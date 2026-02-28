@@ -10,7 +10,7 @@ import (
 	"gitlab.com/traveltoaiur/lazyenv/internal/tui"
 )
 
-var version = "0.1.2"
+var version = "0.1.3"
 
 var cli struct {
 	Path       string           `arg:"" optional:"" default:"." help:"Directory to scan." type:"existingdir"`
