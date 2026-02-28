@@ -24,7 +24,9 @@ check:
 
 release:
   stage: release
-  image: goreleaser/goreleaser:latest
+  image:
+    name: goreleaser/goreleaser:latest
+    entrypoint: [""]
   before_script: []
   cache: []
   variables:
