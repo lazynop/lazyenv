@@ -2,4 +2,7 @@
 .agents
 .serena
 CLAUDE.md
+docs/
 bin/
+dist/
+coverage.out

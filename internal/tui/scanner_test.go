@@ -69,7 +69,7 @@ func TestScanDirRecursive(t *testing.T) {
 
 func TestScanDirSkipsNodeModules(t *testing.T) {
 	dir := setupScanDir(t, map[string]string{
-		".env":                   "FOO=bar\n",
+		".env":                  "FOO=bar\n",
 		"node_modules/pkg/.env": "SKIP=me\n",
 	})
 

@@ -39,4 +39,8 @@ check: fmt-check vet test
 
 # Clean build artifacts
 clean:
-    rm -rf bin coverage.out
+    rm -rf bin coverage.out dist
+
+# Build a snapshot release (no publish)
+release-snapshot:
+    goreleaser release --snapshot --clean

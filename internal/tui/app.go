@@ -53,15 +53,15 @@ type AppConfig struct {
 
 // App is the main Bubble Tea model.
 type App struct {
-	config      AppConfig
-	keys        KeyMap
-	theme       Theme
-	hasDarkBg   bool
-	focus       Focus
-	mode        AppMode
-	width       int
-	height      int
-	ready       bool
+	config    AppConfig
+	keys      KeyMap
+	theme     Theme
+	hasDarkBg bool
+	focus     Focus
+	mode      AppMode
+	width     int
+	height    int
+	ready     bool
 
 	fileList    FileListModel
 	varList     VarListModel
