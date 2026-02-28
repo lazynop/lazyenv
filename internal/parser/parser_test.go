@@ -1,343 +1,207 @@
 package parser
 
 import (
-	"bytes"
-	"gitlab.com/traveltoaiur/lazyenv/internal/model"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gitlab.com/traveltoaiur/lazyenv/internal/model"
 )
 
 func TestBasicKeyValue(t *testing.T) {
-	input := "FOO=bar\n"
-	ef := ParseBytes(".env", []byte(input))
-	if len(ef.Vars) != 1 {
-		t.Fatalf("expected 1 var, got %d", len(ef.Vars))
-	}
-	if ef.Vars[0].Key != "FOO" || ef.Vars[0].Value != "bar" {
-		t.Errorf("got %q=%q", ef.Vars[0].Key, ef.Vars[0].Value)
-	}
-	if ef.Vars[0].QuoteStyle != model.QuoteNone {
-		t.Errorf("expected QuoteNone, got %d", ef.Vars[0].QuoteStyle)
-	}
+	ef := ParseBytes(".env", []byte("FOO=bar\n"))
+
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "FOO", ef.Vars[0].Key)
+	assert.Equal(t, "bar", ef.Vars[0].Value)
+	assert.Equal(t, model.QuoteNone, ef.Vars[0].QuoteStyle)
 }
 
 func TestDoubleQuotedValue(t *testing.T) {
-	input := `FOO="hello world"` + "\n"
-	ef := ParseBytes(".env", []byte(input))
-	if len(ef.Vars) != 1 {
-		t.Fatalf("expected 1 var, got %d", len(ef.Vars))
-	}
-	if ef.Vars[0].Value != "hello world" {
-		t.Errorf("expected %q, got %q", "hello world", ef.Vars[0].Value)
-	}
-	if ef.Vars[0].QuoteStyle != model.QuoteDouble {
-		t.Errorf("expected QuoteDouble")
-	}
+	ef := ParseBytes(".env", []byte("FOO=\"hello world\"\n"))
+
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "hello world", ef.Vars[0].Value)
+	assert.Equal(t, model.QuoteDouble, ef.Vars[0].QuoteStyle)
 }
 
 func TestSingleQuotedValue(t *testing.T) {
-	input := `FOO='hello world'` + "\n"
-	ef := ParseBytes(".env", []byte(input))
-	if len(ef.Vars) != 1 {
-		t.Fatalf("expected 1 var, got %d", len(ef.Vars))
-	}
-	if ef.Vars[0].Value != "hello world" {
-		t.Errorf("expected %q, got %q", "hello world", ef.Vars[0].Value)
-	}
-	if ef.Vars[0].QuoteStyle != model.QuoteSingle {
-		t.Errorf("expected QuoteSingle")
-	}
+	ef := ParseBytes(".env", []byte("FOO='hello world'\n"))
+
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "hello world", ef.Vars[0].Value)
+	assert.Equal(t, model.QuoteSingle, ef.Vars[0].QuoteStyle)
 }
 
 func TestMultilineDoubleQuoted(t *testing.T) {
-	input := "MULTI=\"line1\nline2\nline3\"\n"
-	ef := ParseBytes(".env", []byte(input))
-	if len(ef.Vars) != 1 {
-		t.Fatalf("expected 1 var, got %d", len(ef.Vars))
-	}
-	expected := "line1\nline2\nline3"
-	if ef.Vars[0].Value != expected {
-		t.Errorf("expected %q, got %q", expected, ef.Vars[0].Value)
-	}
+	ef := ParseBytes(".env", []byte("MULTI=\"line1\nline2\nline3\"\n"))
+
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "line1\nline2\nline3", ef.Vars[0].Value)
 }
 
 func TestExportPrefix(t *testing.T) {
-	input := "export NODE_ENV=production\n"
-	ef := ParseBytes(".env", []byte(input))
-	if len(ef.Vars) != 1 {
-		t.Fatalf("expected 1 var, got %d", len(ef.Vars))
-	}
-	if ef.Vars[0].Key != "NODE_ENV" || ef.Vars[0].Value != "production" {
-		t.Errorf("got %q=%q", ef.Vars[0].Key, ef.Vars[0].Value)
-	}
-	if !ef.Vars[0].HasExport {
-		t.Error("expected HasExport=true")
-	}
+	ef := ParseBytes(".env", []byte("export NODE_ENV=production\n"))
+
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "NODE_ENV", ef.Vars[0].Key)
+	assert.Equal(t, "production", ef.Vars[0].Value)
+	assert.True(t, ef.Vars[0].HasExport)
 }
 
 func TestEmptyValue(t *testing.T) {
-	input := "EMPTY=\nALSO_EMPTY=\"\"\n"
-	ef := ParseBytes(".env", []byte(input))
-	if len(ef.Vars) != 2 {
-		t.Fatalf("expected 2 vars, got %d", len(ef.Vars))
-	}
-	if ef.Vars[0].Value != "" || !ef.Vars[0].IsEmpty {
-		t.Errorf("first var: value=%q, isEmpty=%v", ef.Vars[0].Value, ef.Vars[0].IsEmpty)
-	}
-	if ef.Vars[1].Value != "" || !ef.Vars[1].IsEmpty {
-		t.Errorf("second var: value=%q, isEmpty=%v", ef.Vars[1].Value, ef.Vars[1].IsEmpty)
-	}
+	ef := ParseBytes(".env", []byte("EMPTY=\nALSO_EMPTY=\"\"\n"))
+
+	require.Len(t, ef.Vars, 2)
+	assert.Empty(t, ef.Vars[0].Value)
+	assert.True(t, ef.Vars[0].IsEmpty)
+	assert.Empty(t, ef.Vars[1].Value)
+	assert.True(t, ef.Vars[1].IsEmpty)
 }
 
 func TestComments(t *testing.T) {
-	input := "# This is a comment\nFOO=bar\n"
-	ef := ParseBytes(".env", []byte(input))
-	if len(ef.Vars) != 1 {
-		t.Fatalf("expected 1 var, got %d", len(ef.Vars))
-	}
-	if len(ef.Lines) != 2 {
-		t.Fatalf("expected 2 lines, got %d", len(ef.Lines))
-	}
-	if ef.Lines[0].Type != model.LineComment {
-		t.Errorf("expected first line to be comment")
-	}
+	ef := ParseBytes(".env", []byte("# This is a comment\nFOO=bar\n"))
+
+	require.Len(t, ef.Vars, 1)
+	require.Len(t, ef.Lines, 2)
+	assert.Equal(t, model.LineComment, ef.Lines[0].Type)
 }
 
 func TestInlineComment(t *testing.T) {
-	input := "FOO=bar # this is inline\n"
-	ef := ParseBytes(".env", []byte(input))
-	if len(ef.Vars) != 1 {
-		t.Fatalf("expected 1 var, got %d", len(ef.Vars))
-	}
-	if ef.Vars[0].Value != "bar" {
-		t.Errorf("expected value %q, got %q", "bar", ef.Vars[0].Value)
-	}
-	if ef.Vars[0].Comment != "this is inline" {
-		t.Errorf("expected comment %q, got %q", "this is inline", ef.Vars[0].Comment)
-	}
+	ef := ParseBytes(".env", []byte("FOO=bar # this is inline\n"))
+
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "bar", ef.Vars[0].Value)
+	assert.Equal(t, "this is inline", ef.Vars[0].Comment)
 }
 
 func TestBlankLines(t *testing.T) {
-	input := "FOO=bar\n\nBAZ=qux\n"
-	ef := ParseBytes(".env", []byte(input))
-	if len(ef.Vars) != 2 {
-		t.Fatalf("expected 2 vars, got %d", len(ef.Vars))
-	}
-	if len(ef.Lines) != 3 {
-		t.Fatalf("expected 3 lines, got %d", len(ef.Lines))
-	}
-	if ef.Lines[1].Type != model.LineEmpty {
-		t.Errorf("expected middle line to be empty")
-	}
+	ef := ParseBytes(".env", []byte("FOO=bar\n\nBAZ=qux\n"))
+
+	require.Len(t, ef.Vars, 2)
+	require.Len(t, ef.Lines, 3)
+	assert.Equal(t, model.LineEmpty, ef.Lines[1].Type)
 }
 
 func TestEscapeSequences(t *testing.T) {
-	input := `FOO="hello \"world\" \\path\nnewline"` + "\n"
+	input := "FOO=\"hello \\\"world\\\" \\\\path\\nnewline\"\n"
 	ef := ParseBytes(".env", []byte(input))
-	if len(ef.Vars) != 1 {
-		t.Fatalf("expected 1 var, got %d", len(ef.Vars))
-	}
-	expected := "hello \"world\" \\path\nnewline"
-	if ef.Vars[0].Value != expected {
-		t.Errorf("expected %q, got %q", expected, ef.Vars[0].Value)
-	}
+
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "hello \"world\" \\path\nnewline", ef.Vars[0].Value)
 }
 
 func TestDuplicateDetection(t *testing.T) {
-	input := "FOO=first\nBAR=baz\nFOO=second\n"
-	ef := ParseBytes(".env", []byte(input))
-	if len(ef.Vars) != 3 {
-		t.Fatalf("expected 3 vars, got %d", len(ef.Vars))
-	}
-	if !ef.Vars[0].IsDuplicate {
-		t.Error("first FOO should be marked duplicate")
-	}
-	if ef.Vars[1].IsDuplicate {
-		t.Error("BAR should not be duplicate")
-	}
-	if !ef.Vars[2].IsDuplicate {
-		t.Error("second FOO should be marked duplicate")
-	}
+	ef := ParseBytes(".env", []byte("FOO=first\nBAR=baz\nFOO=second\n"))
+
+	require.Len(t, ef.Vars, 3)
+	assert.True(t, ef.Vars[0].IsDuplicate, "first FOO should be duplicate")
+	assert.False(t, ef.Vars[1].IsDuplicate, "BAR should not be duplicate")
+	assert.True(t, ef.Vars[2].IsDuplicate, "second FOO should be duplicate")
 }
 
 func TestInvalidLinesTreatedAsComments(t *testing.T) {
-	input := "not a valid line\nFOO=bar\n"
-	ef := ParseBytes(".env", []byte(input))
-	if len(ef.Vars) != 1 {
-		t.Fatalf("expected 1 var, got %d", len(ef.Vars))
-	}
-	if ef.Lines[0].Type != model.LineComment {
-		t.Errorf("invalid line should be treated as comment, got %d", ef.Lines[0].Type)
-	}
+	ef := ParseBytes(".env", []byte("not a valid line\nFOO=bar\n"))
+
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, model.LineComment, ef.Lines[0].Type)
 }
 
 func TestRoundTripFidelity(t *testing.T) {
-	input := `# Database config
-DB_HOST=localhost              # primary host
-DB_PORT=5432
-DB_PASSWORD="super secret"
+	input := "# Database config\nDB_HOST=localhost              # primary host\nDB_PORT=5432\nDB_PASSWORD=\"super secret\"\n\n# API settings\nexport API_KEY='sk-12345'\nEMPTY=\nQUOTED_EMPTY=\"\"\n\n# Multiline\nMULTI=\"line1\nline2\nline3\"\n"
 
-# API settings
-export API_KEY='sk-12345'
-EMPTY=
-QUOTED_EMPTY=""
-
-# Multiline
-MULTI="line1
-line2
-line3"
-`
 	ef := ParseBytes(".env", []byte(input))
 	output := Marshal(ef)
-	if !bytes.Equal([]byte(input), output) {
-		t.Errorf("round-trip mismatch:\n--- input ---\n%s\n--- output ---\n%s", input, string(output))
-	}
+
+	assert.Equal(t, input, string(output))
 }
 
 func TestModifiedVarWriteBack(t *testing.T) {
-	input := "FOO=old\nBAR=keep\n"
-	ef := ParseBytes(".env", []byte(input))
+	ef := ParseBytes(".env", []byte("FOO=old\nBAR=keep\n"))
 	ef.UpdateVar(0, "new")
 
-	output := string(Marshal(ef))
-	if output != "FOO=new\nBAR=keep\n" {
-		t.Errorf("unexpected output: %q", output)
-	}
+	assert.Equal(t, "FOO=new\nBAR=keep\n", string(Marshal(ef)))
 }
 
 func TestModifiedQuotedVarWriteBack(t *testing.T) {
-	input := `FOO="old value"` + "\n"
-	ef := ParseBytes(".env", []byte(input))
+	ef := ParseBytes(".env", []byte("FOO=\"old value\"\n"))
 	ef.UpdateVar(0, "new value")
 
-	output := string(Marshal(ef))
-	expected := `FOO="new value"` + "\n"
-	if output != expected {
-		t.Errorf("expected %q, got %q", expected, output)
-	}
+	assert.Equal(t, "FOO=\"new value\"\n", string(Marshal(ef)))
 }
 
 func TestAddVar(t *testing.T) {
-	input := "FOO=bar\n"
-	ef := ParseBytes(".env", []byte(input))
+	ef := ParseBytes(".env", []byte("FOO=bar\n"))
 	ef.AddVar("NEW", "val")
 
-	if len(ef.Vars) != 2 {
-		t.Fatalf("expected 2 vars, got %d", len(ef.Vars))
-	}
-	output := string(Marshal(ef))
-	expected := "FOO=bar\nNEW=val\n"
-	if output != expected {
-		t.Errorf("expected %q, got %q", expected, output)
-	}
+	require.Len(t, ef.Vars, 2)
+	assert.Equal(t, "FOO=bar\nNEW=val\n", string(Marshal(ef)))
 }
 
 func TestDeleteVar(t *testing.T) {
-	input := "FOO=bar\nBAZ=qux\nQUX=end\n"
-	ef := ParseBytes(".env", []byte(input))
+	ef := ParseBytes(".env", []byte("FOO=bar\nBAZ=qux\nQUX=end\n"))
 	ef.DeleteVar(1) // delete BAZ
 
-	if len(ef.Vars) != 2 {
-		t.Fatalf("expected 2 vars, got %d", len(ef.Vars))
-	}
-	output := string(Marshal(ef))
-	expected := "FOO=bar\nQUX=end\n"
-	if output != expected {
-		t.Errorf("expected %q, got %q", expected, output)
-	}
+	require.Len(t, ef.Vars, 2)
+	assert.Equal(t, "FOO=bar\nQUX=end\n", string(Marshal(ef)))
 }
 
 func TestSecretDetection(t *testing.T) {
-	input := "DB_PASSWORD=secret123\nAPI_KEY=sk-12345\nNORMAL=hello\n"
-	ef := ParseBytes(".env", []byte(input))
-	if !ef.Vars[0].IsSecret {
-		t.Error("DB_PASSWORD should be secret")
-	}
-	if !ef.Vars[1].IsSecret {
-		t.Error("API_KEY should be secret")
-	}
-	if ef.Vars[2].IsSecret {
-		t.Error("NORMAL should not be secret")
-	}
+	ef := ParseBytes(".env", []byte("DB_PASSWORD=secret123\nAPI_KEY=sk-12345\nNORMAL=hello\n"))
+
+	assert.True(t, ef.Vars[0].IsSecret, "DB_PASSWORD should be secret")
+	assert.True(t, ef.Vars[1].IsSecret, "API_KEY should be secret")
+	assert.False(t, ef.Vars[2].IsSecret, "NORMAL should not be secret")
 }
 
 func TestPlaceholderDetection(t *testing.T) {
-	input := "A=changeme\nB=TODO\nC=your_api_key_here\nD=real_value\n"
-	ef := ParseBytes(".env", []byte(input))
-	if !ef.Vars[0].IsPlaceholder {
-		t.Error("changeme should be placeholder")
-	}
-	if !ef.Vars[1].IsPlaceholder {
-		t.Error("TODO should be placeholder")
-	}
-	if !ef.Vars[2].IsPlaceholder {
-		t.Error("your_api_key_here should be placeholder")
-	}
-	if ef.Vars[3].IsPlaceholder {
-		t.Error("real_value should not be placeholder")
-	}
+	ef := ParseBytes(".env", []byte("A=changeme\nB=TODO\nC=your_api_key_here\nD=real_value\n"))
+
+	assert.True(t, ef.Vars[0].IsPlaceholder, "changeme should be placeholder")
+	assert.True(t, ef.Vars[1].IsPlaceholder, "TODO should be placeholder")
+	assert.True(t, ef.Vars[2].IsPlaceholder, "your_api_key_here should be placeholder")
+	assert.False(t, ef.Vars[3].IsPlaceholder, "real_value should not be placeholder")
 }
 
 func TestWriteFileAtomic(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, ".env")
 
-	// Write initial file
-	os.WriteFile(path, []byte("FOO=bar\n"), 0644)
+	require.NoError(t, os.WriteFile(path, []byte("FOO=bar\n"), 0644))
 
 	ef, err := ParseFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	ef.UpdateVar(0, "baz")
-	if err := WriteFile(ef); err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, WriteFile(ef))
 
 	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(data) != "FOO=baz\n" {
-		t.Errorf("expected %q, got %q", "FOO=baz\n", string(data))
-	}
+	require.NoError(t, err)
+	assert.Equal(t, "FOO=baz\n", string(data))
 }
 
 func TestExportPrefixWriteBack(t *testing.T) {
-	input := "export FOO=bar\n"
-	ef := ParseBytes(".env", []byte(input))
+	ef := ParseBytes(".env", []byte("export FOO=bar\n"))
 	ef.UpdateVar(0, "baz")
 
-	output := string(Marshal(ef))
-	expected := "export FOO=baz\n"
-	if output != expected {
-		t.Errorf("expected %q, got %q", expected, output)
-	}
+	assert.Equal(t, "export FOO=baz\n", string(Marshal(ef)))
 }
 
 func TestInlineCommentWriteBack(t *testing.T) {
-	input := "FOO=bar # comment\n"
-	ef := ParseBytes(".env", []byte(input))
+	ef := ParseBytes(".env", []byte("FOO=bar # comment\n"))
 	ef.UpdateVar(0, "baz")
 
-	output := string(Marshal(ef))
-	expected := "FOO=baz # comment\n"
-	if output != expected {
-		t.Errorf("expected %q, got %q", expected, output)
-	}
+	assert.Equal(t, "FOO=baz # comment\n", string(Marshal(ef)))
 }
 
 func TestVarByKey(t *testing.T) {
-	input := "FOO=first\nFOO=second\n"
-	ef := ParseBytes(".env", []byte(input))
+	ef := ParseBytes(".env", []byte("FOO=first\nFOO=second\n"))
+
 	v := ef.VarByKey("FOO")
-	if v == nil || v.Value != "second" {
-		t.Error("VarByKey should return last occurrence")
-	}
-	v = ef.VarByKey("MISSING")
-	if v != nil {
-		t.Error("VarByKey should return nil for missing key")
-	}
+	require.NotNil(t, v)
+	assert.Equal(t, "second", v.Value, "VarByKey should return last occurrence")
+
+	assert.Nil(t, ef.VarByKey("MISSING"))
 }
