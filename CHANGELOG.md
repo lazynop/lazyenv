@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2026-02-28
+
+### Added
+- Reset command (`r`) in normal mode to discard changes and reload from disk
+
+### Fixed
+- Recursive scan (`-r`) without explicit path now correctly defaults to current directory
+
+### Improved
+- Replaced `flag` with Kong for CLI argument parsing
+- Kong `existingdir` type for path validation
+
+### Testing
+- Test for `ScanDir` with dot path in recursive mode
+
 ## [0.1.1] - 2026-02-28
 
 First public release of LazyEnv.
