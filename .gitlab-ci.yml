@@ -25,6 +25,8 @@ check:
 release:
   stage: release
   image: goreleaser/goreleaser:latest
+  before_script: []
+  cache: []
   variables:
     GIT_DEPTH: 0
   rules:
