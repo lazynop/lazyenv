@@ -9,9 +9,6 @@ All notable changes to this project will be documented in this file.
 - `-G`/`--no-git-check` flag to disable gitignore check
 - Silent fallback when git is not installed or not in a git repo
 
-### Fixed
-- CI workflow rules to prevent duplicate pipelines
-
 ### Improved
 - Modernize codebase for Go 1.26 (`SplitSeq`, range over int, etc.)
 
