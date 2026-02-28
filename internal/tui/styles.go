@@ -1,8 +1,12 @@
 package tui
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"image/color"
 
-// Theme holds all Lip Gloss styles with adaptive colors for light/dark terminals.
+	"charm.land/lipgloss/v2"
+)
+
+// Theme holds all Lip Gloss styles.
 type Theme struct {
 	// Panel styles
 	FilePanel    lipgloss.Style
@@ -19,13 +23,13 @@ type Theme struct {
 	ModifiedMarker lipgloss.Style
 
 	// Value styles
-	SecretValue      lipgloss.Style
-	EmptyWarning     lipgloss.Style
-	PlaceholderWarn  lipgloss.Style
-	DuplicateWarn    lipgloss.Style
-	KeyStyle         lipgloss.Style
-	ValueStyle       lipgloss.Style
-	CommentStyle     lipgloss.Style
+	SecretValue     lipgloss.Style
+	EmptyWarning    lipgloss.Style
+	PlaceholderWarn lipgloss.Style
+	DuplicateWarn   lipgloss.Style
+	KeyStyle        lipgloss.Style
+	ValueStyle      lipgloss.Style
+	CommentStyle    lipgloss.Style
 
 	// Diff styles
 	DiffEqual   lipgloss.Style
@@ -36,21 +40,26 @@ type Theme struct {
 	// Help
 	HelpKey  lipgloss.Style
 	HelpDesc lipgloss.Style
+
+	// Colors (for direct use)
+	ColorPrimary color.Color
+	ColorFg      color.Color
+	ColorBorder  color.Color
 }
 
-var (
-	colorPrimary = lipgloss.AdaptiveColor{Light: "#7B2FBE", Dark: "#BD93F9"}
-	colorWarning = lipgloss.AdaptiveColor{Light: "#D97706", Dark: "#FFB86C"}
-	colorError   = lipgloss.AdaptiveColor{Light: "#DC2626", Dark: "#FF5555"}
-	colorSuccess = lipgloss.AdaptiveColor{Light: "#059669", Dark: "#50FA7B"}
-	colorMuted   = lipgloss.AdaptiveColor{Light: "#6B7280", Dark: "#6272A4"}
-	colorFg      = lipgloss.AdaptiveColor{Light: "#1F2937", Dark: "#F8F8F2"}
-	colorBg      = lipgloss.AdaptiveColor{Light: "#F9FAFB", Dark: "#282A36"}
-	colorBorder  = lipgloss.AdaptiveColor{Light: "#D1D5DB", Dark: "#44475A"}
-)
+// BuildTheme returns a theme based on the terminal background.
+func BuildTheme(isDark bool) Theme {
+	ld := lipgloss.LightDark(isDark)
 
-// DefaultTheme returns the default theme.
-func DefaultTheme() Theme {
+	colorPrimary := ld(lipgloss.Color("#7B2FBE"), lipgloss.Color("#BD93F9"))
+	colorWarning := ld(lipgloss.Color("#D97706"), lipgloss.Color("#FFB86C"))
+	colorError := ld(lipgloss.Color("#DC2626"), lipgloss.Color("#FF5555"))
+	colorSuccess := ld(lipgloss.Color("#059669"), lipgloss.Color("#50FA7B"))
+	colorMuted := ld(lipgloss.Color("#6B7280"), lipgloss.Color("#6272A4"))
+	colorFg := ld(lipgloss.Color("#1F2937"), lipgloss.Color("#F8F8F2"))
+	colorBorder := ld(lipgloss.Color("#D1D5DB"), lipgloss.Color("#44475A"))
+	colorCursorBg := ld(lipgloss.Color("#E5E7EB"), lipgloss.Color("#44475A"))
+
 	return Theme{
 		FilePanel: lipgloss.NewStyle().
 			BorderStyle(lipgloss.RoundedBorder()).
@@ -77,7 +86,7 @@ func DefaultTheme() Theme {
 		CursorItem: lipgloss.NewStyle().
 			Bold(true).
 			Foreground(colorFg).
-			Background(lipgloss.AdaptiveColor{Light: "#E5E7EB", Dark: "#44475A"}),
+			Background(colorCursorBg),
 		MutedItem: lipgloss.NewStyle().
 			Foreground(colorMuted),
 		ModifiedMarker: lipgloss.NewStyle().
@@ -114,5 +123,9 @@ func DefaultTheme() Theme {
 			Foreground(colorPrimary),
 		HelpDesc: lipgloss.NewStyle().
 			Foreground(colorMuted),
+
+		ColorPrimary: colorPrimary,
+		ColorFg:      colorFg,
+		ColorBorder:  colorBorder,
 	}
 }

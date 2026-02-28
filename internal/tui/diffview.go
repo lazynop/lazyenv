@@ -6,7 +6,7 @@ import (
 	"gitlab.com/traveltoaiur/lazyenv/internal/parser"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 )
 
 // DiffStats holds counts of each diff type.
@@ -335,14 +335,14 @@ func (m *DiffViewModel) View(theme Theme) string {
 		Width(halfWidth).
 		Height(m.Height - 2).
 		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(colorBorder).
+		BorderForeground(theme.ColorBorder).
 		Render(fmt.Sprintf("%s\n%s", leftTitle, leftContent))
 
 	rightPanel := lipgloss.NewStyle().
 		Width(halfWidth).
 		Height(m.Height - 2).
 		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(colorBorder).
+		BorderForeground(theme.ColorBorder).
 		Render(fmt.Sprintf("%s\n%s", rightTitle, rightContent))
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, leftPanel, rightPanel)

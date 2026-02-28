@@ -6,7 +6,7 @@ import (
 	"gitlab.com/traveltoaiur/lazyenv/internal/tui"
 	"os"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 var version = "0.1.0"
@@ -51,7 +51,7 @@ func main() {
 		ShowAll:   *showAll,
 	})
 
-	p := tea.NewProgram(app, tea.WithAltScreen())
+	p := tea.NewProgram(app)
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

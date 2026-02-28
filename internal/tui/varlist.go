@@ -248,7 +248,7 @@ func (m *VarListModel) renderPanel(title, content string, theme Theme) string {
 		Height(m.Height)
 
 	if m.Focused {
-		style = style.BorderForeground(colorPrimary)
+		style = style.BorderForeground(theme.ColorPrimary)
 	}
 
 	inner := fmt.Sprintf("%s\n%s", title, content)

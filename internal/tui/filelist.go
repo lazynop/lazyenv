@@ -5,7 +5,7 @@ import (
 	"gitlab.com/traveltoaiur/lazyenv/internal/model"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 )
 
 // FileListModel manages the file list panel.
@@ -138,7 +138,7 @@ func (m *FileListModel) renderPanel(title, content string, theme Theme) string {
 		Height(m.Height)
 
 	if m.Focused {
-		style = style.BorderForeground(colorPrimary)
+		style = style.BorderForeground(theme.ColorPrimary)
 	}
 
 	inner := fmt.Sprintf("%s\n%s", title, content)

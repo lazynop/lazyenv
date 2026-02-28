@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/textinput"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 // AppMode represents the current application mode.
@@ -53,20 +53,21 @@ type AppConfig struct {
 
 // App is the main Bubble Tea model.
 type App struct {
-	config    AppConfig
-	keys      KeyMap
-	theme     Theme
-	focus     Focus
-	mode      AppMode
-	width     int
-	height    int
-	ready     bool
+	config      AppConfig
+	keys        KeyMap
+	theme       Theme
+	hasDarkBg   bool
+	focus       Focus
+	mode        AppMode
+	width       int
+	height      int
+	ready       bool
 
-	fileList  FileListModel
-	varList   VarListModel
-	statusBar StatusBarModel
-	diffView  DiffViewModel
-	editor    EditorModel
+	fileList    FileListModel
+	varList     VarListModel
+	statusBar   StatusBarModel
+	diffView    DiffViewModel
+	editor      EditorModel
 	searchInput textinput.Model
 
 	// Compare mode state
@@ -82,16 +83,17 @@ func NewApp(config AppConfig) App {
 	ti.CharLimit = 100
 
 	return App{
-		config:    config,
-		keys:      DefaultKeyMap(),
-		theme:     DefaultTheme(),
-		focus:     FocusFiles,
-		mode:      ModeNormal,
-		fileList:  NewFileListModel(),
-		varList:   NewVarListModel(),
-		statusBar: NewStatusBarModel(),
-		diffView:  NewDiffViewModel(),
-		editor:    NewEditorModel(),
+		config:      config,
+		keys:        DefaultKeyMap(),
+		theme:       BuildTheme(true), // default to dark, will update on BackgroundColorMsg
+		hasDarkBg:   true,
+		focus:       FocusFiles,
+		mode:        ModeNormal,
+		fileList:    NewFileListModel(),
+		varList:     NewVarListModel(),
+		statusBar:   NewStatusBarModel(),
+		diffView:    NewDiffViewModel(),
+		editor:      NewEditorModel(),
 		searchInput: ti,
 	}
 }
@@ -114,6 +116,11 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.diffView.Height = a.height - 4
 		return a, nil
 
+	case tea.BackgroundColorMsg:
+		a.hasDarkBg = msg.IsDark()
+		a.theme = BuildTheme(a.hasDarkBg)
+		return a, nil
+
 	case FilesLoadedMsg:
 		if msg.Err != nil {
 			a.statusBar.SetMessage("Error: " + msg.Err.Error())
@@ -130,14 +137,14 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.statusBar.ClearMessage()
 		return a, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		return a.handleKey(msg)
 	}
 
 	return a, nil
 }
 
-func (a App) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	// Mode-specific handling
 	switch a.mode {
 	case ModeEditing:
@@ -278,7 +285,7 @@ func (a App) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return a, nil
 }
 
-func (a App) handleEditingKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
@@ -313,7 +320,7 @@ func (a App) handleEditingKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (a App) handleConfirmDeleteKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (a App) handleConfirmDeleteKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Confirm):
 		idx := a.varList.SelectedVarIndex()
@@ -331,14 +338,14 @@ func (a App) handleConfirmDeleteKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return a, nil
 }
 
-func (a App) handleHelpKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (a App) handleHelpKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, a.keys.Escape) || key.Matches(msg, a.keys.Help) || key.Matches(msg, a.keys.Quit) {
 		a.mode = ModeNormal
 	}
 	return a, nil
 }
 
-func (a App) handleSearchKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (a App) handleSearchKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
@@ -355,7 +362,7 @@ func (a App) handleSearchKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (a App) handleComparingKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Quit), key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
@@ -474,7 +481,7 @@ func (a App) startCompareEdit(file *model.EnvFile) (tea.Model, tea.Cmd) {
 	return a, a.editor.input.Focus()
 }
 
-func (a App) handleEditingCompareKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (a App) handleEditingCompareKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Escape):
 		a.mode = ModeComparing
@@ -495,7 +502,7 @@ func (a App) handleEditingCompareKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (a App) handleCompareSelectKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (a App) handleCompareSelectKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
@@ -556,56 +563,59 @@ func (a App) handleSave() (App, tea.Cmd) {
 	return a, clearMessageAfter(2 * time.Second)
 }
 
-func (a App) View() string {
+func (a App) View() tea.View {
 	if !a.ready {
-		return "Loading..."
+		return tea.NewView("Loading...")
 	}
+
+	var content string
 
 	switch a.mode {
 	case ModeHelp:
-		return a.viewHelp()
+		content = a.viewHelp()
 	case ModeComparing:
 		diffContent := a.diffView.View(a.theme)
 		statusBarContent := a.statusBar.View(a.theme, a.mode, a.focus, "", 0, a.diffView.Stats)
-		return lipgloss.JoinVertical(lipgloss.Left, diffContent, statusBarContent)
+		content = lipgloss.JoinVertical(lipgloss.Left, diffContent, statusBarContent)
 	case ModeEditingCompare:
 		diffContent := a.diffView.View(a.theme)
 		editorBar := a.theme.StatusBar.Width(a.width).Render("  " + a.editor.View())
 		statusBarContent := a.statusBar.View(a.theme, ModeEditing, a.focus, "", 0)
-		return lipgloss.JoinVertical(lipgloss.Left, diffContent, editorBar, statusBarContent)
+		content = lipgloss.JoinVertical(lipgloss.Left, diffContent, editorBar, statusBarContent)
+	default:
+		a.updateLayout()
+
+		// Two-panel layout
+		filePanel := a.fileList.View(a.theme)
+		varPanel := a.varList.View(a.theme)
+
+		panels := lipgloss.JoinHorizontal(lipgloss.Top, filePanel, varPanel)
+
+		// Status bar
+		fileName := ""
+		varCount := 0
+		if f := a.varList.File; f != nil {
+			fileName = f.Name
+			varCount = len(f.Vars)
+		}
+
+		statusBarContent := a.statusBar.View(a.theme, a.mode, a.focus, fileName, varCount)
+
+		// Search bar
+		if a.mode == ModeSearching {
+			searchBar := a.theme.StatusBar.Width(a.width).Render("  / " + a.searchInput.View())
+			content = lipgloss.JoinVertical(lipgloss.Left, panels, searchBar, statusBarContent)
+		} else if a.mode == ModeEditing {
+			editorBar := a.theme.StatusBar.Width(a.width).Render("  " + a.editor.View())
+			content = lipgloss.JoinVertical(lipgloss.Left, panels, editorBar, statusBarContent)
+		} else {
+			content = lipgloss.JoinVertical(lipgloss.Left, panels, statusBarContent)
+		}
 	}
 
-	a.updateLayout()
-
-	// Two-panel layout
-	filePanel := a.fileList.View(a.theme)
-	varPanel := a.varList.View(a.theme)
-
-	panels := lipgloss.JoinHorizontal(lipgloss.Top, filePanel, varPanel)
-
-	// Status bar
-	fileName := ""
-	varCount := 0
-	if f := a.varList.File; f != nil {
-		fileName = f.Name
-		varCount = len(f.Vars)
-	}
-
-	statusBarContent := a.statusBar.View(a.theme, a.mode, a.focus, fileName, varCount)
-
-	// Search bar
-	if a.mode == ModeSearching {
-		searchBar := a.theme.StatusBar.Width(a.width).Render("  / " + a.searchInput.View())
-		return lipgloss.JoinVertical(lipgloss.Left, panels, searchBar, statusBarContent)
-	}
-
-	// Editor overlay
-	if a.mode == ModeEditing {
-		editorBar := a.theme.StatusBar.Width(a.width).Render("  " + a.editor.View())
-		return lipgloss.JoinVertical(lipgloss.Left, panels, editorBar, statusBarContent)
-	}
-
-	return lipgloss.JoinVertical(lipgloss.Left, panels, statusBarContent)
+	view := tea.NewView(content)
+	view.AltScreen = true
+	return view
 }
 
 func (a *App) updateLayout() {
@@ -663,7 +673,7 @@ func (a App) viewHelp() string {
 		Width(a.width).
 		Height(a.height).
 		Padding(1, 2).
-		Foreground(colorFg)
+		Foreground(a.theme.ColorFg)
 
 	footer := a.theme.MutedItem.Render("\n  Press Esc or ? to close")
 

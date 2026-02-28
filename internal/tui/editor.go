@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"gitlab.com/traveltoaiur/lazyenv/internal/model"
 
-	"github.com/charmbracelet/bubbles/textinput"
+	"charm.land/bubbles/v2/textinput"
 )
 
 // Add step tracks the two-step add flow.
