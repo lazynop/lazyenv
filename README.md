@@ -1,5 +1,7 @@
 # lazyenv
 
+> **Work in progress** — not ready for production use.
+
 TUI for managing `.env` files — written in Go with [Bubble Tea](https://github.com/charmbracelet/bubbletea).
 
 Browse, compare, edit and validate environment variables from your terminal.
