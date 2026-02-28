@@ -117,6 +117,24 @@ func TestScanDirEmptyDir(t *testing.T) {
 	assert.Empty(t, files)
 }
 
+func TestScanDirDotPathRecursive(t *testing.T) {
+	dir := setupScanDir(t, map[string]string{
+		".env":     "A=1\n",
+		"sub/.env": "B=2\n",
+	})
+
+	// Simulate the fallback: scan "." from within the target directory
+	origDir, err := os.Getwd()
+	require.NoError(t, err)
+	require.NoError(t, os.Chdir(dir))
+	t.Cleanup(func() { os.Chdir(origDir) })
+
+	files, err := ScanDir(".", true)
+
+	require.NoError(t, err)
+	require.Len(t, files, 2, `ScanDir(".", true) should find files recursively`)
+}
+
 func TestIsEnvFile(t *testing.T) {
 	tests := []struct {
 		name     string
