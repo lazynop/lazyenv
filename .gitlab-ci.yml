@@ -18,7 +18,7 @@ check:
   <<: *go-template
   stage: check
   script:
-    - test -z "$(gofmt -l .)" || (echo "Files need formatting:" && gofmt -l . && exit 1)
+    - test -z "$(gofmt -l $(find . -name '*.go' -not -path './.go/*'))" || (echo "Files need formatting:" && gofmt -l $(find . -name '*.go' -not -path './.go/*') && exit 1)
     - go vet ./...
     - go test -race -cover ./...
 
