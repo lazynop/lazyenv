@@ -25,6 +25,10 @@ func main() {
 		kong.Vars{"version": version},
 	)
 
+	if cli.Path == "" {
+		cli.Path = "."
+	}
+
 	app := tui.NewApp(tui.AppConfig{
 		Dir:       cli.Path,
 		Recursive: cli.Recursive,
