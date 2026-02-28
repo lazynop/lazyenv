@@ -24,16 +24,10 @@ check:
 
 release:
   stage: release
-  image: docker:stable
-  services:
-    - docker:dind
+  image: goreleaser/goreleaser:latest
   variables:
     GIT_DEPTH: 0
   rules:
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
   script:
-    - docker run --rm
-      -v $PWD:/go/src/gitlab.com/traveltoaiur/lazyenv
-      -w /go/src/gitlab.com/traveltoaiur/lazyenv
-      -e GITLAB_TOKEN
-      goreleaser/goreleaser release --clean
+    - goreleaser release --clean
