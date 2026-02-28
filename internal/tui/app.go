@@ -46,9 +46,10 @@ type ClearMessageMsg struct{}
 
 // AppConfig holds startup configuration.
 type AppConfig struct {
-	Dir       string
-	Recursive bool
-	ShowAll   bool
+	Dir        string
+	Recursive  bool
+	ShowAll    bool
+	NoGitCheck bool // skip .gitignore check (flag -G or git not installed)
 }
 
 // App is the main Bubble Tea model.
@@ -99,9 +100,13 @@ func NewApp(config AppConfig) App {
 }
 
 func (a App) Init() tea.Cmd {
+	noGitCheck := a.config.NoGitCheck
 	return tea.Batch(
 		func() tea.Msg {
 			files, err := ScanDir(a.config.Dir, a.config.Recursive)
+			if err == nil && !noGitCheck {
+				CheckGitIgnore(files)
+			}
 			return FilesLoadedMsg{Files: files, Err: err}
 		},
 		tea.RequestBackgroundColor,
@@ -697,6 +702,11 @@ func (a App) viewHelp() string {
     /              Search variables
     o              Toggle sort (position / alphabetical)
     Ctrl+S         Toggle secret masking
+
+  Indicators
+    ●              Selected file
+    *              Modified (unsaved changes)
+    !              Not covered by .gitignore
 
   General
     ?              Show/hide this help

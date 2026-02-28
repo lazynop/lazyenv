@@ -100,6 +100,12 @@ func (m *FileListModel) View(theme Theme) string {
 		f := m.Files[i]
 		name := f.Name
 
+		// Git warning prefix
+		gitWarn := ""
+		if f.GitWarning {
+			gitWarn = theme.GitWarning.Render("! ")
+		}
+
 		// Indicators
 		indicator := "  "
 		if i == m.Selected {
@@ -111,7 +117,7 @@ func (m *FileListModel) View(theme Theme) string {
 			modified = theme.ModifiedMarker.Render("*")
 		}
 
-		line := fmt.Sprintf("%s%s%s", indicator, name, modified)
+		line := fmt.Sprintf("%s%s%s%s", indicator, gitWarn, name, modified)
 
 		if i == m.Cursor && m.Focused {
 			line = theme.CursorItem.Render(padRight(line, m.Width-4))

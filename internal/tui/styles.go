@@ -21,6 +21,7 @@ type Theme struct {
 	CursorItem     lipgloss.Style
 	MutedItem      lipgloss.Style
 	ModifiedMarker lipgloss.Style
+	GitWarning     lipgloss.Style
 
 	// Value styles
 	SecretValue     lipgloss.Style
@@ -91,6 +92,9 @@ func BuildTheme(isDark bool) Theme {
 			Foreground(colorMuted),
 		ModifiedMarker: lipgloss.NewStyle().
 			Foreground(colorWarning),
+		GitWarning: lipgloss.NewStyle().
+			Foreground(colorError).
+			Bold(true),
 
 		SecretValue: lipgloss.NewStyle().
 			Foreground(colorMuted),

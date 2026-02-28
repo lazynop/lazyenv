@@ -111,6 +111,12 @@ func TestDeleteVarOutOfBounds(t *testing.T) {
 	assert.False(t, ef.Modified)
 }
 
+func TestGitWarningDefaultFalse(t *testing.T) {
+	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
+
+	assert.False(t, ef.GitWarning, "GitWarning should default to false")
+}
+
 func TestVarByKey(t *testing.T) {
 	ef := newTestFile(
 		EnvVar{Key: "FOO", Value: "first"},

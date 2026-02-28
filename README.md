@@ -8,11 +8,12 @@ Browse, compare, edit and validate environment variables from your terminal.
 
 ## Features
 
+- **Gitignore warning** — shows `!` next to files not covered by `.gitignore` (disable with `-G`)
 - **File scanning** — finds `.env`, `.env.*`, `*.env` in the current directory (or recursively with `-r`)
 - **Two-panel layout** — file list on the left, variables on the right
 - **Secret masking** — auto-detects keys like `*_PASSWORD`, `*_TOKEN`, `*_API_KEY` and masks their values
 - **Inline validation** — warns on empty values, placeholders (`TODO`, `changeme`), and duplicate keys
-- **Diff/compare** — side-by-side comparison between two env files
+- **Diff/compare** — side-by-side comparison between two env files with bidirectional copy, inline editing, difference filtering, and jump-to-next/prev diff
 - **Inline editing** — edit, add, and delete variables without leaving the TUI
 - **Round-trip fidelity** — saves preserve comments, blank lines, quoting, and ordering
 
@@ -39,6 +40,7 @@ lazyenv [path] [flags]
 |------|-------------|
 | `-r` | Scan subdirectories recursively |
 | `-a` | Show secrets in cleartext at startup |
+| `-G` | Disable `.gitignore` check |
 | `-v` | Show version |
 | `-h` | Show help |
 

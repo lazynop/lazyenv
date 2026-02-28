@@ -1,12 +1,14 @@
 package tui
 
 import (
-	"gitlab.com/traveltoaiur/lazyenv/internal/model"
-	"gitlab.com/traveltoaiur/lazyenv/internal/parser"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"gitlab.com/traveltoaiur/lazyenv/internal/model"
+	"gitlab.com/traveltoaiur/lazyenv/internal/parser"
 )
 
 // ScanDir finds and parses all .env files in the given directory.
@@ -74,4 +76,48 @@ func isEnvFile(name string) bool {
 		return true
 	}
 	return false
+}
+
+// CheckGitIgnore marks files NOT covered by .gitignore with GitWarning = true.
+// Silently does nothing if not in a git repo or git is unavailable.
+func CheckGitIgnore(files []*model.EnvFile) {
+	if len(files) == 0 {
+		return
+	}
+
+	// Check if we're in a git repo first
+	dir := filepath.Dir(files[0].Path)
+	if !isGitRepo(dir) {
+		return
+	}
+
+	paths := make([]string, len(files))
+	for i, f := range files {
+		paths[i] = f.Path
+	}
+
+	args := append([]string{"check-ignore"}, paths...)
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	output, _ := cmd.Output()
+
+	ignored := make(map[string]bool)
+	for line := range strings.SplitSeq(string(output), "\n") {
+		if line := strings.TrimSpace(line); line != "" {
+			ignored[line] = true
+		}
+	}
+
+	for _, f := range files {
+		if !ignored[f.Path] {
+			f.GitWarning = true
+		}
+	}
+}
+
+// isGitRepo checks if the given directory is inside a git repository.
+func isGitRepo(dir string) bool {
+	cmd := exec.Command("git", "rev-parse", "--git-dir")
+	cmd.Dir = dir
+	return cmd.Run() == nil
 }
