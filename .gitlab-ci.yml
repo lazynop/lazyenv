@@ -1,0 +1,58 @@
+stages:
+  - lint
+  - test
+  - build
+  - release
+
+workflow:
+  rules:
+    - when: never
+
+variables:
+  GOPATH: $CI_PROJECT_DIR/.go
+  BINARY_NAME: lazyenv
+
+cache:
+  paths:
+    - .go/pkg/mod/
+
+.go-template: &go-template
+  image: golang:1.24
+  before_script:
+    - mkdir -p $GOPATH
+
+vet:
+  <<: *go-template
+  stage: lint
+  script:
+    - go vet ./...
+
+test:
+  <<: *go-template
+  stage: test
+  script:
+    - go test -race -cover ./...
+
+build:
+  <<: *go-template
+  stage: build
+  script:
+    - go build -o $BINARY_NAME .
+  artifacts:
+    paths:
+      - $BINARY_NAME
+    expire_in: 1 week
+
+release:
+  <<: *go-template
+  stage: release
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
+  script:
+    - GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=${CI_COMMIT_TAG#v}" -o ${BINARY_NAME}-linux-amd64 .
+    - GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=${CI_COMMIT_TAG#v}" -o ${BINARY_NAME}-darwin-amd64 .
+    - GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.version=${CI_COMMIT_TAG#v}" -o ${BINARY_NAME}-darwin-arm64 .
+    - GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=${CI_COMMIT_TAG#v}" -o ${BINARY_NAME}-windows-amd64.exe .
+  artifacts:
+    paths:
+      - ${BINARY_NAME}-*
