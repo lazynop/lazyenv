@@ -1,8 +1,3 @@
-workflow:
-  rules:
-    - if: $CI_COMMIT_TAG
-    - if: $CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_TAG == null
-
 stages:
   - check
   - release
@@ -14,14 +9,11 @@ cache:
   paths:
     - .go/pkg/mod/
 
-.go-template: &go-template
+check:
+  stage: check
   image: golang:1.26
   before_script:
     - mkdir -p $GOPATH
-
-check:
-  <<: *go-template
-  stage: check
   script:
     - test -z "$(gofmt -l *.go internal/)" || (echo "Files need formatting:" && gofmt -l *.go internal/ && exit 1)
     - go vet ./...
