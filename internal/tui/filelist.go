@@ -89,16 +89,12 @@ func (m *FileListModel) View(theme Theme) string {
 		return m.renderPanel(title, content, theme)
 	}
 
-	visible := m.Height - 4 // borders + title + padding
-	if visible < 1 {
-		visible = 1
-	}
+	visible := max(
+		// borders + title + padding
+		m.Height-4, 1)
 
 	var lines []string
-	end := m.Offset + visible
-	if end > len(m.Files) {
-		end = len(m.Files)
-	}
+	end := min(m.Offset+visible, len(m.Files))
 
 	for i := m.Offset; i < end; i++ {
 		f := m.Files[i]

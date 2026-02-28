@@ -117,10 +117,7 @@ func (m *StatusBarModel) View(theme Theme, mode AppMode, focus Focus, fileName s
 	// Layout
 	leftWidth := lipgloss.Width(left)
 	rightWidth := lipgloss.Width(right)
-	gap := m.Width - leftWidth - rightWidth - 4
-	if gap < 1 {
-		gap = 1
-	}
+	gap := max(m.Width-leftWidth-rightWidth-4, 1)
 
 	bar := fmt.Sprintf("  %s%s%s  ", left, strings.Repeat(" ", gap), right)
 

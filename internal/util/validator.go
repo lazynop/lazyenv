@@ -1,6 +1,9 @@
 package util
 
-import "strings"
+import (
+	"slices"
+	"strings"
+)
 
 var placeholderExact = []string{
 	"changeme", "todo", "fixme", "xxx", "replace_me",
@@ -13,10 +16,8 @@ func IsPlaceholderValue(value string) bool {
 	if lower == "" {
 		return false
 	}
-	for _, p := range placeholderExact {
-		if lower == p {
-			return true
-		}
+	if slices.Contains(placeholderExact, lower) {
+		return true
 	}
 	// "your_*_here" pattern
 	if strings.HasPrefix(lower, "your_") && strings.HasSuffix(lower, "_here") {

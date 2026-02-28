@@ -260,21 +260,12 @@ func (m *DiffViewModel) View(theme Theme) string {
 		keyWidth = 25
 	}
 
-	valWidth := halfWidth - keyWidth - 10
-	if valWidth < 8 {
-		valWidth = 8
-	}
+	valWidth := max(halfWidth-keyWidth-10, 8)
 
 	// Render entries
-	visible := m.Height - 6
-	if visible < 1 {
-		visible = 1
-	}
+	visible := max(m.Height-6, 1)
 
-	end := m.Offset + visible
-	if end > len(m.Entries) {
-		end = len(m.Entries)
-	}
+	end := min(m.Offset+visible, len(m.Entries))
 
 	var leftLines, rightLines []string
 

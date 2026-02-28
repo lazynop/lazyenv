@@ -110,7 +110,7 @@ func ParseBytes(name string, data []byte) *model.EnvFile {
 
 		// Mark earlier occurrences as duplicate too
 		if isDuplicate {
-			for j := 0; j < varIdx; j++ {
+			for j := range varIdx {
 				if ef.Vars[j].Key == key {
 					ef.Vars[j].IsDuplicate = true
 				}
@@ -141,17 +141,17 @@ func parseLine(lines []string, i int) (string, string, string, model.QuoteStyle,
 	}
 
 	// Find the = sign
-	eqIdx := strings.Index(working, "=")
-	if eqIdx < 0 {
+	before, after, ok := strings.Cut(working, "=")
+	if !ok {
 		return "", "", "", model.QuoteNone, false, "", 0
 	}
 
-	key := strings.TrimSpace(working[:eqIdx])
+	key := strings.TrimSpace(before)
 	if key == "" || !isValidKey(key) {
 		return "", "", "", model.QuoteNone, false, "", 0
 	}
 
-	rest := working[eqIdx+1:]
+	rest := after
 
 	// Determine quoting
 	if len(rest) > 0 && rest[0] == '"' {
@@ -223,13 +223,13 @@ func parseSingleQuoted(rest string) (string, string) {
 	// rest starts with '
 	content := rest[1:]
 	// Find closing single quote (no escape processing in single quotes)
-	endIdx := strings.Index(content, "'")
-	if endIdx < 0 {
+	before, after, ok := strings.Cut(content, "'")
+	if !ok {
 		// Unterminated — take everything
 		return content, ""
 	}
-	value := content[:endIdx]
-	remainder := strings.TrimSpace(content[endIdx+1:])
+	value := before
+	remainder := strings.TrimSpace(after)
 
 	comment := ""
 	if strings.HasPrefix(remainder, "#") {

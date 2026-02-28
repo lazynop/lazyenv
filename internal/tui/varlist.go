@@ -150,10 +150,7 @@ func (m *VarListModel) View(theme Theme) string {
 		return m.renderPanel(title, content, theme)
 	}
 
-	visible := m.Height - 4
-	if visible < 1 {
-		visible = 1
-	}
+	visible := max(m.Height-4, 1)
 
 	// Calculate column widths
 	keyWidth := 0
@@ -167,16 +164,12 @@ func (m *VarListModel) View(theme Theme) string {
 		keyWidth = 30
 	}
 
-	maxValWidth := m.Width - keyWidth - 12 // space for padding, warnings, borders
-	if maxValWidth < 10 {
-		maxValWidth = 10
-	}
+	maxValWidth := max(
+		// space for padding, warnings, borders
+		m.Width-keyWidth-12, 10)
 
 	var lines []string
-	end := m.Offset + visible
-	if end > len(m.displayIndices) {
-		end = len(m.displayIndices)
-	}
+	end := min(m.Offset+visible, len(m.displayIndices))
 
 	for i := m.Offset; i < end; i++ {
 		idx := m.displayIndices[i]

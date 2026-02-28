@@ -1,6 +1,7 @@
 package util
 
 import (
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -27,10 +28,8 @@ var secretValuePrefixes = []string{
 func IsSecret(key, value string) bool {
 	upper := strings.ToUpper(key)
 
-	for _, exact := range secretExact {
-		if upper == exact {
-			return true
-		}
+	if slices.Contains(secretExact, upper) {
+		return true
 	}
 	for _, suffix := range secretSuffixes {
 		if strings.HasSuffix(upper, suffix) {
