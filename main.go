@@ -1,54 +1,45 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"gitlab.com/traveltoaiur/lazyenv/internal/tui"
 	"os"
 
+	"github.com/alecthomas/kong"
 	tea "charm.land/bubbletea/v2"
+	"gitlab.com/traveltoaiur/lazyenv/internal/tui"
 )
 
 var version = "0.1.1"
 
+var cli struct {
+	Path      string           `arg:"" optional:"" default:"." help:"Directory to scan." type:"path"`
+	Recursive bool             `short:"r" help:"Scan subdirectories recursively."`
+	ShowAll   bool             `short:"a" name:"show-all" help:"Show secrets in cleartext at startup."`
+	Version   kong.VersionFlag `short:"v" help:"Show version."`
+}
+
 func main() {
-	recursive := flag.Bool("r", false, "Scan subdirectories recursively")
-	showAll := flag.Bool("a", false, "Show secrets in cleartext at startup")
-	showVersion := flag.Bool("v", false, "Show version")
-	showHelp := flag.Bool("h", false, "Show help")
-	flag.Parse()
-
-	if *showHelp {
-		printUsage()
-		os.Exit(0)
-	}
-
-	if *showVersion {
-		fmt.Printf("lazyenv %s\n", version)
-		os.Exit(0)
-	}
-
-	// Determine directory to scan
-	dir := "."
-	if flag.NArg() > 0 {
-		dir = flag.Arg(0)
-	}
+	kong.Parse(&cli,
+		kong.Name("lazyenv"),
+		kong.Description("TUI for managing .env files."),
+		kong.Vars{"version": version},
+	)
 
 	// Validate directory
-	info, err := os.Stat(dir)
+	info, err := os.Stat(cli.Path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 	if !info.IsDir() {
-		fmt.Fprintf(os.Stderr, "Error: %s is not a directory\n", dir)
+		fmt.Fprintf(os.Stderr, "Error: %s is not a directory\n", cli.Path)
 		os.Exit(1)
 	}
 
 	app := tui.NewApp(tui.AppConfig{
-		Dir:       dir,
-		Recursive: *recursive,
-		ShowAll:   *showAll,
+		Dir:       cli.Path,
+		Recursive: cli.Recursive,
+		ShowAll:   cli.ShowAll,
 	})
 
 	p := tea.NewProgram(app)
@@ -56,17 +47,4 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-}
-
-func printUsage() {
-	fmt.Println("Usage: lazyenv [path] [flags]")
-	fmt.Println()
-	fmt.Println("Arguments:")
-	fmt.Println(" path    Directory to scan (default: current directory)")
-	fmt.Println()
-	fmt.Println("Flags:")
-	fmt.Println(" -r    Scan subdirectories recursively")
-	fmt.Println(" -a    Show secrets in cleartext at startup")
-	fmt.Println(" -v    Show version")
-	fmt.Println(" -h    Show help")
 }
