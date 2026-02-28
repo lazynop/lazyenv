@@ -258,6 +258,9 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, a.keys.Save):
 		return a.handleSave()
 
+	case key.Matches(msg, a.keys.Reset):
+		return a.handleReset()
+
 	case key.Matches(msg, a.keys.ToggleSecret):
 		a.varList.ShowSecrets = !a.varList.ShowSecrets
 		if a.varList.ShowSecrets {
@@ -566,6 +569,37 @@ func (a App) handleSave() (App, tea.Cmd) {
 	return a, clearMessageAfter(2 * time.Second)
 }
 
+func (a App) handleReset() (App, tea.Cmd) {
+	f := a.varList.File
+	if f == nil {
+		a.statusBar.SetMessage("No file selected")
+		return a, clearMessageAfter(2 * time.Second)
+	}
+	if !f.Modified {
+		a.statusBar.SetMessage("No changes to reset")
+		return a, clearMessageAfter(2 * time.Second)
+	}
+
+	refreshed, err := parser.ParseFile(f.Path)
+	if err != nil {
+		a.statusBar.SetMessage("Error reloading: " + err.Error())
+		return a, clearMessageAfter(3 * time.Second)
+	}
+
+	for i, existing := range a.fileList.Files {
+		if existing.Path == f.Path {
+			a.fileList.Files[i] = refreshed
+			if a.fileList.Selected == i {
+				a.varList.SetFile(refreshed)
+			}
+			break
+		}
+	}
+
+	a.statusBar.SetMessage("Reset to saved state")
+	return a, clearMessageAfter(2 * time.Second)
+}
+
 func (a App) View() tea.View {
 	if !a.ready {
 		return tea.NewView("Loading...")
@@ -661,6 +695,7 @@ func (a App) viewHelp() string {
     a              Add new variable
     d              Delete variable (with confirmation)
     w              Save changes
+    r              Reset file (discard changes)
     c              Compare two files (diff view)
     /              Search variables
     o              Toggle sort (position / alphabetical)

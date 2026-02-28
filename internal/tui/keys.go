@@ -15,6 +15,7 @@ type KeyMap struct {
 	Compare      key.Binding
 	Search       key.Binding
 	Save         key.Binding
+	Reset        key.Binding
 	ToggleSecret key.Binding
 	ToggleSort   key.Binding
 	Help         key.Binding
@@ -73,6 +74,10 @@ func DefaultKeyMap() KeyMap {
 		Save: key.NewBinding(
 			key.WithKeys("w"),
 			key.WithHelp("w", "save"),
+		),
+		Reset: key.NewBinding(
+			key.WithKeys("r"),
+			key.WithHelp("r", "reset"),
 		),
 		ToggleSecret: key.NewBinding(
 			key.WithKeys("ctrl+s"),
