@@ -99,10 +99,13 @@ func NewApp(config AppConfig) App {
 }
 
 func (a App) Init() tea.Cmd {
-	return func() tea.Msg {
-		files, err := ScanDir(a.config.Dir, a.config.Recursive)
-		return FilesLoadedMsg{Files: files, Err: err}
-	}
+	return tea.Batch(
+		func() tea.Msg {
+			files, err := ScanDir(a.config.Dir, a.config.Recursive)
+			return FilesLoadedMsg{Files: files, Err: err}
+		},
+		tea.RequestBackgroundColor,
+	)
 }
 
 func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
