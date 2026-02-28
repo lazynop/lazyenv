@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Upgraded to Bubble Tea v2, Lipgloss v2, Bubbles v2 (`charm.land` imports)
+- Adaptive light/dark theme via terminal background detection (`BackgroundColorMsg`)
+- Simplified GitLab CI pipeline to check + release stages (GoReleaser handles builds)
+- Replaced Makefile with justfile
+
 ### Added
 - Initial release, work in progress
 - Two-panel TUI layout with file list and variable viewer
@@ -16,4 +22,6 @@ All notable changes to this project will be documented in this file.
 - Write-back with format preservation
 - Keyboard navigation with vim-style bindings (hjkl)
 - CLI flags: `-r` (recursive scan), `-a` (show secrets), `-v` (version), `-h` (help)
-- GitLab CI pipeline with vet, test, build, and multi-platform release stages
+- Test suites with testify for parser, model, util, and scanner packages (56 tests)
+- GoReleaser configuration for automated multi-platform releases
+- `justfile` as task runner (build, test, check, fmt, release-snapshot)
