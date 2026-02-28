@@ -9,7 +9,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 )
 
-var version = "0.1.0"
+var version = "0.1.1"
 
 func main() {
 	recursive := flag.Bool("r", false, "Scan subdirectories recursively")
