@@ -117,3 +117,56 @@ func TestPeekHiddenWhenNotFocused(t *testing.T) {
 
 	assert.NotContains(t, view, "was:", "peek line should only show when panel is focused")
 }
+
+func TestDeletedVarsShownInVarList(t *testing.T) {
+	f := makeTestFile(".env", "FOO", "BAR")
+	var vlm VarListModel
+	vlm.SetFile(f)
+	vlm.Focused = true
+	vlm.Width = 80
+	vlm.Height = 20
+
+	f.DeleteVar(1) // delete BAR
+	vlm.Refresh()
+
+	theme := BuildTheme(true)
+	view := vlm.View(theme)
+
+	assert.Contains(t, view, "BAR", "deleted var should still appear in the list")
+	assert.Contains(t, view, "-", "deleted var should show - marker")
+}
+
+func TestDeletedVarsDisappearAfterReAdd(t *testing.T) {
+	f := makeTestFile(".env", "FOO", "BAR")
+	var vlm VarListModel
+	vlm.SetFile(f)
+	vlm.Focused = true
+	vlm.Width = 80
+	vlm.Height = 20
+
+	f.DeleteVar(1) // delete BAR
+	vlm.Refresh()
+	f.AddVar("BAR", "new_val") // re-add BAR
+	vlm.Refresh()
+
+	assert.Empty(t, f.DeletedVars, "re-added var should be removed from DeletedVars")
+}
+
+func TestPeekAfterDeleteAndReAdd(t *testing.T) {
+	f := makeTestFile(".env", "FOO")
+	var vlm VarListModel
+	vlm.SetFile(f)
+	vlm.Focused = true
+	vlm.Peeking = true
+	vlm.Width = 80
+	vlm.Height = 20
+
+	f.DeleteVar(0) // delete FOO (original value: val_FOO)
+	f.AddVar("FOO", "new_value") // re-add with different value
+	vlm.Refresh()
+
+	theme := BuildTheme(true)
+	view := vlm.View(theme)
+
+	assert.Contains(t, view, "was: val_FOO", "peek should show original value after delete+re-add")
+}

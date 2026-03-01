@@ -37,12 +37,13 @@ type EnvVar struct {
 
 // EnvFile represents a parsed .env file.
 type EnvFile struct {
-	Path       string
-	Name       string // filename (e.g. ".env.local")
-	Vars       []EnvVar
-	Lines      []RawLine // all original lines for faithful write-back
-	Modified   bool
-	GitWarning bool // true if file is NOT covered by .gitignore
+	Path        string
+	Name        string // filename (e.g. ".env.local")
+	Vars        []EnvVar
+	DeletedVars []EnvVar  // vars removed since last save (for UI display)
+	Lines       []RawLine // all original lines for faithful write-back
+	Modified    bool
+	GitWarning  bool // true if file is NOT covered by .gitignore
 }
 
 // RawLine preserves original content for round-trip writing.
@@ -84,6 +85,17 @@ func (ef *EnvFile) AddVar(key, value string) {
 		Content: key + "=" + value,
 		VarIdx:  varIdx,
 	})
+	// Remove from DeletedVars if re-adding a previously deleted key,
+	// and preserve the original value for peek.
+	for i, d := range ef.DeletedVars {
+		if d.Key == key {
+			last := &ef.Vars[varIdx]
+			last.OriginalValue = d.Value
+			last.IsNew = false    // was deleted then re-added: treat as modified
+			ef.DeletedVars = append(ef.DeletedVars[:i], ef.DeletedVars[i+1:]...)
+			break
+		}
+	}
 	ef.Modified = true
 }
 
@@ -91,6 +103,10 @@ func (ef *EnvFile) AddVar(key, value string) {
 func (ef *EnvFile) DeleteVar(idx int) {
 	if idx < 0 || idx >= len(ef.Vars) {
 		return
+	}
+	// Track deleted var for UI display (skip if it was newly added this session).
+	if !ef.Vars[idx].IsNew {
+		ef.DeletedVars = append(ef.DeletedVars, ef.Vars[idx])
 	}
 	// Find and remove the corresponding RawLine
 	for i, line := range ef.Lines {

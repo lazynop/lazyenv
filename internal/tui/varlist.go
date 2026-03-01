@@ -262,6 +262,25 @@ func (m *VarListModel) View(theme Theme) string {
 		}
 	}
 
+	// Render deleted variables at the bottom
+	for _, dv := range m.File.DeletedVars {
+		if len(lines) >= visible {
+			break
+		}
+		key := padRight(dv.Key, keyWidth)
+		value := dv.Value
+		if dv.IsSecret && !m.ShowSecrets {
+			value = util.MaskValue(dv.Value)
+		}
+		if len(value) > maxValWidth {
+			value = value[:maxValWidth-2] + ".."
+		}
+		value = padRight(value, maxValWidth)
+		marker := theme.DeletedMarker.Render("-")
+		line := theme.MutedItem.Render(fmt.Sprintf("  %s  %s", key, value)) + marker + " "
+		lines = append(lines, line)
+	}
+
 	_ = varCount
 	content := strings.Join(lines, "\n")
 	return m.renderPanel(title, content, theme)

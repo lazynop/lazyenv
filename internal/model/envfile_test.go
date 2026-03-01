@@ -114,6 +114,56 @@ func TestDeleteVar(t *testing.T) {
 	}
 }
 
+func TestDeleteVarTracksDeleted(t *testing.T) {
+	ef := newTestFile(
+		EnvVar{Key: "FOO", Value: "1"},
+		EnvVar{Key: "BAR", Value: "2"},
+	)
+
+	ef.DeleteVar(1) // delete BAR
+
+	require.Len(t, ef.DeletedVars, 1)
+	assert.Equal(t, "BAR", ef.DeletedVars[0].Key)
+	assert.Equal(t, "2", ef.DeletedVars[0].Value)
+}
+
+func TestDeleteNewVarNotTracked(t *testing.T) {
+	ef := newTestFile(EnvVar{Key: "FOO", Value: "1"})
+	ef.AddVar("NEW", "val")
+	require.Len(t, ef.Vars, 2)
+
+	ef.DeleteVar(1) // delete the newly added var
+
+	assert.Empty(t, ef.DeletedVars, "newly added vars should not appear in DeletedVars")
+}
+
+func TestReAddDeletedVarRemovesFromDeleted(t *testing.T) {
+	ef := newTestFile(
+		EnvVar{Key: "FOO", Value: "original"},
+	)
+
+	ef.DeleteVar(0)
+	require.Len(t, ef.DeletedVars, 1)
+
+	ef.AddVar("FOO", "new_value")
+	assert.Empty(t, ef.DeletedVars, "re-adding should remove from DeletedVars")
+}
+
+func TestReAddDeletedVarPreservesOriginalValue(t *testing.T) {
+	ef := newTestFile(
+		EnvVar{Key: "FOO", Value: "original"},
+	)
+
+	ef.DeleteVar(0)
+	ef.AddVar("FOO", "new_value")
+
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "new_value", ef.Vars[0].Value)
+	assert.Equal(t, "original", ef.Vars[0].OriginalValue, "peek should show the original value")
+	assert.False(t, ef.Vars[0].IsNew, "re-added var should be treated as modified, not new")
+	assert.True(t, ef.Vars[0].Modified)
+}
+
 func TestDeleteVarOutOfBounds(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
 
