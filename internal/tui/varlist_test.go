@@ -1,0 +1,193 @@
+package tui
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"gitlab.com/traveltoaiur/lazyenv/internal/model"
+)
+
+func TestVarListMoveUp(t *testing.T) {
+	f := makeTestFile(".env", "A", "B", "C")
+	var vl VarListModel
+	vl.SetFile(f)
+	vl.Height = 20
+
+	vl.MoveDown() // cursor=1
+	vl.MoveDown() // cursor=2
+	assert.Equal(t, 2, vl.Cursor)
+
+	vl.MoveUp()
+	assert.Equal(t, 1, vl.Cursor)
+
+	vl.MoveUp()
+	assert.Equal(t, 0, vl.Cursor)
+
+	// Already at top
+	vl.MoveUp()
+	assert.Equal(t, 0, vl.Cursor)
+}
+
+func TestVarListMoveDownBound(t *testing.T) {
+	f := makeTestFile(".env", "A", "B")
+	var vl VarListModel
+	vl.SetFile(f)
+	vl.Height = 20
+
+	vl.MoveDown()
+	vl.MoveDown()
+	vl.MoveDown()
+	assert.Equal(t, 1, vl.Cursor, "should not exceed last index")
+}
+
+func TestVarListSelectedVarNoFile(t *testing.T) {
+	var vl VarListModel
+	assert.Nil(t, vl.SelectedVar())
+	assert.Equal(t, -1, vl.SelectedVarIndex())
+}
+
+func TestVarListSelectedVarEmpty(t *testing.T) {
+	f := makeTestFile(".env")
+	var vl VarListModel
+	vl.SetFile(f)
+	assert.Nil(t, vl.SelectedVar())
+}
+
+func TestVarListSearchFilter(t *testing.T) {
+	f := makeTestFile(".env", "DB_HOST", "API_KEY", "DB_PORT")
+	var vl VarListModel
+	vl.SetFile(f)
+
+	assert.Equal(t, 3, len(vl.displayIndices))
+
+	vl.SetSearch("DB")
+	assert.Equal(t, 2, len(vl.displayIndices), "should match DB_HOST and DB_PORT")
+
+	vl.SetSearch("API")
+	assert.Equal(t, 1, len(vl.displayIndices), "should match API_KEY only")
+
+	vl.SetSearch("NOMATCH")
+	assert.Equal(t, 0, len(vl.displayIndices))
+
+	vl.SetSearch("")
+	assert.Equal(t, 3, len(vl.displayIndices), "clear search should show all")
+}
+
+func TestVarListSearchCaseInsensitive(t *testing.T) {
+	f := makeTestFile(".env", "MY_KEY")
+	var vl VarListModel
+	vl.SetFile(f)
+
+	vl.SetSearch("my_key")
+	assert.Equal(t, 1, len(vl.displayIndices), "search should be case-insensitive")
+}
+
+func TestVarListToggleSort(t *testing.T) {
+	f := makeTestFile(".env", "ZZZ", "AAA", "MMM")
+	var vl VarListModel
+	vl.SetFile(f)
+
+	// Default order: file order
+	assert.False(t, vl.SortAlpha)
+	assert.Equal(t, 0, vl.displayIndices[0]) // ZZZ
+	assert.Equal(t, 1, vl.displayIndices[1]) // AAA
+	assert.Equal(t, 2, vl.displayIndices[2]) // MMM
+
+	vl.ToggleSort()
+	assert.True(t, vl.SortAlpha)
+	// Alphabetical: AAA(1), MMM(2), ZZZ(0)
+	assert.Equal(t, "AAA", f.Vars[vl.displayIndices[0]].Key)
+	assert.Equal(t, "MMM", f.Vars[vl.displayIndices[1]].Key)
+	assert.Equal(t, "ZZZ", f.Vars[vl.displayIndices[2]].Key)
+
+	vl.ToggleSort()
+	assert.False(t, vl.SortAlpha)
+}
+
+func TestVarListRefreshAfterAdd(t *testing.T) {
+	f := makeTestFile(".env", "FOO")
+	var vl VarListModel
+	vl.SetFile(f)
+	assert.Equal(t, 1, len(vl.displayIndices))
+
+	f.AddVar("BAR", "val")
+	vl.Refresh()
+	assert.Equal(t, 2, len(vl.displayIndices))
+}
+
+func TestVarListScrolling(t *testing.T) {
+	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F", "G", "H")
+	var vl VarListModel
+	vl.SetFile(f)
+	vl.Height = 8 // visible = 8 - 4 = 4
+
+	for range 6 {
+		vl.MoveDown()
+	}
+	assert.Equal(t, 6, vl.Cursor)
+	assert.Greater(t, vl.Offset, 0, "should scroll")
+}
+
+func TestVarListViewNoFile(t *testing.T) {
+	var vl VarListModel
+	vl.Width = 60
+	vl.Height = 10
+
+	theme := BuildTheme(true)
+	view := vl.View(theme)
+	assert.Contains(t, view, "Select a file")
+}
+
+func TestVarListViewNoMatches(t *testing.T) {
+	f := makeTestFile(".env", "FOO")
+	var vl VarListModel
+	vl.SetFile(f)
+	vl.SetSearch("ZZZZZ")
+	vl.Width = 60
+	vl.Height = 10
+
+	theme := BuildTheme(true)
+	view := vl.View(theme)
+	assert.Contains(t, view, "No matches")
+}
+
+func TestVarListViewRendersVars(t *testing.T) {
+	f := makeTestFile(".env", "FOO", "BAR")
+	var vl VarListModel
+	vl.SetFile(f)
+	vl.Width = 60
+	vl.Height = 20
+	vl.Focused = true
+
+	theme := BuildTheme(true)
+	view := vl.View(theme)
+	assert.Contains(t, view, "FOO")
+	assert.Contains(t, view, "BAR")
+}
+
+func TestVarListViewIndicators(t *testing.T) {
+	f := &model.EnvFile{
+		Name: ".env",
+		Vars: []model.EnvVar{
+			{Key: "NEW_VAR", Value: "val", IsNew: true, Modified: true},
+			{Key: "DUP_KEY", Value: "val", IsDuplicate: true},
+			{Key: "EMPTY", Value: "", IsEmpty: true},
+		},
+		Lines: []model.RawLine{
+			{Type: model.LineVariable, Content: "NEW_VAR=val", VarIdx: 0},
+			{Type: model.LineVariable, Content: "DUP_KEY=val", VarIdx: 1},
+			{Type: model.LineVariable, Content: "EMPTY=", VarIdx: 2},
+		},
+	}
+	var vl VarListModel
+	vl.SetFile(f)
+	vl.Width = 60
+	vl.Height = 20
+	vl.Focused = true
+
+	theme := BuildTheme(true)
+	view := vl.View(theme)
+	assert.Contains(t, view, "NEW_VAR")
+	assert.Contains(t, view, "DUP_KEY")
+	assert.Contains(t, view, "EMPTY")
+}

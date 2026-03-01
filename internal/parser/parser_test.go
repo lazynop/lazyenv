@@ -205,3 +205,95 @@ func TestVarByKey(t *testing.T) {
 
 	assert.Nil(t, ef.VarByKey("MISSING"))
 }
+
+func TestIsValidKey(t *testing.T) {
+	tests := []struct {
+		key  string
+		want bool
+	}{
+		{"FOO", true},
+		{"foo_bar", true},
+		{"A1", true},
+		{"_PRIVATE", true},
+		{"my.config", true},
+		{"my-var", true},
+		{"FOO_BAR_123", true},
+
+		// Invalid cases
+		{"", false},
+		{"1STARTS_WITH_DIGIT", false},
+		{"has space", false},
+		{"has@sign", false},
+		{"has#hash", false},
+		{"has$dollar", false},
+		{"with=equals", false},
+	}
+
+	for _, tt := range tests {
+		t.Run("key_"+tt.key, func(t *testing.T) {
+			assert.Equal(t, tt.want, isValidKey(tt.key))
+		})
+	}
+}
+
+func TestParseSingleQuotedEdgeCases(t *testing.T) {
+	// Unterminated single quote
+	ef := ParseBytes(".env", []byte("FOO='no closing quote\n"))
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "no closing quote", ef.Vars[0].Value)
+	assert.Equal(t, model.QuoteSingle, ef.Vars[0].QuoteStyle)
+
+	// Empty single-quoted value
+	ef = ParseBytes(".env", []byte("FOO=''\n"))
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "", ef.Vars[0].Value)
+	assert.Equal(t, model.QuoteSingle, ef.Vars[0].QuoteStyle)
+	assert.True(t, ef.Vars[0].IsEmpty)
+
+	// Single-quoted value with inline comment
+	ef = ParseBytes(".env", []byte("FOO='bar' # comment\n"))
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "bar", ef.Vars[0].Value)
+	assert.Equal(t, "comment", ef.Vars[0].Comment)
+}
+
+func TestProcessEscapesEdgeCases(t *testing.T) {
+	// Unrecognized escapes are preserved literally
+	assert.Equal(t, "\\x", processEscapes(`\x`))
+	assert.Equal(t, "\\z", processEscapes(`\z`))
+
+	// Trailing backslash (no char after it) — preserved as-is
+	assert.Equal(t, "end\\", processEscapes(`end\`))
+
+	// \r escape
+	assert.Equal(t, "\r", processEscapes(`\r`))
+
+	// \t escape
+	assert.Equal(t, "\t", processEscapes(`\t`))
+
+	// Mixed escapes
+	assert.Equal(t, "a\nb\\c\"d", processEscapes(`a\nb\\c\"d`))
+}
+
+func TestParseDoubleQuotedUnterminated(t *testing.T) {
+	// Unterminated double quote: value extends to EOF
+	ef := ParseBytes(".env", []byte("FOO=\"no closing\n"))
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "no closing", ef.Vars[0].Value)
+	assert.Equal(t, model.QuoteDouble, ef.Vars[0].QuoteStyle)
+}
+
+func TestExportWithTab(t *testing.T) {
+	ef := ParseBytes(".env", []byte("export\tFOO=bar\n"))
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "FOO", ef.Vars[0].Key)
+	assert.True(t, ef.Vars[0].HasExport)
+}
+
+func TestKeyWithNoEquals(t *testing.T) {
+	// A line with no = sign should be treated as a comment
+	ef := ParseBytes(".env", []byte("NOEQUALS\nFOO=bar\n"))
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "FOO", ef.Vars[0].Key)
+	assert.Equal(t, model.LineComment, ef.Lines[0].Type)
+}

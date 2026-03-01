@@ -48,3 +48,65 @@ func TestCreateBackupMissingSource(t *testing.T) {
 	require.Error(t, err)
 	assert.ErrorContains(t, err, "reading file for backup")
 }
+
+func TestEscapeDouble(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{"newline", "hello\nworld", `hello\nworld`},
+		{"tab", "hello\tworld", `hello\tworld`},
+		{"backslash", `a\b`, `a\\b`},
+		{"double_quote", `say "hi"`, `say \"hi\"`},
+		{"carriage_return", "line\rend", `line\rend`},
+		{"plain", "nothing special", "nothing special"},
+		{"all_combined", "a\"\\\n\t\r", `a\"\\\n\t\r`},
+		{"empty", "", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, escapeDouble(tt.in))
+		})
+	}
+}
+
+func TestReconstructLineSingleQuoted(t *testing.T) {
+	ef := ParseBytes(".env", []byte("FOO='original'\n"))
+	ef.UpdateVar(0, "updated value")
+
+	output := string(Marshal(ef))
+	assert.Equal(t, "FOO='updated value'\n", output)
+}
+
+func TestReconstructLineExportWithComment(t *testing.T) {
+	ef := ParseBytes(".env", []byte("export FOO=bar # keep this\n"))
+	ef.UpdateVar(0, "baz")
+
+	output := string(Marshal(ef))
+	assert.Equal(t, "export FOO=baz # keep this\n", output)
+}
+
+func TestReconstructLineDoubleQuotedEscape(t *testing.T) {
+	ef := ParseBytes(".env", []byte("FOO=\"old\"\n"))
+	ef.UpdateVar(0, "has \"quotes\" and\nnewline")
+
+	output := string(Marshal(ef))
+	assert.Equal(t, "FOO=\"has \\\"quotes\\\" and\\nnewline\"\n", output)
+}
+
+func TestMarshalPreservesUnmodified(t *testing.T) {
+	input := "# Header comment\n\nFOO=bar\nBAZ=qux\n"
+	ef := ParseBytes(".env", []byte(input))
+	// No modifications — output should be identical
+	assert.Equal(t, input, string(Marshal(ef)))
+}
+
+func TestWriteFileNoPath(t *testing.T) {
+	ef := ParseBytes(".env", []byte("FOO=bar\n"))
+	// Path is empty by default from ParseBytes
+	err := WriteFile(ef)
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "no file path set")
+}
