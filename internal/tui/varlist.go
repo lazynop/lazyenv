@@ -189,17 +189,20 @@ func (m *VarListModel) View(theme Theme) string {
 		}
 		value = padRight(value, maxValWidth)
 
-		// Warning/status indicator
-		warning := "  "
+		// Warning/status indicator (2 slots: [modified][issue])
+		mod := " "
+		issue := " "
 		if v.Modified {
-			warning = theme.ModifiedMarker.Render("* ")
-		} else if v.IsDuplicate {
-			warning = theme.DuplicateWarn.Render("2x")
-		} else if v.IsEmpty {
-			warning = theme.EmptyWarning.Render("○ ")
-		} else if v.IsPlaceholder {
-			warning = theme.PlaceholderWarn.Render("… ")
+			mod = theme.ModifiedMarker.Render("*")
 		}
+		if v.IsDuplicate {
+			issue = theme.DuplicateWarn.Render("D")
+		} else if v.IsEmpty {
+			issue = theme.EmptyWarning.Render("○")
+		} else if v.IsPlaceholder {
+			issue = theme.PlaceholderWarn.Render("…")
+		}
+		warning := mod + issue
 
 		var line string
 		if v.IsSecret && !m.ShowSecrets {
