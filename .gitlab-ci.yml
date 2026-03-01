@@ -1,5 +1,6 @@
 stages:
   - check
+  - docs
   - release
 
 variables:
@@ -18,6 +19,24 @@ check:
     - test -z "$(gofmt -l *.go internal/)" || (echo "Files need formatting:" && gofmt -l *.go internal/ && exit 1)
     - go vet ./...
     - go test -race -cover ./...
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
+
+pages:
+  stage: docs
+  image: golang:1.26
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq pandoc
+    - go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+  script:
+    - mkdir -p public
+    - gomarkdoc ./... > public/api.md
+    - pandoc public/api.md -s --metadata title="LazyEnv API" -o public/index.html
+  artifacts:
+    paths:
+      - public/
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
 
 release:
   stage: release

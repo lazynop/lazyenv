@@ -133,3 +133,17 @@ func WriteFile(ef *model.EnvFile) error {
 
 	return nil
 }
+
+// CreateBackup creates a .bak copy of the file at the given path.
+// It preserves the original file's permissions.
+func CreateBackup(path string) error {
+	src, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("reading file for backup: %w", err)
+	}
+	mode := os.FileMode(0644)
+	if info, err := os.Stat(path); err == nil {
+		mode = info.Mode()
+	}
+	return os.WriteFile(path+".bak", src, mode)
+}

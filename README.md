@@ -15,6 +15,7 @@ Browse, compare, edit and validate environment variables from your terminal.
 - **Inline validation** — warns on empty values, placeholders (`TODO`, `changeme`), and duplicate keys
 - **Diff/compare** — side-by-side comparison between two env files with bidirectional copy, inline editing, difference filtering, and jump-to-next/prev diff
 - **Inline editing** — edit, add, and delete variables without leaving the TUI
+- **Automatic backup** — creates a `.bak` copy before the first save of each session (disable with `-B`)
 - **Round-trip fidelity** — saves preserve comments, blank lines, quoting, and ordering
 
 ## Build
@@ -40,6 +41,7 @@ lazyenv [path] [flags]
 |------|-------------|
 | `-r` | Scan subdirectories recursively |
 | `-a` | Show secrets in cleartext at startup |
+| `-B` | Disable `.bak` backup before first save |
 | `-G` | Disable `.gitignore` check |
 | `-v` | Show version |
 | `-h` | Show help |

@@ -10,13 +10,14 @@ import (
 	"gitlab.com/traveltoaiur/lazyenv/internal/tui"
 )
 
-var version = "0.1.3"
+var version = "0.1.4"
 
 var cli struct {
 	Path       string           `arg:"" optional:"" default:"." help:"Directory to scan." type:"existingdir"`
 	Recursive  bool             `short:"r" help:"Scan subdirectories recursively."`
 	ShowAll    bool             `short:"a" name:"show-all" help:"Show secrets in cleartext at startup."`
 	NoGitCheck bool             `short:"G" name:"no-git-check" help:"Disable .gitignore check."`
+	NoBackup   bool             `short:"B" name:"no-backup" help:"Disable .bak backup before first save."`
 	Version    kong.VersionFlag `short:"v" help:"Show version."`
 }
 
@@ -43,6 +44,7 @@ func main() {
 		Recursive:  cli.Recursive,
 		ShowAll:    cli.ShowAll,
 		NoGitCheck: noGitCheck,
+		NoBackup:   cli.NoBackup,
 	})
 
 	p := tea.NewProgram(app)

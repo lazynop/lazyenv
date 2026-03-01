@@ -50,6 +50,7 @@ type AppConfig struct {
 	Recursive  bool
 	ShowAll    bool
 	NoGitCheck bool // skip .gitignore check (flag -G or git not installed)
+	NoBackup   bool // skip .bak backup before first save (flag -B)
 }
 
 // App is the main Bubble Tea model.
@@ -71,6 +72,9 @@ type App struct {
 	editor      EditorModel
 	searchInput textinput.Model
 
+	// Backup state: tracks which files have been backed up this session
+	backedUpPaths map[string]bool
+
 	// Compare mode state
 	compareFirstFile  *model.EnvFile
 	compareEditFile   *model.EnvFile // which file is being edited in compare mode
@@ -84,18 +88,19 @@ func NewApp(config AppConfig) App {
 	ti.CharLimit = 100
 
 	return App{
-		config:      config,
-		keys:        DefaultKeyMap(),
-		theme:       BuildTheme(true), // default to dark, will update on BackgroundColorMsg
-		hasDarkBg:   true,
-		focus:       FocusFiles,
-		mode:        ModeNormal,
-		fileList:    NewFileListModel(),
-		varList:     NewVarListModel(),
-		statusBar:   NewStatusBarModel(),
-		diffView:    NewDiffViewModel(),
-		editor:      NewEditorModel(),
-		searchInput: ti,
+		config:        config,
+		keys:          DefaultKeyMap(),
+		theme:         BuildTheme(true), // default to dark, will update on BackgroundColorMsg
+		hasDarkBg:     true,
+		focus:         FocusFiles,
+		mode:          ModeNormal,
+		fileList:      NewFileListModel(),
+		varList:       NewVarListModel(),
+		statusBar:     NewStatusBarModel(),
+		diffView:      NewDiffViewModel(),
+		editor:        NewEditorModel(),
+		searchInput:   ti,
+		backedUpPaths: make(map[string]bool),
 	}
 }
 
@@ -428,8 +433,10 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 func (a App) handleCompareSave() (App, tea.Cmd) {
 	saved := []string{}
+	var warn strings.Builder
 	for _, f := range []*model.EnvFile{a.diffView.FileA, a.diffView.FileB} {
 		if f != nil && f.Modified {
+			warn.WriteString(a.backupIfNeeded(f.Path))
 			if err := parser.WriteFile(f); err != nil {
 				a.statusBar.SetMessage("Error saving " + f.Name + ": " + err.Error())
 				return a, clearMessageAfter(3 * time.Second)
@@ -455,7 +462,7 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 	if len(saved) == 0 {
 		a.statusBar.SetMessage("No changes to save")
 	} else {
-		a.statusBar.SetMessage("Saved " + strings.Join(saved, ", "))
+		a.statusBar.SetMessage(warn.String() + "Saved " + strings.Join(saved, ", "))
 	}
 	// Recompute diff after save
 	a.diffView.allEntries = model.ComputeDiff(a.diffView.FileA, a.diffView.FileB)
@@ -536,6 +543,21 @@ func (a App) handleCompareSelectKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	return a, nil
 }
 
+// backupIfNeeded creates a .bak backup of the file before the first save of
+// the session. It is a no-op if --no-backup was set or the file was already
+// backed up. Returns a warning message (empty on success or skip).
+func (a App) backupIfNeeded(path string) string {
+	if a.config.NoBackup || a.backedUpPaths[path] {
+		return ""
+	}
+	if err := parser.CreateBackup(path); err != nil {
+		a.backedUpPaths[path] = true // don't retry on every save
+		return "backup failed: " + err.Error() + " - "
+	}
+	a.backedUpPaths[path] = true
+	return ""
+}
+
 func (a App) handleSave() (App, tea.Cmd) {
 	f := a.varList.File
 	if f == nil {
@@ -547,6 +569,8 @@ func (a App) handleSave() (App, tea.Cmd) {
 		return a, clearMessageAfter(2 * time.Second)
 	}
 
+	warn := a.backupIfNeeded(f.Path)
+
 	if err := parser.WriteFile(f); err != nil {
 		a.statusBar.SetMessage("Error saving: " + err.Error())
 		return a, clearMessageAfter(3 * time.Second)
@@ -555,7 +579,7 @@ func (a App) handleSave() (App, tea.Cmd) {
 	// Re-parse to refresh RawLines
 	refreshed, err := parser.ParseFile(f.Path)
 	if err != nil {
-		a.statusBar.SetMessage("Saved but refresh failed: " + err.Error())
+		a.statusBar.SetMessage(warn + "Saved but refresh failed: " + err.Error())
 		return a, clearMessageAfter(3 * time.Second)
 	}
 
@@ -570,7 +594,7 @@ func (a App) handleSave() (App, tea.Cmd) {
 		}
 	}
 
-	a.statusBar.SetMessage("Saved " + f.Name)
+	a.statusBar.SetMessage(warn + "Saved " + f.Name)
 	return a, clearMessageAfter(2 * time.Second)
 }
 
