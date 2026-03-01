@@ -4,35 +4,43 @@ TUI for managing `.env` files — written in Go with [Bubble Tea](https://github
 
 Browse, compare, edit and validate environment variables from your terminal.
 
-This project is **Work in progress**, but releases can be used in production.
-
 ## Features
 
-- **Gitignore warning** — shows `!` next to files not covered by `.gitignore` (disable with `-G`)
-- **File scanning** — finds `.env`, `.env.*`, `*.env` in the current directory (or recursively with `-r`)
-- **Two-panel layout** — file list on the left, variables on the right
-- **Secret masking** — auto-detects keys like `*_PASSWORD`, `*_TOKEN`, `*_API_KEY` and masks their values
-- **Inline validation** — warns on empty values, placeholders (`TODO`, `changeme`), and duplicate keys
-- **Diff/compare** — side-by-side comparison between two env files with bidirectional copy, inline editing, difference filtering, and jump-to-next/prev diff
-- **Completeness matrix** — full-screen grid showing which variables exist across all files, with inline add for missing entries
-- **Inline editing** — edit, add, and delete variables without leaving the TUI
-- **Yank to clipboard** — copy variable values (`y`) or full lines (`Y`) via OSC 52
-- **Peek original** — press `p` to see the original value of a modified variable inline, or a hint for newly added ones
-- **Change tracking** — distinct indicators for new (`+`), modified (`*`), duplicate (`D`), empty (`○`), and placeholder (`…`) variables
-- **Automatic backup** — creates a `.bak` copy before the first save of each session (disable with `-B`)
+- **Browse and edit** — two-panel layout with file list and variables, inline editing, add, delete
+- **Compare and sync** — side-by-side diff between two files with bidirectional copy and inline editing
+- **Completeness matrix** — multi-file grid view showing which variables exist where, with inline add for missing entries
+- **Change tracking** — distinct indicators for new (`+`), modified (`*`), deleted (`-`), duplicate (`D`), empty (`○`), and placeholder (`…`) variables
+- **Peek original values** — toggle inline display of the original value before edits
+- **Clipboard support** — yank values or full `KEY=value` lines to clipboard (OSC 52)
+- **Secret masking** — auto-detects sensitive keys and masks their values
+- **Gitignore check** — warns when `.env` files are not covered by `.gitignore`
+- **Automatic backup** — creates a `.bak` copy before the first save of each session
 - **Round-trip fidelity** — saves preserve comments, blank lines, quoting, and ordering
+- **Search and sort** — filter variables by name or value, toggle alphabetical sorting
 
-## Build
+## Install
 
-Requires Go 1.22+.
+### From releases
+
+Download the latest binary from [GitLab Releases](https://gitlab.com/traveltoaiur/lazyenv/-/releases). Builds are available for Linux, macOS, Windows, and FreeBSD (amd64/arm64).
+
+### From source
+
+Requires Go 1.26+.
 
 ```
-make              # build to bin/lazyenv
-make run          # build + run
-make run ARGS=-r  # build + run with flags
-make test         # run tests
-make vet          # static analysis
-make clean        # remove bin/
+go install gitlab.com/traveltoaiur/lazyenv@latest
+```
+
+### Build locally
+
+```
+just build        # build to bin/lazyenv
+just run          # build + run
+just run -r       # build + run with flags
+just test         # run tests
+just check        # fmt + vet + tests
+just clean        # remove build artifacts
 ```
 
 ## Usage
@@ -41,37 +49,60 @@ make clean        # remove bin/
 lazyenv [path] [flags]
 ```
 
-| Flag | Description                             |
-| ---- | --------------------------------------- |
-| `-r` | Scan subdirectories recursively         |
-| `-a` | Show secrets in cleartext at startup    |
+| Flag | Description |
+| ---- | ---------------------------------------- |
+| `-r` | Scan subdirectories recursively |
+| `-a` | Show secrets in cleartext at startup |
 | `-B` | Disable `.bak` backup before first save |
-| `-G` | Disable `.gitignore` check              |
-| `-v` | Show version                            |
-| `-h` | Show help                               |
-
-## Documentation
-
-API documentation is available at [pkg.go.dev/gitlab.com/traveltoaiur/lazyenv](https://pkg.go.dev/gitlab.com/traveltoaiur/lazyenv).
+| `-G` | Disable `.gitignore` check |
+| `-v` | Show version |
+| `-h` | Show help |
 
 ## Keybindings
 
-| Key         | Action                                |
-| ----------- | ------------------------------------- |
-| `↑/↓` `j/k` | Navigate items                        |
-| `←/→` `h/l` | Switch panels                         |
-| `Enter`     | Select file                           |
-| `e`         | Edit variable value                   |
-| `a`         | Add new variable                      |
-| `d`         | Delete variable                       |
-| `y` / `Y`   | Yank value / full line to clipboard   |
-| `p`         | Peek original value (toggle)          |
-| `w`         | Save changes                          |
-| `r`         | Reset file to saved state             |
-| `c`         | Compare two files                     |
-| `m`         | Completeness matrix                   |
-| `/`         | Search variables                      |
-| `o`         | Toggle sort (position / alphabetical) |
-| `Ctrl+S`    | Toggle secret masking                 |
-| `?`         | Help                                  |
-| `q`         | Quit                                  |
+### Navigation
+
+| Key | Action |
+| ----------- | ----------------------------- |
+| `↑/↓` `j/k` | Navigate items |
+| `←/→` `h/l` | Switch panels (files / vars) |
+| `Enter` | Select file |
+
+### Editing
+
+| Key | Action |
+| ----- | ---------------------------------- |
+| `e` | Edit variable value |
+| `a` | Add new variable |
+| `d` | Delete variable (with confirmation) |
+| `w` | Save changes |
+| `r` | Reset file to saved state |
+
+### Tools
+
+| Key | Action |
+| -------- | ------------------------------------ |
+| `y` | Copy value to clipboard |
+| `Y` | Copy `KEY=value` to clipboard |
+| `p` | Peek original value (toggle) |
+| `c` | Compare two files (diff view) |
+| `m` | Completeness matrix (multi-file) |
+| `/` | Search variables |
+| `o` | Toggle sort (position / alphabetical) |
+| `Ctrl+S` | Toggle secret masking |
+
+### General
+
+| Key | Action |
+| ---------- | ------------------- |
+| `?` | Show/hide help |
+| `q` `Ctrl+C` | Quit |
+| `Esc` | Back / cancel |
+
+## Documentation
+
+API docs: [pkg.go.dev/gitlab.com/traveltoaiur/lazyenv](https://pkg.go.dev/gitlab.com/traveltoaiur/lazyenv)
+
+## License
+
+[MIT](LICENSE)
