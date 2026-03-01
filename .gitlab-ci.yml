@@ -27,6 +27,7 @@ pages:
   image: golang:1.26
   before_script:
     - apt-get update -qq && apt-get install -y -qq pandoc
+    - export PATH="$GOPATH/bin:$PATH"
     - go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
   script:
     - mkdir -p public
