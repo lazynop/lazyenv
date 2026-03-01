@@ -427,6 +427,8 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, a.keys.Quit), key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
 		a.compareFirstFile = nil
+		// Restore cursor to the selected file so file list and var panel stay in sync.
+		a.fileList.Cursor = a.fileList.Selected
 	case key.Matches(msg, a.keys.Up):
 		a.diffView.MoveUp()
 	case key.Matches(msg, a.keys.Down):
@@ -571,6 +573,8 @@ func (a App) handleCompareSelectKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.mode = ModeNormal
 		a.compareFirstFile = nil
 		a.statusBar.ClearMessage()
+		// Restore cursor to the selected file so file list and var panel stay in sync.
+		a.fileList.Cursor = a.fileList.Selected
 	case key.Matches(msg, a.keys.Up):
 		a.fileList.MoveUp()
 	case key.Matches(msg, a.keys.Down):
