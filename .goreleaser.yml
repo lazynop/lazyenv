@@ -2,28 +2,50 @@ version: 2
 
 project_name: lazyenv
 
+before:
+  hooks:
+    - go mod tidy
+
 builds:
   - main: .
     binary: lazyenv
     env:
       - CGO_ENABLED=0
+    flags:
+      - -trimpath
     ldflags:
-      - -s -w -X main.version={{.Version}}
+      - -s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}} -X main.date={{.CommitDate}}
+    mod_timestamp: "{{ .CommitTimestamp }}"
     goos:
       - linux
       - darwin
       - windows
+      - freebsd
     goarch:
       - amd64
       - arm64
+      - arm
+    goarm:
+      - "7"
     ignore:
       - goos: windows
         goarch: arm64
+      - goos: windows
+        goarch: arm
+      - goos: freebsd
+        goarch: arm
+
+gomod:
+  proxy: true
 
 archives:
   - formats:
       - tar.gz
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+      - CHANGELOG.md
     format_overrides:
       - goos: windows
         formats:
@@ -32,9 +54,24 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
+snapshot:
+  version_template: "{{ .Version }}-next"
+
 changelog:
   use: gitlab
   sort: asc
+  groups:
+    - title: Features
+      regexp: "^.*feat.*:+.*$"
+      order: 0
+    - title: Bug Fixes
+      regexp: "^.*fix.*:+.*$"
+      order: 1
+    - title: Refactor
+      regexp: "^.*refactor.*:+.*$"
+      order: 2
+    - title: Others
+      order: 999
   filters:
     exclude:
       - "^docs:"

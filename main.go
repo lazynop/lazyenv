@@ -10,7 +10,11 @@ import (
 	"gitlab.com/traveltoaiur/lazyenv/internal/tui"
 )
 
-var version = "0.1.4"
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
 
 var cli struct {
 	Path       string           `arg:"" optional:"" default:"." help:"Directory to scan." type:"existingdir"`
@@ -25,7 +29,7 @@ func main() {
 	kong.Parse(&cli,
 		kong.Name("lazyenv"),
 		kong.Description("TUI for managing .env files."),
-		kong.Vars{"version": version},
+		kong.Vars{"version": fmt.Sprintf("%s (commit: %s, built: %s)", version, commit, date)},
 	)
 
 	if cli.Path == "" {

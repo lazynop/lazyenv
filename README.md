@@ -1,10 +1,10 @@
 # lazyenv
 
-> **Work in progress** — not ready for production use.
-
 TUI for managing `.env` files — written in Go with [Bubble Tea](https://github.com/charmbracelet/bubbletea).
 
 Browse, compare, edit and validate environment variables from your terminal.
+
+This project is **Work in progress**, but releases can be used in production.
 
 ## Features
 
@@ -37,14 +37,14 @@ make clean        # remove bin/
 lazyenv [path] [flags]
 ```
 
-| Flag | Description |
-|------|-------------|
-| `-r` | Scan subdirectories recursively |
-| `-a` | Show secrets in cleartext at startup |
+| Flag | Description                             |
+| ---- | --------------------------------------- |
+| `-r` | Scan subdirectories recursively         |
+| `-a` | Show secrets in cleartext at startup    |
 | `-B` | Disable `.bak` backup before first save |
-| `-G` | Disable `.gitignore` check |
-| `-v` | Show version |
-| `-h` | Show help |
+| `-G` | Disable `.gitignore` check              |
+| `-v` | Show version                            |
+| `-h` | Show help                               |
 
 ## Documentation
 
@@ -52,18 +52,18 @@ API documentation is available at [pkg.go.dev/gitlab.com/traveltoaiur/lazyenv](h
 
 ## Keybindings
 
-| Key | Action |
-|-----|--------|
-| `↑/↓` `j/k` | Navigate items |
-| `←/→` `h/l` | Switch panels |
-| `Enter` | Select file |
-| `e` | Edit variable value |
-| `a` | Add new variable |
-| `d` | Delete variable |
-| `w` | Save changes |
-| `c` | Compare two files |
-| `/` | Search variables |
-| `o` | Toggle sort (position / alphabetical) |
-| `Ctrl+S` | Toggle secret masking |
-| `?` | Help |
-| `q` | Quit |
+| Key         | Action                                |
+| ----------- | ------------------------------------- |
+| `↑/↓` `j/k` | Navigate items                        |
+| `←/→` `h/l` | Switch panels                         |
+| `Enter`     | Select file                           |
+| `e`         | Edit variable value                   |
+| `a`         | Add new variable                      |
+| `d`         | Delete variable                       |
+| `w`         | Save changes                          |
+| `c`         | Compare two files                     |
+| `/`         | Search variables                      |
+| `o`         | Toggle sort (position / alphabetical) |
+| `Ctrl+S`    | Toggle secret masking                 |
+| `?`         | Help                                  |
+| `q`         | Quit                                  |
