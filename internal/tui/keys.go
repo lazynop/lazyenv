@@ -27,6 +27,8 @@ type KeyMap struct {
 	PrevDiff     key.Binding
 	Filter       key.Binding
 	Matrix       key.Binding
+	YankValue    key.Binding
+	YankLine     key.Binding
 }
 
 // DefaultKeyMap returns the default keybindings.
@@ -123,6 +125,14 @@ func DefaultKeyMap() KeyMap {
 		Matrix: key.NewBinding(
 			key.WithKeys("m"),
 			key.WithHelp("m", "matrix"),
+		),
+		YankValue: key.NewBinding(
+			key.WithKeys("y"),
+			key.WithHelp("y", "yank value"),
+		),
+		YankLine: key.NewBinding(
+			key.WithKeys("Y"),
+			key.WithHelp("Y", "yank KEY=value"),
 		),
 	}
 }

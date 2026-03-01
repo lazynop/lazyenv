@@ -313,6 +313,31 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.matrixView.Height = a.height - 1
 		a.mode = ModeMatrix
 
+	case key.Matches(msg, a.keys.YankValue):
+		if a.focus == FocusVars {
+			v := a.varList.SelectedVar()
+			if v != nil {
+				a.statusBar.SetMessage(fmt.Sprintf("Copied %s value to clipboard", v.Key))
+				return a, tea.Batch(
+					tea.SetClipboard(v.Value),
+					clearMessageAfter(2*time.Second),
+				)
+			}
+		}
+
+	case key.Matches(msg, a.keys.YankLine):
+		if a.focus == FocusVars {
+			v := a.varList.SelectedVar()
+			if v != nil {
+				line := v.Key + "=" + v.Value
+				a.statusBar.SetMessage(fmt.Sprintf("Copied %s to clipboard", v.Key+"=..."))
+				return a, tea.Batch(
+					tea.SetClipboard(line),
+					clearMessageAfter(2*time.Second),
+				)
+			}
+		}
+
 	case key.Matches(msg, a.keys.Help):
 		a.mode = ModeHelp
 	}
@@ -808,6 +833,8 @@ func (a App) viewHelp() string {
     c              Compare two files (diff view)
     /              Search variables
     o              Toggle sort (position / alphabetical)
+    y              Copy value to clipboard
+    Y              Copy KEY=value to clipboard
     m              Completeness matrix (multi-file)
     Ctrl+S         Toggle secret masking
 
