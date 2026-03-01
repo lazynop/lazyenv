@@ -31,9 +31,20 @@ func TestUpdateVar(t *testing.T) {
 
 	assert.Equal(t, "new", ef.Vars[0].Value)
 	assert.True(t, ef.Vars[0].Modified)
+	assert.Equal(t, "old", ef.Vars[0].OriginalValue)
 	assert.True(t, ef.Modified)
 	assert.Equal(t, "keep", ef.Vars[1].Value)
 	assert.False(t, ef.Vars[1].Modified)
+}
+
+func TestUpdateVarPreservesOriginalOnSecondEdit(t *testing.T) {
+	ef := newTestFile(EnvVar{Key: "FOO", Value: "original"})
+
+	ef.UpdateVar(0, "first_edit")
+	ef.UpdateVar(0, "second_edit")
+
+	assert.Equal(t, "second_edit", ef.Vars[0].Value)
+	assert.Equal(t, "original", ef.Vars[0].OriginalValue, "OriginalValue should not change on subsequent edits")
 }
 
 func TestUpdateVarSetsIsEmpty(t *testing.T) {
@@ -63,6 +74,8 @@ func TestAddVar(t *testing.T) {
 	assert.Equal(t, "NEW", ef.Vars[1].Key)
 	assert.Equal(t, "val", ef.Vars[1].Value)
 	assert.True(t, ef.Vars[1].Modified)
+	assert.True(t, ef.Vars[1].IsNew)
+	assert.Empty(t, ef.Vars[1].OriginalValue, "new vars should have no OriginalValue")
 	assert.True(t, ef.Modified)
 	require.Len(t, ef.Lines, 2)
 	assert.Equal(t, LineVariable, ef.Lines[1].Type)

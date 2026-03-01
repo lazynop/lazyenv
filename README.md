@@ -14,7 +14,11 @@ This project is **Work in progress**, but releases can be used in production.
 - **Secret masking** — auto-detects keys like `*_PASSWORD`, `*_TOKEN`, `*_API_KEY` and masks their values
 - **Inline validation** — warns on empty values, placeholders (`TODO`, `changeme`), and duplicate keys
 - **Diff/compare** — side-by-side comparison between two env files with bidirectional copy, inline editing, difference filtering, and jump-to-next/prev diff
+- **Completeness matrix** — full-screen grid showing which variables exist across all files, with inline add for missing entries
 - **Inline editing** — edit, add, and delete variables without leaving the TUI
+- **Yank to clipboard** — copy variable values (`y`) or full lines (`Y`) via OSC 52
+- **Peek original** — press `p` to see the original value of a modified variable inline, or a hint for newly added ones
+- **Change tracking** — distinct indicators for new (`+`), modified (`*`), duplicate (`D`), empty (`○`), and placeholder (`…`) variables
 - **Automatic backup** — creates a `.bak` copy before the first save of each session (disable with `-B`)
 - **Round-trip fidelity** — saves preserve comments, blank lines, quoting, and ordering
 
@@ -60,8 +64,12 @@ API documentation is available at [pkg.go.dev/gitlab.com/traveltoaiur/lazyenv](h
 | `e`         | Edit variable value                   |
 | `a`         | Add new variable                      |
 | `d`         | Delete variable                       |
+| `y` / `Y`   | Yank value / full line to clipboard   |
+| `p`         | Peek original value (toggle)          |
 | `w`         | Save changes                          |
+| `r`         | Reset file to saved state             |
 | `c`         | Compare two files                     |
+| `m`         | Completeness matrix                   |
 | `/`         | Search variables                      |
 | `o`         | Toggle sort (position / alphabetical) |
 | `Ctrl+S`    | Toggle secret masking                 |

@@ -29,6 +29,7 @@ type KeyMap struct {
 	Matrix       key.Binding
 	YankValue    key.Binding
 	YankLine     key.Binding
+	Peek         key.Binding
 }
 
 // DefaultKeyMap returns the default keybindings.
@@ -133,6 +134,10 @@ func DefaultKeyMap() KeyMap {
 		YankLine: key.NewBinding(
 			key.WithKeys("Y"),
 			key.WithHelp("Y", "yank KEY=value"),
+		),
+		Peek: key.NewBinding(
+			key.WithKeys("p"),
+			key.WithHelp("p", "peek original"),
 		),
 	}
 }

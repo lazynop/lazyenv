@@ -338,6 +338,11 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			}
 		}
 
+	case key.Matches(msg, a.keys.Peek):
+		if a.focus == FocusVars {
+			a.varList.Peeking = !a.varList.Peeking
+		}
+
 	case key.Matches(msg, a.keys.Help):
 		a.mode = ModeHelp
 	}

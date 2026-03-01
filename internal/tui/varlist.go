@@ -19,6 +19,7 @@ type VarListModel struct {
 	ShowSecrets bool
 	SortAlpha   bool
 	SearchQuery string
+	Peeking     bool
 
 	// Filtered/sorted indices into File.Vars
 	displayIndices []int
@@ -151,6 +152,13 @@ func (m *VarListModel) View(theme Theme) string {
 	}
 
 	visible := max(m.Height-4, 1)
+	// Reserve a line for peek if active on a modified/new variable
+	if m.Peeking && m.Cursor >= 0 && m.Cursor < len(m.displayIndices) {
+		v := &m.File.Vars[m.displayIndices[m.Cursor]]
+		if v.Modified || v.IsNew {
+			visible = max(visible-1, 1)
+		}
+	}
 
 	// Calculate column widths
 	keyWidth := 0
@@ -192,7 +200,9 @@ func (m *VarListModel) View(theme Theme) string {
 		// Warning/status indicator (2 slots: [modified][issue])
 		mod := " "
 		issue := " "
-		if v.Modified {
+		if v.IsNew {
+			mod = theme.AddedMarker.Render("+")
+		} else if v.Modified {
 			mod = theme.ModifiedMarker.Render("*")
 		}
 		if v.IsDuplicate {
@@ -233,6 +243,23 @@ func (m *VarListModel) View(theme Theme) string {
 		}
 
 		lines = append(lines, line)
+
+		// Peek line: show original value under the selected variable
+		if m.Peeking && i == m.Cursor && m.Focused {
+			var peekLine string
+			if v.IsNew {
+				peekLine = theme.MutedItem.Render(fmt.Sprintf("  %s  ↳ new variable", padRight("", keyWidth)))
+			} else if v.Modified {
+				orig := v.OriginalValue
+				if len(orig) > maxValWidth-4 {
+					orig = orig[:maxValWidth-6] + ".."
+				}
+				peekLine = theme.MutedItem.Render(fmt.Sprintf("  %s  ↳ was: %s", padRight("", keyWidth), orig))
+			}
+			if peekLine != "" {
+				lines = append(lines, peekLine)
+			}
+		}
 	}
 
 	_ = varCount

@@ -31,6 +31,8 @@ type EnvVar struct {
 	IsPlaceholder bool
 	IsDuplicate   bool
 	Modified      bool
+	IsNew         bool
+	OriginalValue string // value before first edit (empty for new vars)
 }
 
 // EnvFile represents a parsed .env file.
@@ -55,6 +57,9 @@ func (ef *EnvFile) UpdateVar(idx int, newValue string) {
 	if idx < 0 || idx >= len(ef.Vars) {
 		return
 	}
+	if !ef.Vars[idx].Modified {
+		ef.Vars[idx].OriginalValue = ef.Vars[idx].Value
+	}
 	ef.Vars[idx].Value = newValue
 	ef.Vars[idx].Modified = true
 	ef.Vars[idx].IsEmpty = newValue == ""
@@ -70,6 +75,7 @@ func (ef *EnvFile) AddVar(key, value string) {
 		QuoteStyle: QuoteNone,
 		IsEmpty:    value == "",
 		Modified:   true,
+		IsNew:      true,
 	}
 	varIdx := len(ef.Vars)
 	ef.Vars = append(ef.Vars, v)
