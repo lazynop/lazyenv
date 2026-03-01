@@ -100,6 +100,14 @@ func (m *StatusBarModel) View(theme Theme, mode AppMode, focus Focus, fileName s
 		hints = "Press Esc or ? to close help"
 	case ModeSearching:
 		hints = "Type to search, Esc to close"
+	case ModeMatrix:
+		hints = fmt.Sprintf(
+			"%s %s %s %s",
+			formatHint(theme, "↑↓←→", "navigate"),
+			formatHint(theme, "a", "add missing"),
+			formatHint(theme, "o", "sort"),
+			formatHint(theme, "q", "back"),
+		)
 	}
 
 	// Right side: file info

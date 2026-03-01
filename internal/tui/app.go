@@ -25,6 +25,8 @@ const (
 	ModeConfirmDelete
 	ModeHelp
 	ModeSearching
+	ModeMatrix
+	ModeMatrixEditing
 )
 
 // Focus represents which panel has focus.
@@ -71,6 +73,7 @@ type App struct {
 	diffView    DiffViewModel
 	editor      EditorModel
 	searchInput textinput.Model
+	matrixView  MatrixModel
 
 	// Backup state: tracks which files have been backed up this session
 	backedUpPaths map[string]bool
@@ -127,6 +130,8 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.updateLayout()
 		a.diffView.Width = a.width - 2
 		a.diffView.Height = a.height - 4
+		a.matrixView.Width = a.width
+		a.matrixView.Height = a.height - 1
 		return a, nil
 
 	case tea.BackgroundColorMsg:
@@ -174,6 +179,10 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a.handleComparingKey(msg)
 	case ModeCompareSelect:
 		return a.handleCompareSelectKey(msg)
+	case ModeMatrix:
+		return a.handleMatrixKey(msg)
+	case ModeMatrixEditing:
+		return a.handleMatrixEditingKey(msg)
 	}
 
 	// Normal mode
@@ -293,6 +302,16 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.mode = ModeSearching
 		a.searchInput.SetValue("")
 		return a, a.searchInput.Focus()
+
+	case key.Matches(msg, a.keys.Matrix):
+		if len(a.fileList.Files) < 2 {
+			a.statusBar.SetMessage("Need at least 2 files for matrix")
+			return a, clearMessageAfter(2 * time.Second)
+		}
+		a.matrixView = NewMatrixModel(a.fileList.Files)
+		a.matrixView.Width = a.width
+		a.matrixView.Height = a.height - 1
+		a.mode = ModeMatrix
 
 	case key.Matches(msg, a.keys.Help):
 		a.mode = ModeHelp
@@ -543,6 +562,59 @@ func (a App) handleCompareSelectKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	return a, nil
 }
 
+func (a App) handleMatrixKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch {
+	case key.Matches(msg, a.keys.Quit), key.Matches(msg, a.keys.Escape):
+		a.mode = ModeNormal
+	case key.Matches(msg, a.keys.Up):
+		a.matrixView.MoveUp()
+	case key.Matches(msg, a.keys.Down):
+		a.matrixView.MoveDown()
+	case key.Matches(msg, a.keys.Left):
+		a.matrixView.MoveLeft()
+	case key.Matches(msg, a.keys.Right):
+		a.matrixView.MoveRight()
+	case key.Matches(msg, a.keys.ToggleSort):
+		a.matrixView.ToggleSort()
+		if a.matrixView.sortMode == model.SortCompleteness {
+			a.statusBar.SetMessage("Sorted by completeness")
+		} else {
+			a.statusBar.SetMessage("Sorted alphabetically")
+		}
+		return a, clearMessageAfter(2 * time.Second)
+	case key.Matches(msg, a.keys.Add):
+		cmd := a.matrixView.StartEdit()
+		if a.matrixView.editing {
+			a.mode = ModeMatrixEditing
+			return a, cmd
+		}
+		if a.matrixView.message != "" {
+			a.statusBar.SetMessage(a.matrixView.message)
+			a.matrixView.message = ""
+			return a, clearMessageAfter(2 * time.Second)
+		}
+	}
+	return a, nil
+}
+
+func (a App) handleMatrixEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch {
+	case key.Matches(msg, a.keys.Escape):
+		a.matrixView.CancelEdit()
+		a.mode = ModeMatrix
+		return a, nil
+	case key.Matches(msg, a.keys.Enter):
+		a.matrixView.ConfirmEdit()
+		a.mode = ModeMatrix
+		a.statusBar.SetMessage("Variable added")
+		return a, clearMessageAfter(2 * time.Second)
+	default:
+		var cmd tea.Cmd
+		a.matrixView.editor, cmd = a.matrixView.editor.Update(msg)
+		return a, cmd
+	}
+}
+
 // backupIfNeeded creates a .bak backup of the file before the first save of
 // the session. It is a no-op if --no-backup was set or the file was already
 // backed up. Returns a warning message (empty on success or skip).
@@ -648,6 +720,16 @@ func (a App) View() tea.View {
 		editorBar := a.theme.StatusBar.Width(a.width).Render("  " + a.editor.View())
 		statusBarContent := a.statusBar.View(a.theme, ModeEditing, a.focus, "", 0)
 		content = lipgloss.JoinVertical(lipgloss.Left, diffContent, editorBar, statusBarContent)
+	case ModeMatrix:
+		matrixContent := a.matrixView.View(a.theme)
+		statusBarContent := a.statusBar.View(a.theme, a.mode, a.focus, "", 0)
+		content = lipgloss.JoinVertical(lipgloss.Left, matrixContent, statusBarContent)
+	case ModeMatrixEditing:
+		matrixContent := a.matrixView.View(a.theme)
+		prompt := fmt.Sprintf("  Add %s to %s: ", a.matrixView.editKey, a.matrixView.fileNames[a.matrixView.editFile])
+		editorBar := a.theme.StatusBar.Width(a.width).Render(prompt + a.matrixView.editor.View())
+		statusBarContent := a.statusBar.View(a.theme, ModeEditing, a.focus, "", 0)
+		content = lipgloss.JoinVertical(lipgloss.Left, matrixContent, editorBar, statusBarContent)
 	default:
 		a.updateLayout()
 
@@ -725,6 +807,7 @@ func (a App) viewHelp() string {
     c              Compare two files (diff view)
     /              Search variables
     o              Toggle sort (position / alphabetical)
+    m              Completeness matrix (multi-file)
     Ctrl+S         Toggle secret masking
 
   Indicators
