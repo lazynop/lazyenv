@@ -46,6 +46,10 @@ lazyenv [path] [flags]
 | `-v` | Show version |
 | `-h` | Show help |
 
+## Documentation
+
+API documentation is available at [pkg.go.dev/gitlab.com/traveltoaiur/lazyenv](https://pkg.go.dev/gitlab.com/traveltoaiur/lazyenv).
+
 ## Keybindings
 
 | Key | Action |

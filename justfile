@@ -37,12 +37,6 @@ fmt-check:
 # Run all checks (format + vet + tests)
 check: fmt-check vet test
 
-# Generate API documentation
-docs:
-    @mkdir -p docs
-    gomarkdoc ./... > docs/API.md
-    @echo "Documentation generated in docs/API.md"
-
 # Clean build artifacts
 clean:
     rm -rf bin coverage.out dist

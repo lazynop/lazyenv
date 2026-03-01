@@ -7,8 +7,6 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Automatic `.bak` backup before the first save of each session
 - `-B`/`--no-backup` flag to disable backup
-- GitLab Pages job for API documentation (gomarkdoc + pandoc)
-- `just docs` recipe for local documentation generation
 
 ## [0.1.3] - 2026-03-01
 

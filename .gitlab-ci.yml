@@ -1,6 +1,5 @@
 stages:
   - check
-  - docs
   - release
 
 variables:
@@ -22,22 +21,6 @@ check:
   rules:
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
 
-pages:
-  stage: docs
-  image: golang:1.26
-  before_script:
-    - apt-get update -qq && apt-get install -y -qq pandoc
-    - export PATH="$GOPATH/bin:$PATH"
-    - go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
-  script:
-    - mkdir -p public
-    - gomarkdoc gitlab.com/traveltoaiur/lazyenv/... > public/api.md
-    - pandoc public/api.md -s --metadata title="LazyEnv API" -o public/index.html
-  artifacts:
-    paths:
-      - public/
-  rules:
-    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
 
 release:
   stage: release
@@ -52,3 +35,4 @@ release:
     - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
   script:
     - goreleaser release --clean
+    - curl -s "https://proxy.golang.org/gitlab.com/traveltoaiur/lazyenv/@v/${CI_COMMIT_TAG}.info" || true
