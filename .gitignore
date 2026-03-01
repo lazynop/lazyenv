@@ -1,8 +1,12 @@
-.claude
-.agents
-.serena
-CLAUDE.md
+.claude/
+.agents/
+.serena/
 docs/
 bin/
 dist/
+
+*.bak
+*.out
+
+CLAUDE.md
 coverage.out
