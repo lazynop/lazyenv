@@ -839,20 +839,29 @@ func (a App) viewHelp() string {
     e              Edit variable value
     a              Add new variable
     d              Delete variable (with confirmation)
+    y              Copy value to clipboard
+    Y              Copy KEY=value to clipboard
+    p              Peek original value (toggle)
     w              Save changes
     r              Reset file (discard changes)
     c              Compare two files (diff view)
+    m              Completeness matrix (multi-file)
     /              Search variables
     o              Toggle sort (position / alphabetical)
-    y              Copy value to clipboard
-    Y              Copy KEY=value to clipboard
-    m              Completeness matrix (multi-file)
     Ctrl+S         Toggle secret masking
 
-  Indicators
+  File Indicators
     ●              Selected file
     *              Modified (unsaved changes)
     !              Not covered by .gitignore
+
+  Variable Indicators
+    +              Newly added variable
+    *              Modified variable
+    -              Deleted variable (until save)
+    D              Duplicate key
+    ○              Empty value
+    …              Placeholder value
 
   General
     ?              Show/hide this help
