@@ -488,6 +488,7 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 			// Re-parse to refresh RawLines
 			refreshed, err := parser.ParseFile(f.Path)
 			if err == nil {
+				refreshed.GitWarning = f.GitWarning
 				for i, existing := range a.fileList.Files {
 					if existing.Path == f.Path {
 						a.fileList.Files[i] = refreshed
@@ -679,6 +680,7 @@ func (a App) handleSave() (App, tea.Cmd) {
 		a.statusBar.SetMessage(warn + "Saved but refresh failed: " + err.Error())
 		return a, clearMessageAfter(3 * time.Second)
 	}
+	refreshed.GitWarning = f.GitWarning
 
 	// Replace file in the list
 	for i, existing := range a.fileList.Files {
