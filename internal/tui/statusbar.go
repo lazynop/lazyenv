@@ -58,12 +58,13 @@ func (m *StatusBarModel) View(theme Theme, mode AppMode, focus Focus, fileName s
 	case ModeNormal:
 		if focus == FocusVars {
 			hints = fmt.Sprintf(
-				"%s %s %s %s %s %s %s %s %s %s",
+				"%s %s %s %s %s %s %s %s %s %s %s",
 				formatHint(theme, "e", "edit"),
 				formatHint(theme, "a", "add"),
 				formatHint(theme, "d", "del"),
 				formatHint(theme, "y", "yank"),
 				formatHint(theme, "c", "compare"),
+				formatHint(theme, "m", "matrix"),
 				formatHint(theme, "/", "search"),
 				formatHint(theme, "w", "save"),
 				formatHint(theme, "r", "reset"),
@@ -72,9 +73,10 @@ func (m *StatusBarModel) View(theme Theme, mode AppMode, focus Focus, fileName s
 			)
 		} else {
 			hints = fmt.Sprintf(
-				"%s %s %s %s",
+				"%s %s %s %s %s",
 				formatHint(theme, "enter", "select"),
 				formatHint(theme, "c", "compare"),
+				formatHint(theme, "m", "matrix"),
 				formatHint(theme, "?", "help"),
 				formatHint(theme, "q", "quit"),
 			)
