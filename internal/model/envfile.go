@@ -91,7 +91,7 @@ func (ef *EnvFile) AddVar(key, value string) {
 		if d.Key == key {
 			last := &ef.Vars[varIdx]
 			last.OriginalValue = d.Value
-			last.IsNew = false    // was deleted then re-added: treat as modified
+			last.IsNew = false // was deleted then re-added: treat as modified
 			ef.DeletedVars = append(ef.DeletedVars[:i], ef.DeletedVars[i+1:]...)
 			break
 		}

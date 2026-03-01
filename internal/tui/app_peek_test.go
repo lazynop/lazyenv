@@ -161,7 +161,7 @@ func TestPeekAfterDeleteAndReAdd(t *testing.T) {
 	vlm.Width = 80
 	vlm.Height = 20
 
-	f.DeleteVar(0) // delete FOO (original value: val_FOO)
+	f.DeleteVar(0)               // delete FOO (original value: val_FOO)
 	f.AddVar("FOO", "new_value") // re-add with different value
 	vlm.Refresh()
 
