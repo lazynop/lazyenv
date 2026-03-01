@@ -686,6 +686,7 @@ func (a App) handleReset() (App, tea.Cmd) {
 		a.statusBar.SetMessage("Error reloading: " + err.Error())
 		return a, clearMessageAfter(3 * time.Second)
 	}
+	refreshed.GitWarning = f.GitWarning
 
 	for i, existing := range a.fileList.Files {
 		if existing.Path == f.Path {
