@@ -2,8 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"gitlab.com/traveltoaiur/lazyenv/internal/model"
-	"gitlab.com/traveltoaiur/lazyenv/internal/parser"
 	"strings"
 	"time"
 
@@ -11,6 +9,9 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+
+	"gitlab.com/traveltoaiur/lazyenv/internal/model"
+	"gitlab.com/traveltoaiur/lazyenv/internal/parser"
 )
 
 // AppMode represents the current application mode.

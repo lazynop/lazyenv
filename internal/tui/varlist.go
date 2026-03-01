@@ -2,10 +2,11 @@ package tui
 
 import (
 	"fmt"
-	"gitlab.com/traveltoaiur/lazyenv/internal/model"
-	"gitlab.com/traveltoaiur/lazyenv/internal/util"
 	"sort"
 	"strings"
+
+	"gitlab.com/traveltoaiur/lazyenv/internal/model"
+	"gitlab.com/traveltoaiur/lazyenv/internal/util"
 )
 
 // VarListModel manages the variable list panel.
@@ -35,6 +36,7 @@ func (m *VarListModel) SetFile(f *model.EnvFile) {
 	m.File = f
 	m.Cursor = 0
 	m.Offset = 0
+	m.Peeking = false
 	m.recomputeIndices()
 }
 
@@ -129,10 +131,8 @@ func (m *VarListModel) Refresh() {
 // View renders the variable list panel.
 func (m *VarListModel) View(theme Theme) string {
 	fileName := ""
-	varCount := 0
 	if m.File != nil {
 		fileName = m.File.Name
-		varCount = len(m.File.Vars)
 	}
 
 	title := theme.PanelTitle.Render(fmt.Sprintf("Variables (%s)", fileName))
@@ -281,7 +281,6 @@ func (m *VarListModel) View(theme Theme) string {
 		lines = append(lines, line)
 	}
 
-	_ = varCount
 	content := strings.Join(lines, "\n")
 	return m.renderPanel(title, content, theme)
 }

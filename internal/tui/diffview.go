@@ -2,11 +2,12 @@ package tui
 
 import (
 	"fmt"
-	"gitlab.com/traveltoaiur/lazyenv/internal/model"
-	"gitlab.com/traveltoaiur/lazyenv/internal/parser"
 	"strings"
 
 	"charm.land/lipgloss/v2"
+
+	"gitlab.com/traveltoaiur/lazyenv/internal/model"
+	"gitlab.com/traveltoaiur/lazyenv/internal/parser"
 )
 
 // DiffStats holds counts of each diff type.

@@ -2,10 +2,11 @@ package tui
 
 import (
 	"fmt"
-	"gitlab.com/traveltoaiur/lazyenv/internal/model"
 	"strings"
 
 	"charm.land/lipgloss/v2"
+
+	"gitlab.com/traveltoaiur/lazyenv/internal/model"
 )
 
 // FileListModel manages the file list panel.

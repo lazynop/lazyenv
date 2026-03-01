@@ -1,10 +1,11 @@
 package parser
 
 import (
-	"gitlab.com/traveltoaiur/lazyenv/internal/model"
-	"gitlab.com/traveltoaiur/lazyenv/internal/util"
 	"os"
 	"strings"
+
+	"gitlab.com/traveltoaiur/lazyenv/internal/model"
+	"gitlab.com/traveltoaiur/lazyenv/internal/util"
 )
 
 // ParseFile reads and parses an .env file from disk.

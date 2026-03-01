@@ -2,10 +2,11 @@ package parser
 
 import (
 	"fmt"
-	"gitlab.com/traveltoaiur/lazyenv/internal/model"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"gitlab.com/traveltoaiur/lazyenv/internal/model"
 )
 
 // Marshal serializes an EnvFile back to bytes.
