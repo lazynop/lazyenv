@@ -189,9 +189,11 @@ func (m *VarListModel) View(theme Theme) string {
 		}
 		value = padRight(value, maxValWidth)
 
-		// Warning indicator
+		// Warning/status indicator
 		warning := "  "
-		if v.IsDuplicate {
+		if v.Modified {
+			warning = theme.ModifiedMarker.Render("* ")
+		} else if v.IsDuplicate {
 			warning = theme.DuplicateWarn.Render("⚠ ")
 		} else if v.IsEmpty {
 			warning = theme.EmptyWarning.Render("⚠ ")
