@@ -31,7 +31,7 @@ pages:
     - go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
   script:
     - mkdir -p public
-    - gomarkdoc ./... > public/api.md
+    - gomarkdoc gitlab.com/traveltoaiur/lazyenv/... > public/api.md
     - pandoc public/api.md -s --metadata title="LazyEnv API" -o public/index.html
   artifacts:
     paths:
