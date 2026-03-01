@@ -194,11 +194,11 @@ func (m *VarListModel) View(theme Theme) string {
 		if v.Modified {
 			warning = theme.ModifiedMarker.Render("* ")
 		} else if v.IsDuplicate {
-			warning = theme.DuplicateWarn.Render("⚠ ")
+			warning = theme.DuplicateWarn.Render("2x")
 		} else if v.IsEmpty {
-			warning = theme.EmptyWarning.Render("⚠ ")
+			warning = theme.EmptyWarning.Render("○ ")
 		} else if v.IsPlaceholder {
-			warning = theme.PlaceholderWarn.Render("⚠ ")
+			warning = theme.PlaceholderWarn.Render("… ")
 		}
 
 		var line string
