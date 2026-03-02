@@ -63,6 +63,10 @@ func ScanDir(path string, recursive bool) ([]*model.EnvFile, error) {
 }
 
 func isEnvFile(name string) bool {
+	// Skip backup files
+	if strings.HasSuffix(name, ".bak") {
+		return false
+	}
 	// Exact match: .env
 	if name == ".env" {
 		return true

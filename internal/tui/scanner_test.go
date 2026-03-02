@@ -147,6 +147,9 @@ func TestIsEnvFile(t *testing.T) {
 		{"config.txt", false},
 		{"env", false},
 		{".environment", false},
+		{".env.bak", false},
+		{"app.env.bak", false},
+		{".env.local.bak", false},
 	}
 	for _, tt := range tests {
 		assert.Equal(t, tt.expected, isEnvFile(tt.name), "isEnvFile(%q)", tt.name)
