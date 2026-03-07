@@ -1,6 +1,7 @@
 stages:
   - check
   - release
+  - deploy
 
 variables:
   GOPATH: $CI_PROJECT_DIR/.go
@@ -36,3 +37,17 @@ release:
   script:
     - goreleaser release --clean
     - curl -s "https://proxy.golang.org/gitlab.com/traveltoaiur/lazyenv/@v/${CI_COMMIT_TAG}.info" || true
+
+pages:
+  stage: deploy
+  image: python:latest
+  script:
+    - pip install zensical
+    - zensical build --clean
+  pages:
+    publish: public
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - docs/**/*
+        - mkdocs.yml

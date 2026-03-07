@@ -1,0 +1,50 @@
+site_name: lazyenv
+site_description: TUI for managing .env files
+site_url: https://traveltoaiur.gitlab.io/lazyenv
+site_dir: public
+
+repo_url: https://gitlab.com/traveltoaiur/lazyenv
+repo_name: traveltoaiur/lazyenv
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - content.tabs.link
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - tables
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Features: features.md
+  - Configuration: configuration.md
+  - Keybindings: keybindings.md

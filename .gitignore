@@ -1,7 +1,8 @@
 .claude/
 .agents/
 .serena/
-docs/
+site/
+public/
 bin/
 dist/
 

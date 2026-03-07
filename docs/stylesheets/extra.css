@@ -1,0 +1,47 @@
+/* Tighter layout — reduce whitespace */
+.md-main__inner {
+  margin-top: 0;
+}
+
+.md-content__inner {
+  padding-top: 0.4rem;
+}
+
+.md-content__inner > :first-child {
+  margin-top: 0;
+}
+
+/* Compact tables */
+.md-typeset table:not([class]) td,
+.md-typeset table:not([class]) th {
+  padding: 0.4em 0.8em;
+}
+
+/* Tighter headings */
+.md-typeset h1 {
+  margin: 0 0 0.8em;
+}
+
+.md-typeset h2 {
+  margin: 1.2em 0 0.4em;
+}
+
+.md-typeset h3 {
+  margin: 1em 0 0.4em;
+}
+
+/* Compact paragraphs */
+.md-typeset p {
+  margin-bottom: 0.6em;
+}
+
+/* Tighter lists */
+.md-typeset ul,
+.md-typeset ol {
+  margin-bottom: 0.6em;
+}
+
+/* Compact code blocks */
+.md-typeset pre {
+  margin: 0.6em 0;
+}
