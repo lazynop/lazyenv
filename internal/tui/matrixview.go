@@ -8,6 +8,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	"gitlab.com/traveltoaiur/lazyenv/internal/config"
 	"gitlab.com/traveltoaiur/lazyenv/internal/model"
 )
 
@@ -24,6 +25,8 @@ type MatrixModel struct {
 
 	sortMode model.SortMode
 
+	layout config.LayoutConfig
+
 	Width  int
 	Height int
 
@@ -34,11 +37,8 @@ type MatrixModel struct {
 	message  string // transient message
 }
 
-const matrixColWidth = 14 // width per file column
-const matrixKeyWidth = 20 // width for key names column
-
 // NewMatrixModel creates a matrix model from the loaded files.
-func NewMatrixModel(files []*model.EnvFile) MatrixModel {
+func NewMatrixModel(files []*model.EnvFile, layout config.LayoutConfig) MatrixModel {
 	entries, names := model.ComputeMatrix(files)
 	ti := textinput.New()
 	ti.CharLimit = 256
@@ -46,6 +46,7 @@ func NewMatrixModel(files []*model.EnvFile) MatrixModel {
 		files:     files,
 		entries:   entries,
 		fileNames: names,
+		layout:    layout,
 		editor:    ti,
 	}
 }
@@ -114,11 +115,11 @@ func (m *MatrixModel) ensureHorizontalVisible() {
 }
 
 func (m *MatrixModel) visibleCols() int {
-	available := m.Width - matrixKeyWidth - 2
-	if available < matrixColWidth {
+	available := m.Width - m.layout.MatrixKeyWidth - 2
+	if available < m.layout.MatrixColWidth {
 		return 1
 	}
-	return min(available/matrixColWidth, len(m.fileNames))
+	return min(available/m.layout.MatrixColWidth, len(m.fileNames))
 }
 
 // ToggleSort toggles between alphabetical and completeness sorting.
@@ -183,16 +184,16 @@ func (m *MatrixModel) View(theme Theme) string {
 
 	// Header row
 	var hdr strings.Builder
-	hdr.WriteString(fmt.Sprintf("%-*s", matrixKeyWidth, "KEY"))
+	hdr.WriteString(fmt.Sprintf("%-*s", m.layout.MatrixKeyWidth, "KEY"))
 	for ci := m.offsetCol; ci < endCol; ci++ {
 		name := m.fileNames[ci]
-		if len(name) > matrixColWidth-2 {
-			name = name[:matrixColWidth-3] + "…"
+		if len(name) > m.layout.MatrixColWidth-2 {
+			name = name[:m.layout.MatrixColWidth-3] + "…"
 		}
 		if ci == m.cursorCol {
-			hdr.WriteString(theme.SelectedItem.Render(fmt.Sprintf("%-*s", matrixColWidth, name)))
+			hdr.WriteString(theme.SelectedItem.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, name)))
 		} else {
-			hdr.WriteString(theme.HelpKey.Render(fmt.Sprintf("%-*s", matrixColWidth, name)))
+			hdr.WriteString(theme.HelpKey.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, name)))
 		}
 	}
 	b.WriteString(hdr.String())
@@ -214,10 +215,10 @@ func (m *MatrixModel) View(theme Theme) string {
 
 		// Key name
 		keyStr := entry.Key
-		if len(keyStr) > matrixKeyWidth-2 {
-			keyStr = keyStr[:matrixKeyWidth-3] + "…"
+		if len(keyStr) > m.layout.MatrixKeyWidth-2 {
+			keyStr = keyStr[:m.layout.MatrixKeyWidth-3] + "…"
 		}
-		keyFormatted := fmt.Sprintf("%-*s", matrixKeyWidth, keyStr)
+		keyFormatted := fmt.Sprintf("%-*s", m.layout.MatrixKeyWidth, keyStr)
 		if ri == m.cursorRow {
 			keyFormatted = theme.SelectedItem.Render(keyFormatted)
 		} else {
@@ -231,14 +232,14 @@ func (m *MatrixModel) View(theme Theme) string {
 			if ri == m.cursorRow && ci == m.cursorCol {
 				// Highlight active cell
 				if entry.Present[ci] {
-					cell = theme.SelectedItem.Render(fmt.Sprintf("%-*s", matrixColWidth, " "+checkMark))
+					cell = theme.SelectedItem.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+checkMark))
 				} else {
-					cell = theme.DiffRemoved.Underline(true).Render(fmt.Sprintf("%-*s", matrixColWidth, " "+crossMark))
+					cell = theme.DiffRemoved.Underline(true).Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+crossMark))
 				}
 			} else if entry.Present[ci] {
-				cell = theme.DiffEqual.Render(fmt.Sprintf("%-*s", matrixColWidth, " "+checkMark))
+				cell = theme.DiffEqual.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+checkMark))
 			} else {
-				cell = theme.DiffRemoved.Render(fmt.Sprintf("%-*s", matrixColWidth, " "+crossMark))
+				cell = theme.DiffRemoved.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+crossMark))
 			}
 			row.WriteString(cell)
 		}

@@ -100,6 +100,40 @@ func TestCompareSavePreservesGitWarning(t *testing.T) {
 	assert.True(t, app.fileList.Files[1].GitWarning, "GitWarning on file B must survive compare save")
 }
 
+func TestCompareResetPreservesGitWarning(t *testing.T) {
+	dir := t.TempDir()
+	pathA := filepath.Join(dir, ".env")
+	pathB := filepath.Join(dir, ".env.prod")
+	require.NoError(t, os.WriteFile(pathA, []byte("FOO=a\n"), 0644))
+	require.NoError(t, os.WriteFile(pathB, []byte("FOO=b\n"), 0644))
+
+	fA, err := parser.ParseFile(pathA)
+	require.NoError(t, err)
+	fA.GitWarning = true
+
+	fB, err := parser.ParseFile(pathB)
+	require.NoError(t, err)
+	fB.GitWarning = true
+
+	app := newTestApp(nil)
+	app.fileList.Files = append(app.fileList.Files, fA, fB)
+	app.fileList.Selected = 0
+	app.varList.SetFile(fA)
+
+	// Enter compare mode and modify file A.
+	app.mode = ModeComparing
+	app.diffView.SetFiles(fA, fB)
+	fA.UpdateVar(0, "changed")
+	require.True(t, fA.Modified)
+
+	// Press 'r' to reset in compare mode.
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "r"})
+	app = updated.(App)
+
+	assert.True(t, app.fileList.Files[0].GitWarning, "GitWarning on file A must survive compare reset")
+	assert.True(t, app.fileList.Files[1].GitWarning, "GitWarning on file B must survive compare reset")
+}
+
 func TestSaveFromMatrixPreservesGitWarning(t *testing.T) {
 	// Create two real files, enter matrix, add a var, then save.
 	dir := t.TempDir()

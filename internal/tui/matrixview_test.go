@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"gitlab.com/traveltoaiur/lazyenv/internal/config"
 	"gitlab.com/traveltoaiur/lazyenv/internal/model"
 )
 
@@ -25,7 +26,7 @@ func TestNewMatrixModel(t *testing.T) {
 	f1 := makeTestFile(".env", "HOST", "PORT", "DB")
 	f2 := makeTestFile(".env.local", "HOST", "SECRET")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 
 	// Union of keys: DB, HOST, PORT, SECRET = 4 (sorted alpha)
 	assert.Equal(t, 4, len(m.entries), "should have 4 unique keys")
@@ -38,7 +39,7 @@ func TestMatrixMoveDown(t *testing.T) {
 	f1 := makeTestFile(".env", "A", "B", "C")
 	f2 := makeTestFile(".env.local", "A")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -60,7 +61,7 @@ func TestMatrixMoveUp(t *testing.T) {
 	f1 := makeTestFile(".env", "A", "B", "C")
 	f2 := makeTestFile(".env.local", "A")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -85,7 +86,7 @@ func TestMatrixMoveRight(t *testing.T) {
 	f2 := makeTestFile(".env.local", "A")
 	f3 := makeTestFile(".env.prod", "A")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2, f3})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2, f3}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -107,7 +108,7 @@ func TestMatrixMoveLeft(t *testing.T) {
 	f2 := makeTestFile(".env.local", "A")
 	f3 := makeTestFile(".env.prod", "A")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2, f3})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2, f3}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -132,7 +133,7 @@ func TestMatrixToggleSort(t *testing.T) {
 	f1 := makeTestFile(".env", "A", "B", "C")
 	f2 := makeTestFile(".env.local", "A", "C")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -158,7 +159,7 @@ func TestMatrixStartEditMissing(t *testing.T) {
 	f1 := makeTestFile(".env", "A", "B")
 	f2 := makeTestFile(".env.local", "A")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -183,7 +184,7 @@ func TestMatrixStartEditPresent(t *testing.T) {
 	f1 := makeTestFile(".env", "A", "B")
 	f2 := makeTestFile(".env.local", "A")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -201,7 +202,7 @@ func TestMatrixConfirmEdit(t *testing.T) {
 	f1 := makeTestFile(".env", "A", "B")
 	f2 := makeTestFile(".env.local", "A")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -237,7 +238,7 @@ func TestMatrixCancelEdit(t *testing.T) {
 	f1 := makeTestFile(".env", "A", "B")
 	f2 := makeTestFile(".env.local", "A")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -262,11 +263,11 @@ func TestMatrixViewContainsCheckAndCross(t *testing.T) {
 
 	// f2 needs at least one var to have a key in the union,
 	// but here A is only in f1, so A will be present in f1, absent in f2
-	m := NewMatrixModel([]*model.EnvFile{f1, f2})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
-	theme := BuildTheme(true) // dark theme
+	theme := BuildTheme(true, config.ColorConfig{}) // dark theme
 	view := m.View(theme)
 
 	assert.True(t, strings.Contains(view, "\u2713"), "view should contain check mark")

@@ -6,6 +6,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 
+	"gitlab.com/traveltoaiur/lazyenv/internal/config"
 	"gitlab.com/traveltoaiur/lazyenv/internal/model"
 	"gitlab.com/traveltoaiur/lazyenv/internal/parser"
 )
@@ -30,11 +31,13 @@ type DiffViewModel struct {
 	Height     int
 	HideEqual  bool
 	Stats      DiffStats
+
+	layout config.LayoutConfig
 }
 
 // NewDiffViewModel creates a new diff view model.
-func NewDiffViewModel() DiffViewModel {
-	return DiffViewModel{}
+func NewDiffViewModel(layout config.LayoutConfig) DiffViewModel {
+	return DiffViewModel{layout: layout}
 }
 
 // SetFiles computes the diff between two files.
@@ -223,6 +226,8 @@ func (m *DiffViewModel) Reset() string {
 	if errB != nil {
 		return "Failed to reload " + m.FileB.Name
 	}
+	newA.GitWarning = m.FileA.GitWarning
+	newB.GitWarning = m.FileB.GitWarning
 	m.FileA = newA
 	m.FileB = newB
 	m.allEntries = model.ComputeDiff(m.FileA, m.FileB)
@@ -257,11 +262,11 @@ func (m *DiffViewModel) View(theme Theme) string {
 			keyWidth = len(e.Key)
 		}
 	}
-	if keyWidth > 25 {
-		keyWidth = 25
+	if keyWidth > m.layout.DiffMaxKeyWidth {
+		keyWidth = m.layout.DiffMaxKeyWidth
 	}
 
-	valWidth := max(halfWidth-keyWidth-10, 8)
+	valWidth := max(halfWidth-keyWidth-m.layout.DiffPadding, m.layout.DiffMinValueWidth)
 
 	// Render entries
 	visible := max(m.Height-6, 1)
@@ -292,7 +297,7 @@ func (m *DiffViewModel) View(theme Theme) string {
 			style = theme.DiffRemoved
 		}
 
-		key := padRight(e.Key, keyWidth)
+		key := padRight(truncate(e.Key, keyWidth), keyWidth)
 		valA := truncate(e.ValueA, valWidth)
 		valB := truncate(e.ValueB, valWidth)
 		valA = padRight(valA, valWidth)

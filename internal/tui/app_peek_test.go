@@ -5,6 +5,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
+
+	"gitlab.com/traveltoaiur/lazyenv/internal/config"
 )
 
 func TestPeekToggle(t *testing.T) {
@@ -53,7 +55,7 @@ func TestPeekShowsOriginalForModifiedVar(t *testing.T) {
 
 	// Enable peek.
 	app.varList.Peeking = true
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 	view := app.varList.View(theme)
 
 	assert.Contains(t, view, "was: val_FOO", "peek should show original value")
@@ -75,7 +77,7 @@ func TestPeekShowsNewVariableHint(t *testing.T) {
 	app.varList.MoveDown() // cursor on NEW_VAR
 
 	app.varList.Peeking = true
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 	view := app.varList.View(theme)
 
 	assert.Contains(t, view, "new variable", "peek should show 'new variable' for added vars")
@@ -93,7 +95,7 @@ func TestPeekShowsNothingForUnmodifiedVar(t *testing.T) {
 
 	// Enable peek without editing anything.
 	app.varList.Peeking = true
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 	view := app.varList.View(theme)
 
 	assert.NotContains(t, view, "was:", "peek should not show anything for unmodified vars")
@@ -112,7 +114,7 @@ func TestPeekHiddenWhenNotFocused(t *testing.T) {
 
 	app.varList.Peeking = true
 	app.varList.Focused = false // not focused
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 	view := app.varList.View(theme)
 
 	assert.NotContains(t, view, "was:", "peek line should only show when panel is focused")
@@ -129,7 +131,7 @@ func TestDeletedVarsShownInVarList(t *testing.T) {
 	f.DeleteVar(1) // delete BAR
 	vlm.Refresh()
 
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 	view := vlm.View(theme)
 
 	assert.Contains(t, view, "BAR", "deleted var should still appear in the list")
@@ -165,7 +167,7 @@ func TestPeekAfterDeleteAndReAdd(t *testing.T) {
 	f.AddVar("FOO", "new_value") // re-add with different value
 	vlm.Refresh()
 
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 	view := vlm.View(theme)
 
 	assert.Contains(t, view, "was: val_FOO", "peek should show original value after delete+re-add")

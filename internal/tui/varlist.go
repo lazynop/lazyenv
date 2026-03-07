@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"gitlab.com/traveltoaiur/lazyenv/internal/config"
 	"gitlab.com/traveltoaiur/lazyenv/internal/model"
 	"gitlab.com/traveltoaiur/lazyenv/internal/util"
 )
@@ -22,13 +23,15 @@ type VarListModel struct {
 	SearchQuery string
 	Peeking     bool
 
+	layout config.LayoutConfig
+
 	// Filtered/sorted indices into File.Vars
 	displayIndices []int
 }
 
 // NewVarListModel creates a new variable list model.
-func NewVarListModel() VarListModel {
-	return VarListModel{}
+func NewVarListModel(layout config.LayoutConfig) VarListModel {
+	return VarListModel{layout: layout}
 }
 
 // SetFile sets the active file and recomputes display indices.
@@ -168,13 +171,13 @@ func (m *VarListModel) View(theme Theme) string {
 			keyWidth = kw
 		}
 	}
-	if keyWidth > 30 {
-		keyWidth = 30
+	if keyWidth > m.layout.VarListMaxKeyWidth {
+		keyWidth = m.layout.VarListMaxKeyWidth
 	}
 
 	maxValWidth := max(
 		// space for padding, warnings, borders
-		m.Width-keyWidth-12, 10)
+		m.Width-keyWidth-m.layout.VarListPadding, m.layout.VarListMinValueWidth)
 
 	var lines []string
 	end := min(m.Offset+visible, len(m.displayIndices))
@@ -183,8 +186,8 @@ func (m *VarListModel) View(theme Theme) string {
 		idx := m.displayIndices[i]
 		v := &m.File.Vars[idx]
 
-		// Key
-		key := padRight(v.Key, keyWidth)
+		// Key (truncate if longer than column)
+		key := padRight(truncate(v.Key, keyWidth), keyWidth)
 
 		// Value (potentially masked)
 		value := v.Value
@@ -230,7 +233,7 @@ func (m *VarListModel) View(theme Theme) string {
 		if i == m.Cursor && m.Focused {
 			line = theme.CursorItem.Render(padRight(stripAnsi(line), m.Width-4))
 			// Re-apply on cursor: show key bold on highlighted bg
-			k := padRight(v.Key, keyWidth)
+			k := padRight(truncate(v.Key, keyWidth), keyWidth)
 			val := v.Value
 			if v.IsSecret && !m.ShowSecrets {
 				val = util.MaskValue(v.Value)
@@ -267,7 +270,7 @@ func (m *VarListModel) View(theme Theme) string {
 		if len(lines) >= visible {
 			break
 		}
-		key := padRight(dv.Key, keyWidth)
+		key := padRight(truncate(dv.Key, keyWidth), keyWidth)
 		value := dv.Value
 		if dv.IsSecret && !m.ShowSecrets {
 			value = util.MaskValue(dv.Value)

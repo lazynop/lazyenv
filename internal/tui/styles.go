@@ -4,6 +4,8 @@ import (
 	"image/color"
 
 	"charm.land/lipgloss/v2"
+
+	"gitlab.com/traveltoaiur/lazyenv/internal/config"
 )
 
 // Theme holds all Lip Gloss styles.
@@ -50,18 +52,25 @@ type Theme struct {
 	ColorBorder  color.Color
 }
 
-// BuildTheme returns a theme based on the terminal background.
-func BuildTheme(isDark bool) Theme {
+// BuildTheme returns a theme based on the terminal background and optional color overrides.
+func BuildTheme(isDark bool, colors config.ColorConfig) Theme {
 	ld := lipgloss.LightDark(isDark)
 
-	colorPrimary := ld(lipgloss.Color("#7B2FBE"), lipgloss.Color("#BD93F9"))
-	colorWarning := ld(lipgloss.Color("#D97706"), lipgloss.Color("#FFB86C"))
-	colorError := ld(lipgloss.Color("#DC2626"), lipgloss.Color("#FF5555"))
-	colorSuccess := ld(lipgloss.Color("#059669"), lipgloss.Color("#50FA7B"))
-	colorMuted := ld(lipgloss.Color("#6B7280"), lipgloss.Color("#6272A4"))
-	colorFg := ld(lipgloss.Color("#1F2937"), lipgloss.Color("#F8F8F2"))
-	colorBorder := ld(lipgloss.Color("#D1D5DB"), lipgloss.Color("#44475A"))
-	colorCursorBg := ld(lipgloss.Color("#E5E7EB"), lipgloss.Color("#44475A"))
+	resolve := func(override, light, dark string) color.Color {
+		if override != "" {
+			return lipgloss.Color(override)
+		}
+		return ld(lipgloss.Color(light), lipgloss.Color(dark))
+	}
+
+	colorPrimary := resolve(colors.Primary, "#7B2FBE", "#BD93F9")
+	colorWarning := resolve(colors.Warning, "#D97706", "#FFB86C")
+	colorError := resolve(colors.Error, "#DC2626", "#FF5555")
+	colorSuccess := resolve(colors.Success, "#059669", "#50FA7B")
+	colorMuted := resolve(colors.Muted, "#6B7280", "#6272A4")
+	colorFg := resolve(colors.Fg, "#1F2937", "#F8F8F2")
+	colorBorder := resolve(colors.Border, "#D1D5DB", "#44475A")
+	colorCursorBg := resolve(colors.CursorBg, "#E5E7EB", "#44475A")
 
 	return Theme{
 		FilePanel: lipgloss.NewStyle().

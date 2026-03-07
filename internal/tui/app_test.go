@@ -5,6 +5,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
+
+	"gitlab.com/traveltoaiur/lazyenv/internal/config"
 	"gitlab.com/traveltoaiur/lazyenv/internal/model"
 )
 
@@ -163,7 +165,7 @@ func TestQuitReturnsQuitCmd(t *testing.T) {
 }
 
 func TestViewNotReady(t *testing.T) {
-	app := NewApp(AppConfig{})
+	app := NewApp(config.DefaultConfig())
 	// ready is false by default
 	view := app.View()
 	assert.Contains(t, view.Content, "Loading")

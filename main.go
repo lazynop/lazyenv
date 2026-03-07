@@ -7,6 +7,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/alecthomas/kong"
+
+	"gitlab.com/traveltoaiur/lazyenv/internal/config"
 	"gitlab.com/traveltoaiur/lazyenv/internal/tui"
 )
 
@@ -43,13 +45,14 @@ func main() {
 		}
 	}
 
-	app := tui.NewApp(tui.AppConfig{
-		Dir:        cli.Path,
-		Recursive:  cli.Recursive,
-		ShowAll:    cli.ShowAll,
-		NoGitCheck: noGitCheck,
-		NoBackup:   cli.NoBackup,
-	})
+	cfg := config.DefaultConfig()
+	cfg.Dir = cli.Path
+	cfg.Recursive = cli.Recursive
+	cfg.ShowAll = cli.ShowAll
+	cfg.NoGitCheck = noGitCheck
+	cfg.NoBackup = cli.NoBackup
+
+	app := tui.NewApp(cfg)
 
 	p := tea.NewProgram(app)
 	if _, err := p.Run(); err != nil {

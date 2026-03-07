@@ -4,12 +4,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"gitlab.com/traveltoaiur/lazyenv/internal/config"
 	"gitlab.com/traveltoaiur/lazyenv/internal/model"
 )
 
 func TestVarListMoveUp(t *testing.T) {
 	f := makeTestFile(".env", "A", "B", "C")
-	var vl VarListModel
+	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
 	vl.Height = 20
 
@@ -30,7 +32,7 @@ func TestVarListMoveUp(t *testing.T) {
 
 func TestVarListMoveDownBound(t *testing.T) {
 	f := makeTestFile(".env", "A", "B")
-	var vl VarListModel
+	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
 	vl.Height = 20
 
@@ -41,21 +43,21 @@ func TestVarListMoveDownBound(t *testing.T) {
 }
 
 func TestVarListSelectedVarNoFile(t *testing.T) {
-	var vl VarListModel
+	vl := NewVarListModel(config.DefaultConfig().Layout)
 	assert.Nil(t, vl.SelectedVar())
 	assert.Equal(t, -1, vl.SelectedVarIndex())
 }
 
 func TestVarListSelectedVarEmpty(t *testing.T) {
 	f := makeTestFile(".env")
-	var vl VarListModel
+	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
 	assert.Nil(t, vl.SelectedVar())
 }
 
 func TestVarListSearchFilter(t *testing.T) {
 	f := makeTestFile(".env", "DB_HOST", "API_KEY", "DB_PORT")
-	var vl VarListModel
+	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
 
 	assert.Equal(t, 3, len(vl.displayIndices))
@@ -75,7 +77,7 @@ func TestVarListSearchFilter(t *testing.T) {
 
 func TestVarListSearchCaseInsensitive(t *testing.T) {
 	f := makeTestFile(".env", "MY_KEY")
-	var vl VarListModel
+	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
 
 	vl.SetSearch("my_key")
@@ -84,7 +86,7 @@ func TestVarListSearchCaseInsensitive(t *testing.T) {
 
 func TestVarListToggleSort(t *testing.T) {
 	f := makeTestFile(".env", "ZZZ", "AAA", "MMM")
-	var vl VarListModel
+	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
 
 	// Default order: file order
@@ -106,7 +108,7 @@ func TestVarListToggleSort(t *testing.T) {
 
 func TestVarListRefreshAfterAdd(t *testing.T) {
 	f := makeTestFile(".env", "FOO")
-	var vl VarListModel
+	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
 	assert.Equal(t, 1, len(vl.displayIndices))
 
@@ -117,7 +119,7 @@ func TestVarListRefreshAfterAdd(t *testing.T) {
 
 func TestVarListScrolling(t *testing.T) {
 	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F", "G", "H")
-	var vl VarListModel
+	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
 	vl.Height = 8 // visible = 8 - 4 = 4
 
@@ -129,40 +131,60 @@ func TestVarListScrolling(t *testing.T) {
 }
 
 func TestVarListViewNoFile(t *testing.T) {
-	var vl VarListModel
+	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.Width = 60
 	vl.Height = 10
 
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 	view := vl.View(theme)
 	assert.Contains(t, view, "Select a file")
 }
 
 func TestVarListViewNoMatches(t *testing.T) {
 	f := makeTestFile(".env", "FOO")
-	var vl VarListModel
+	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
 	vl.SetSearch("ZZZZZ")
 	vl.Width = 60
 	vl.Height = 10
 
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 	view := vl.View(theme)
 	assert.Contains(t, view, "No matches")
 }
 
 func TestVarListViewRendersVars(t *testing.T) {
 	f := makeTestFile(".env", "FOO", "BAR")
-	var vl VarListModel
+	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
 	vl.Width = 60
 	vl.Height = 20
 	vl.Focused = true
 
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 	view := vl.View(theme)
 	assert.Contains(t, view, "FOO")
 	assert.Contains(t, view, "BAR")
+}
+
+func TestVarListViewTruncatesLongKeys(t *testing.T) {
+	longKey := "THIS_IS_A_VERY_LONG_ENVIRONMENT_VARIABLE_NAME_THAT_EXCEEDS_THIRTY"
+	f := makeTestFile(".env", longKey, "SHORT")
+	vl := NewVarListModel(config.DefaultConfig().Layout)
+	vl.SetFile(f)
+	vl.Width = 80
+	vl.Height = 20
+	vl.Focused = true
+
+	theme := BuildTheme(true, config.ColorConfig{})
+	view := vl.View(theme)
+
+	// The full key should NOT appear (it exceeds the 30-char cap)
+	assert.NotContains(t, view, longKey, "long key should be truncated")
+	// The truncated version with ".." should appear
+	assert.Contains(t, view, "THIS_IS_A_VERY_LONG_ENVIRONM..", "truncated key with .. should appear")
+	// Short key should still be fully visible
+	assert.Contains(t, view, "SHORT")
 }
 
 func TestVarListViewIndicators(t *testing.T) {
@@ -179,13 +201,13 @@ func TestVarListViewIndicators(t *testing.T) {
 			{Type: model.LineVariable, Content: "EMPTY=", VarIdx: 2},
 		},
 	}
-	var vl VarListModel
+	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
 	vl.Width = 60
 	vl.Height = 20
 	vl.Focused = true
 
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 	view := vl.View(theme)
 	assert.Contains(t, view, "NEW_VAR")
 	assert.Contains(t, view, "DUP_KEY")

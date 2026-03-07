@@ -7,12 +7,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"gitlab.com/traveltoaiur/lazyenv/internal/config"
 	"gitlab.com/traveltoaiur/lazyenv/internal/model"
 )
 
 // newTestApp creates an App ready for testing with the given files loaded.
 func newTestApp(files []*model.EnvFile) App {
-	app := NewApp(AppConfig{})
+	app := NewApp(config.DefaultConfig())
 	app.width = 120
 	app.height = 40
 	app.ready = true

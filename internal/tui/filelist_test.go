@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"gitlab.com/traveltoaiur/lazyenv/internal/config"
 )
 
 func TestFileListMoveUp(t *testing.T) {
@@ -129,7 +131,7 @@ func TestFileListViewEmpty(t *testing.T) {
 	fl.Width = 30
 	fl.Height = 10
 
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 	view := fl.View(theme)
 	assert.Contains(t, view, "No .env files found")
 }
@@ -145,7 +147,7 @@ func TestFileListViewWithFiles(t *testing.T) {
 	fl.Height = 10
 	fl.Focused = true
 
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 	view := fl.View(theme)
 	assert.Contains(t, view, ".env")
 }

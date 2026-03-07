@@ -1,11 +1,16 @@
 package tui
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"gitlab.com/traveltoaiur/lazyenv/internal/config"
 	"gitlab.com/traveltoaiur/lazyenv/internal/model"
+	"gitlab.com/traveltoaiur/lazyenv/internal/parser"
 )
 
 func makeDiffFiles() (*model.EnvFile, *model.EnvFile) {
@@ -18,7 +23,7 @@ func makeDiffFiles() (*model.EnvFile, *model.EnvFile) {
 
 func TestDiffViewSetFiles(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel()
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.SetFiles(a, b)
 
 	assert.Equal(t, a, dv.FileA)
@@ -29,7 +34,7 @@ func TestDiffViewSetFiles(t *testing.T) {
 
 func TestDiffViewStats(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel()
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.SetFiles(a, b)
 
 	assert.Equal(t, 1, dv.Stats.Equal, "SHARED is equal")
@@ -40,7 +45,7 @@ func TestDiffViewStats(t *testing.T) {
 
 func TestDiffViewMoveUpDown(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel()
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -66,7 +71,7 @@ func TestDiffViewMoveUpDown(t *testing.T) {
 
 func TestDiffViewMoveDownBound(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel()
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -79,7 +84,7 @@ func TestDiffViewMoveDownBound(t *testing.T) {
 
 func TestDiffViewToggleFilter(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel()
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.SetFiles(a, b)
 
 	totalBefore := len(dv.Entries)
@@ -102,7 +107,7 @@ func TestDiffViewToggleFilter(t *testing.T) {
 
 func TestDiffViewCopyToRightChanged(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel()
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -125,7 +130,7 @@ func TestDiffViewCopyToRightChanged(t *testing.T) {
 
 func TestDiffViewCopyToRightAdded(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel()
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -148,7 +153,7 @@ func TestDiffViewCopyToRightAdded(t *testing.T) {
 
 func TestDiffViewCopyToRightRemoved(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel()
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -170,7 +175,7 @@ func TestDiffViewCopyToRightRemoved(t *testing.T) {
 
 func TestDiffViewCopyToLeftChanged(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel()
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -193,7 +198,7 @@ func TestDiffViewCopyToLeftChanged(t *testing.T) {
 
 func TestDiffViewCopyToLeftRemoved(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel()
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -215,7 +220,7 @@ func TestDiffViewCopyToLeftRemoved(t *testing.T) {
 
 func TestDiffViewCopyToLeftAdded(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel()
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -237,7 +242,7 @@ func TestDiffViewCopyToLeftAdded(t *testing.T) {
 
 func TestDiffViewCopyEqualNoOp(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel()
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -258,7 +263,7 @@ func TestDiffViewCopyEqualNoOp(t *testing.T) {
 
 func TestDiffViewNextPrevDiff(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel()
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -281,10 +286,57 @@ func TestDiffViewNextPrevDiff(t *testing.T) {
 }
 
 func TestDiffViewCopyOutOfBounds(t *testing.T) {
-	dv := NewDiffViewModel()
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Cursor = -1
 	assert.Equal(t, "", dv.CopyToRight())
 	assert.Equal(t, "", dv.CopyToLeft())
+}
+
+func TestDiffViewTruncatesLongKeys(t *testing.T) {
+	longKey := "THIS_IS_A_VERY_LONG_ENVIRONMENT_VARIABLE_NAME"
+	a := makeTestFile(".env", longKey)
+	b := makeTestFile(".env.prod", longKey)
+	b.Vars[0].Value = "different"
+
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
+	dv.Width = 100
+	dv.Height = 20
+	dv.SetFiles(a, b)
+
+	theme := BuildTheme(true, config.ColorConfig{})
+	view := dv.View(theme)
+
+	// The full key should NOT appear (it exceeds the 25-char cap)
+	assert.NotContains(t, view, longKey, "long key should be truncated")
+	// The truncated version with ".." should appear
+	assert.Contains(t, view, "THIS_IS_A_VERY_LONG_ENV..", "truncated key with .. should appear")
+}
+
+func TestDiffViewResetPreservesGitWarning(t *testing.T) {
+	dir := t.TempDir()
+	pathA := filepath.Join(dir, ".env")
+	pathB := filepath.Join(dir, ".env.prod")
+	require.NoError(t, os.WriteFile(pathA, []byte("FOO=a\n"), 0644))
+	require.NoError(t, os.WriteFile(pathB, []byte("FOO=b\n"), 0644))
+
+	fA, err := parser.ParseFile(pathA)
+	require.NoError(t, err)
+	fA.GitWarning = true
+
+	fB, err := parser.ParseFile(pathB)
+	require.NoError(t, err)
+	fB.GitWarning = true
+
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
+	dv.SetFiles(fA, fB)
+
+	// Modify and then reset
+	fA.UpdateVar(0, "changed")
+	errMsg := dv.Reset()
+	assert.Empty(t, errMsg)
+
+	assert.True(t, dv.FileA.GitWarning, "GitWarning on file A must survive DiffViewModel.Reset")
+	assert.True(t, dv.FileB.GitWarning, "GitWarning on file B must survive DiffViewModel.Reset")
 }
 
 func TestDiffViewScrolling(t *testing.T) {
@@ -296,7 +348,7 @@ func TestDiffViewScrolling(t *testing.T) {
 	a := makeTestFile(".env", keys...)
 	b := makeTestFile(".env.prod") // empty — all will be "added"
 
-	dv := NewDiffViewModel()
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 12 // visible = 12 - 6 = 6
 	dv.SetFiles(a, b)
 

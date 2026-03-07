@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"gitlab.com/traveltoaiur/lazyenv/internal/config"
 )
 
 func TestStatusBarSetClearMessage(t *testing.T) {
@@ -20,7 +22,7 @@ func TestStatusBarSetClearMessage(t *testing.T) {
 func TestStatusBarViewNormal(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 
 	// Normal mode, file panel
 	view := sb.View(theme, ModeNormal, FocusFiles, ".env", 5)
@@ -33,7 +35,7 @@ func TestStatusBarViewNormal(t *testing.T) {
 func TestStatusBarViewNormalVarFocus(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 
 	view := sb.View(theme, ModeNormal, FocusVars, ".env", 3)
 	assert.Contains(t, view, "edit")
@@ -45,7 +47,7 @@ func TestStatusBarViewNormalVarFocus(t *testing.T) {
 func TestStatusBarViewComparing(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 
 	stats := DiffStats{Changed: 2, Added: 1, Removed: 0, Equal: 3}
 	view := sb.View(theme, ModeComparing, FocusVars, "", 0, stats)
@@ -56,7 +58,7 @@ func TestStatusBarViewComparing(t *testing.T) {
 func TestStatusBarViewComparingAllEqual(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 
 	stats := DiffStats{Equal: 5}
 	view := sb.View(theme, ModeComparing, FocusVars, "", 0, stats)
@@ -66,7 +68,7 @@ func TestStatusBarViewComparingAllEqual(t *testing.T) {
 func TestStatusBarViewEditing(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 
 	view := sb.View(theme, ModeEditing, FocusVars, "", 0)
 	assert.Contains(t, view, "Enter to confirm")
@@ -75,7 +77,7 @@ func TestStatusBarViewEditing(t *testing.T) {
 func TestStatusBarViewConfirmDelete(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 
 	view := sb.View(theme, ModeConfirmDelete, FocusVars, "", 0)
 	assert.Contains(t, view, "Delete variable")
@@ -84,7 +86,7 @@ func TestStatusBarViewConfirmDelete(t *testing.T) {
 func TestStatusBarViewHelp(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 
 	view := sb.View(theme, ModeHelp, FocusVars, "", 0)
 	assert.Contains(t, view, "close help")
@@ -93,7 +95,7 @@ func TestStatusBarViewHelp(t *testing.T) {
 func TestStatusBarViewSearching(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 
 	view := sb.View(theme, ModeSearching, FocusVars, "", 0)
 	assert.Contains(t, view, "Type to search")
@@ -102,7 +104,7 @@ func TestStatusBarViewSearching(t *testing.T) {
 func TestStatusBarViewMatrix(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 
 	view := sb.View(theme, ModeMatrix, FocusVars, "", 0)
 	assert.Contains(t, view, "navigate")
@@ -112,7 +114,7 @@ func TestStatusBarViewMatrix(t *testing.T) {
 func TestStatusBarViewCompareSelect(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 
 	view := sb.View(theme, ModeCompareSelect, FocusFiles, "", 0)
 	assert.Contains(t, view, "Select second file")
@@ -122,7 +124,7 @@ func TestStatusBarMessageOverridesHints(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120
 	sb.SetMessage("File saved successfully")
-	theme := BuildTheme(true)
+	theme := BuildTheme(true, config.ColorConfig{})
 
 	view := sb.View(theme, ModeNormal, FocusVars, ".env", 5)
 	assert.Contains(t, view, "File saved successfully")

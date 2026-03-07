@@ -10,6 +10,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
+	"gitlab.com/traveltoaiur/lazyenv/internal/config"
 	"gitlab.com/traveltoaiur/lazyenv/internal/model"
 	"gitlab.com/traveltoaiur/lazyenv/internal/parser"
 )
@@ -47,18 +48,9 @@ type FilesLoadedMsg struct {
 // ClearMessageMsg clears the status bar message.
 type ClearMessageMsg struct{}
 
-// AppConfig holds startup configuration.
-type AppConfig struct {
-	Dir        string
-	Recursive  bool
-	ShowAll    bool
-	NoGitCheck bool // skip .gitignore check (flag -G or git not installed)
-	NoBackup   bool // skip .bak backup before first save (flag -B)
-}
-
 // App is the main Bubble Tea model.
 type App struct {
-	config    AppConfig
+	config    config.Config
 	keys      KeyMap
 	theme     Theme
 	hasDarkBg bool
@@ -86,22 +78,22 @@ type App struct {
 }
 
 // NewApp creates a new App model.
-func NewApp(config AppConfig) App {
+func NewApp(cfg config.Config) App {
 	ti := textinput.New()
 	ti.Placeholder = "Search..."
 	ti.CharLimit = 100
 
 	return App{
-		config:        config,
+		config:        cfg,
 		keys:          DefaultKeyMap(),
-		theme:         BuildTheme(true), // default to dark, will update on BackgroundColorMsg
+		theme:         BuildTheme(true, cfg.Colors), // default to dark, will update on BackgroundColorMsg
 		hasDarkBg:     true,
 		focus:         FocusFiles,
 		mode:          ModeNormal,
 		fileList:      NewFileListModel(),
-		varList:       NewVarListModel(),
+		varList:       NewVarListModel(cfg.Layout),
 		statusBar:     NewStatusBarModel(),
-		diffView:      NewDiffViewModel(),
+		diffView:      NewDiffViewModel(cfg.Layout),
 		editor:        NewEditorModel(),
 		searchInput:   ti,
 		backedUpPaths: make(map[string]bool),
@@ -137,7 +129,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.BackgroundColorMsg:
 		a.hasDarkBg = msg.IsDark()
-		a.theme = BuildTheme(a.hasDarkBg)
+		a.theme = BuildTheme(a.hasDarkBg, a.config.Colors)
 		return a, nil
 
 	case FilesLoadedMsg:
@@ -288,7 +280,7 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		} else {
 			a.statusBar.SetMessage("Secrets hidden")
 		}
-		return a, clearMessageAfter(2 * time.Second)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 
 	case key.Matches(msg, a.keys.ToggleSort):
 		a.varList.ToggleSort()
@@ -297,7 +289,7 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		} else {
 			a.statusBar.SetMessage("Sorted by position")
 		}
-		return a, clearMessageAfter(2 * time.Second)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 
 	case key.Matches(msg, a.keys.Search):
 		a.mode = ModeSearching
@@ -307,9 +299,9 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, a.keys.Matrix):
 		if len(a.fileList.Files) < 2 {
 			a.statusBar.SetMessage("Need at least 2 files for matrix")
-			return a, clearMessageAfter(2 * time.Second)
+			return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 		}
-		a.matrixView = NewMatrixModel(a.fileList.Files)
+		a.matrixView = NewMatrixModel(a.fileList.Files, a.config.Layout)
 		a.matrixView.Width = a.width
 		a.matrixView.Height = a.height - 1
 		a.mode = ModeMatrix
@@ -321,7 +313,7 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				a.statusBar.SetMessage(fmt.Sprintf("Copied %s value to clipboard", v.Key))
 				return a, tea.Batch(
 					tea.SetClipboard(v.Value),
-					clearMessageAfter(2*time.Second),
+					clearMessageAfter(a.config.Layout.MessageTimeout),
 				)
 			}
 		}
@@ -334,7 +326,7 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				a.statusBar.SetMessage(fmt.Sprintf("Copied %s to clipboard", v.Key+"=..."))
 				return a, tea.Batch(
 					tea.SetClipboard(line),
-					clearMessageAfter(2*time.Second),
+					clearMessageAfter(a.config.Layout.MessageTimeout),
 				)
 			}
 		}
@@ -378,7 +370,7 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			a.varList.Refresh()
 			a.statusBar.SetMessage("Modified " + a.varList.File.Vars[result.VarIndex].Key)
 		}
-		return a, clearMessageAfter(2 * time.Second)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	default:
 		var cmd tea.Cmd
 		a.editor.input, cmd = a.editor.input.Update(msg)
@@ -397,7 +389,7 @@ func (a App) handleConfirmDeleteKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			a.statusBar.SetMessage("Deleted " + name)
 		}
 		a.mode = ModeNormal
-		return a, clearMessageAfter(2 * time.Second)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	case key.Matches(msg, a.keys.Deny), key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
 	}
@@ -442,12 +434,12 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, a.keys.Right):
 		if k := a.diffView.CopyToRight(); k != "" {
 			a.statusBar.SetMessage(k + " → " + a.diffView.FileB.Name)
-			return a, clearMessageAfter(2 * time.Second)
+			return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 		}
 	case key.Matches(msg, a.keys.Left):
 		if k := a.diffView.CopyToLeft(); k != "" {
 			a.statusBar.SetMessage(k + " → " + a.diffView.FileA.Name)
-			return a, clearMessageAfter(2 * time.Second)
+			return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 		}
 	case key.Matches(msg, a.keys.Filter):
 		a.diffView.ToggleFilter()
@@ -456,7 +448,7 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		} else {
 			a.statusBar.SetMessage("Showing all entries")
 		}
-		return a, clearMessageAfter(2 * time.Second)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	case key.Matches(msg, a.keys.Save):
 		return a.handleCompareSave()
 	case key.Matches(msg, a.keys.Edit): // e = edit left
@@ -471,14 +463,20 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			for i, f := range a.fileList.Files {
 				if f.Path == a.diffView.FileA.Path {
 					a.fileList.Files[i] = a.diffView.FileA
+					if a.fileList.Selected == i {
+						a.varList.SetFile(a.diffView.FileA)
+					}
 				}
 				if f.Path == a.diffView.FileB.Path {
 					a.fileList.Files[i] = a.diffView.FileB
+					if a.fileList.Selected == i {
+						a.varList.SetFile(a.diffView.FileB)
+					}
 				}
 			}
 			a.statusBar.SetMessage("Reset to saved state")
 		}
-		return a, clearMessageAfter(2 * time.Second)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	}
 	return a, nil
 }
@@ -491,7 +489,7 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 			warn.WriteString(a.backupIfNeeded(f.Path))
 			if err := parser.WriteFile(f); err != nil {
 				a.statusBar.SetMessage("Error saving " + f.Name + ": " + err.Error())
-				return a, clearMessageAfter(3 * time.Second)
+				return a, clearMessageAfter(a.config.Layout.ErrorMessageTimeout)
 			}
 			// Re-parse to refresh RawLines
 			refreshed, err := parser.ParseFile(f.Path)
@@ -500,6 +498,9 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 				for i, existing := range a.fileList.Files {
 					if existing.Path == f.Path {
 						a.fileList.Files[i] = refreshed
+						if a.fileList.Selected == i {
+							a.varList.SetFile(refreshed)
+						}
 						break
 					}
 				}
@@ -520,7 +521,7 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 	// Recompute diff after save
 	a.diffView.allEntries = model.ComputeDiff(a.diffView.FileA, a.diffView.FileB)
 	a.diffView.recompute()
-	return a, clearMessageAfter(2 * time.Second)
+	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 }
 
 func (a App) startCompareEdit(file *model.EnvFile) (tea.Model, tea.Cmd) {
@@ -541,7 +542,7 @@ func (a App) startCompareEdit(file *model.EnvFile) (tea.Model, tea.Cmd) {
 	if varIdx < 0 {
 		// Key doesn't exist in this file
 		a.statusBar.SetMessage(e.Key + " not in " + file.Name)
-		return a, clearMessageAfter(2 * time.Second)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	}
 
 	a.compareEditFile = file
@@ -565,7 +566,7 @@ func (a App) handleEditingCompareKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.diffView.recompute()
 		a.mode = ModeComparing
 		a.statusBar.SetMessage("Modified " + a.compareEditFile.Vars[a.compareEditVarIdx].Key)
-		return a, clearMessageAfter(2 * time.Second)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	default:
 		var cmd tea.Cmd
 		a.editor.input, cmd = a.editor.input.Update(msg)
@@ -617,7 +618,7 @@ func (a App) handleMatrixKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		} else {
 			a.statusBar.SetMessage("Sorted alphabetically")
 		}
-		return a, clearMessageAfter(2 * time.Second)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	case key.Matches(msg, a.keys.Add):
 		cmd := a.matrixView.StartEdit()
 		if a.matrixView.editing {
@@ -627,7 +628,7 @@ func (a App) handleMatrixKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		if a.matrixView.message != "" {
 			a.statusBar.SetMessage(a.matrixView.message)
 			a.matrixView.message = ""
-			return a, clearMessageAfter(2 * time.Second)
+			return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 		}
 	}
 	return a, nil
@@ -643,7 +644,7 @@ func (a App) handleMatrixEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.matrixView.ConfirmEdit()
 		a.mode = ModeMatrix
 		a.statusBar.SetMessage("Variable added")
-		return a, clearMessageAfter(2 * time.Second)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	default:
 		var cmd tea.Cmd
 		a.matrixView.editor, cmd = a.matrixView.editor.Update(msg)
@@ -670,25 +671,25 @@ func (a App) handleSave() (App, tea.Cmd) {
 	f := a.varList.File
 	if f == nil {
 		a.statusBar.SetMessage("No file selected")
-		return a, clearMessageAfter(2 * time.Second)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	}
 	if !f.Modified {
 		a.statusBar.SetMessage("No changes to save")
-		return a, clearMessageAfter(2 * time.Second)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	}
 
 	warn := a.backupIfNeeded(f.Path)
 
 	if err := parser.WriteFile(f); err != nil {
 		a.statusBar.SetMessage("Error saving: " + err.Error())
-		return a, clearMessageAfter(3 * time.Second)
+		return a, clearMessageAfter(a.config.Layout.ErrorMessageTimeout)
 	}
 
 	// Re-parse to refresh RawLines
 	refreshed, err := parser.ParseFile(f.Path)
 	if err != nil {
 		a.statusBar.SetMessage(warn + "Saved but refresh failed: " + err.Error())
-		return a, clearMessageAfter(3 * time.Second)
+		return a, clearMessageAfter(a.config.Layout.ErrorMessageTimeout)
 	}
 	refreshed.GitWarning = f.GitWarning
 
@@ -704,24 +705,24 @@ func (a App) handleSave() (App, tea.Cmd) {
 	}
 
 	a.statusBar.SetMessage(warn + "Saved " + f.Name)
-	return a, clearMessageAfter(2 * time.Second)
+	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 }
 
 func (a App) handleReset() (App, tea.Cmd) {
 	f := a.varList.File
 	if f == nil {
 		a.statusBar.SetMessage("No file selected")
-		return a, clearMessageAfter(2 * time.Second)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	}
 	if !f.Modified {
 		a.statusBar.SetMessage("No changes to reset")
-		return a, clearMessageAfter(2 * time.Second)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	}
 
 	refreshed, err := parser.ParseFile(f.Path)
 	if err != nil {
 		a.statusBar.SetMessage("Error reloading: " + err.Error())
-		return a, clearMessageAfter(3 * time.Second)
+		return a, clearMessageAfter(a.config.Layout.ErrorMessageTimeout)
 	}
 	refreshed.GitWarning = f.GitWarning
 
@@ -736,7 +737,7 @@ func (a App) handleReset() (App, tea.Cmd) {
 	}
 
 	a.statusBar.SetMessage("Reset to saved state")
-	return a, clearMessageAfter(2 * time.Second)
+	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 }
 
 func (a App) View() tea.View {
