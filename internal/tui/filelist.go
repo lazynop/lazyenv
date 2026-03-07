@@ -118,14 +118,32 @@ func (m *FileListModel) View(theme Theme) string {
 			modified = theme.ModifiedMarker.Render("*")
 		}
 
-		line := fmt.Sprintf("%s%s%s%s", indicator, gitWarn, name, modified)
-
+		var line string
 		if i == m.Cursor && m.Focused {
-			line = theme.CursorItem.Render(padRight(line, m.Width-4))
-		} else if i == m.Selected {
-			line = theme.SelectedItem.Render(line)
+			// Cursor: build raw string directly (no styled segments to strip)
+			warn := ""
+			if f.GitWarning {
+				warn = "! "
+			}
+			mod := ""
+			if f.Modified {
+				mod = "*"
+			}
+			raw := fmt.Sprintf("%s%s%s%s", indicator, warn, name, mod)
+			line = theme.CursorItem.Render(padRight(raw, m.Width-4))
 		} else {
-			line = theme.NormalItem.Render(line)
+			// Style each segment individually to avoid ANSI reset leaking
+			var itemStyle lipgloss.Style
+			if i == m.Selected {
+				itemStyle = theme.SelectedItem
+			} else {
+				itemStyle = theme.NormalItem
+			}
+			line = fmt.Sprintf("%s%s%s%s",
+				itemStyle.Render(indicator),
+				gitWarn,
+				itemStyle.Render(name),
+				modified)
 		}
 
 		lines = append(lines, line)

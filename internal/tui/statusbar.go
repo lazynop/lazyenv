@@ -99,13 +99,13 @@ func (m *StatusBarModel) View(theme Theme, mode AppMode, focus Focus, fileName s
 			diffStats,
 		)
 	case ModeEditing:
-		hints = "Enter to confirm, Esc to cancel"
+		hints = theme.MutedItem.Render("Enter to confirm, Esc to cancel")
 	case ModeConfirmDelete:
 		hints = theme.DuplicateWarn.Render("Delete variable? (y/n)")
 	case ModeHelp:
-		hints = "Press Esc or ? to close help"
+		hints = theme.MutedItem.Render("Press Esc or ? to close help")
 	case ModeSearching:
-		hints = "Type to search, Esc to close"
+		hints = theme.MutedItem.Render("Type to search, Esc to close")
 	case ModeMatrix:
 		hints = fmt.Sprintf(
 			"%s %s %s %s",
@@ -141,5 +141,5 @@ func (m *StatusBarModel) View(theme Theme, mode AppMode, focus Focus, fileName s
 }
 
 func formatHint(theme Theme, key, desc string) string {
-	return fmt.Sprintf("[%s]%s", theme.StatusBarKey.Render(key), desc)
+	return fmt.Sprintf("[%s]%s", theme.StatusBarKey.Render(key), theme.MutedItem.Render(desc))
 }
