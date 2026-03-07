@@ -1,0 +1,10 @@
+# Wide layout for large terminals and long variable names.
+# Good for projects with verbose env keys like
+# NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.
+
+[layout]
+var-list-max-key-width = 50
+diff-max-key-width = 40
+matrix-key-width = 35
+matrix-col-width = 18
+var-list-padding = 16

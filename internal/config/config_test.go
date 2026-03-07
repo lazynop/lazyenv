@@ -200,6 +200,82 @@ func TestLoadFilePatterns(t *testing.T) {
 	assert.Equal(t, []string{"*.bak", "*.tmp"}, cfg.Files.Exclude)
 }
 
+func TestLoadThemePreset(t *testing.T) {
+	dir := t.TempDir()
+	content := []byte("theme = \"dracula\"\n")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
+
+	cfg, warnings, err := Load(dir)
+	require.NoError(t, err)
+	assert.Empty(t, warnings)
+	assert.Equal(t, "dracula", cfg.Theme)
+	assert.Equal(t, "#BD93F9", cfg.Colors.Primary)
+	assert.Equal(t, "#FF5555", cfg.Colors.Error)
+}
+
+func TestLoadThemeWithOverride(t *testing.T) {
+	dir := t.TempDir()
+	content := []byte("theme = \"nord\"\n\n[colors]\nprimary = \"#FF0000\"\n")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
+
+	cfg, warnings, err := Load(dir)
+	require.NoError(t, err)
+	assert.Empty(t, warnings)
+	assert.Equal(t, "#FF0000", cfg.Colors.Primary, "explicit override wins")
+	assert.Equal(t, "#EBCB8B", cfg.Colors.Warning, "rest comes from theme")
+}
+
+func TestLoadUnknownTheme(t *testing.T) {
+	dir := t.TempDir()
+	content := []byte("theme = \"nonexistent\"\n")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
+
+	cfg, warnings, err := Load(dir)
+	require.NoError(t, err)
+	assert.Len(t, warnings, 1)
+	assert.Contains(t, warnings[0], "unknown theme")
+	assert.Equal(t, DefaultConfig(), cfg)
+}
+
+func TestThemeNames(t *testing.T) {
+	names := ThemeNames()
+	assert.Len(t, names, 15)
+	assert.Contains(t, names, "dracula")
+	assert.Contains(t, names, "catppuccin-mocha")
+	assert.Contains(t, names, "nord")
+	assert.Contains(t, names, "tokyo-night")
+	assert.Contains(t, names, "rose-pine")
+	assert.Contains(t, names, "cyberpunk")
+	// verify sorted
+	for i := 1; i < len(names); i++ {
+		assert.True(t, names[i-1] < names[i], "themes should be sorted")
+	}
+}
+
+func TestAllThemesHaveAllColors(t *testing.T) {
+	for _, name := range ThemeNames() {
+		colors, ok := LookupTheme(name)
+		assert.True(t, ok, "theme %s should exist", name)
+		assert.NotEmpty(t, colors.Primary, "%s: primary", name)
+		assert.NotEmpty(t, colors.Warning, "%s: warning", name)
+		assert.NotEmpty(t, colors.Error, "%s: error", name)
+		assert.NotEmpty(t, colors.Success, "%s: success", name)
+		assert.NotEmpty(t, colors.Muted, "%s: muted", name)
+		assert.NotEmpty(t, colors.Fg, "%s: fg", name)
+		assert.NotEmpty(t, colors.Border, "%s: border", name)
+		assert.NotEmpty(t, colors.CursorBg, "%s: cursor-bg", name)
+	}
+}
+
+func TestLookupTheme(t *testing.T) {
+	colors, ok := LookupTheme("dracula")
+	assert.True(t, ok)
+	assert.Equal(t, "#BD93F9", colors.Primary)
+
+	_, ok = LookupTheme("nonexistent")
+	assert.False(t, ok)
+}
+
 func TestDefaultColorsEmpty(t *testing.T) {
 	c := DefaultConfig().Colors
 

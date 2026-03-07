@@ -1,0 +1,5 @@
+# Start from a theme preset, then override individual colors.
+theme = "gruvbox-dark"
+
+[colors]
+primary = "#FF6600"    # override just primary, rest comes from gruvbox

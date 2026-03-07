@@ -1,0 +1,8 @@
+# Monorepo setup — scan subdirectories, include extra patterns.
+recursive = true
+sort = "alphabetical"
+no-backup = true
+
+[files]
+include = [".env", ".env.*", "*.env", ".secrets"]
+exclude = ["*.bak", "*.example", "*.sample"]

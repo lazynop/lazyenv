@@ -58,10 +58,12 @@ show-config name:
     -go run . --show-config
     @rm -f .lazyenvrc
 
-# Shorthand recipes for each example config
+# Shorthand recipes for example configs
 try-minimal: (try-config "minimal")
 try-dracula: (try-config "dracula-theme")
 try-catppuccin: (try-config "catppuccin-mocha")
+try-nord: (try-config "nord-theme")
+try-override: (try-config "theme-with-override")
 try-wide: (try-config "wide-layout")
 try-monorepo: (try-config "monorepo")
 try-full: (try-config "full")

@@ -1,0 +1,3 @@
+# Minimal config — just override what you need.
+recursive = true
+sort = "alphabetical"

@@ -17,6 +17,7 @@ Browse, compare, edit and validate environment variables from your terminal.
 - **Automatic backup** — creates a `.bak` copy before the first save of each session
 - **Round-trip fidelity** — saves preserve comments, blank lines, quoting, and ordering
 - **Search and sort** — filter variables by name or value, toggle alphabetical sorting
+- **Configuration file** — TOML config with built-in color themes (Dracula, Catppuccin, Nord, Gruvbox, Solarized), layout tuning, and file patterns
 
 ## Install
 
@@ -50,13 +51,68 @@ lazyenv [path] [flags]
 ```
 
 | Flag | Description |
-| ---- | ---------------------------------------- |
+| ---- | ------------------------------------------ |
 | `-r` | Scan subdirectories recursively |
 | `-a` | Show secrets in cleartext at startup |
+| `-s` | Sort order: `position` or `alphabetical` |
 | `-B` | Disable `.bak` backup before first save |
 | `-G` | Disable `.gitignore` check |
+| `--show-config` | Show effective configuration and exit |
 | `-v` | Show version |
 | `-h` | Show help |
+
+## Configuration
+
+Create a `.lazyenvrc` file (TOML) in your project root, or `~/.config/lazyenv/config.toml` for global settings. CLI flags override config file values.
+
+```toml
+recursive = true
+sort = "alphabetical"
+theme = "catppuccin-mocha"
+```
+
+### Themes
+
+Built-in color themes can be activated with a single line:
+
+| Theme | Type |
+| ----- | ---- |
+| `catppuccin-latte` | Light |
+| `catppuccin-mocha` | Dark |
+| `cyberpunk` | Dark |
+| `dracula` | Dark |
+| `everforest` | Dark |
+| `gruvbox-dark` | Dark |
+| `gruvbox-light` | Light |
+| `kanagawa` | Dark |
+| `monokai-pro` | Dark |
+| `nord` | Dark |
+| `one-dark` | Dark |
+| `rose-pine` | Dark |
+| `solarized-dark` | Dark |
+| `solarized-light` | Light |
+| `tokyo-night` | Dark |
+
+Individual colors can override the theme:
+
+```toml
+theme = "nord"
+
+[colors]
+primary = "#FF6600"    # override just primary, rest from nord
+```
+
+### File patterns
+
+Control which files are detected:
+
+```toml
+[files]
+include = [".env", ".env.*", "*.env"]
+exclude = ["*.bak", "*.example"]
+```
+
+Run `lazyenv --show-config` to see the effective configuration.
 
 ## Keybindings
 
