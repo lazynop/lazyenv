@@ -4,49 +4,53 @@ import "time"
 
 // Config holds all application configuration.
 type Config struct {
-	Dir        string
-	Recursive  bool
-	ShowAll    bool
-	NoGitCheck bool
-	NoBackup   bool
-	Sort       string // "position" | "alphabetical"
+	Dir        string `toml:"-"` // CLI-only, not in config file
+	Recursive  bool   `toml:"recursive"`
+	ShowAll    bool   `toml:"show-secrets"`
+	NoGitCheck bool   `toml:"no-git-check"`
+	NoBackup   bool   `toml:"no-backup"`
+	Sort       string `toml:"sort"` // "position" | "alphabetical"
 
-	Layout LayoutConfig
-	Colors ColorConfig
-	Files  FileConfig
+	Layout LayoutConfig `toml:"layout"`
+	Colors ColorConfig  `toml:"colors"`
+	Files  FileConfig   `toml:"files"`
+
+	Warnings []string `toml:"-"` // non-fatal config issues, displayed at startup
 }
 
 // FileConfig holds file detection patterns.
 type FileConfig struct {
-	Include []string // glob patterns to include (e.g. ".env", ".env.*", "*.env")
-	Exclude []string // glob patterns to exclude (e.g. "*.bak")
+	Include []string `toml:"include"` // glob patterns to include (e.g. ".env", ".env.*", "*.env")
+	Exclude []string `toml:"exclude"` // glob patterns to exclude (e.g. "*.bak")
 }
 
 // LayoutConfig holds layout/sizing constants used by TUI components.
 type LayoutConfig struct {
-	VarListMaxKeyWidth   int
-	DiffMaxKeyWidth      int
-	MatrixKeyWidth       int
-	MatrixColWidth       int
-	VarListMinValueWidth int
-	VarListPadding       int
-	DiffMinValueWidth    int
-	DiffPadding          int
-	MessageTimeout       time.Duration
-	ErrorMessageTimeout  time.Duration
+	VarListMaxKeyWidth   int `toml:"var-list-max-key-width"`
+	DiffMaxKeyWidth      int `toml:"diff-max-key-width"`
+	MatrixKeyWidth       int `toml:"matrix-key-width"`
+	MatrixColWidth       int `toml:"matrix-col-width"`
+	VarListMinValueWidth int `toml:"var-list-min-value-width"`
+	VarListPadding       int `toml:"var-list-padding"`
+	DiffMinValueWidth    int `toml:"diff-min-value-width"`
+	DiffPadding          int `toml:"diff-padding"`
+
+	// Internal constants, not exposed in config file.
+	MessageTimeout      time.Duration `toml:"-"`
+	ErrorMessageTimeout time.Duration `toml:"-"`
 }
 
 // ColorConfig holds semantic color overrides (hex strings).
 // Empty string means "use auto-detected dark/light default".
 type ColorConfig struct {
-	Primary  string
-	Warning  string
-	Error    string
-	Success  string
-	Muted    string
-	Fg       string
-	Border   string
-	CursorBg string
+	Primary  string `toml:"primary"`
+	Warning  string `toml:"warning"`
+	Error    string `toml:"error"`
+	Success  string `toml:"success"`
+	Muted    string `toml:"muted"`
+	Fg       string `toml:"fg"`
+	Border   string `toml:"border"`
+	CursorBg string `toml:"cursor-bg"`
 }
 
 // DefaultConfig returns a Config with all default values.

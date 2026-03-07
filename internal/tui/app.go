@@ -48,6 +48,9 @@ type FilesLoadedMsg struct {
 // ClearMessageMsg clears the status bar message.
 type ClearMessageMsg struct{}
 
+// ConfigWarningMsg is sent at startup if the config file has issues.
+type ConfigWarningMsg struct{ Warning string }
+
 // App is the main Bubble Tea model.
 type App struct {
 	config    config.Config
@@ -102,7 +105,7 @@ func NewApp(cfg config.Config) App {
 
 func (a App) Init() tea.Cmd {
 	noGitCheck := a.config.NoGitCheck
-	return tea.Batch(
+	cmds := []tea.Cmd{
 		func() tea.Msg {
 			files, err := ScanDir(a.config.Dir, a.config.Recursive, a.config.Files)
 			if err == nil && !noGitCheck {
@@ -111,7 +114,14 @@ func (a App) Init() tea.Cmd {
 			return FilesLoadedMsg{Files: files, Err: err}
 		},
 		tea.RequestBackgroundColor,
-	)
+	}
+	if len(a.config.Warnings) > 0 {
+		warning := a.config.Warnings[0]
+		cmds = append(cmds, func() tea.Msg {
+			return ConfigWarningMsg{Warning: warning}
+		})
+	}
+	return tea.Batch(cmds...)
 }
 
 func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -131,6 +141,10 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.hasDarkBg = msg.IsDark()
 		a.theme = BuildTheme(a.hasDarkBg, a.config.Colors)
 		return a, nil
+
+	case ConfigWarningMsg:
+		a.statusBar.SetMessage("Config: " + msg.Warning)
+		return a, clearMessageAfter(a.config.Layout.ErrorMessageTimeout)
 
 	case FilesLoadedMsg:
 		if msg.Err != nil {
