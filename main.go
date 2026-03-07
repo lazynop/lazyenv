@@ -41,7 +41,7 @@ func main() {
 		cli.Path = "."
 	}
 
-	cfg, warnings, err := config.Load(cli.Path)
+	cfg, warnings, err := config.Load(".")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
 		os.Exit(1)

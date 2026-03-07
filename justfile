@@ -44,3 +44,24 @@ clean:
 # Build a snapshot release (no publish)
 release-snapshot:
     goreleaser release --snapshot --clean
+
+# Run with an example config (copies it as .lazyenvrc, runs, then removes it)
+try-config name:
+    @cp examples/config/{{name}}.toml .lazyenvrc
+    @echo "Using examples/config/{{name}}.toml"
+    -go run . env
+    @rm -f .lazyenvrc
+
+# Show effective config for an example config
+show-config name:
+    @cp examples/config/{{name}}.toml .lazyenvrc
+    -go run . --show-config
+    @rm -f .lazyenvrc
+
+# Shorthand recipes for each example config
+try-minimal: (try-config "minimal")
+try-dracula: (try-config "dracula-theme")
+try-catppuccin: (try-config "catppuccin-mocha")
+try-wide: (try-config "wide-layout")
+try-monorepo: (try-config "monorepo")
+try-full: (try-config "full")
