@@ -41,6 +41,7 @@ func (a App) viewHelp() string {
     w              Save changes
     r              Reset file (discard changes)
     c              Compare two files (diff view)
+                     n/N  Jump to next/prev diff
     m              Completeness matrix (multi-file)
     /              Search variables
     o              Toggle sort (position / alphabetical)

@@ -88,9 +88,10 @@ func (m *StatusBarModel) View(theme Theme, mode AppMode, focus Focus, fileName s
 		hints = theme.EmptyWarning.Render("Select second file to compare (Enter to select, Esc to cancel)")
 	case ModeComparing:
 		hints = fmt.Sprintf(
-			"%s %s %s %s %s %s %s %s",
+			"%s %s %s %s %s %s %s %s %s",
 			formatHint(theme, "←/→", "copy"),
 			formatHint(theme, "e/E", "edit L/R"),
+			formatHint(theme, "n/N", "next/prev diff"),
 			formatHint(theme, "f", "filter"),
 			formatHint(theme, "w", "save"),
 			formatHint(theme, "r", "reset"),

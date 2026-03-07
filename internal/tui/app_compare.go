@@ -22,6 +22,10 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.diffView.MoveUp()
 	case key.Matches(msg, a.keys.Down):
 		a.diffView.MoveDown()
+	case key.Matches(msg, a.keys.NextDiff):
+		a.diffView.NextDiff()
+	case key.Matches(msg, a.keys.PrevDiff):
+		a.diffView.PrevDiff()
 	case key.Matches(msg, a.keys.Right):
 		if k := a.diffView.CopyToRight(); k != "" {
 			a.statusBar.SetMessage(k + " → " + a.diffView.FileB.Name)
