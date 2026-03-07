@@ -23,20 +23,6 @@ just test         # run tests
 just check        # fmt + vet + tests
 ```
 
-## Usage
+## Next steps
 
-```
-lazyenv [path] [flags]
-```
-
-| Flag | Description |
-| ---- | ----------- |
-| `-r` | Scan subdirectories recursively |
-| `-a` | Show secrets in cleartext at startup |
-| `-s` | Sort order: `position` or `alphabetical` |
-| `-B` | Disable `.bak` backup before first save |
-| `-G` | Disable `.gitignore` check |
-| `--show-config` | Show effective configuration and exit |
-| `--list-themes` | List available built-in themes and exit |
-| `-v` | Show version |
-| `-h` | Show help |
+See the [Usage](usage.md) page for all CLI flags and options.

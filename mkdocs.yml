@@ -45,6 +45,8 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Installation: installation.md
+  - Usage: usage.md
   - Features: features.md
   - Configuration: configuration.md
   - Keybindings: keybindings.md
+  - Changelog: changelog.md

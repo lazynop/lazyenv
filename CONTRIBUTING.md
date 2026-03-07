@@ -18,8 +18,16 @@ Found a bug or have a feature request? Open an issue on [GitLab](https://gitlab.
 ```bash
 just build        # build to bin/lazyenv
 just test         # run tests only
-just fix          # apply Go modernization fixes
 just check        # fmt + vet + tests (same as CI)
+```
+
+### Before submitting
+
+Run `just fix` to apply Go modernization fixes, then make sure `just check` passes with no errors:
+
+```bash
+just fix
+just check
 ```
 
 ## License
