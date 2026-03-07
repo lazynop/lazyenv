@@ -49,8 +49,8 @@ func findConfigFile(projectDir string) string {
 }
 
 func fileExists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
+	info, err := os.Stat(path)
+	return err == nil && !info.IsDir()
 }
 
 func merge(defaults Config, rawData []byte) (Config, []string) {

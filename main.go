@@ -25,6 +25,7 @@ var cli struct {
 	ShowAll    *bool            `short:"a" name:"show-all" help:"Show secrets in cleartext at startup."`
 	NoGitCheck *bool            `short:"G" name:"no-git-check" help:"Disable .gitignore check."`
 	NoBackup   *bool            `short:"B" name:"no-backup" help:"Disable .bak backup before first save."`
+	Sort       *string          `short:"s" name:"sort" help:"Sort order: position or alphabetical." enum:"position,alphabetical"`
 	ShowConfig bool             `name:"show-config" help:"Show effective configuration and exit."`
 	Version    kong.VersionFlag `short:"v" help:"Show version."`
 }
@@ -55,6 +56,9 @@ func main() {
 	}
 	if cli.NoBackup != nil {
 		cfg.NoBackup = *cli.NoBackup
+	}
+	if cli.Sort != nil {
+		cfg.Sort = *cli.Sort
 	}
 	if cli.NoGitCheck != nil {
 		cfg.NoGitCheck = *cli.NoGitCheck

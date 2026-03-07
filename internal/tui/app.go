@@ -55,14 +55,14 @@ type ConfigWarningMsg struct{ Warning string }
 type App struct {
 	config         config.Config
 	configWarnings []string
-	keys      KeyMap
-	theme     Theme
-	hasDarkBg bool
-	focus     Focus
-	mode      AppMode
-	width     int
-	height    int
-	ready     bool
+	keys           KeyMap
+	theme          Theme
+	hasDarkBg      bool
+	focus          Focus
+	mode           AppMode
+	width          int
+	height         int
+	ready          bool
 
 	fileList    FileListModel
 	varList     VarListModel
@@ -95,18 +95,18 @@ func NewApp(cfg config.Config, warnings []string) App {
 	return App{
 		config:         cfg,
 		configWarnings: warnings,
-		keys:          DefaultKeyMap(),
-		theme:         BuildTheme(true, cfg.Colors), // default to dark, will update on BackgroundColorMsg
-		hasDarkBg:     true,
-		focus:         FocusFiles,
-		mode:          ModeNormal,
-		fileList:      NewFileListModel(),
-		varList:       varList,
-		statusBar:     NewStatusBarModel(),
-		diffView:      NewDiffViewModel(cfg.Layout),
-		editor:        NewEditorModel(),
-		searchInput:   ti,
-		backedUpPaths: make(map[string]bool),
+		keys:           DefaultKeyMap(),
+		theme:          BuildTheme(true, cfg.Colors), // default to dark, will update on BackgroundColorMsg
+		hasDarkBg:      true,
+		focus:          FocusFiles,
+		mode:           ModeNormal,
+		fileList:       NewFileListModel(),
+		varList:        varList,
+		statusBar:      NewStatusBarModel(),
+		diffView:       NewDiffViewModel(cfg.Layout),
+		editor:         NewEditorModel(),
+		searchInput:    ti,
+		backedUpPaths:  make(map[string]bool),
 	}
 }
 
@@ -123,7 +123,7 @@ func (a App) Init() tea.Cmd {
 		tea.RequestBackgroundColor,
 	}
 	if len(a.configWarnings) > 0 {
-		warning := a.configWarnings[0]
+		warning := strings.Join(a.configWarnings, "; ")
 		cmds = append(cmds, func() tea.Msg {
 			return ConfigWarningMsg{Warning: warning}
 		})

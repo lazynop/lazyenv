@@ -41,14 +41,14 @@ type LayoutConfig struct {
 // ColorConfig holds semantic color overrides (hex strings).
 // Empty string means "use auto-detected dark/light default".
 type ColorConfig struct {
-	Primary  string `toml:"primary"`
-	Warning  string `toml:"warning"`
-	Error    string `toml:"error"`
-	Success  string `toml:"success"`
-	Muted    string `toml:"muted"`
-	Fg       string `toml:"fg"`
-	Border   string `toml:"border"`
-	CursorBg string `toml:"cursor-bg"`
+	Primary  string `toml:"primary,omitempty"`
+	Warning  string `toml:"warning,omitempty"`
+	Error    string `toml:"error,omitempty"`
+	Success  string `toml:"success,omitempty"`
+	Muted    string `toml:"muted,omitempty"`
+	Fg       string `toml:"fg,omitempty"`
+	Border   string `toml:"border,omitempty"`
+	CursorBg string `toml:"cursor-bg,omitempty"`
 }
 
 // DefaultConfig returns a Config with all default values.
