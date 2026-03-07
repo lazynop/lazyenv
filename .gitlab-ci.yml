@@ -42,6 +42,7 @@ pages:
   stage: deploy
   image: python:latest
   script:
+    - cp CHANGELOG.md docs/changelog.md
     - pip install zensical
     - zensical build --clean
   pages:
@@ -51,3 +52,4 @@ pages:
       changes:
         - docs/**/*
         - mkdocs.yml
+        - CHANGELOG.md

@@ -1,6 +1,7 @@
 .claude/
 .agents/
 .serena/
+.cache/
 site/
 public/
 bin/
@@ -10,5 +11,6 @@ dist/
 *.out
 
 CLAUDE.md
+docs/changelog.md
 coverage.out
 .lazyenvrc
