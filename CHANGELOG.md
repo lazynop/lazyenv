@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-03-07
+
+### Added
+- Configuration file support (`.lazyenvrc` in project root or `~/.config/lazyenv/config.toml`)
+- 15 built-in color themes (catppuccin, dracula, gruvbox, nord, tokyo-night, and more)
+- Theme background color support via Bubble Tea v2 `View.BackgroundColor`
+- `--list-themes` flag to list available built-in themes
+- `--no-theme-bg` flag and `no-theme-bg` config option to disable theme background
+- `--show-config` flag to display effective configuration
+- `-s` / `--sort` flag for sort order (position or alphabetical)
+- Configurable file detection patterns (`[files]` section in config)
+- Configurable layout dimensions (`[layout]` section in config)
+- Configurable color overrides (`[colors]` section in config)
+- Blocking error alert for invalid configuration (e.g. unknown theme)
+
+### Fixed
+- Config file search now uses current working directory instead of scan directory
+- ANSI color reset leaking in file list when using styled themes
+- Status bar text now uses theme colors for visibility on all backgrounds
+- Exclude `.bak` files from env file detection
+
+### Improved
+- Centralized configuration constants into dedicated config package
+- Extracted file detection patterns into configurable FileConfig
+- Themes organized in dedicated subpackage with one file per theme
+
 ## [0.2.0] - 2026-03-01
 
 ### Added
