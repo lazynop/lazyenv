@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2026-03-07
+
+### Added
+- Configurable marker colors for variable indicators (new, modified, deleted, duplicate, empty, placeholder)
+
+### Fixed
+- Next/prev diff navigation (`n`/`N`) not working in compare mode
+
+### Improved
+- Split monolithic `app.go` into focused files for better maintainability
+
 ## [0.3.0] - 2026-03-07
 
 ### Added
