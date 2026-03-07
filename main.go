@@ -64,8 +64,6 @@ func main() {
 		}
 	}
 
-	cfg.Warnings = warnings
-
 	if cli.ShowConfig {
 		enc := toml.NewEncoder(os.Stdout)
 		enc.SetIndentTables(true)
@@ -76,7 +74,7 @@ func main() {
 		return
 	}
 
-	app := tui.NewApp(cfg)
+	app := tui.NewApp(cfg, warnings)
 
 	p := tea.NewProgram(app)
 	if _, err := p.Run(); err != nil {

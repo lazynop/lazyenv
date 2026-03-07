@@ -53,7 +53,8 @@ type ConfigWarningMsg struct{ Warning string }
 
 // App is the main Bubble Tea model.
 type App struct {
-	config    config.Config
+	config         config.Config
+	configWarnings []string
 	keys      KeyMap
 	theme     Theme
 	hasDarkBg bool
@@ -81,20 +82,26 @@ type App struct {
 }
 
 // NewApp creates a new App model.
-func NewApp(cfg config.Config) App {
+func NewApp(cfg config.Config, warnings []string) App {
 	ti := textinput.New()
 	ti.Placeholder = "Search..."
 	ti.CharLimit = 100
 
+	varList := NewVarListModel(cfg.Layout)
+	if cfg.Sort == "alphabetical" {
+		varList.SortAlpha = true
+	}
+
 	return App{
-		config:        cfg,
+		config:         cfg,
+		configWarnings: warnings,
 		keys:          DefaultKeyMap(),
 		theme:         BuildTheme(true, cfg.Colors), // default to dark, will update on BackgroundColorMsg
 		hasDarkBg:     true,
 		focus:         FocusFiles,
 		mode:          ModeNormal,
 		fileList:      NewFileListModel(),
-		varList:       NewVarListModel(cfg.Layout),
+		varList:       varList,
 		statusBar:     NewStatusBarModel(),
 		diffView:      NewDiffViewModel(cfg.Layout),
 		editor:        NewEditorModel(),
@@ -115,8 +122,8 @@ func (a App) Init() tea.Cmd {
 		},
 		tea.RequestBackgroundColor,
 	}
-	if len(a.config.Warnings) > 0 {
-		warning := a.config.Warnings[0]
+	if len(a.configWarnings) > 0 {
+		warning := a.configWarnings[0]
 		cmds = append(cmds, func() tea.Msg {
 			return ConfigWarningMsg{Warning: warning}
 		})

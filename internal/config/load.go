@@ -54,14 +54,11 @@ func fileExists(path string) bool {
 }
 
 func merge(defaults Config, rawData []byte) (Config, []string) {
-	// Check for unknown keys first
-	if err := checkUnknownKeys(rawData); err != nil {
-		return defaults, []string{fmt.Sprintf("unknown key in config: %v", err)}
-	}
-
 	result := defaults
-	if err := toml.Unmarshal(rawData, &result); err != nil {
-		return defaults, []string{fmt.Sprintf("config parse error: %v", err)}
+	dec := toml.NewDecoder(bytes.NewReader(rawData))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&result); err != nil {
+		return defaults, []string{fmt.Sprintf("config error: %v", err)}
 	}
 
 	result.Dir = defaults.Dir
@@ -71,13 +68,6 @@ func merge(defaults Config, rawData []byte) (Config, []string) {
 	}
 
 	return result, nil
-}
-
-func checkUnknownKeys(data []byte) error {
-	var target Config
-	dec := toml.NewDecoder(bytes.NewReader(data))
-	dec.DisallowUnknownFields()
-	return dec.Decode(&target)
 }
 
 func validate(cfg Config) []string {

@@ -165,7 +165,7 @@ func TestQuitReturnsQuitCmd(t *testing.T) {
 }
 
 func TestViewNotReady(t *testing.T) {
-	app := NewApp(config.DefaultConfig())
+	app := NewApp(config.DefaultConfig(), nil)
 	// ready is false by default
 	view := app.View()
 	assert.Contains(t, view.Content, "Loading")

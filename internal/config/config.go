@@ -14,8 +14,6 @@ type Config struct {
 	Layout LayoutConfig `toml:"layout"`
 	Colors ColorConfig  `toml:"colors"`
 	Files  FileConfig   `toml:"files"`
-
-	Warnings []string `toml:"-"` // non-fatal config issues, displayed at startup
 }
 
 // FileConfig holds file detection patterns.

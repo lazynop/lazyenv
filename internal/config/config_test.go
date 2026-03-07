@@ -127,7 +127,7 @@ func TestLoadUnknownKey(t *testing.T) {
 	cfg, warnings, err := Load(dir)
 	require.NoError(t, err)
 	assert.Len(t, warnings, 1)
-	assert.Contains(t, warnings[0], "unknown")
+	assert.Contains(t, warnings[0], "config error")
 	assert.Equal(t, DefaultConfig(), cfg)
 }
 
