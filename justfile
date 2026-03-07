@@ -26,6 +26,10 @@ test-cover:
 vet:
     go vet ./...
 
+# Apply Go modernization fixes
+fix:
+    go fix ./...
+
 # Format code
 fmt:
     gofmt -w .

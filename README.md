@@ -4,6 +4,8 @@ TUI for managing `.env` files — written in Go with [Bubble Tea](https://github
 
 Browse, compare, edit and validate environment variables from your terminal.
 
+**[Documentation](https://lazyenv-4bb2c3.gitlab.io/)**
+
 ## Features
 
 - **Browse and edit** — two-panel layout with file list and variables, inline editing, add, delete

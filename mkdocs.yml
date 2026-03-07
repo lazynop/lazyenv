@@ -1,6 +1,6 @@
 site_name: lazyenv
 site_description: TUI for managing .env files
-site_url: https://traveltoaiur.gitlab.io/lazyenv
+site_url: https://lazyenv-4bb2c3.gitlab.io/
 site_dir: public
 
 repo_url: https://gitlab.com/traveltoaiur/lazyenv
