@@ -48,7 +48,10 @@ type Theme struct {
 
 	// Colors (for direct use)
 	ColorPrimary color.Color
+	ColorError   color.Color
+	ColorMuted   color.Color
 	ColorFg      color.Color
+	ColorBg      color.Color // nil when no theme bg; used by View.BackgroundColor
 	ColorBorder  color.Color
 }
 
@@ -71,6 +74,11 @@ func BuildTheme(isDark bool, colors config.ColorConfig) Theme {
 	colorFg := resolve(colors.Fg, "#1F2937", "#F8F8F2")
 	colorBorder := resolve(colors.Border, "#D1D5DB", "#44475A")
 	colorCursorBg := resolve(colors.CursorBg, "#E5E7EB", "#44475A")
+
+	var colorBg color.Color
+	if colors.Bg != "" {
+		colorBg = lipgloss.Color(colors.Bg)
+	}
 
 	return Theme{
 		FilePanel: lipgloss.NewStyle().
@@ -144,7 +152,10 @@ func BuildTheme(isDark bool, colors config.ColorConfig) Theme {
 			Foreground(colorMuted),
 
 		ColorPrimary: colorPrimary,
+		ColorError:   colorError,
+		ColorMuted:   colorMuted,
 		ColorFg:      colorFg,
+		ColorBg:      colorBg,
 		ColorBorder:  colorBorder,
 	}
 }

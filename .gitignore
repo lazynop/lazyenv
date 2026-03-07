@@ -10,3 +10,4 @@ dist/
 
 CLAUDE.md
 coverage.out
+.lazyenvrc

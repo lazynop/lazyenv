@@ -211,6 +211,30 @@ func TestLoadThemePreset(t *testing.T) {
 	assert.Equal(t, "dracula", cfg.Theme)
 	assert.Equal(t, "#BD93F9", cfg.Colors.Primary)
 	assert.Equal(t, "#FF5555", cfg.Colors.Error)
+	assert.Equal(t, "#282A36", cfg.Colors.Bg)
+}
+
+func TestLoadThemeNoThemeBg(t *testing.T) {
+	dir := t.TempDir()
+	content := []byte("theme = \"dracula\"\nno-theme-bg = true\n")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
+
+	cfg, warnings, err := Load(dir)
+	require.NoError(t, err)
+	assert.Empty(t, warnings)
+	assert.Equal(t, "#BD93F9", cfg.Colors.Primary, "other colors still resolved")
+	assert.Empty(t, cfg.Colors.Bg, "bg cleared by no-theme-bg")
+}
+
+func TestLoadBgColorOverride(t *testing.T) {
+	dir := t.TempDir()
+	content := []byte("[colors]\nbg = \"#111111\"\n")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
+
+	cfg, warnings, err := Load(dir)
+	require.NoError(t, err)
+	assert.Empty(t, warnings)
+	assert.Equal(t, "#111111", cfg.Colors.Bg)
 }
 
 func TestLoadThemeWithOverride(t *testing.T) {
@@ -234,6 +258,7 @@ func TestLoadUnknownTheme(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, warnings, 1)
 	assert.Contains(t, warnings[0], "unknown theme")
+	assert.Contains(t, warnings[0], "--list-themes")
 	assert.Equal(t, DefaultConfig(), cfg)
 }
 
@@ -262,6 +287,7 @@ func TestAllThemesHaveAllColors(t *testing.T) {
 		assert.NotEmpty(t, colors.Success, "%s: success", name)
 		assert.NotEmpty(t, colors.Muted, "%s: muted", name)
 		assert.NotEmpty(t, colors.Fg, "%s: fg", name)
+		assert.NotEmpty(t, colors.Bg, "%s: bg", name)
 		assert.NotEmpty(t, colors.Border, "%s: border", name)
 		assert.NotEmpty(t, colors.CursorBg, "%s: cursor-bg", name)
 	}

@@ -29,6 +29,7 @@ const (
 	ModeSearching
 	ModeMatrix
 	ModeMatrixEditing
+	ModeConfigError
 )
 
 // Focus represents which panel has focus.
@@ -71,6 +72,9 @@ type App struct {
 	editor      EditorModel
 	searchInput textinput.Model
 	matrixView  MatrixModel
+
+	// Config error shown as blocking alert
+	configError string
 
 	// Backup state: tracks which files have been backed up this session
 	backedUpPaths map[string]bool
@@ -150,8 +154,9 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, nil
 
 	case ConfigWarningMsg:
-		a.statusBar.SetMessage("Config: " + msg.Warning)
-		return a, clearMessageAfter(a.config.Layout.ErrorMessageTimeout)
+		a.configError = msg.Warning
+		a.mode = ModeConfigError
+		return a, nil
 
 	case FilesLoadedMsg:
 		if msg.Err != nil {
@@ -197,6 +202,8 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a.handleMatrixKey(msg)
 	case ModeMatrixEditing:
 		return a.handleMatrixEditingKey(msg)
+	case ModeConfigError:
+		return a, tea.Quit
 	}
 
 	// Normal mode
@@ -769,6 +776,8 @@ func (a App) View() tea.View {
 	var content string
 
 	switch a.mode {
+	case ModeConfigError:
+		content = a.viewConfigError()
 	case ModeHelp:
 		content = a.viewHelp()
 	case ModeComparing:
@@ -823,6 +832,7 @@ func (a App) View() tea.View {
 
 	view := tea.NewView(content)
 	view.AltScreen = true
+	view.BackgroundColor = a.theme.ColorBg
 	return view
 }
 
@@ -847,6 +857,26 @@ func clearMessageAfter(d time.Duration) tea.Cmd {
 	return tea.Tick(d, func(time.Time) tea.Msg {
 		return ClearMessageMsg{}
 	})
+}
+
+func (a App) viewConfigError() string {
+	box := lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(a.theme.ColorError).
+		Padding(1, 3).
+		Align(lipgloss.Center)
+
+	title := a.theme.GitWarning.Render("Configuration Error")
+
+	msg := a.theme.NormalItem.Render(a.configError)
+
+	hint := a.theme.MutedItem.Render("Press any key to exit")
+
+	alert := box.Render(
+		lipgloss.JoinVertical(lipgloss.Center, title, "", msg, "", hint),
+	)
+
+	return lipgloss.Place(a.width, a.height, lipgloss.Center, lipgloss.Center, alert)
 }
 
 func (a App) viewHelp() string {

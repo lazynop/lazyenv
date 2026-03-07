@@ -25,8 +25,10 @@ var cli struct {
 	ShowAll    *bool            `short:"a" name:"show-all" help:"Show secrets in cleartext at startup."`
 	NoGitCheck *bool            `short:"G" name:"no-git-check" help:"Disable .gitignore check."`
 	NoBackup   *bool            `short:"B" name:"no-backup" help:"Disable .bak backup before first save."`
+	NoThemeBg  *bool            `name:"no-theme-bg" help:"Disable theme background color."`
 	Sort       *string          `short:"s" name:"sort" help:"Sort order: position or alphabetical." enum:"position,alphabetical"`
 	ShowConfig bool             `name:"show-config" help:"Show effective configuration and exit."`
+	ListThemes bool             `name:"list-themes" help:"List available built-in themes and exit."`
 	Version    kong.VersionFlag `short:"v" help:"Show version."`
 }
 
@@ -57,6 +59,12 @@ func main() {
 	if cli.NoBackup != nil {
 		cfg.NoBackup = *cli.NoBackup
 	}
+	if cli.NoThemeBg != nil {
+		cfg.NoThemeBg = *cli.NoThemeBg
+		if cfg.NoThemeBg {
+			cfg.Colors.Bg = ""
+		}
+	}
 	if cli.Sort != nil {
 		cfg.Sort = *cli.Sort
 	}
@@ -66,6 +74,13 @@ func main() {
 		if _, err := exec.LookPath("git"); err != nil {
 			cfg.NoGitCheck = true
 		}
+	}
+
+	if cli.ListThemes {
+		for _, name := range config.ThemeNames() {
+			fmt.Println(name)
+		}
+		return
 	}
 
 	if cli.ShowConfig {

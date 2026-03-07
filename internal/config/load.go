@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	toml "github.com/pelletier/go-toml/v2"
 )
@@ -69,6 +68,9 @@ func merge(defaults Config, rawData []byte) (Config, []string) {
 	}
 
 	result.Colors = resolveColors(result.Theme, result.Colors)
+	if result.NoThemeBg {
+		result.Colors.Bg = ""
+	}
 	return result, nil
 }
 
@@ -77,7 +79,7 @@ func validate(cfg Config) []string {
 
 	if cfg.Theme != "" {
 		if _, ok := LookupTheme(cfg.Theme); !ok {
-			warns = append(warns, fmt.Sprintf("unknown theme: %q (available: %s)", cfg.Theme, strings.Join(ThemeNames(), ", ")))
+			warns = append(warns, fmt.Sprintf("unknown theme %q (see --list-themes)", cfg.Theme))
 		}
 	}
 

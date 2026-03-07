@@ -58,6 +58,7 @@ lazyenv [path] [flags]
 | `-B` | Disable `.bak` backup before first save |
 | `-G` | Disable `.gitignore` check |
 | `--show-config` | Show effective configuration and exit |
+| `--list-themes` | List available built-in themes and exit |
 | `-v` | Show version |
 | `-h` | Show help |
 

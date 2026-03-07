@@ -45,6 +45,13 @@ clean:
 release-snapshot:
     goreleaser release --snapshot --clean
 
+# Run with a built-in theme by name (e.g. just try-theme tokyo-night)
+try-theme name:
+    @echo 'theme = "{{name}}"' > .lazyenvrc
+    @echo "Using theme: {{name}}"
+    -go run . env
+    @rm -f .lazyenvrc
+
 # Run with an example config (copies it as .lazyenvrc, runs, then removes it)
 try-config name:
     @cp examples/config/{{name}}.toml .lazyenvrc

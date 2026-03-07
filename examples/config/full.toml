@@ -42,5 +42,6 @@ diff-padding = 10
 # success = "#50FA7B"
 # muted = "#6272A4"
 # fg = "#F8F8F2"
+# bg = "#282A36"
 # border = "#44475A"
 # cursor-bg = "#44475A"
