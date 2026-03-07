@@ -8,6 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"gitlab.com/traveltoaiur/lazyenv/internal/config"
 )
 
 func initGitRepo(t *testing.T, dir string) {
@@ -26,7 +28,7 @@ func TestCheckGitIgnoreMarksUncoveredFiles(t *testing.T) {
 	})
 	initGitRepo(t, dir)
 
-	files, err := ScanDir(dir, false)
+	files, err := ScanDir(dir, false, config.DefaultConfig().Files)
 	require.NoError(t, err)
 	require.Len(t, files, 2)
 
@@ -50,7 +52,7 @@ func TestCheckGitIgnoreAllIgnored(t *testing.T) {
 	})
 	initGitRepo(t, dir)
 
-	files, err := ScanDir(dir, false)
+	files, err := ScanDir(dir, false, config.DefaultConfig().Files)
 	require.NoError(t, err)
 
 	CheckGitIgnore(files)
@@ -66,7 +68,7 @@ func TestCheckGitIgnoreNotAGitRepo(t *testing.T) {
 	})
 	// NOT a git repo — no git init
 
-	files, err := ScanDir(dir, false)
+	files, err := ScanDir(dir, false, config.DefaultConfig().Files)
 	require.NoError(t, err)
 
 	CheckGitIgnore(files)
@@ -91,7 +93,7 @@ func TestCheckGitIgnoreWildcard(t *testing.T) {
 	})
 	initGitRepo(t, dir)
 
-	files, err := ScanDir(dir, false)
+	files, err := ScanDir(dir, false, config.DefaultConfig().Files)
 	require.NoError(t, err)
 	require.Len(t, files, 3)
 
@@ -110,7 +112,7 @@ func TestCheckGitIgnoreSubdirectory(t *testing.T) {
 	})
 	initGitRepo(t, dir)
 
-	files, err := ScanDir(dir, true)
+	files, err := ScanDir(dir, true, config.DefaultConfig().Files)
 	require.NoError(t, err)
 	require.Len(t, files, 2)
 

@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"gitlab.com/traveltoaiur/lazyenv/internal/config"
 )
 
 func setupScanDir(t *testing.T, files map[string]string) string {
@@ -28,7 +30,7 @@ func TestScanDirFindsEnvFiles(t *testing.T) {
 		"not-an-env.txt": "ignored\n",
 	})
 
-	files, err := ScanDir(dir, false)
+	files, err := ScanDir(dir, false, config.DefaultConfig().Files)
 
 	require.NoError(t, err)
 	require.Len(t, files, 3)
@@ -48,7 +50,7 @@ func TestScanDirNonRecursive(t *testing.T) {
 		"sub/.env": "SUB=val\n",
 	})
 
-	files, err := ScanDir(dir, false)
+	files, err := ScanDir(dir, false, config.DefaultConfig().Files)
 
 	require.NoError(t, err)
 	require.Len(t, files, 1, "non-recursive should only find root .env")
@@ -61,7 +63,7 @@ func TestScanDirRecursive(t *testing.T) {
 		"sub/deep/.env": "DEEP=val\n",
 	})
 
-	files, err := ScanDir(dir, true)
+	files, err := ScanDir(dir, true, config.DefaultConfig().Files)
 
 	require.NoError(t, err)
 	require.Len(t, files, 3)
@@ -73,7 +75,7 @@ func TestScanDirSkipsNodeModules(t *testing.T) {
 		"node_modules/pkg/.env": "SKIP=me\n",
 	})
 
-	files, err := ScanDir(dir, true)
+	files, err := ScanDir(dir, true, config.DefaultConfig().Files)
 
 	require.NoError(t, err)
 	require.Len(t, files, 1)
@@ -85,7 +87,7 @@ func TestScanDirSkipsHiddenDirs(t *testing.T) {
 		".hidden/.env": "SKIP=me\n",
 	})
 
-	files, err := ScanDir(dir, true)
+	files, err := ScanDir(dir, true, config.DefaultConfig().Files)
 
 	require.NoError(t, err)
 	require.Len(t, files, 1)
@@ -99,7 +101,7 @@ func TestScanDirSortsByDepthThenName(t *testing.T) {
 		".env":           "D=4\n",
 	})
 
-	files, err := ScanDir(dir, true)
+	files, err := ScanDir(dir, true, config.DefaultConfig().Files)
 
 	require.NoError(t, err)
 	require.Len(t, files, 4)
@@ -111,7 +113,7 @@ func TestScanDirSortsByDepthThenName(t *testing.T) {
 func TestScanDirEmptyDir(t *testing.T) {
 	dir := t.TempDir()
 
-	files, err := ScanDir(dir, false)
+	files, err := ScanDir(dir, false, config.DefaultConfig().Files)
 
 	require.NoError(t, err)
 	assert.Empty(t, files)
@@ -129,10 +131,10 @@ func TestScanDirDotPathRecursive(t *testing.T) {
 	require.NoError(t, os.Chdir(dir))
 	t.Cleanup(func() { os.Chdir(origDir) })
 
-	files, err := ScanDir(".", true)
+	files, err := ScanDir(".", true, config.DefaultConfig().Files)
 
 	require.NoError(t, err)
-	require.Len(t, files, 2, `ScanDir(".", true) should find files recursively`)
+	require.Len(t, files, 2, `ScanDir(".", true, config.DefaultConfig().Files) should find files recursively`)
 }
 
 func TestIsEnvFile(t *testing.T) {
@@ -152,6 +154,41 @@ func TestIsEnvFile(t *testing.T) {
 		{".env.local.bak", false},
 	}
 	for _, tt := range tests {
-		assert.Equal(t, tt.expected, isEnvFile(tt.name), "isEnvFile(%q)", tt.name)
+		assert.Equal(t, tt.expected, isEnvFile(tt.name, config.DefaultConfig().Files), "isEnvFile(%q)", tt.name)
 	}
+}
+
+func TestIsEnvFileCustomPatterns(t *testing.T) {
+	// Custom include: only "*.conf" files
+	cfg := config.FileConfig{
+		Include: []string{"*.conf"},
+		Exclude: []string{"secret.*"},
+	}
+
+	assert.True(t, isEnvFile("app.conf", cfg))
+	assert.False(t, isEnvFile(".env", cfg), "should not match without .env in include")
+	assert.False(t, isEnvFile("secret.conf", cfg), "should be excluded by secret.* pattern")
+}
+
+func TestIsEnvFileEmptyPatterns(t *testing.T) {
+	cfg := config.FileConfig{}
+	assert.False(t, isEnvFile(".env", cfg), "empty include should match nothing")
+}
+
+func TestScanDirCustomExclude(t *testing.T) {
+	dir := setupScanDir(t, map[string]string{
+		".env":       "FOO=bar\n",
+		".env.local": "LOCAL=1\n",
+	})
+
+	// Exclude .env.local specifically
+	cfg := config.FileConfig{
+		Include: []string{".env", ".env.*", "*.env"},
+		Exclude: []string{".env.local"},
+	}
+
+	files, err := ScanDir(dir, false, cfg)
+	require.NoError(t, err)
+	require.Len(t, files, 1)
+	assert.Equal(t, ".env", files[0].Name)
 }

@@ -104,7 +104,7 @@ func (a App) Init() tea.Cmd {
 	noGitCheck := a.config.NoGitCheck
 	return tea.Batch(
 		func() tea.Msg {
-			files, err := ScanDir(a.config.Dir, a.config.Recursive)
+			files, err := ScanDir(a.config.Dir, a.config.Recursive, a.config.Files)
 			if err == nil && !noGitCheck {
 				CheckGitIgnore(files)
 			}

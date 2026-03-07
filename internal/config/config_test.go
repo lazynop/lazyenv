@@ -33,6 +33,13 @@ func TestDefaultLayoutValues(t *testing.T) {
 	assert.Equal(t, 3*time.Second, l.ErrorMessageTimeout)
 }
 
+func TestDefaultFilePatterns(t *testing.T) {
+	f := DefaultConfig().Files
+
+	assert.Equal(t, []string{".env", ".env.*", "*.env"}, f.Include)
+	assert.Equal(t, []string{"*.bak"}, f.Exclude)
+}
+
 func TestDefaultColorsEmpty(t *testing.T) {
 	c := DefaultConfig().Colors
 

@@ -7,12 +7,13 @@ import (
 	"sort"
 	"strings"
 
+	"gitlab.com/traveltoaiur/lazyenv/internal/config"
 	"gitlab.com/traveltoaiur/lazyenv/internal/model"
 	"gitlab.com/traveltoaiur/lazyenv/internal/parser"
 )
 
 // ScanDir finds and parses all .env files in the given directory.
-func ScanDir(path string, recursive bool) ([]*model.EnvFile, error) {
+func ScanDir(path string, recursive bool, fileCfg config.FileConfig) ([]*model.EnvFile, error) {
 	var files []*model.EnvFile
 
 	walkFn := func(p string, d os.DirEntry, err error) error {
@@ -35,7 +36,7 @@ func ScanDir(path string, recursive bool) ([]*model.EnvFile, error) {
 			return nil
 		}
 
-		if isEnvFile(d.Name()) {
+		if isEnvFile(d.Name(), fileCfg) {
 			ef, err := parser.ParseFile(p)
 			if err != nil {
 				return nil // skip unparseable files
@@ -62,22 +63,18 @@ func ScanDir(path string, recursive bool) ([]*model.EnvFile, error) {
 	return files, nil
 }
 
-func isEnvFile(name string) bool {
-	// Skip backup files
-	if strings.HasSuffix(name, ".bak") {
-		return false
+func isEnvFile(name string, cfg config.FileConfig) bool {
+	// Check exclude patterns first
+	for _, pat := range cfg.Exclude {
+		if matched, _ := filepath.Match(pat, name); matched {
+			return false
+		}
 	}
-	// Exact match: .env
-	if name == ".env" {
-		return true
-	}
-	// Prefix match: .env.* (e.g. .env.local, .env.production)
-	if strings.HasPrefix(name, ".env.") {
-		return true
-	}
-	// Suffix match: *.env (e.g. app.env, prod.env)
-	if strings.HasSuffix(name, ".env") {
-		return true
+	// Check include patterns
+	for _, pat := range cfg.Include {
+		if matched, _ := filepath.Match(pat, name); matched {
+			return true
+		}
 	}
 	return false
 }

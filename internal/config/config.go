@@ -13,6 +13,13 @@ type Config struct {
 
 	Layout LayoutConfig
 	Colors ColorConfig
+	Files  FileConfig
+}
+
+// FileConfig holds file detection patterns.
+type FileConfig struct {
+	Include []string // glob patterns to include (e.g. ".env", ".env.*", "*.env")
+	Exclude []string // glob patterns to exclude (e.g. "*.bak")
 }
 
 // LayoutConfig holds layout/sizing constants used by TUI components.
@@ -60,5 +67,9 @@ func DefaultConfig() Config {
 			ErrorMessageTimeout:  3 * time.Second,
 		},
 		// Colors: all empty = use theme auto-detection
+		Files: FileConfig{
+			Include: []string{".env", ".env.*", "*.env"},
+			Exclude: []string{"*.bak"},
+		},
 	}
 }
