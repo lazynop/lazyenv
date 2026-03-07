@@ -10,7 +10,7 @@ type Config struct {
 	NoGitCheck bool   `toml:"no-git-check"`
 	NoBackup   bool   `toml:"no-backup"`
 	NoThemeBg  bool   `toml:"no-theme-bg"`
-	Sort       string `toml:"sort"`  // "position" | "alphabetical"
+	Sort       string `toml:"sort"`            // "position" | "alphabetical"
 	Theme      string `toml:"theme,omitempty"` // built-in theme name (e.g. "dracula", "nord")
 
 	Layout LayoutConfig `toml:"layout"`
