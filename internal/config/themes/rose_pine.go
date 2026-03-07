@@ -12,4 +12,7 @@ var rosePine = Colors{
 	Bg:       "#191724", // base
 	Border:   "#26233A", // highlight low
 	CursorBg: "#26233A",
+	Modified: "#F6C177", // gold
+	Added:    "#9CCFD8", // foam
+	Deleted:  "#EB6F92", // love
 }

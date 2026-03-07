@@ -12,4 +12,7 @@ var gruvboxDark = Colors{
 	Bg:       "#282828", // bg0
 	Border:   "#504945", // bg2
 	CursorBg: "#504945",
+	Modified: "#FABD2F", // bright yellow (cleaner than orange for markers)
+	Added:    "#B8BB26", // green
+	Deleted:  "#FB4934", // red
 }

@@ -12,4 +12,7 @@ var kanagawa = Colors{
 	Bg:       "#1F1F28", // sumi ink
 	Border:   "#363646", // sumi ink
 	CursorBg: "#363646",
+	Modified: "#DCA561", // carp yellow (warmer, more visible than surimi orange)
+	Added:    "#76946A", // autumn green
+	Deleted:  "#C34043", // autumn red
 }

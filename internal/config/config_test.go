@@ -264,7 +264,7 @@ func TestLoadUnknownTheme(t *testing.T) {
 
 func TestThemeNames(t *testing.T) {
 	names := ThemeNames()
-	assert.Len(t, names, 15)
+	assert.Len(t, names, 17)
 	assert.Contains(t, names, "dracula")
 	assert.Contains(t, names, "catppuccin-mocha")
 	assert.Contains(t, names, "nord")
@@ -287,9 +287,14 @@ func TestAllThemesHaveAllColors(t *testing.T) {
 		assert.NotEmpty(t, colors.Success, "%s: success", name)
 		assert.NotEmpty(t, colors.Muted, "%s: muted", name)
 		assert.NotEmpty(t, colors.Fg, "%s: fg", name)
-		assert.NotEmpty(t, colors.Bg, "%s: bg", name)
+		if name != "default-dark" && name != "default-light" {
+			assert.NotEmpty(t, colors.Bg, "%s: bg", name)
+		}
 		assert.NotEmpty(t, colors.Border, "%s: border", name)
 		assert.NotEmpty(t, colors.CursorBg, "%s: cursor-bg", name)
+		assert.NotEmpty(t, colors.Modified, "%s: modified", name)
+		assert.NotEmpty(t, colors.Added, "%s: added", name)
+		assert.NotEmpty(t, colors.Deleted, "%s: deleted", name)
 	}
 }
 
@@ -313,4 +318,7 @@ func TestDefaultColorsEmpty(t *testing.T) {
 	assert.Empty(t, c.Fg)
 	assert.Empty(t, c.Border)
 	assert.Empty(t, c.CursorBg)
+	assert.Empty(t, c.Modified)
+	assert.Empty(t, c.Added)
+	assert.Empty(t, c.Deleted)
 }

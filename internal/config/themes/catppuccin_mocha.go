@@ -12,4 +12,7 @@ var catppuccinMocha = Colors{
 	Bg:       "#1E1E2E", // base
 	Border:   "#45475A", // surface0
 	CursorBg: "#45475A",
+	Modified: "#F9E2AF", // yellow (softer than peach for inline markers)
+	Added:    "#A6E3A1", // green
+	Deleted:  "#F38BA8", // red
 }

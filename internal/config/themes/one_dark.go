@@ -12,4 +12,7 @@ var oneDark = Colors{
 	Bg:       "#282C34", // background
 	Border:   "#3E4451", // selection
 	CursorBg: "#3E4451",
+	Modified: "#E5C07B", // yellow
+	Added:    "#98C379", // green
+	Deleted:  "#E06C75", // red
 }

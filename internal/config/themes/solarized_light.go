@@ -12,4 +12,7 @@ var solarizedLight = Colors{
 	Bg:       "#FDF6E3", // base3
 	Border:   "#EEE8D5", // base2
 	CursorBg: "#EEE8D5",
+	Modified: "#B58900", // yellow
+	Added:    "#859900", // green
+	Deleted:  "#DC322F", // red
 }

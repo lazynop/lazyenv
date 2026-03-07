@@ -12,4 +12,7 @@ var cyberpunk = Colors{
 	Bg:       "#0D0221", // void
 	Border:   "#281450", // deep purple
 	CursorBg: "#281450",
+	Modified: "#FFE600", // yellow
+	Added:    "#00FF64", // green
+	Deleted:  "#FF003C", // red
 }

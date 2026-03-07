@@ -52,6 +52,9 @@ type ColorConfig struct {
 	Bg       string `toml:"bg,omitempty"`
 	Border   string `toml:"border,omitempty"`
 	CursorBg string `toml:"cursor-bg,omitempty"`
+	Modified string `toml:"modified,omitempty"`
+	Added    string `toml:"added,omitempty"`
+	Deleted  string `toml:"deleted,omitempty"`
 }
 
 // DefaultConfig returns a Config with all default values.

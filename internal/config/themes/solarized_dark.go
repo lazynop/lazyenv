@@ -12,4 +12,7 @@ var solarizedDark = Colors{
 	Bg:       "#002B36", // base03
 	Border:   "#073642", // base02
 	CursorBg: "#073642",
+	Modified: "#B58900", // yellow
+	Added:    "#859900", // green
+	Deleted:  "#DC322F", // red
 }

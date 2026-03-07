@@ -75,6 +75,10 @@ func BuildTheme(isDark bool, colors config.ColorConfig) Theme {
 	colorBorder := resolve(colors.Border, "#D1D5DB", "#44475A")
 	colorCursorBg := resolve(colors.CursorBg, "#E5E7EB", "#44475A")
 
+	colorModified := resolve(colors.Modified, "#D97706", "#FFB86C")
+	colorAdded := resolve(colors.Added, "#059669", "#50FA7B")
+	colorDeleted := resolve(colors.Deleted, "#DC2626", "#FF5555")
+
 	var colorBg color.Color
 	if colors.Bg != "" {
 		colorBg = lipgloss.Color(colors.Bg)
@@ -110,11 +114,11 @@ func BuildTheme(isDark bool, colors config.ColorConfig) Theme {
 		MutedItem: lipgloss.NewStyle().
 			Foreground(colorMuted),
 		ModifiedMarker: lipgloss.NewStyle().
-			Foreground(colorWarning),
+			Foreground(colorModified),
 		AddedMarker: lipgloss.NewStyle().
-			Foreground(colorSuccess),
+			Foreground(colorAdded),
 		DeletedMarker: lipgloss.NewStyle().
-			Foreground(colorError),
+			Foreground(colorDeleted),
 		GitWarning: lipgloss.NewStyle().
 			Foreground(colorError).
 			Bold(true),

@@ -12,4 +12,7 @@ var tokyoNight = Colors{
 	Bg:       "#1A1B26", // background
 	Border:   "#292E42", // selection
 	CursorBg: "#292E42",
+	Modified: "#E0AF68", // yellow
+	Added:    "#9ECE6A", // green
+	Deleted:  "#F7768E", // red
 }

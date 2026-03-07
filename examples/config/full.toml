@@ -10,10 +10,10 @@ no-git-check = false
 sort = "position"                 # "position" | "alphabetical"
 
 # Built-in theme preset. Available: catppuccin-latte, catppuccin-mocha,
-# cyberpunk, dracula, everforest, gruvbox-dark, gruvbox-light, kanagawa,
-# monokai-pro, nord, one-dark, rose-pine, solarized-dark, solarized-light,
-# tokyo-night.
-# Omit to use auto-detected dark/light defaults.
+# cyberpunk, default-dark, default-light, dracula, everforest, gruvbox-dark,
+# gruvbox-light, kanagawa, monokai-pro, nord, one-dark, rose-pine,
+# solarized-dark, solarized-light, tokyo-night.
+# Omit to use auto-detected dark/light defaults (same as default-dark/light).
 # theme = "dracula"
 
 # File detection patterns (glob syntax).
@@ -45,3 +45,6 @@ diff-padding = 10
 # bg = "#282A36"
 # border = "#44475A"
 # cursor-bg = "#44475A"
+# modified = "#FFB86C"
+# added = "#50FA7B"
+# deleted = "#FF5555"

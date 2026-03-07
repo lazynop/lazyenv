@@ -12,4 +12,7 @@ var gruvboxLight = Colors{
 	Bg:       "#FBF1C7", // bg0
 	Border:   "#D5C4A1", // bg2
 	CursorBg: "#D5C4A1",
+	Modified: "#B57614", // yellow (more visible than dark orange on light bg)
+	Added:    "#79740E", // green
+	Deleted:  "#9D0006", // red
 }

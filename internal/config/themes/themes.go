@@ -13,6 +13,9 @@ type Colors struct {
 	Bg       string
 	Border   string
 	CursorBg string
+	Modified string
+	Added    string
+	Deleted  string
 }
 
 // registry maps theme names to their color palettes.
@@ -20,6 +23,8 @@ var registry = map[string]Colors{
 	"catppuccin-latte": catppuccinLatte,
 	"catppuccin-mocha": catppuccinMocha,
 	"cyberpunk":        cyberpunk,
+	"default-dark":     defaultDark,
+	"default-light":    defaultLight,
 	"dracula":          dracula,
 	"everforest":       everforest,
 	"gruvbox-dark":     gruvboxDark,

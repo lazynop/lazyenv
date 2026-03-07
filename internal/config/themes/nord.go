@@ -12,4 +12,7 @@ var nord = Colors{
 	Bg:       "#2E3440", // nord0 — polar night
 	Border:   "#3B4252", // nord1 — polar night
 	CursorBg: "#3B4252",
+	Modified: "#EBCB8B", // aurora yellow
+	Added:    "#A3BE8C", // aurora green
+	Deleted:  "#BF616A", // aurora red
 }

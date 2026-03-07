@@ -18,6 +18,9 @@ func LookupTheme(name string) (ColorConfig, bool) {
 		Bg:       t.Bg,
 		Border:   t.Border,
 		CursorBg: t.CursorBg,
+		Modified: t.Modified,
+		Added:    t.Added,
+		Deleted:  t.Deleted,
 	}, true
 }
 
@@ -59,6 +62,15 @@ func resolveColors(theme string, colors ColorConfig) ColorConfig {
 	}
 	if colors.CursorBg != "" {
 		base.CursorBg = colors.CursorBg
+	}
+	if colors.Modified != "" {
+		base.Modified = colors.Modified
+	}
+	if colors.Added != "" {
+		base.Added = colors.Added
+	}
+	if colors.Deleted != "" {
+		base.Deleted = colors.Deleted
 	}
 	return base
 }

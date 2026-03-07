@@ -12,4 +12,7 @@ var catppuccinLatte = Colors{
 	Bg:       "#EFF1F5", // base
 	Border:   "#CCD0DA", // surface0
 	CursorBg: "#CCD0DA",
+	Modified: "#DF8E1D", // yellow
+	Added:    "#40A02B", // green
+	Deleted:  "#D20F39", // red
 }

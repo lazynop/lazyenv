@@ -12,4 +12,7 @@ var everforest = Colors{
 	Bg:       "#2F3537", // bg0
 	Border:   "#444E4F", // bg visual
 	CursorBg: "#444E4F",
+	Modified: "#D9BB80", // warm yellow (slightly more saturated than warning)
+	Added:    "#83C092", // aqua
+	Deleted:  "#E67E80", // red
 }
