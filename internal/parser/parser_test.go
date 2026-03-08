@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/lazynop/lazyenv/internal/model"
 )
 
 func TestBasicKeyValue(t *testing.T) {

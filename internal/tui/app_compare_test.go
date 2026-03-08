@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/stretchr/testify/assert"
 	"github.com/lazynop/lazyenv/internal/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCompareExitRestoresCursorToSelected(t *testing.T) {
