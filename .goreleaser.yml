@@ -58,7 +58,7 @@ snapshot:
   version_template: "{{ .Version }}-next"
 
 changelog:
-  use: gitlab
+  use: github
   sort: asc
   groups:
     - title: Features
@@ -79,6 +79,6 @@ changelog:
       - "^ci:"
 
 release:
-  gitlab:
-    owner: traveltoaiur
+  github:
+    owner: lazynop
     name: lazyenv

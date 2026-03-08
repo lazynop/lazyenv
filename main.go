@@ -9,8 +9,8 @@ import (
 	"github.com/alecthomas/kong"
 	toml "github.com/pelletier/go-toml/v2"
 
-	"gitlab.com/traveltoaiur/lazyenv/internal/config"
-	"gitlab.com/traveltoaiur/lazyenv/internal/tui"
+	"github.com/lazynop/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/tui"
 )
 
 var (

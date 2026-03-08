@@ -32,53 +32,6 @@ lazyenv ./services -r
 | `-v` | `--version`      | Show version, commit, and build date.                                                                       |
 | `-h` | `--help`         | Show help.                                                                                                  |
 
-## Flag details
-
-### `-r` / `--recursive`
-
-By default lazyenv only looks for `.env` files in the given directory. With `-r` it walks subdirectories too. Equivalent to `recursive = true` in the [config file](configuration.md).
-
-### `-a` / `--show-all`
-
-Sensitive keys (passwords, tokens, secrets) are masked with `****` by default. This flag reveals them at startup. You can still toggle visibility at runtime with `Ctrl+S`.
-
-### `-s` / `--sort`
-
-Controls the initial sort order of the variable list:
-
-- `position` — preserves the order variables appear in the file (default).
-- `alphabetical` — sorts variables by key name.
-
-Toggleable at runtime with `o`.
-
-### `-B` / `--no-backup`
-
-Skips creating a `.bak` copy of a file before its first save in the session. Useful if your workflow already has backups or version control.
-
-### `-G` / `--no-git-check`
-
-Disables the warning shown when `.env` files are not covered by `.gitignore`. If `git` is not installed, this check is automatically disabled.
-
-### `--no-theme-bg`
-
-Themes include a background color by default. This flag strips it, so the terminal's native background (including transparency) is preserved.
-
-### `--show-config`
-
-Prints the effective configuration as TOML (after merging defaults, config file, and CLI flags) and exits. Useful for debugging configuration issues.
-
-```bash
-lazyenv --show-config
-```
-
-### `--list-themes`
-
-Prints all available built-in theme names, one per line, and exits.
-
-```bash
-lazyenv --list-themes
-```
-
 ## Precedence
 
 Configuration is resolved in this order, from lowest to highest priority:

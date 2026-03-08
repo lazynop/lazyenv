@@ -7,9 +7,9 @@ import (
 	"sort"
 	"strings"
 
-	"gitlab.com/traveltoaiur/lazyenv/internal/config"
-	"gitlab.com/traveltoaiur/lazyenv/internal/model"
-	"gitlab.com/traveltoaiur/lazyenv/internal/parser"
+	"github.com/lazynop/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 // ScanDir finds and parses all .env files in the given directory.

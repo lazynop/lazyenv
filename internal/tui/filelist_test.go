@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"gitlab.com/traveltoaiur/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/config"
 )
 
 func TestFileListMoveUp(t *testing.T) {

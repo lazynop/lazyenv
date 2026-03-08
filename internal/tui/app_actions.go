@@ -3,7 +3,7 @@ package tui
 import (
 	tea "charm.land/bubbletea/v2"
 
-	"gitlab.com/traveltoaiur/lazyenv/internal/parser"
+	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 // backupIfNeeded creates a .bak backup of the file before the first save of

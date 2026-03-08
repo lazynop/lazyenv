@@ -6,7 +6,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
 
-	"gitlab.com/traveltoaiur/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/config"
 )
 
 func TestPeekToggle(t *testing.T) {

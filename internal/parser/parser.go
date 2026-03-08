@@ -4,8 +4,8 @@ import (
 	"os"
 	"strings"
 
-	"gitlab.com/traveltoaiur/lazyenv/internal/model"
-	"gitlab.com/traveltoaiur/lazyenv/internal/util"
+	"github.com/lazynop/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/util"
 )
 
 // ParseFile reads and parses an .env file from disk.

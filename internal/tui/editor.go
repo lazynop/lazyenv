@@ -2,7 +2,7 @@ package tui
 
 import (
 	"fmt"
-	"gitlab.com/traveltoaiur/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/model"
 
 	"charm.land/bubbles/v2/textinput"
 )

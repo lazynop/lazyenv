@@ -17,7 +17,7 @@ Working with `.env` files is tedious: scattered across projects, easy to forget 
 
 ```bash
 # Install
-go install gitlab.com/traveltoaiur/lazyenv@latest
+go install github.com/lazynop/lazyenv@latest
 
 # Run in the current directory
 lazyenv

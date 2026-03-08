@@ -1,10 +1,10 @@
 # Contributing
 
-lazyenv is maintained by **Steven Raimondi** ([@traveltoaiur](https://gitlab.com/traveltoaiur)).
+lazyenv is maintained by **Steven Raimondi** ([@lazynop](https://github.com/lazynop)).
 
 ## Reporting issues
 
-Found a bug or have a feature request? Open an issue on [GitLab](https://gitlab.com/traveltoaiur/lazyenv/-/issues).
+Found a bug or have a feature request? Open an issue on [GitHub](https://github.com/lazynop/lazyenv/issues).
 
 ## Development
 

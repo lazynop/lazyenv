@@ -6,7 +6,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 
-	"gitlab.com/traveltoaiur/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/model"
 )
 
 // FileListModel manages the file list panel.

@@ -5,7 +5,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 
-	"gitlab.com/traveltoaiur/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/config"
 )
 
 // Theme holds all Lip Gloss styles.

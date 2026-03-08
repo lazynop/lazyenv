@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"gitlab.com/traveltoaiur/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/config"
 )
 
 func setupScanDir(t *testing.T, files map[string]string) string {

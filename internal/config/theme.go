@@ -1,6 +1,6 @@
 package config
 
-import "gitlab.com/traveltoaiur/lazyenv/internal/config/themes"
+import "github.com/lazynop/lazyenv/internal/config/themes"
 
 // LookupTheme returns the ColorConfig for a named theme.
 func LookupTheme(name string) (ColorConfig, bool) {

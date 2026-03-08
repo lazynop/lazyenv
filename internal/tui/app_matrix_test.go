@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"gitlab.com/traveltoaiur/lazyenv/internal/config"
-	"gitlab.com/traveltoaiur/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/model"
 )
 
 // newTestApp creates an App ready for testing with the given files loaded.

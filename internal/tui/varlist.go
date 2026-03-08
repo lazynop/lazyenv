@@ -5,9 +5,9 @@ import (
 	"sort"
 	"strings"
 
-	"gitlab.com/traveltoaiur/lazyenv/internal/config"
-	"gitlab.com/traveltoaiur/lazyenv/internal/model"
-	"gitlab.com/traveltoaiur/lazyenv/internal/util"
+	"github.com/lazynop/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/util"
 )
 
 // VarListModel manages the variable list panel.

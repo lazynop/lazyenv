@@ -1,13 +1,15 @@
 site_name: lazyenv
 site_description: TUI for managing .env files
-site_url: https://lazyenv-4bb2c3.gitlab.io/
+site_url: https://lazynop.github.io/lazyenv/
 site_dir: public
 
-repo_url: https://gitlab.com/traveltoaiur/lazyenv
-repo_name: traveltoaiur/lazyenv
+repo_url: https://github.com/lazynop/lazyenv
+repo_name: lazynop/lazyenv
 
 theme:
   name: material
+  icon:
+    logo: material/console
   palette:
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
@@ -26,14 +28,37 @@ theme:
   features:
     - navigation.sections
     - navigation.expand
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - navigation.path
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.footer
+    - toc.integrate
     - content.code.copy
     - content.tabs.link
+    - search.suggest
+    - search.highlight
+    - search.share
+
+copyright: "&copy; Copyright 2026, Steven Raimondi"
+
+extra:
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/lazynop/lazyenv
+
+plugins:
+  - search
 
 extra_css:
   - stylesheets/extra.css
 
 markdown_extensions:
   - admonition
+  - pymdownx.details
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.superfences

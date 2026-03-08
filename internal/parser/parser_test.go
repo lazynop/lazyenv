@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gitlab.com/traveltoaiur/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/model"
 )
 
 func TestBasicKeyValue(t *testing.T) {

@@ -1,4 +1,4 @@
-module gitlab.com/traveltoaiur/lazyenv
+module github.com/lazynop/lazyenv
 
 go 1.26.0
 

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"gitlab.com/traveltoaiur/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/config"
 )
 
 func initGitRepo(t *testing.T, dir string) {

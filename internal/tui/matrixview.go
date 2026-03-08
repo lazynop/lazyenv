@@ -8,8 +8,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
-	"gitlab.com/traveltoaiur/lazyenv/internal/config"
-	"gitlab.com/traveltoaiur/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/model"
 )
 
 // MatrixModel manages the completeness matrix view.
