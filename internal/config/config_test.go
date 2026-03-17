@@ -33,6 +33,7 @@ func TestDefaultLayoutValues(t *testing.T) {
 	assert.Equal(t, 12, l.VarListPadding)
 	assert.Equal(t, 8, l.DiffMinValueWidth)
 	assert.Equal(t, 10, l.DiffPadding)
+	assert.Equal(t, 0, l.FileListWidth)
 	assert.Equal(t, 2*time.Second, l.MessageTimeout)
 	assert.Equal(t, 3*time.Second, l.ErrorMessageTimeout)
 }
@@ -117,6 +118,29 @@ func TestLoadPartialOverride(t *testing.T) {
 	assert.Equal(t, 50, cfg.Layout.VarListMaxKeyWidth)
 	assert.Equal(t, "#FF0000", cfg.Colors.Primary)
 	assert.Equal(t, 25, cfg.Layout.DiffMaxKeyWidth)
+}
+
+func TestLoadFileListWidth(t *testing.T) {
+	dir := t.TempDir()
+	content := []byte("[layout]\nfile-list-width = 40\n")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
+
+	cfg, warnings, err := Load(dir)
+	require.NoError(t, err)
+	assert.Empty(t, warnings)
+	assert.Equal(t, 40, cfg.Layout.FileListWidth)
+}
+
+func TestLoadFileListWidthNegativeWarns(t *testing.T) {
+	dir := t.TempDir()
+	content := []byte("[layout]\nfile-list-width = -1\n")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
+
+	cfg, warnings, err := Load(dir)
+	require.NoError(t, err)
+	assert.Len(t, warnings, 1)
+	assert.Contains(t, warnings[0], "file-list-width")
+	assert.Equal(t, DefaultConfig(), cfg)
 }
 
 func TestLoadUnknownKey(t *testing.T) {

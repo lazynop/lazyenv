@@ -99,7 +99,10 @@ func (m *FileListModel) View(theme Theme) string {
 
 	for i := m.Offset; i < end; i++ {
 		f := m.Files[i]
-		name := f.Name
+
+		// Truncate file name to fit panel width.
+		// Available space: panel width - borders(4) - indicator(2) - gitWarn(2) - modified(1)
+		name := truncate(f.Name, m.Width-9)
 
 		// Git warning prefix
 		gitWarn := ""

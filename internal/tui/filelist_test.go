@@ -136,6 +136,38 @@ func TestFileListViewEmpty(t *testing.T) {
 	assert.Contains(t, view, "No .env files found")
 }
 
+func TestFileListViewTruncatesLongNames(t *testing.T) {
+	f := makeTestFile(".env.development.local.backup.extra", "FOO")
+
+	var fl FileListModel
+	fl.Files = append(fl.Files, f)
+	fl.Width = 25
+	fl.Height = 10
+	fl.Focused = true
+
+	theme := BuildTheme(true, config.ColorConfig{})
+	view := fl.View(theme)
+
+	// Name should be truncated — full name should NOT appear
+	assert.NotContains(t, view, ".env.development.local.backup.extra")
+	// Truncation marker should appear
+	assert.Contains(t, view, "..")
+}
+
+func TestFileListViewShortNameNotTruncated(t *testing.T) {
+	f := makeTestFile(".env", "FOO")
+
+	var fl FileListModel
+	fl.Files = append(fl.Files, f)
+	fl.Width = 30
+	fl.Height = 10
+
+	theme := BuildTheme(true, config.ColorConfig{})
+	view := fl.View(theme)
+	assert.Contains(t, view, ".env")
+	assert.NotContains(t, view, "..")
+}
+
 func TestFileListViewWithFiles(t *testing.T) {
 	f1 := makeTestFile(".env", "FOO")
 	f1.Modified = true

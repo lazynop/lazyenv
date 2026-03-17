@@ -106,5 +106,9 @@ func validate(cfg Config) []string {
 		}
 	}
 
+	if l.FileListWidth < 0 {
+		warns = append(warns, fmt.Sprintf("invalid file-list-width: %d (must be >= 0)", l.FileListWidth))
+	}
+
 	return warns
 }

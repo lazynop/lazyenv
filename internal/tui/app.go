@@ -604,6 +604,9 @@ func (a App) View() tea.View {
 
 func (a *App) updateLayout() {
 	fileWidth := max(a.width/4, 20)
+	if a.config.Layout.FileListWidth > 0 {
+		fileWidth = a.config.Layout.FileListWidth
+	}
 	varWidth := a.width - fileWidth
 
 	panelHeight := a.height - 3 // space for status bar

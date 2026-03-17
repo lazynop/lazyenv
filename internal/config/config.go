@@ -32,6 +32,7 @@ type LayoutConfig struct {
 	MatrixColWidth       int `toml:"matrix-col-width"`
 	VarListMinValueWidth int `toml:"var-list-min-value-width"`
 	VarListPadding       int `toml:"var-list-padding"`
+	FileListWidth        int `toml:"file-list-width"`
 	DiffMinValueWidth    int `toml:"diff-min-value-width"`
 	DiffPadding          int `toml:"diff-padding"`
 
