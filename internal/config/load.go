@@ -9,39 +9,60 @@ import (
 	toml "github.com/pelletier/go-toml/v2"
 )
 
+// LoadResult holds the result of loading a config file.
+type LoadResult struct {
+	Config   Config
+	Path     string   // path of the config file used, empty if none found
+	Warnings []string // validation warnings
+}
+
 // Load searches for config files and returns the merged configuration.
-// Search order: ./.lazyenvrc → ~/.config/lazyenv/config.toml → ~/.lazyenvrc
-// Returns (config, warnings, error). Warnings are non-fatal issues.
-// A malformed config file produces a warning and falls back to defaults.
-func Load(projectDir string) (Config, []string, error) {
+// If configPath is non-empty, it takes highest priority.
+// A malformed or invalid config produces warnings and falls back to defaults.
+func Load(projectDir, configPath string) (Config, []string) {
+	r := LoadFull(projectDir, configPath)
+	return r.Config, r.Warnings
+}
+
+// LoadFull searches for config files and returns detailed results.
+func LoadFull(projectDir, configPath string) LoadResult {
 	cfg := DefaultConfig()
 
-	path := findConfigFile(projectDir)
+	path := findConfigFile(projectDir, configPath)
 	if path == "" {
-		return cfg, nil, nil
+		return LoadResult{Config: cfg}
 	}
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return cfg, []string{fmt.Sprintf("cannot read %s: %v", path, err)}, nil
+		return LoadResult{Config: cfg, Path: path, Warnings: []string{fmt.Sprintf("cannot read %s: %v", path, err)}}
 	}
 
 	merged, warns := merge(cfg, data)
-	return merged, warns, nil
+	return LoadResult{Config: merged, Path: path, Warnings: warns}
+}
+
+// ConfigSearchPaths returns all paths searched for config files, in priority order.
+// If configPath is non-empty, it is prepended as the highest priority.
+func ConfigSearchPaths(projectDir, configPath string) []string {
+	var paths []string
+	if configPath != "" {
+		paths = append(paths, configPath)
+	}
+	paths = append(paths, filepath.Join(projectDir, ".lazyenvrc"))
+	if xdg, err := os.UserConfigDir(); err == nil {
+		paths = append(paths, filepath.Join(xdg, "lazyenv", "config.toml"))
+	}
+	if home, err := os.UserHomeDir(); err == nil {
+		paths = append(paths, filepath.Join(home, ".lazyenvrc"))
+	}
+	return paths
 }
 
 // findConfigFile returns the first config file found, or "".
-func findConfigFile(projectDir string) string {
-	if p := filepath.Join(projectDir, ".lazyenvrc"); fileExists(p) {
-		return p
-	}
-	if xdg, err := os.UserConfigDir(); err == nil {
-		if p := filepath.Join(xdg, "lazyenv", "config.toml"); fileExists(p) {
-			return p
-		}
-	}
-	if home, err := os.UserHomeDir(); err == nil {
-		if p := filepath.Join(home, ".lazyenvrc"); fileExists(p) {
+func findConfigFile(projectDir, configPath string) string {
+	for _, p := range ConfigSearchPaths(projectDir, configPath) {
+		if fileExists(p) {
 			return p
 		}
 	}

@@ -68,8 +68,7 @@ func TestTomlTagsMatchExample(t *testing.T) {
 
 func TestLoadNoConfigFile(t *testing.T) {
 	dir := t.TempDir()
-	cfg, warnings, err := Load(dir)
-	require.NoError(t, err)
+	cfg, warnings := Load(dir, "")
 	assert.Empty(t, warnings)
 	assert.Equal(t, DefaultConfig(), cfg)
 }
@@ -79,8 +78,7 @@ func TestLoadProjectConfig(t *testing.T) {
 	content := []byte("recursive = true\nsort = \"alphabetical\"\n")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
 
-	cfg, warnings, err := Load(dir)
-	require.NoError(t, err)
+	cfg, warnings := Load(dir, "")
 	assert.Empty(t, warnings)
 	assert.True(t, cfg.Recursive)
 	assert.Equal(t, "alphabetical", cfg.Sort)
@@ -91,8 +89,7 @@ func TestLoadMalformedConfig(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), []byte("invalid toml [[["), 0644))
 
-	cfg, warnings, err := Load(dir)
-	require.NoError(t, err)
+	cfg, warnings := Load(dir, "")
 	assert.Len(t, warnings, 1)
 	assert.Equal(t, DefaultConfig(), cfg)
 }
@@ -102,8 +99,7 @@ func TestLoadInvalidValues(t *testing.T) {
 	content := []byte("[layout]\nvar-list-max-key-width = -5\n")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
 
-	cfg, warnings, err := Load(dir)
-	require.NoError(t, err)
+	cfg, warnings := Load(dir, "")
 	assert.Len(t, warnings, 1)
 	assert.Equal(t, DefaultConfig(), cfg)
 }
@@ -113,8 +109,7 @@ func TestLoadPartialOverride(t *testing.T) {
 	content := []byte("[layout]\nvar-list-max-key-width = 50\n\n[colors]\nprimary = \"#FF0000\"\n")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
 
-	cfg, warnings, err := Load(dir)
-	require.NoError(t, err)
+	cfg, warnings := Load(dir, "")
 	assert.Empty(t, warnings)
 	assert.Equal(t, 50, cfg.Layout.VarListMaxKeyWidth)
 	assert.Equal(t, "#FF0000", cfg.Colors.Primary)
@@ -126,8 +121,7 @@ func TestLoadFileListWidth(t *testing.T) {
 	content := []byte("[layout]\nfile-list-width = 40\n")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
 
-	cfg, warnings, err := Load(dir)
-	require.NoError(t, err)
+	cfg, warnings := Load(dir, "")
 	assert.Empty(t, warnings)
 	assert.Equal(t, 40, cfg.Layout.FileListWidth)
 }
@@ -138,8 +132,7 @@ func TestLoadFileListWidthTooSmallWarns(t *testing.T) {
 		content := []byte(fmt.Sprintf("[layout]\nfile-list-width = %d\n", val))
 		require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
 
-		cfg, warnings, err := Load(dir)
-		require.NoError(t, err)
+		cfg, warnings := Load(dir, "")
 		assert.Len(t, warnings, 1, "val=%d", val)
 		assert.Contains(t, warnings[0], "file-list-width")
 		assert.Equal(t, DefaultConfig(), cfg)
@@ -151,8 +144,7 @@ func TestLoadUnknownKey(t *testing.T) {
 	content := []byte("recusrive = true\n") // typo
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
 
-	cfg, warnings, err := Load(dir)
-	require.NoError(t, err)
+	cfg, warnings := Load(dir, "")
 	assert.Len(t, warnings, 1)
 	assert.Contains(t, warnings[0], "config error")
 	assert.Equal(t, DefaultConfig(), cfg)
@@ -171,8 +163,7 @@ func TestLoadXDGConfig(t *testing.T) {
 	))
 
 	projectDir := t.TempDir()
-	cfg, warnings, err := Load(projectDir)
-	require.NoError(t, err)
+	cfg, warnings := Load(projectDir, "")
 	assert.Empty(t, warnings)
 	assert.Equal(t, "alphabetical", cfg.Sort)
 }
@@ -196,8 +187,7 @@ func TestLoadProjectOverridesGlobal(t *testing.T) {
 		0644,
 	))
 
-	cfg, warnings, err := Load(projectDir)
-	require.NoError(t, err)
+	cfg, warnings := Load(projectDir, "")
 	assert.Empty(t, warnings)
 	assert.Equal(t, "position", cfg.Sort, "project config wins")
 	assert.False(t, cfg.Recursive, "global config should NOT be loaded when project config exists")
@@ -208,8 +198,7 @@ func TestLoadColorOverrides(t *testing.T) {
 	content := []byte("[colors]\nprimary = \"#FF0000\"\n")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
 
-	cfg, warnings, err := Load(dir)
-	require.NoError(t, err)
+	cfg, warnings := Load(dir, "")
 	assert.Empty(t, warnings)
 	assert.Equal(t, "#FF0000", cfg.Colors.Primary)
 	assert.Empty(t, cfg.Colors.Warning, "unset colors stay empty")
@@ -220,8 +209,7 @@ func TestLoadFilePatterns(t *testing.T) {
 	content := []byte("[files]\ninclude = [\".env\", \".secrets\"]\nexclude = [\"*.bak\", \"*.tmp\"]\n")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
 
-	cfg, warnings, err := Load(dir)
-	require.NoError(t, err)
+	cfg, warnings := Load(dir, "")
 	assert.Empty(t, warnings)
 	assert.Equal(t, []string{".env", ".secrets"}, cfg.Files.Include)
 	assert.Equal(t, []string{"*.bak", "*.tmp"}, cfg.Files.Exclude)
@@ -232,8 +220,7 @@ func TestLoadThemePreset(t *testing.T) {
 	content := []byte("theme = \"dracula\"\n")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
 
-	cfg, warnings, err := Load(dir)
-	require.NoError(t, err)
+	cfg, warnings := Load(dir, "")
 	assert.Empty(t, warnings)
 	assert.Equal(t, "dracula", cfg.Theme)
 	assert.Equal(t, "#BD93F9", cfg.Colors.Primary)
@@ -246,8 +233,7 @@ func TestLoadThemeNoThemeBg(t *testing.T) {
 	content := []byte("theme = \"dracula\"\nno-theme-bg = true\n")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
 
-	cfg, warnings, err := Load(dir)
-	require.NoError(t, err)
+	cfg, warnings := Load(dir, "")
 	assert.Empty(t, warnings)
 	assert.Equal(t, "#BD93F9", cfg.Colors.Primary, "other colors still resolved")
 	assert.Empty(t, cfg.Colors.Bg, "bg cleared by no-theme-bg")
@@ -258,8 +244,7 @@ func TestLoadBgColorOverride(t *testing.T) {
 	content := []byte("[colors]\nbg = \"#111111\"\n")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
 
-	cfg, warnings, err := Load(dir)
-	require.NoError(t, err)
+	cfg, warnings := Load(dir, "")
 	assert.Empty(t, warnings)
 	assert.Equal(t, "#111111", cfg.Colors.Bg)
 }
@@ -269,8 +254,7 @@ func TestLoadThemeWithOverride(t *testing.T) {
 	content := []byte("theme = \"nord\"\n\n[colors]\nprimary = \"#FF0000\"\n")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
 
-	cfg, warnings, err := Load(dir)
-	require.NoError(t, err)
+	cfg, warnings := Load(dir, "")
 	assert.Empty(t, warnings)
 	assert.Equal(t, "#FF0000", cfg.Colors.Primary, "explicit override wins")
 	assert.Equal(t, "#EBCB8B", cfg.Colors.Warning, "rest comes from theme")
@@ -281,8 +265,7 @@ func TestLoadUnknownTheme(t *testing.T) {
 	content := []byte("theme = \"nonexistent\"\n")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
 
-	cfg, warnings, err := Load(dir)
-	require.NoError(t, err)
+	cfg, warnings := Load(dir, "")
 	assert.Len(t, warnings, 1)
 	assert.Contains(t, warnings[0], "unknown theme")
 	assert.Contains(t, warnings[0], "--list-themes")
@@ -332,6 +315,60 @@ func TestLookupTheme(t *testing.T) {
 
 	_, ok = LookupTheme("nonexistent")
 	assert.False(t, ok)
+}
+
+func TestConfigSearchPathsDefault(t *testing.T) {
+	paths := ConfigSearchPaths("/project", "")
+	assert.Equal(t, "/project/.lazyenvrc", paths[0])
+	assert.GreaterOrEqual(t, len(paths), 2, "should include at least project and one global path")
+}
+
+func TestConfigSearchPathsWithCustom(t *testing.T) {
+	paths := ConfigSearchPaths("/project", "/custom/config.toml")
+	assert.Equal(t, "/custom/config.toml", paths[0], "custom path should be first")
+	assert.Equal(t, "/project/.lazyenvrc", paths[1], "project path should be second")
+}
+
+func TestLoadFullReturnsPath(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), []byte("recursive = true\n"), 0644))
+
+	r := LoadFull(dir, "")
+	assert.Equal(t, filepath.Join(dir, ".lazyenvrc"), r.Path)
+	assert.Empty(t, r.Warnings)
+	assert.True(t, r.Config.Recursive)
+}
+
+func TestLoadFullNoConfig(t *testing.T) {
+	dir := t.TempDir()
+	r := LoadFull(dir, "")
+	assert.Empty(t, r.Path)
+	assert.Empty(t, r.Warnings)
+	assert.Equal(t, DefaultConfig(), r.Config)
+}
+
+func TestLoadFullCustomPath(t *testing.T) {
+	dir := t.TempDir()
+	customPath := filepath.Join(dir, "custom.toml")
+	require.NoError(t, os.WriteFile(customPath, []byte("sort = \"alphabetical\"\n"), 0644))
+
+	r := LoadFull(t.TempDir(), customPath)
+	assert.Equal(t, customPath, r.Path)
+	assert.Empty(t, r.Warnings)
+	assert.Equal(t, "alphabetical", r.Config.Sort)
+}
+
+func TestLoadFullCustomPathOverridesProject(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), []byte("recursive = true\n"), 0644))
+
+	customPath := filepath.Join(dir, "custom.toml")
+	require.NoError(t, os.WriteFile(customPath, []byte("sort = \"alphabetical\"\n"), 0644))
+
+	r := LoadFull(dir, customPath)
+	assert.Equal(t, customPath, r.Path, "custom path should win over project .lazyenvrc")
+	assert.Equal(t, "alphabetical", r.Config.Sort)
+	assert.False(t, r.Config.Recursive, "project config should not be loaded")
 }
 
 func TestDefaultColorsEmpty(t *testing.T) {

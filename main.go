@@ -28,6 +28,8 @@ var cli struct {
 	NoThemeBg     *bool            `name:"no-theme-bg" help:"Disable theme background color."`
 	Sort          *string          `short:"s" name:"sort" help:"Sort order: position or alphabetical." enum:"position,alphabetical"`
 	FileListWidth *int             `name:"file-list-width" help:"Width of the file list panel (0=auto)."`
+	Config        string           `short:"c" name:"config" help:"Path to configuration file." type:"existingfile"`
+	CheckConfig   bool             `name:"check-config" help:"Validate configuration file and exit."`
 	ShowConfig    bool             `name:"show-config" help:"Show effective configuration and exit."`
 	ListThemes    bool             `name:"list-themes" help:"List available built-in themes and exit."`
 	Version       kong.VersionFlag `short:"v" help:"Show version."`
@@ -69,6 +71,37 @@ func applyCLIOverrides(cfg *config.Config) {
 	}
 }
 
+func checkConfig() {
+	r := config.LoadFull(".", cli.Config)
+	paths := config.ConfigSearchPaths(".", cli.Config)
+
+	fmt.Println("Search paths (highest priority first):")
+	for _, p := range paths {
+		if p == r.Path {
+			fmt.Printf("  ✓ %s\n", p)
+		} else {
+			fmt.Printf("  · %s\n", p)
+		}
+	}
+	fmt.Println()
+
+	if r.Path == "" {
+		fmt.Fprintln(os.Stderr, "No configuration file found.")
+		os.Exit(1)
+	}
+
+	if len(r.Warnings) == 0 {
+		fmt.Printf("Config OK: %s\n", r.Path)
+		return
+	}
+
+	fmt.Fprintf(os.Stderr, "Config errors in %s:\n", r.Path)
+	for _, w := range r.Warnings {
+		fmt.Fprintf(os.Stderr, "  ✗ %s\n", w)
+	}
+	os.Exit(1)
+}
+
 func main() {
 	kong.Parse(&cli,
 		kong.Name("lazyenv"),
@@ -80,11 +113,12 @@ func main() {
 		cli.Path = "."
 	}
 
-	cfg, warnings, err := config.Load(".")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
-		os.Exit(1)
+	if cli.CheckConfig {
+		checkConfig()
+		return
 	}
+
+	cfg, warnings := config.Load(".", cli.Config)
 
 	cfg.Dir = cli.Path
 	applyCLIOverrides(&cfg)
