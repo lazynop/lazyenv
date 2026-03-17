@@ -28,11 +28,11 @@ vet:
 
 # Apply Go modernization fixes
 fix:
-    go fix ./...
+    @go fix ./...
 
 # Format code
 fmt:
-    gofmt -w .
+    @gofmt -w .
 
 # Run linters (cyclomatic complexity + dead assignments)
 lint:
@@ -52,7 +52,7 @@ check: fmt-check vet lint test
 
 # Clean build artifacts
 clean:
-    rm -rf bin coverage.out dist
+    @rm -rf bin coverage.out dist
 
 # Build a snapshot release (no publish)
 release-snapshot:
