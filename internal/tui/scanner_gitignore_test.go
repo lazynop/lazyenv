@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
@@ -14,9 +13,7 @@ import (
 
 func initGitRepo(t *testing.T, dir string) {
 	t.Helper()
-	cmd := exec.Command("git", "init", dir)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd := exec.Command("git", "init", "-b", "main", dir)
 	require.NoError(t, cmd.Run())
 }
 
