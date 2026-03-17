@@ -15,9 +15,9 @@ run *args:
 
 # Run all tests
 test:
-    go test ./... -v
+    go test -race ./... -v
 
-# Run tests with race detection and coverage
+# Run tests with coverage report
 test-cover:
     go test -race -coverprofile=coverage.out ./...
     go tool cover -func=coverage.out
