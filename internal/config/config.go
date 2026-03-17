@@ -24,6 +24,9 @@ type FileConfig struct {
 	Exclude []string `toml:"exclude"` // glob patterns to exclude (e.g. "*.bak")
 }
 
+// FileListMinWidth is the minimum allowed width for the file list panel.
+const FileListMinWidth = 20
+
 // LayoutConfig holds layout/sizing constants used by TUI components.
 type LayoutConfig struct {
 	VarListMaxKeyWidth   int `toml:"var-list-max-key-width"`

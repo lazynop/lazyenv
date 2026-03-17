@@ -50,7 +50,12 @@ func applyCLIOverrides(cfg *config.Config) {
 		}
 	}
 	if cli.FileListWidth != nil {
-		cfg.Layout.FileListWidth = *cli.FileListWidth
+		v := *cli.FileListWidth
+		if v != 0 && v < config.FileListMinWidth {
+			fmt.Fprintf(os.Stderr, "Warning: --file-list-width %d is below minimum %d, using %d\n", v, config.FileListMinWidth, config.FileListMinWidth)
+			v = config.FileListMinWidth
+		}
+		cfg.Layout.FileListWidth = v
 	}
 	if cli.Sort != nil {
 		cfg.Sort = *cli.Sort

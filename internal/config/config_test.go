@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -131,16 +132,18 @@ func TestLoadFileListWidth(t *testing.T) {
 	assert.Equal(t, 40, cfg.Layout.FileListWidth)
 }
 
-func TestLoadFileListWidthNegativeWarns(t *testing.T) {
-	dir := t.TempDir()
-	content := []byte("[layout]\nfile-list-width = -1\n")
-	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
+func TestLoadFileListWidthTooSmallWarns(t *testing.T) {
+	for _, val := range []int{-1, 5, 19} {
+		dir := t.TempDir()
+		content := []byte(fmt.Sprintf("[layout]\nfile-list-width = %d\n", val))
+		require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
 
-	cfg, warnings, err := Load(dir)
-	require.NoError(t, err)
-	assert.Len(t, warnings, 1)
-	assert.Contains(t, warnings[0], "file-list-width")
-	assert.Equal(t, DefaultConfig(), cfg)
+		cfg, warnings, err := Load(dir)
+		require.NoError(t, err)
+		assert.Len(t, warnings, 1, "val=%d", val)
+		assert.Contains(t, warnings[0], "file-list-width")
+		assert.Equal(t, DefaultConfig(), cfg)
+	}
 }
 
 func TestLoadUnknownKey(t *testing.T) {

@@ -603,7 +603,7 @@ func (a App) View() tea.View {
 }
 
 func (a *App) updateLayout() {
-	fileWidth := max(a.width/4, 20)
+	fileWidth := max(a.width/4, config.FileListMinWidth)
 	if a.config.Layout.FileListWidth > 0 {
 		fileWidth = a.config.Layout.FileListWidth
 	}

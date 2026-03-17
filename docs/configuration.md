@@ -78,7 +78,7 @@ file-list-width = 0
 | `diff-padding`             | `10`    | Horizontal space reserved for borders, markers, and spacing in diff rows.                   |
 | `matrix-key-width`         | `20`    | Width of the key column in the completeness matrix.                                         |
 | `matrix-col-width`         | `14`    | Width of each file column in the matrix. Controls how many files fit on screen.             |
-| `file-list-width`          | `0`     | Width of the file list panel. `0` = auto (1/4 of screen, min 20). File names truncate to fit. |
+| `file-list-width`          | `0`     | Width of the file list panel. `0` = auto (1/4 of screen). Min 20. File names truncate to fit. |
 
 ## [colors]
 
