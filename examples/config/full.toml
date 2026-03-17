@@ -32,7 +32,7 @@ var-list-min-value-width = 10
 var-list-padding = 12
 diff-min-value-width = 8
 diff-padding = 10
-file-list-width = 55                  # 0 = auto (1/4 screen, min 20), > 0 = fixed width
+file-list-width = 0                  # 0 = auto (1/4 screen, min 20), > 0 = fixed width
 
 # Color overrides (hex). When using a theme, these override individual colors.
 # Leave empty or omit to use the theme or auto-detected defaults.
