@@ -20,16 +20,17 @@ var (
 )
 
 var cli struct {
-	Path       string           `arg:"" optional:"" default:"." help:"Directory to scan." type:"existingdir"`
-	Recursive  *bool            `short:"r" help:"Scan subdirectories recursively."`
-	ShowAll    *bool            `short:"a" name:"show-all" help:"Show secrets in cleartext at startup."`
-	NoGitCheck *bool            `short:"G" name:"no-git-check" help:"Disable .gitignore check."`
-	NoBackup   *bool            `short:"B" name:"no-backup" help:"Disable .bak backup before first save."`
-	NoThemeBg  *bool            `name:"no-theme-bg" help:"Disable theme background color."`
-	Sort       *string          `short:"s" name:"sort" help:"Sort order: position or alphabetical." enum:"position,alphabetical"`
-	ShowConfig bool             `name:"show-config" help:"Show effective configuration and exit."`
-	ListThemes bool             `name:"list-themes" help:"List available built-in themes and exit."`
-	Version    kong.VersionFlag `short:"v" help:"Show version."`
+	Path          string           `arg:"" optional:"" default:"." help:"Directory to scan." type:"existingdir"`
+	Recursive     *bool            `short:"r" help:"Scan subdirectories recursively."`
+	ShowAll       *bool            `short:"a" name:"show-all" help:"Show secrets in cleartext at startup."`
+	NoGitCheck    *bool            `short:"G" name:"no-git-check" help:"Disable .gitignore check."`
+	NoBackup      *bool            `short:"B" name:"no-backup" help:"Disable .bak backup before first save."`
+	NoThemeBg     *bool            `name:"no-theme-bg" help:"Disable theme background color."`
+	Sort          *string          `short:"s" name:"sort" help:"Sort order: position or alphabetical." enum:"position,alphabetical"`
+	FileListWidth *int             `name:"file-list-width" help:"Width of the file list panel (0=auto)."`
+	ShowConfig    bool             `name:"show-config" help:"Show effective configuration and exit."`
+	ListThemes    bool             `name:"list-themes" help:"List available built-in themes and exit."`
+	Version       kong.VersionFlag `short:"v" help:"Show version."`
 }
 
 func applyCLIOverrides(cfg *config.Config) {
@@ -47,6 +48,9 @@ func applyCLIOverrides(cfg *config.Config) {
 		if cfg.NoThemeBg {
 			cfg.Colors.Bg = ""
 		}
+	}
+	if cli.FileListWidth != nil {
+		cfg.Layout.FileListWidth = *cli.FileListWidth
 	}
 	if cli.Sort != nil {
 		cfg.Sort = *cli.Sort

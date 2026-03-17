@@ -102,7 +102,7 @@ func (m *FileListModel) View(theme Theme) string {
 
 		// Truncate file name to fit panel width.
 		// Available space: panel width - borders(4) - indicator(2) - gitWarn(2) - modified(1)
-		name := truncate(f.Name, m.Width-9)
+		name := truncate(f.Name, max(m.Width-9, 1))
 
 		// Git warning prefix
 		gitWarn := ""

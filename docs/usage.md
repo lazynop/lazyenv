@@ -27,6 +27,7 @@ lazyenv ./services -r
 | `-B` | `--no-backup`    | Disable `.bak` backup before first save.                                                                    |
 | `-G` | `--no-git-check` | Disable `.gitignore` check. Auto-disabled if `git` is not found in `$PATH`.                                 |
 |      | `--no-theme-bg`  | Disable theme background color, keeping the terminal's native background. Useful for transparent terminals. |
+|      | `--file-list-width` | Width of the file list panel in characters. `0` = auto (1/4 screen, min 20).                             |
 |      | `--show-config`  | Print the effective configuration (TOML) and exit.                                                          |
 |      | `--list-themes`  | List available built-in themes and exit.                                                                    |
 | `-v` | `--version`      | Show version, commit, and build date.                                                                       |
