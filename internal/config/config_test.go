@@ -129,7 +129,7 @@ func TestLoadFileListWidth(t *testing.T) {
 func TestLoadFileListWidthTooSmallWarns(t *testing.T) {
 	for _, val := range []int{-1, 5, 19} {
 		dir := t.TempDir()
-		content := []byte(fmt.Sprintf("[layout]\nfile-list-width = %d\n", val))
+		content := fmt.Appendf(nil, "[layout]\nfile-list-width = %d\n", val)
 		require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
 
 		cfg, warnings := Load(dir, "")
