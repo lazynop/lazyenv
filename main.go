@@ -32,24 +32,7 @@ var cli struct {
 	Version    kong.VersionFlag `short:"v" help:"Show version."`
 }
 
-func main() {
-	kong.Parse(&cli,
-		kong.Name("lazyenv"),
-		kong.Description("TUI for managing .env files."),
-		kong.Vars{"version": fmt.Sprintf("%s (commit: %s, built: %s)", version, commit, date)},
-	)
-
-	if cli.Path == "" {
-		cli.Path = "."
-	}
-
-	cfg, warnings, err := config.Load(".")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
-		os.Exit(1)
-	}
-
-	cfg.Dir = cli.Path
+func applyCLIOverrides(cfg *config.Config) {
 	if cli.Recursive != nil {
 		cfg.Recursive = *cli.Recursive
 	}
@@ -75,6 +58,27 @@ func main() {
 			cfg.NoGitCheck = true
 		}
 	}
+}
+
+func main() {
+	kong.Parse(&cli,
+		kong.Name("lazyenv"),
+		kong.Description("TUI for managing .env files."),
+		kong.Vars{"version": fmt.Sprintf("%s (commit: %s, built: %s)", version, commit, date)},
+	)
+
+	if cli.Path == "" {
+		cli.Path = "."
+	}
+
+	cfg, warnings, err := config.Load(".")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
+		os.Exit(1)
+	}
+
+	cfg.Dir = cli.Path
+	applyCLIOverrides(&cfg)
 
 	if cli.ListThemes {
 		for _, name := range config.ThemeNames() {

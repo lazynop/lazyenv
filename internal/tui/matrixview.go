@@ -166,6 +166,59 @@ func (m *MatrixModel) CancelEdit() {
 	m.editing = false
 }
 
+func (m *MatrixModel) renderHeaderRow(endCol int, theme Theme) string {
+	var hdr strings.Builder
+	hdr.WriteString(fmt.Sprintf("%-*s", m.layout.MatrixKeyWidth, "KEY"))
+	for ci := m.offsetCol; ci < endCol; ci++ {
+		name := m.fileNames[ci]
+		if len(name) > m.layout.MatrixColWidth-2 {
+			name = name[:m.layout.MatrixColWidth-3] + "…"
+		}
+		if ci == m.cursorCol {
+			hdr.WriteString(theme.SelectedItem.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, name)))
+		} else {
+			hdr.WriteString(theme.HelpKey.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, name)))
+		}
+	}
+	return hdr.String()
+}
+
+func (m *MatrixModel) renderBodyRow(ri, endCol int, checkMark, crossMark string, theme Theme) string {
+	entry := m.entries[ri]
+
+	// Key name
+	keyStr := entry.Key
+	if len(keyStr) > m.layout.MatrixKeyWidth-2 {
+		keyStr = keyStr[:m.layout.MatrixKeyWidth-3] + "…"
+	}
+	keyFormatted := fmt.Sprintf("%-*s", m.layout.MatrixKeyWidth, keyStr)
+	if ri == m.cursorRow {
+		keyFormatted = theme.SelectedItem.Render(keyFormatted)
+	} else {
+		keyFormatted = theme.NormalItem.Render(keyFormatted)
+	}
+
+	var row strings.Builder
+	row.WriteString(keyFormatted)
+	for ci := m.offsetCol; ci < endCol; ci++ {
+		var cell string
+		if ri == m.cursorRow && ci == m.cursorCol {
+			// Highlight active cell
+			if entry.Present[ci] {
+				cell = theme.SelectedItem.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+checkMark))
+			} else {
+				cell = theme.DiffRemoved.Underline(true).Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+crossMark))
+			}
+		} else if entry.Present[ci] {
+			cell = theme.DiffEqual.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+checkMark))
+		} else {
+			cell = theme.DiffRemoved.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+crossMark))
+		}
+		row.WriteString(cell)
+	}
+	return row.String()
+}
+
 // View renders the matrix.
 func (m *MatrixModel) View(theme Theme) string {
 	if len(m.entries) == 0 {
@@ -183,20 +236,7 @@ func (m *MatrixModel) View(theme Theme) string {
 	endCol := min(m.offsetCol+visCols, len(m.fileNames))
 
 	// Header row
-	var hdr strings.Builder
-	hdr.WriteString(fmt.Sprintf("%-*s", m.layout.MatrixKeyWidth, "KEY"))
-	for ci := m.offsetCol; ci < endCol; ci++ {
-		name := m.fileNames[ci]
-		if len(name) > m.layout.MatrixColWidth-2 {
-			name = name[:m.layout.MatrixColWidth-3] + "…"
-		}
-		if ci == m.cursorCol {
-			hdr.WriteString(theme.SelectedItem.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, name)))
-		} else {
-			hdr.WriteString(theme.HelpKey.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, name)))
-		}
-	}
-	b.WriteString(hdr.String())
+	b.WriteString(m.renderHeaderRow(endCol, theme))
 	b.WriteString("\n")
 
 	// Separator
@@ -211,40 +251,7 @@ func (m *MatrixModel) View(theme Theme) string {
 	crossMark := "✗"
 
 	for ri := m.offsetRow; ri < endRow; ri++ {
-		entry := m.entries[ri]
-
-		// Key name
-		keyStr := entry.Key
-		if len(keyStr) > m.layout.MatrixKeyWidth-2 {
-			keyStr = keyStr[:m.layout.MatrixKeyWidth-3] + "…"
-		}
-		keyFormatted := fmt.Sprintf("%-*s", m.layout.MatrixKeyWidth, keyStr)
-		if ri == m.cursorRow {
-			keyFormatted = theme.SelectedItem.Render(keyFormatted)
-		} else {
-			keyFormatted = theme.NormalItem.Render(keyFormatted)
-		}
-
-		var row strings.Builder
-		row.WriteString(keyFormatted)
-		for ci := m.offsetCol; ci < endCol; ci++ {
-			var cell string
-			if ri == m.cursorRow && ci == m.cursorCol {
-				// Highlight active cell
-				if entry.Present[ci] {
-					cell = theme.SelectedItem.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+checkMark))
-				} else {
-					cell = theme.DiffRemoved.Underline(true).Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+crossMark))
-				}
-			} else if entry.Present[ci] {
-				cell = theme.DiffEqual.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+checkMark))
-			} else {
-				cell = theme.DiffRemoved.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+crossMark))
-			}
-			row.WriteString(cell)
-		}
-
-		b.WriteString(row.String())
+		b.WriteString(m.renderBodyRow(ri, endCol, checkMark, crossMark, theme))
 		b.WriteString("\n")
 	}
 

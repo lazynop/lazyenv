@@ -27,23 +27,11 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, a.keys.PrevDiff):
 		a.diffView.PrevDiff()
 	case key.Matches(msg, a.keys.Right):
-		if k := a.diffView.CopyToRight(); k != "" {
-			a.statusBar.SetMessage(k + " → " + a.diffView.FileB.Name)
-			return a, clearMessageAfter(a.config.Layout.MessageTimeout)
-		}
+		return a.handleCompareCopy(a.diffView.CopyToRight, a.diffView.FileB.Name)
 	case key.Matches(msg, a.keys.Left):
-		if k := a.diffView.CopyToLeft(); k != "" {
-			a.statusBar.SetMessage(k + " → " + a.diffView.FileA.Name)
-			return a, clearMessageAfter(a.config.Layout.MessageTimeout)
-		}
+		return a.handleCompareCopy(a.diffView.CopyToLeft, a.diffView.FileA.Name)
 	case key.Matches(msg, a.keys.Filter):
-		a.diffView.ToggleFilter()
-		if a.diffView.HideEqual {
-			a.statusBar.SetMessage("Showing differences only")
-		} else {
-			a.statusBar.SetMessage("Showing all entries")
-		}
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a.handleCompareFilter()
 	case key.Matches(msg, a.keys.Save):
 		return a.handleCompareSave()
 	case key.Matches(msg, a.keys.Edit): // e = edit left
@@ -51,29 +39,51 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case msg.String() == "E": // E = edit right
 		return a.startCompareEdit(a.diffView.FileB)
 	case msg.String() == "r":
-		if errMsg := a.diffView.Reset(); errMsg != "" {
-			a.statusBar.SetMessage(errMsg)
-		} else {
-			// Update file references in the main list too
-			for i, f := range a.fileList.Files {
-				if f.Path == a.diffView.FileA.Path {
-					a.fileList.Files[i] = a.diffView.FileA
-					if a.fileList.Selected == i {
-						a.varList.SetFile(a.diffView.FileA)
-					}
-				}
-				if f.Path == a.diffView.FileB.Path {
-					a.fileList.Files[i] = a.diffView.FileB
-					if a.fileList.Selected == i {
-						a.varList.SetFile(a.diffView.FileB)
-					}
-				}
-			}
-			a.statusBar.SetMessage("Reset to saved state")
-		}
+		return a.handleCompareReset()
+	}
+	return a, nil
+}
+
+func (a App) handleCompareCopy(copyFn func() string, targetName string) (tea.Model, tea.Cmd) {
+	if k := copyFn(); k != "" {
+		a.statusBar.SetMessage(k + " → " + targetName)
 		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	}
 	return a, nil
+}
+
+func (a App) handleCompareFilter() (tea.Model, tea.Cmd) {
+	a.diffView.ToggleFilter()
+	if a.diffView.HideEqual {
+		a.statusBar.SetMessage("Showing differences only")
+	} else {
+		a.statusBar.SetMessage("Showing all entries")
+	}
+	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+}
+
+func (a App) handleCompareReset() (App, tea.Cmd) {
+	if errMsg := a.diffView.Reset(); errMsg != "" {
+		a.statusBar.SetMessage(errMsg)
+	} else {
+		// Update file references in the main list too
+		for i, f := range a.fileList.Files {
+			if f.Path == a.diffView.FileA.Path {
+				a.fileList.Files[i] = a.diffView.FileA
+				if a.fileList.Selected == i {
+					a.varList.SetFile(a.diffView.FileA)
+				}
+			}
+			if f.Path == a.diffView.FileB.Path {
+				a.fileList.Files[i] = a.diffView.FileB
+				if a.fileList.Selected == i {
+					a.varList.SetFile(a.diffView.FileB)
+				}
+			}
+		}
+		a.statusBar.SetMessage("Reset to saved state")
+	}
+	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 }
 
 func (a App) handleCompareSave() (App, tea.Cmd) {

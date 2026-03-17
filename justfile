@@ -24,7 +24,7 @@ test-cover:
 
 # Run static analysis
 vet:
-    go vet ./...
+    @go vet ./...
 
 # Apply Go modernization fixes
 fix:
@@ -34,12 +34,21 @@ fix:
 fmt:
     gofmt -w .
 
+# Run linters (cyclomatic complexity + dead assignments)
+lint:
+    #!/usr/bin/env bash
+    set -o pipefail
+    rc=0
+    gocyclo -over 15 . || rc=1
+    ineffassign ./... || rc=1
+    exit $rc
+
 # Check formatting (CI-friendly, fails if unformatted)
 fmt-check:
     @test -z "$(gofmt -l .)" || (echo "Files need formatting:" && gofmt -l . && exit 1)
 
-# Run all checks (format + vet + tests)
-check: fmt-check vet test
+# Run all checks (format + vet + lint + tests)
+check: fmt-check vet lint test
 
 # Clean build artifacts
 clean:

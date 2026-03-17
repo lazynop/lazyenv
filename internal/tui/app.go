@@ -206,80 +206,34 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	}
 
 	// Normal mode
+	return a.handleNormalKey(msg)
+}
+
+func (a App) handleNormalKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Quit):
 		return a, tea.Quit
+	case key.Matches(msg, a.keys.Help):
+		a.mode = ModeHelp
+		return a, nil
+	}
 
-	case key.Matches(msg, a.keys.Up):
-		if a.focus == FocusFiles {
-			a.fileList.MoveUp()
-			a.fileList.Select()
-			if f := a.fileList.SelectedFile(); f != nil {
-				a.varList.SetFile(f)
-			}
-		} else {
-			a.varList.MoveUp()
-		}
+	// Navigation keys (Up/Down/Left/Right/Enter)
+	if updated, handled := a.handleNormalNavigation(msg); handled {
+		return updated, nil
+	}
 
-	case key.Matches(msg, a.keys.Down):
-		if a.focus == FocusFiles {
-			a.fileList.MoveDown()
-			a.fileList.Select()
-			if f := a.fileList.SelectedFile(); f != nil {
-				a.varList.SetFile(f)
-			}
-		} else {
-			a.varList.MoveDown()
-		}
+	// Var-focused actions (Edit/Add/Delete/Yank/Peek)
+	if m, cmd, handled := a.handleNormalVarAction(msg); handled {
+		return m, cmd
+	}
 
-	case key.Matches(msg, a.keys.Left):
-		a.focus = FocusFiles
-		a.fileList.Focused = true
-		a.varList.Focused = false
+	// Global actions (Compare/Save/Reset/Toggle/Search/Matrix)
+	return a.handleNormalGlobalAction(msg)
+}
 
-	case key.Matches(msg, a.keys.Right):
-		a.focus = FocusVars
-		a.fileList.Focused = false
-		a.varList.Focused = true
-
-	case key.Matches(msg, a.keys.Enter):
-		if a.focus == FocusFiles {
-			a.fileList.Select()
-			f := a.fileList.SelectedFile()
-			if f != nil {
-				a.varList.SetFile(f)
-			}
-			a.focus = FocusVars
-			a.fileList.Focused = false
-			a.varList.Focused = true
-		}
-
-	case key.Matches(msg, a.keys.Edit):
-		if a.focus == FocusVars {
-			v := a.varList.SelectedVar()
-			if v != nil {
-				idx := a.varList.SelectedVarIndex()
-				a.editor.StartEdit(v, idx)
-				a.mode = ModeEditing
-				return a, a.editor.input.Focus()
-			}
-		}
-
-	case key.Matches(msg, a.keys.Add):
-		if a.focus == FocusVars && a.varList.File != nil {
-			a.editor.StartAdd()
-			a.mode = ModeEditing
-			return a, a.editor.input.Focus()
-		}
-
-	case key.Matches(msg, a.keys.Delete):
-		if a.focus == FocusVars {
-			v := a.varList.SelectedVar()
-			if v != nil {
-				a.mode = ModeConfirmDelete
-			}
-		}
-
+func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch {
 	case key.Matches(msg, a.keys.Compare):
 		if len(a.fileList.Files) >= 2 {
 			f := a.fileList.SelectedFile()
@@ -332,42 +286,122 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.matrixView.Width = a.width
 		a.matrixView.Height = a.height - 1
 		a.mode = ModeMatrix
-
-	case key.Matches(msg, a.keys.YankValue):
-		if a.focus == FocusVars {
-			v := a.varList.SelectedVar()
-			if v != nil {
-				a.statusBar.SetMessage(fmt.Sprintf("Copied %s value to clipboard", v.Key))
-				return a, tea.Batch(
-					tea.SetClipboard(v.Value),
-					clearMessageAfter(a.config.Layout.MessageTimeout),
-				)
-			}
-		}
-
-	case key.Matches(msg, a.keys.YankLine):
-		if a.focus == FocusVars {
-			v := a.varList.SelectedVar()
-			if v != nil {
-				line := v.Key + "=" + v.Value
-				a.statusBar.SetMessage(fmt.Sprintf("Copied %s to clipboard", v.Key+"=..."))
-				return a, tea.Batch(
-					tea.SetClipboard(line),
-					clearMessageAfter(a.config.Layout.MessageTimeout),
-				)
-			}
-		}
-
-	case key.Matches(msg, a.keys.Peek):
-		if a.focus == FocusVars {
-			a.varList.Peeking = !a.varList.Peeking
-		}
-
-	case key.Matches(msg, a.keys.Help):
-		a.mode = ModeHelp
 	}
 
 	return a, nil
+}
+
+func (a App) handleNormalNavigation(msg tea.KeyPressMsg) (App, bool) {
+	switch {
+	case key.Matches(msg, a.keys.Up):
+		if a.focus == FocusFiles {
+			a.fileList.MoveUp()
+			a.fileList.Select()
+			if f := a.fileList.SelectedFile(); f != nil {
+				a.varList.SetFile(f)
+			}
+		} else {
+			a.varList.MoveUp()
+		}
+		return a, true
+
+	case key.Matches(msg, a.keys.Down):
+		if a.focus == FocusFiles {
+			a.fileList.MoveDown()
+			a.fileList.Select()
+			if f := a.fileList.SelectedFile(); f != nil {
+				a.varList.SetFile(f)
+			}
+		} else {
+			a.varList.MoveDown()
+		}
+		return a, true
+
+	case key.Matches(msg, a.keys.Left):
+		a.focus = FocusFiles
+		a.fileList.Focused = true
+		a.varList.Focused = false
+		return a, true
+
+	case key.Matches(msg, a.keys.Right):
+		a.focus = FocusVars
+		a.fileList.Focused = false
+		a.varList.Focused = true
+		return a, true
+
+	case key.Matches(msg, a.keys.Enter):
+		if a.focus == FocusFiles {
+			a.fileList.Select()
+			f := a.fileList.SelectedFile()
+			if f != nil {
+				a.varList.SetFile(f)
+			}
+			a.focus = FocusVars
+			a.fileList.Focused = false
+			a.varList.Focused = true
+		}
+		return a, true
+	}
+
+	return a, false
+}
+
+func (a App) handleNormalVarAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bool) {
+	if a.focus != FocusVars {
+		return a, nil, false
+	}
+
+	switch {
+	case key.Matches(msg, a.keys.Edit):
+		v := a.varList.SelectedVar()
+		if v != nil {
+			idx := a.varList.SelectedVarIndex()
+			a.editor.StartEdit(v, idx)
+			a.mode = ModeEditing
+			return a, a.editor.input.Focus(), true
+		}
+
+	case key.Matches(msg, a.keys.Add):
+		if a.varList.File != nil {
+			a.editor.StartAdd()
+			a.mode = ModeEditing
+			return a, a.editor.input.Focus(), true
+		}
+
+	case key.Matches(msg, a.keys.Delete):
+		v := a.varList.SelectedVar()
+		if v != nil {
+			a.mode = ModeConfirmDelete
+			return a, nil, true
+		}
+
+	case key.Matches(msg, a.keys.YankValue):
+		v := a.varList.SelectedVar()
+		if v != nil {
+			a.statusBar.SetMessage(fmt.Sprintf("Copied %s value to clipboard", v.Key))
+			return a, tea.Batch(
+				tea.SetClipboard(v.Value),
+				clearMessageAfter(a.config.Layout.MessageTimeout),
+			), true
+		}
+
+	case key.Matches(msg, a.keys.YankLine):
+		v := a.varList.SelectedVar()
+		if v != nil {
+			line := v.Key + "=" + v.Value
+			a.statusBar.SetMessage(fmt.Sprintf("Copied %s to clipboard", v.Key+"=..."))
+			return a, tea.Batch(
+				tea.SetClipboard(line),
+				clearMessageAfter(a.config.Layout.MessageTimeout),
+			), true
+		}
+
+	case key.Matches(msg, a.keys.Peek):
+		a.varList.Peeking = !a.varList.Peeking
+		return a, nil, true
+	}
+
+	return a, nil, false
 }
 
 func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {

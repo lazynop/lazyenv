@@ -276,51 +276,7 @@ func (m *DiffViewModel) View(theme Theme) string {
 	var leftLines, rightLines []string
 
 	for i := m.Offset; i < end; i++ {
-		e := m.Entries[i]
-		isCursor := i == m.Cursor
-
-		var statusChar string
-		var style lipgloss.Style
-
-		switch e.Status {
-		case model.DiffEqual:
-			statusChar = "="
-			style = theme.DiffEqual
-		case model.DiffChanged:
-			statusChar = "≠"
-			style = theme.DiffChanged
-		case model.DiffAdded:
-			statusChar = "+"
-			style = theme.DiffAdded
-		case model.DiffRemoved:
-			statusChar = "-"
-			style = theme.DiffRemoved
-		}
-
-		key := padRight(truncate(e.Key, keyWidth), keyWidth)
-		valA := truncate(e.ValueA, valWidth)
-		valB := truncate(e.ValueB, valWidth)
-		valA = padRight(valA, valWidth)
-		valB = padRight(valB, valWidth)
-
-		leftLine := fmt.Sprintf("  %s  %s", key, valA)
-		rightLine := fmt.Sprintf("  %s  %s  %s", key, valB, statusChar)
-
-		if e.Status == model.DiffRemoved {
-			leftLine = padRight("", halfWidth-4)
-		}
-		if e.Status == model.DiffAdded {
-			rightLine = fmt.Sprintf("  %s  %s", padRight("", keyWidth+valWidth+2), statusChar)
-		}
-
-		if isCursor {
-			leftLine = theme.CursorItem.Render(padRight(leftLine, halfWidth-4))
-			rightLine = theme.CursorItem.Render(padRight(rightLine, halfWidth-4))
-		} else {
-			leftLine = style.Render(leftLine)
-			rightLine = style.Render(rightLine)
-		}
-
+		leftLine, rightLine := m.renderDiffEntry(m.Entries[i], i == m.Cursor, keyWidth, valWidth, halfWidth, theme)
 		leftLines = append(leftLines, leftLine)
 		rightLines = append(rightLines, rightLine)
 	}
@@ -343,6 +299,54 @@ func (m *DiffViewModel) View(theme Theme) string {
 		Render(fmt.Sprintf("%s\n%s", rightTitle, rightContent))
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, leftPanel, rightPanel)
+}
+
+// renderDiffEntry renders a single diff entry, returning the left and right
+// panel lines.
+func (m *DiffViewModel) renderDiffEntry(e model.DiffEntry, isCursor bool, keyWidth, valWidth, halfWidth int, theme Theme) (string, string) {
+	var statusChar string
+	var style lipgloss.Style
+
+	switch e.Status {
+	case model.DiffEqual:
+		statusChar = "="
+		style = theme.DiffEqual
+	case model.DiffChanged:
+		statusChar = "≠"
+		style = theme.DiffChanged
+	case model.DiffAdded:
+		statusChar = "+"
+		style = theme.DiffAdded
+	case model.DiffRemoved:
+		statusChar = "-"
+		style = theme.DiffRemoved
+	}
+
+	key := padRight(truncate(e.Key, keyWidth), keyWidth)
+	valA := truncate(e.ValueA, valWidth)
+	valB := truncate(e.ValueB, valWidth)
+	valA = padRight(valA, valWidth)
+	valB = padRight(valB, valWidth)
+
+	leftLine := fmt.Sprintf("  %s  %s", key, valA)
+	rightLine := fmt.Sprintf("  %s  %s  %s", key, valB, statusChar)
+
+	if e.Status == model.DiffRemoved {
+		leftLine = padRight("", halfWidth-4)
+	}
+	if e.Status == model.DiffAdded {
+		rightLine = fmt.Sprintf("  %s  %s", padRight("", keyWidth+valWidth+2), statusChar)
+	}
+
+	if isCursor {
+		leftLine = theme.CursorItem.Render(padRight(leftLine, halfWidth-4))
+		rightLine = theme.CursorItem.Render(padRight(rightLine, halfWidth-4))
+	} else {
+		leftLine = style.Render(leftLine)
+		rightLine = style.Render(rightLine)
+	}
+
+	return leftLine, rightLine
 }
 
 func truncate(s string, maxLen int) string {

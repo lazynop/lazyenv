@@ -131,14 +131,162 @@ func (m *VarListModel) Refresh() {
 	m.recomputeIndices()
 }
 
-// View renders the variable list panel.
-func (m *VarListModel) View(theme Theme) string {
+// renderWarningIndicators renders the modification and issue warning indicators for a variable.
+func (m *VarListModel) renderWarningIndicators(v *model.EnvVar, theme Theme) string {
+	mod := " "
+	issue := " "
+
+	if v.IsNew {
+		mod = theme.AddedMarker.Render("+")
+	} else if v.Modified {
+		mod = theme.ModifiedMarker.Render("*")
+	}
+
+	if v.IsDuplicate {
+		issue = theme.DuplicateWarn.Render("D")
+	} else if v.IsEmpty {
+		issue = theme.EmptyWarning.Render("○")
+	} else if v.IsPlaceholder {
+		issue = theme.PlaceholderWarn.Render("…")
+	}
+
+	return mod + issue
+}
+
+// formatValue returns the (possibly masked and truncated) display value for a variable.
+func (m *VarListModel) formatValue(v *model.EnvVar, maxValWidth int) string {
+	value := v.Value
+	if v.IsSecret && !m.ShowSecrets {
+		value = util.MaskValue(v.Value)
+	}
+	if len(value) > maxValWidth {
+		value = value[:maxValWidth-2] + ".."
+	}
+	return padRight(value, maxValWidth)
+}
+
+// renderVarLine renders a single variable line including cursor highlighting, secret masking, and warnings.
+func (m *VarListModel) renderVarLine(i int, v *model.EnvVar, keyWidth, maxValWidth int, theme Theme) string {
+	key := padRight(truncate(v.Key, keyWidth), keyWidth)
+	value := m.formatValue(v, maxValWidth)
+	warning := m.renderWarningIndicators(v, theme)
+
+	if i == m.Cursor && m.Focused {
+		// Cursor line: render as a single styled block (no ANSI nesting)
+		val := v.Value
+		if v.IsSecret && !m.ShowSecrets {
+			val = util.MaskValue(v.Value)
+		}
+		if len(val) > maxValWidth {
+			val = val[:maxValWidth-2] + ".."
+		}
+		val = padRight(val, maxValWidth)
+		return theme.CursorItem.Render(fmt.Sprintf("  %s  %s%s", key, val, stripAnsi(warning)))
+	}
+
+	// Normal line: style key and value segments individually
+	valueStyle := theme.ValueStyle
+	if v.IsSecret && !m.ShowSecrets {
+		valueStyle = theme.SecretValue
+	}
+	return fmt.Sprintf("  %s  %s%s",
+		theme.KeyStyle.Render(key),
+		valueStyle.Render(value),
+		warning)
+}
+
+// renderPeekLine renders the peek line for modified/new variables, or empty string if not applicable.
+func (m *VarListModel) renderPeekLine(v *model.EnvVar, keyWidth, maxValWidth int, theme Theme) string {
+	if v.IsNew {
+		return theme.MutedItem.Render(fmt.Sprintf("  %s  ↳ new variable", padRight("", keyWidth)))
+	}
+	if v.Modified {
+		orig := v.OriginalValue
+		if len(orig) > maxValWidth-4 {
+			orig = orig[:maxValWidth-6] + ".."
+		}
+		return theme.MutedItem.Render(fmt.Sprintf("  %s  ↳ was: %s", padRight("", keyWidth), orig))
+	}
+	return ""
+}
+
+// renderDeletedVars renders the deleted variables section.
+func (m *VarListModel) renderDeletedVars(visible, keyWidth, maxValWidth int, currentLines int, theme Theme) []string {
+	var lines []string
+	for _, dv := range m.File.DeletedVars {
+		if currentLines+len(lines) >= visible {
+			break
+		}
+		key := padRight(truncate(dv.Key, keyWidth), keyWidth)
+		value := m.formatValue(&dv, maxValWidth)
+		marker := theme.DeletedMarker.Render("-")
+		line := theme.MutedItem.Render(fmt.Sprintf("  %s  %s", key, value)) + marker + " "
+		lines = append(lines, line)
+	}
+	return lines
+}
+
+// visibleLines returns how many variable lines can be displayed.
+func (m *VarListModel) visibleLines() int {
+	visible := max(m.Height-4, 1)
+	if m.Peeking && m.Cursor >= 0 && m.Cursor < len(m.displayIndices) {
+		v := &m.File.Vars[m.displayIndices[m.Cursor]]
+		if v.Modified || v.IsNew {
+			visible = max(visible-1, 1)
+		}
+	}
+	return visible
+}
+
+// calcColumnWidths returns the key column width and max value width.
+func (m *VarListModel) calcColumnWidths() (int, int) {
+	keyWidth := 0
+	for _, idx := range m.displayIndices {
+		kw := len(m.File.Vars[idx].Key)
+		if kw > keyWidth {
+			keyWidth = kw
+		}
+	}
+	if keyWidth > m.layout.VarListMaxKeyWidth {
+		keyWidth = m.layout.VarListMaxKeyWidth
+	}
+	maxValWidth := max(
+		m.Width-keyWidth-m.layout.VarListPadding, m.layout.VarListMinValueWidth)
+	return keyWidth, maxValWidth
+}
+
+// renderVarLines renders all visible variable lines including peek lines.
+func (m *VarListModel) renderVarLines(visible, keyWidth, maxValWidth int, theme Theme) []string {
+	var lines []string
+	end := min(m.Offset+visible, len(m.displayIndices))
+
+	for i := m.Offset; i < end; i++ {
+		idx := m.displayIndices[i]
+		v := &m.File.Vars[idx]
+
+		lines = append(lines, m.renderVarLine(i, v, keyWidth, maxValWidth, theme))
+
+		if m.Peeking && i == m.Cursor && m.Focused {
+			if peekLine := m.renderPeekLine(v, keyWidth, maxValWidth, theme); peekLine != "" {
+				lines = append(lines, peekLine)
+			}
+		}
+	}
+	return lines
+}
+
+// viewTitle returns the panel title string.
+func (m *VarListModel) viewTitle(theme Theme) string {
 	fileName := ""
 	if m.File != nil {
 		fileName = m.File.Name
 	}
+	return theme.PanelTitle.Render(fmt.Sprintf("Variables (%s)", fileName))
+}
 
-	title := theme.PanelTitle.Render(fmt.Sprintf("Variables (%s)", fileName))
+// View renders the variable list panel.
+func (m *VarListModel) View(theme Theme) string {
+	title := m.viewTitle(theme)
 
 	if m.File == nil {
 		content := theme.MutedItem.Render("  Select a file")
@@ -150,142 +298,16 @@ func (m *VarListModel) View(theme Theme) string {
 		if m.SearchQuery != "" {
 			msg = fmt.Sprintf("  No matches for %q", m.SearchQuery)
 		}
-		content := theme.MutedItem.Render(msg)
-		return m.renderPanel(title, content, theme)
+		return m.renderPanel(title, theme.MutedItem.Render(msg), theme)
 	}
 
-	visible := max(m.Height-4, 1)
-	// Reserve a line for peek if active on a modified/new variable
-	if m.Peeking && m.Cursor >= 0 && m.Cursor < len(m.displayIndices) {
-		v := &m.File.Vars[m.displayIndices[m.Cursor]]
-		if v.Modified || v.IsNew {
-			visible = max(visible-1, 1)
-		}
-	}
+	visible := m.visibleLines()
+	keyWidth, maxValWidth := m.calcColumnWidths()
 
-	// Calculate column widths
-	keyWidth := 0
-	for _, idx := range m.displayIndices {
-		kw := len(m.File.Vars[idx].Key)
-		if kw > keyWidth {
-			keyWidth = kw
-		}
-	}
-	if keyWidth > m.layout.VarListMaxKeyWidth {
-		keyWidth = m.layout.VarListMaxKeyWidth
-	}
+	lines := m.renderVarLines(visible, keyWidth, maxValWidth, theme)
+	lines = append(lines, m.renderDeletedVars(visible, keyWidth, maxValWidth, len(lines), theme)...)
 
-	maxValWidth := max(
-		// space for padding, warnings, borders
-		m.Width-keyWidth-m.layout.VarListPadding, m.layout.VarListMinValueWidth)
-
-	var lines []string
-	end := min(m.Offset+visible, len(m.displayIndices))
-
-	for i := m.Offset; i < end; i++ {
-		idx := m.displayIndices[i]
-		v := &m.File.Vars[idx]
-
-		// Key (truncate if longer than column)
-		key := padRight(truncate(v.Key, keyWidth), keyWidth)
-
-		// Value (potentially masked)
-		value := v.Value
-		if v.IsSecret && !m.ShowSecrets {
-			value = util.MaskValue(v.Value)
-		}
-		// Truncate long values
-		if len(value) > maxValWidth {
-			value = value[:maxValWidth-2] + ".."
-		}
-		value = padRight(value, maxValWidth)
-
-		// Warning/status indicator (2 slots: [modified][issue])
-		mod := " "
-		issue := " "
-		if v.IsNew {
-			mod = theme.AddedMarker.Render("+")
-		} else if v.Modified {
-			mod = theme.ModifiedMarker.Render("*")
-		}
-		if v.IsDuplicate {
-			issue = theme.DuplicateWarn.Render("D")
-		} else if v.IsEmpty {
-			issue = theme.EmptyWarning.Render("○")
-		} else if v.IsPlaceholder {
-			issue = theme.PlaceholderWarn.Render("…")
-		}
-		warning := mod + issue
-
-		var line string
-		if v.IsSecret && !m.ShowSecrets {
-			line = fmt.Sprintf("  %s  %s%s",
-				theme.KeyStyle.Render(key),
-				theme.SecretValue.Render(value),
-				warning)
-		} else {
-			line = fmt.Sprintf("  %s  %s%s",
-				theme.KeyStyle.Render(key),
-				theme.ValueStyle.Render(value),
-				warning)
-		}
-
-		if i == m.Cursor && m.Focused {
-			line = theme.CursorItem.Render(padRight(stripAnsi(line), m.Width-4))
-			// Re-apply on cursor: show key bold on highlighted bg
-			k := padRight(truncate(v.Key, keyWidth), keyWidth)
-			val := v.Value
-			if v.IsSecret && !m.ShowSecrets {
-				val = util.MaskValue(v.Value)
-			}
-			if len(val) > maxValWidth {
-				val = val[:maxValWidth-2] + ".."
-			}
-			val = padRight(val, maxValWidth)
-			line = theme.CursorItem.Render(fmt.Sprintf("  %s  %s%s", k, val, stripAnsi(warning)))
-		}
-
-		lines = append(lines, line)
-
-		// Peek line: show original value under the selected variable
-		if m.Peeking && i == m.Cursor && m.Focused {
-			var peekLine string
-			if v.IsNew {
-				peekLine = theme.MutedItem.Render(fmt.Sprintf("  %s  ↳ new variable", padRight("", keyWidth)))
-			} else if v.Modified {
-				orig := v.OriginalValue
-				if len(orig) > maxValWidth-4 {
-					orig = orig[:maxValWidth-6] + ".."
-				}
-				peekLine = theme.MutedItem.Render(fmt.Sprintf("  %s  ↳ was: %s", padRight("", keyWidth), orig))
-			}
-			if peekLine != "" {
-				lines = append(lines, peekLine)
-			}
-		}
-	}
-
-	// Render deleted variables at the bottom
-	for _, dv := range m.File.DeletedVars {
-		if len(lines) >= visible {
-			break
-		}
-		key := padRight(truncate(dv.Key, keyWidth), keyWidth)
-		value := dv.Value
-		if dv.IsSecret && !m.ShowSecrets {
-			value = util.MaskValue(dv.Value)
-		}
-		if len(value) > maxValWidth {
-			value = value[:maxValWidth-2] + ".."
-		}
-		value = padRight(value, maxValWidth)
-		marker := theme.DeletedMarker.Render("-")
-		line := theme.MutedItem.Render(fmt.Sprintf("  %s  %s", key, value)) + marker + " "
-		lines = append(lines, line)
-	}
-
-	content := strings.Join(lines, "\n")
-	return m.renderPanel(title, content, theme)
+	return m.renderPanel(title, strings.Join(lines, "\n"), theme)
 }
 
 func (m *VarListModel) renderPanel(title, content string, theme Theme) string {
