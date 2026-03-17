@@ -159,10 +159,7 @@ func (m *VarListModel) formatValue(v *model.EnvVar, maxValWidth int) string {
 	if v.IsSecret && !m.ShowSecrets {
 		value = util.MaskValue(v.Value)
 	}
-	if len(value) > maxValWidth {
-		value = value[:maxValWidth-2] + ".."
-	}
-	return padRight(value, maxValWidth)
+	return padRight(truncate(value, maxValWidth), maxValWidth)
 }
 
 // renderVarLine renders a single variable line including cursor highlighting, secret masking, and warnings.
@@ -173,15 +170,7 @@ func (m *VarListModel) renderVarLine(i int, v *model.EnvVar, keyWidth, maxValWid
 
 	if i == m.Cursor && m.Focused {
 		// Cursor line: render as a single styled block (no ANSI nesting)
-		val := v.Value
-		if v.IsSecret && !m.ShowSecrets {
-			val = util.MaskValue(v.Value)
-		}
-		if len(val) > maxValWidth {
-			val = val[:maxValWidth-2] + ".."
-		}
-		val = padRight(val, maxValWidth)
-		return theme.CursorItem.Render(fmt.Sprintf("  %s  %s%s", key, val, stripAnsi(warning)))
+		return theme.CursorItem.Render(fmt.Sprintf("  %s  %s%s", key, value, stripAnsi(warning)))
 	}
 
 	// Normal line: style key and value segments individually
@@ -201,10 +190,7 @@ func (m *VarListModel) renderPeekLine(v *model.EnvVar, keyWidth, maxValWidth int
 		return theme.MutedItem.Render(fmt.Sprintf("  %s  ↳ new variable", padRight("", keyWidth)))
 	}
 	if v.Modified {
-		orig := v.OriginalValue
-		if len(orig) > maxValWidth-4 {
-			orig = orig[:maxValWidth-6] + ".."
-		}
+		orig := truncate(v.OriginalValue, maxValWidth-4)
 		return theme.MutedItem.Render(fmt.Sprintf("  %s  ↳ was: %s", padRight("", keyWidth), orig))
 	}
 	return ""
