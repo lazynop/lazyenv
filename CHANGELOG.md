@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-03-18
+
+### Added
+- Interactive theme preview with `--themes` flag and 56 built-in themes
+- Mouse support: click and scroll wheel handling across all modes
+- Configurable mouse scroll lines via config
+- `--no-mouse` flag and config option to disable mouse
+- `--check-config` flag to validate configuration
+- `--config` flag to specify a custom config file path
+- `--file-list-width` flag to control file list panel width
+
+### Fixed
+- Enforce minimum file-list-width of 20
+- Show sort hint (o) in status bar for all normal mode panels
+
+### Improved
+- Truncate long file names in file list panel
+
 ## [0.3.1] - 2026-03-07
 
 ### Added
