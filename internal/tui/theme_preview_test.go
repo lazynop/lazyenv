@@ -12,7 +12,7 @@ import (
 )
 
 func TestNewThemePreview(t *testing.T) {
-	m := NewThemePreview()
+	m := NewThemePreview(false)
 
 	assert.NotEmpty(t, m.themes, "themes list should be populated")
 	assert.NotEmpty(t, m.searchPaths, "searchPaths should be populated")
@@ -25,7 +25,7 @@ func TestNewThemePreview(t *testing.T) {
 }
 
 func TestThemePreviewNavigateDown(t *testing.T) {
-	m := NewThemePreview()
+	m := NewThemePreview(false)
 	require.Greater(t, len(m.themes), 1, "need at least 2 themes to test navigation")
 
 	// "j" key moves cursor down
@@ -40,7 +40,7 @@ func TestThemePreviewNavigateDown(t *testing.T) {
 }
 
 func TestThemePreviewNavigateUp(t *testing.T) {
-	m := NewThemePreview()
+	m := NewThemePreview(false)
 	require.Greater(t, len(m.themes), 1, "need at least 2 themes to test navigation")
 
 	// Move down first
@@ -62,7 +62,7 @@ func TestThemePreviewNavigateUp(t *testing.T) {
 }
 
 func TestThemePreviewCursorDoesNotGoBelowZero(t *testing.T) {
-	m := NewThemePreview()
+	m := NewThemePreview(false)
 	assert.Equal(t, 0, m.cursor)
 
 	// Pressing up at top should not go below 0
@@ -76,7 +76,7 @@ func TestThemePreviewCursorDoesNotGoBelowZero(t *testing.T) {
 }
 
 func TestThemePreviewCursorDoesNotExceedMax(t *testing.T) {
-	m := NewThemePreview()
+	m := NewThemePreview(false)
 	maxIdx := len(m.themes) - 1
 
 	// Move to the end
@@ -88,7 +88,7 @@ func TestThemePreviewCursorDoesNotExceedMax(t *testing.T) {
 }
 
 func TestThemePreviewSelectWithEnter(t *testing.T) {
-	m := NewThemePreview()
+	m := NewThemePreview(false)
 	expectedTheme := m.themes[0]
 
 	updated, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
@@ -102,7 +102,7 @@ func TestThemePreviewSelectWithEnter(t *testing.T) {
 }
 
 func TestThemePreviewSelectWithEnterAfterNavigation(t *testing.T) {
-	m := NewThemePreview()
+	m := NewThemePreview(false)
 	require.Greater(t, len(m.themes), 1)
 
 	// Navigate to index 1
@@ -120,7 +120,7 @@ func TestThemePreviewSelectWithEnterAfterNavigation(t *testing.T) {
 }
 
 func TestThemePreviewQuitWithQ(t *testing.T) {
-	m := NewThemePreview()
+	m := NewThemePreview(false)
 
 	updated, cmd := m.Update(tea.KeyPressMsg{Text: "q"})
 	m = updated.(ThemePreviewModel)
@@ -132,7 +132,7 @@ func TestThemePreviewQuitWithQ(t *testing.T) {
 }
 
 func TestThemePreviewQuitWithEsc(t *testing.T) {
-	m := NewThemePreview()
+	m := NewThemePreview(false)
 
 	updated, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
 	m = updated.(ThemePreviewModel)
@@ -144,7 +144,7 @@ func TestThemePreviewQuitWithEsc(t *testing.T) {
 }
 
 func TestThemePreviewWindowSizeMsg(t *testing.T) {
-	m := NewThemePreview()
+	m := NewThemePreview(false)
 	assert.Equal(t, 0, m.width)
 	assert.Equal(t, 0, m.height)
 
@@ -157,7 +157,7 @@ func TestThemePreviewWindowSizeMsg(t *testing.T) {
 }
 
 func TestThemePreviewViewEmptyWhenWidthZero(t *testing.T) {
-	m := NewThemePreview()
+	m := NewThemePreview(false)
 	// No WindowSizeMsg sent — width stays 0
 
 	view := m.View()
@@ -211,7 +211,7 @@ func TestResolveThemeColorsFromRealTheme(t *testing.T) {
 }
 
 func TestThemePreviewSelectedMethod(t *testing.T) {
-	m := NewThemePreview()
+	m := NewThemePreview(false)
 	assert.Equal(t, "", m.Selected())
 
 	// After Enter, Selected() should return the theme name
@@ -221,7 +221,7 @@ func TestThemePreviewSelectedMethod(t *testing.T) {
 }
 
 func TestThemePreviewMouseClick(t *testing.T) {
-	m := NewThemePreview()
+	m := NewThemePreview(false)
 	require.Greater(t, len(m.themes), 5, "need at least 5 themes")
 
 	// Send WindowSizeMsg first so width/height are set
@@ -237,7 +237,7 @@ func TestThemePreviewMouseClick(t *testing.T) {
 }
 
 func TestThemePreviewMouseWheel(t *testing.T) {
-	m := NewThemePreview()
+	m := NewThemePreview(false)
 	require.Greater(t, len(m.themes), 3, "need at least 4 themes")
 
 	// Send WindowSizeMsg first
@@ -252,7 +252,7 @@ func TestThemePreviewMouseWheel(t *testing.T) {
 }
 
 func TestThemePreviewScrollOffset(t *testing.T) {
-	m := NewThemePreview()
+	m := NewThemePreview(false)
 
 	// Set height so contentHeight = max(24-4, 1) = 20
 	updated, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})

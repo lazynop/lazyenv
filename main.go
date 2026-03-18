@@ -136,7 +136,7 @@ func main() {
 	}
 
 	if cli.Themes {
-		selected, err := tui.RunThemePreview()
+		selected, err := tui.RunThemePreview(cfg.NoMouse)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)

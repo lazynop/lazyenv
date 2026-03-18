@@ -53,13 +53,15 @@ type ThemePreviewModel struct {
 	selected    string // non-empty if user pressed Enter
 	width       int
 	height      int
+	noMouse     bool
 }
 
 // NewThemePreview returns a new theme preview model.
-func NewThemePreview() ThemePreviewModel {
+func NewThemePreview(noMouse bool) ThemePreviewModel {
 	return ThemePreviewModel{
 		themes:      config.ThemeNames(),
 		searchPaths: config.ConfigSearchPaths(".", ""),
+		noMouse:     noMouse,
 	}
 }
 
@@ -162,7 +164,9 @@ func (m ThemePreviewModel) View() tea.View {
 
 	view := tea.NewView(lipgloss.JoinVertical(lipgloss.Left, panels, statusBar))
 	view.BackgroundColor = rc.bg
-	view.MouseMode = tea.MouseModeCellMotion
+	if !m.noMouse {
+		view.MouseMode = tea.MouseModeCellMotion
+	}
 	return view
 }
 
@@ -297,8 +301,8 @@ func (m ThemePreviewModel) renderStatusBar(rc resolvedColors) string {
 
 // RunThemePreview runs the interactive theme preview and returns the selected theme name.
 // Returns "" if the user quit without selecting.
-func RunThemePreview() (string, error) {
-	m := NewThemePreview()
+func RunThemePreview(noMouse bool) (string, error) {
+	m := NewThemePreview(noMouse)
 	p := tea.NewProgram(m)
 	result, err := p.Run()
 	if err != nil {
