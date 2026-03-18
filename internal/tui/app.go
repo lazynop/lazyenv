@@ -263,16 +263,16 @@ func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 	switch a.mode {
 	case ModeNormal, ModeSearching:
 		if msg.X < a.fileWidth {
-			a.scrollFileList(up)
+			a = a.scrollFileList(up)
 		} else {
-			a.scrollVarList(up)
+			a = a.scrollVarList(up)
 		}
 	case ModeComparing, ModeEditingCompare:
-		a.scrollDiffView(up)
+		a = a.scrollDiffView(up)
 	case ModeCompareSelect:
-		a.scrollFileList(up)
+		a = a.scrollFileList(up)
 	case ModeMatrix, ModeMatrixEditing:
-		a.scrollMatrix(up)
+		a = a.scrollMatrix(up)
 	}
 	return a
 }
