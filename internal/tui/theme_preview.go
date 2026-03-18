@@ -120,6 +120,7 @@ func (m ThemePreviewModel) View() tea.View {
 
 	view := tea.NewView(lipgloss.JoinVertical(lipgloss.Left, panels, statusBar))
 	view.BackgroundColor = rc.bg
+	view.MouseMode = tea.MouseModeCellMotion
 	return view
 }
 

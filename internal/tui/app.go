@@ -62,6 +62,7 @@ type App struct {
 	mode           AppMode
 	width          int
 	height         int
+	fileWidth      int
 	ready          bool
 
 	fileList    FileListModel
@@ -599,19 +600,22 @@ func (a App) View() tea.View {
 	view := tea.NewView(content)
 	view.AltScreen = true
 	view.BackgroundColor = a.theme.ColorBg
+	if !a.config.NoMouse {
+		view.MouseMode = tea.MouseModeCellMotion
+	}
 	return view
 }
 
 func (a *App) updateLayout() {
-	fileWidth := max(a.width/4, config.FileListMinWidth)
+	a.fileWidth = max(a.width/4, config.FileListMinWidth)
 	if a.config.Layout.FileListWidth > 0 {
-		fileWidth = a.config.Layout.FileListWidth
+		a.fileWidth = a.config.Layout.FileListWidth
 	}
-	varWidth := a.width - fileWidth
+	varWidth := a.width - a.fileWidth
 
 	panelHeight := a.height - 3 // space for status bar
 
-	a.fileList.Width = fileWidth
+	a.fileList.Width = a.fileWidth
 	a.fileList.Height = panelHeight
 	a.fileList.Focused = a.focus == FocusFiles
 

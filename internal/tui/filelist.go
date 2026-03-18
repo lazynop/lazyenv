@@ -60,6 +60,24 @@ func (m *FileListModel) MoveDown() {
 	}
 }
 
+// SetCursor positions the cursor at the given index with bounds checking.
+func (m *FileListModel) SetCursor(index int) {
+	if len(m.Files) == 0 {
+		return
+	}
+	m.Cursor = max(0, min(index, len(m.Files)-1))
+	m.Select()
+	visible := m.Height - 2
+	if visible > 0 {
+		if m.Cursor < m.Offset {
+			m.Offset = m.Cursor
+		}
+		if m.Cursor >= m.Offset+visible {
+			m.Offset = m.Cursor - visible + 1
+		}
+	}
+}
+
 // Select selects the current cursor position.
 func (m *FileListModel) Select() {
 	m.Selected = m.Cursor

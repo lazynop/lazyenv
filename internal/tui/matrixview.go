@@ -91,6 +91,18 @@ func (m *MatrixModel) MoveRight() {
 	m.ensureHorizontalVisible()
 }
 
+// SetCursor positions the cursor at the given row and column with bounds checking.
+func (m *MatrixModel) SetCursor(row, col int) {
+	if len(m.entries) > 0 {
+		m.cursorRow = max(0, min(row, len(m.entries)-1))
+	}
+	if len(m.fileNames) > 0 {
+		m.cursorCol = max(0, min(col, len(m.fileNames)-1))
+	}
+	m.ensureVisible()
+	m.ensureHorizontalVisible()
+}
+
 func (m *MatrixModel) ensureVisible() {
 	viewRows := max(1, m.Height-4) // header + footer + borders
 	if m.cursorRow < m.offsetRow {

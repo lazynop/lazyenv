@@ -106,6 +106,23 @@ func (m *DiffViewModel) MoveDown() {
 	}
 }
 
+// SetCursor positions the cursor at the given index with bounds checking.
+func (m *DiffViewModel) SetCursor(index int) {
+	if len(m.Entries) == 0 {
+		return
+	}
+	m.Cursor = max(0, min(index, len(m.Entries)-1))
+	visible := m.Height - 6
+	if visible > 0 {
+		if m.Cursor < m.Offset {
+			m.Offset = m.Cursor
+		}
+		if m.Cursor >= m.Offset+visible {
+			m.Offset = m.Cursor - visible + 1
+		}
+	}
+}
+
 // NextDiff jumps to the next non-equal entry.
 func (m *DiffViewModel) NextDiff() {
 	for i := m.Cursor + 1; i < len(m.Entries); i++ {

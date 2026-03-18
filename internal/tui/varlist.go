@@ -94,6 +94,28 @@ func (m *VarListModel) MoveDown() {
 	}
 }
 
+// SetCursor positions the cursor at the given index with bounds checking.
+func (m *VarListModel) SetCursor(index int) {
+	if len(m.displayIndices) == 0 {
+		return
+	}
+	m.Cursor = max(0, min(index, len(m.displayIndices)-1))
+	visible := m.Height - 4
+	if visible > 0 {
+		if m.Cursor < m.Offset {
+			m.Offset = m.Cursor
+		}
+		if m.Cursor >= m.Offset+visible {
+			m.Offset = m.Cursor - visible + 1
+		}
+	}
+}
+
+// DisplayCount returns the number of displayed items.
+func (m *VarListModel) DisplayCount() int {
+	return len(m.displayIndices)
+}
+
 // SelectedVar returns the currently selected variable, or nil.
 func (m *VarListModel) SelectedVar() *model.EnvVar {
 	if m.File == nil || len(m.displayIndices) == 0 {
