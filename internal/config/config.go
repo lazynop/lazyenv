@@ -28,6 +28,9 @@ type FileConfig struct {
 // FileListMinWidth is the minimum allowed width for the file list panel.
 const FileListMinWidth = 20
 
+// DefaultMouseScrollLines is the default number of lines scrolled per mouse wheel event.
+const DefaultMouseScrollLines = 1
+
 // LayoutConfig holds layout/sizing constants used by TUI components.
 type LayoutConfig struct {
 	VarListMaxKeyWidth   int `toml:"var-list-max-key-width"`
@@ -39,6 +42,7 @@ type LayoutConfig struct {
 	FileListWidth        int `toml:"file-list-width"`
 	DiffMinValueWidth    int `toml:"diff-min-value-width"`
 	DiffPadding          int `toml:"diff-padding"`
+	MouseScrollLines     int `toml:"mouse-scroll-lines"`
 
 	// Internal constants, not exposed in config file.
 	MessageTimeout      time.Duration `toml:"-"`
@@ -76,6 +80,7 @@ func DefaultConfig() Config {
 			VarListPadding:       12,
 			DiffMinValueWidth:    8,
 			DiffPadding:          10,
+			MouseScrollLines:     DefaultMouseScrollLines,
 			MessageTimeout:       2 * time.Second,
 			ErrorMessageTimeout:  3 * time.Second,
 		},

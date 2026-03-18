@@ -104,9 +104,9 @@ func (m ThemePreviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		listWidth := max(m.width/3, config.FileListMinWidth)
 		if msg.X < listWidth {
 			if msg.Button == tea.MouseWheelUp {
-				m.cursor = max(0, m.cursor-3)
+				m.cursor = max(0, m.cursor-config.DefaultMouseScrollLines)
 			} else {
-				m.cursor = min(len(m.themes)-1, m.cursor+3)
+				m.cursor = min(len(m.themes)-1, m.cursor+config.DefaultMouseScrollLines)
 			}
 		}
 		return m, nil

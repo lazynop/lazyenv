@@ -23,7 +23,7 @@ Browse, compare, edit and validate environment variables from your terminal.
 - Clipboard support (OSC 52), search and sort
 - Round-trip fidelity: saves preserve comments, blank lines, quoting
 - TOML configuration: layout, colors, file patterns, behaviors
-- Mouse support: click to select, scroll wheel to navigate
+- Mouse support: click to select, scroll wheel to navigate (disable with `--no-mouse`)
 - 56 built-in color themes with interactive preview (`--themes`)
 
 ## Install

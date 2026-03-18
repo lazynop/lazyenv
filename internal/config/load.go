@@ -131,5 +131,9 @@ func validate(cfg Config) []string {
 		warns = append(warns, fmt.Sprintf("invalid file-list-width: %d (must be 0 or >= %d)", l.FileListWidth, FileListMinWidth))
 	}
 
+	if l.MouseScrollLines < 0 {
+		warns = append(warns, fmt.Sprintf("invalid mouse-scroll-lines: %d (must be >= 0)", l.MouseScrollLines))
+	}
+
 	return warns
 }

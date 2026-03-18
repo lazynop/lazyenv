@@ -244,11 +244,11 @@ func TestThemePreviewMouseWheel(t *testing.T) {
 	updated, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 	m = updated.(ThemePreviewModel)
 
-	// WheelDown in left panel: cursor = min(len-1, 0+3) = 3
+	// WheelDown in left panel: cursor advances by MouseScrollLines (1)
 	updated, _ = m.Update(tea.MouseWheelMsg{X: 5, Y: 5, Button: tea.MouseWheelDown})
 	m = updated.(ThemePreviewModel)
 
-	assert.Equal(t, 3, m.cursor, "WheelDown should advance cursor by 3")
+	assert.Equal(t, config.DefaultMouseScrollLines, m.cursor, "WheelDown should advance cursor by DefaultMouseScrollLines")
 }
 
 func TestThemePreviewScrollOffset(t *testing.T) {

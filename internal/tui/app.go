@@ -256,7 +256,6 @@ func (a App) handleMatrixMouseClick(msg tea.MouseClickMsg) App {
 	return a
 }
 
-const mouseScrollLines = 3
 
 func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 	up := msg.Button == tea.MouseWheelUp
@@ -278,7 +277,7 @@ func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 }
 
 func (a App) scrollFileList(up bool) App {
-	for range mouseScrollLines {
+	for range a.config.Layout.MouseScrollLines {
 		if up {
 			a.fileList.MoveUp()
 		} else {
@@ -293,7 +292,7 @@ func (a App) scrollFileList(up bool) App {
 }
 
 func (a App) scrollVarList(up bool) App {
-	for range mouseScrollLines {
+	for range a.config.Layout.MouseScrollLines {
 		if up {
 			a.varList.MoveUp()
 		} else {
@@ -304,7 +303,7 @@ func (a App) scrollVarList(up bool) App {
 }
 
 func (a App) scrollDiffView(up bool) App {
-	for range mouseScrollLines {
+	for range a.config.Layout.MouseScrollLines {
 		if up {
 			a.diffView.MoveUp()
 		} else {
@@ -315,7 +314,7 @@ func (a App) scrollDiffView(up bool) App {
 }
 
 func (a App) scrollMatrix(up bool) App {
-	for range mouseScrollLines {
+	for range a.config.Layout.MouseScrollLines {
 		if up {
 			a.matrixView.MoveUp()
 		} else {

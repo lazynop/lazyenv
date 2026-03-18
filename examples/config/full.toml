@@ -34,6 +34,7 @@ var-list-padding = 12
 diff-min-value-width = 8
 diff-padding = 10
 file-list-width = 0                  # 0 = auto (1/4 screen, min 20), > 0 = fixed width
+mouse-scroll-lines = 1               # lines per mouse wheel event
 
 # Color overrides (hex). When using a theme, these override individual colors.
 # Leave empty or omit to use the theme or auto-detected defaults.
