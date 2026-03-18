@@ -32,6 +32,7 @@ var cli struct {
 	CheckConfig   bool             `name:"check-config" help:"Validate configuration file and exit."`
 	ShowConfig    bool             `name:"show-config" help:"Show effective configuration and exit."`
 	ListThemes    bool             `name:"list-themes" help:"List available built-in themes and exit."`
+	Themes        bool             `name:"themes" help:"Interactive theme preview."`
 	Version       kong.VersionFlag `short:"v" help:"Show version."`
 }
 
@@ -126,6 +127,18 @@ func main() {
 	if cli.ListThemes {
 		for _, name := range config.ThemeNames() {
 			fmt.Println(name)
+		}
+		return
+	}
+
+	if cli.Themes {
+		selected, err := tui.RunThemePreview()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		if selected != "" {
+			fmt.Printf("To use this theme, add to your config file:\n\n  theme = %q\n", selected)
 		}
 		return
 	}
