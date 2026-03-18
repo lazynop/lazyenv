@@ -213,10 +213,13 @@ func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 		a.focus = FocusFiles
 		a.fileList.Focused = true
 		a.varList.Focused = false
-		index := msg.Y - 2 + a.fileList.Offset
-		a.fileList.SetCursor(index)
-		if f := a.fileList.SelectedFile(); f != nil {
-			a.varList.SetFile(f)
+		index := msg.Y - 2 + a.fileList.Offset // Y=0 border, Y=1 title, Y=2 first item
+		if index >= 0 {
+			prev := a.fileList.SelectedFile()
+			a.fileList.SetCursor(index)
+			if f := a.fileList.SelectedFile(); f != nil && f != prev {
+				a.varList.SetFile(f)
+			}
 		}
 	} else {
 		// Click on var list panel
@@ -224,7 +227,7 @@ func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 		a.fileList.Focused = false
 		a.varList.Focused = true
 		index := msg.Y - 2 + a.varList.Offset
-		if index < a.varList.DisplayCount() {
+		if index >= 0 && index < a.varList.DisplayCount() {
 			a.varList.SetCursor(index)
 		}
 	}
@@ -232,21 +235,36 @@ func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 }
 
 func (a App) handleCompareMouseClick(msg tea.MouseClickMsg) App {
-	index := msg.Y - 3 + a.diffView.Offset
-	a.diffView.SetCursor(index)
+	index := msg.Y - 3 + a.diffView.Offset // Y=0 border, Y=1 title, Y=2 header, Y=3 first entry
+	if index >= 0 {
+		a.diffView.SetCursor(index)
+	}
 	return a
 }
 
 func (a App) handleCompareSelectMouseClick(msg tea.MouseClickMsg) App {
 	index := msg.Y - 2 + a.fileList.Offset
-	a.fileList.SetCursor(index)
+	if index >= 0 {
+		// Only move cursor, don't update Selected (compare target, not active file)
+		a.fileList.Cursor = max(0, min(index, len(a.fileList.Files)-1))
+		visible := a.fileList.Height - 2
+		if visible > 0 && a.fileList.Cursor < a.fileList.Offset {
+			a.fileList.Offset = a.fileList.Cursor
+		}
+		if visible > 0 && a.fileList.Cursor >= a.fileList.Offset+visible {
+			a.fileList.Offset = a.fileList.Cursor - visible + 1
+		}
+	}
 	return a
 }
 
 func (a App) handleMatrixMouseClick(msg tea.MouseClickMsg) App {
+	row := msg.Y - 2 + a.matrixView.offsetRow // Y=0 header, Y=1 separator, Y=2 first row
+	if row < 0 {
+		return a
+	}
 	keyWidth := a.matrixView.layout.MatrixKeyWidth
 	colWidth := a.matrixView.layout.MatrixColWidth
-	row := msg.Y - 2 + a.matrixView.offsetRow
 	if msg.X >= keyWidth {
 		col := (msg.X-keyWidth)/colWidth + a.matrixView.offsetCol
 		a.matrixView.SetCursor(row, col)
@@ -255,7 +273,6 @@ func (a App) handleMatrixMouseClick(msg tea.MouseClickMsg) App {
 	}
 	return a
 }
-
 
 func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 	up := msg.Button == tea.MouseWheelUp
@@ -277,6 +294,7 @@ func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 }
 
 func (a App) scrollFileList(up bool) App {
+	prev := a.fileList.SelectedFile()
 	for range a.config.Layout.MouseScrollLines {
 		if up {
 			a.fileList.MoveUp()
@@ -285,7 +303,7 @@ func (a App) scrollFileList(up bool) App {
 		}
 	}
 	a.fileList.Select()
-	if f := a.fileList.SelectedFile(); f != nil {
+	if f := a.fileList.SelectedFile(); f != nil && f != prev {
 		a.varList.SetFile(f)
 	}
 	return a

@@ -73,45 +73,58 @@ func (m ThemePreviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 		return m, nil
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "esc", "ctrl+c":
-			return m, tea.Quit
-		case "enter":
-			m.selected = m.themes[m.cursor]
-			return m, tea.Quit
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
-			}
-		case "down", "j":
-			if m.cursor < len(m.themes)-1 {
-				m.cursor++
-			}
-		}
+	case tea.KeyPressMsg:
+		return m.handleKey(msg)
 	case tea.MouseClickMsg:
-		if msg.Button == tea.MouseLeft {
-			listWidth := max(m.width/3, config.FileListMinWidth)
-			if msg.X < listWidth {
-				index := msg.Y - 2 + m.scrollOffset()
-				if index >= 0 && index < len(m.themes) {
-					m.cursor = index
-				}
-			}
-		}
-		return m, nil
+		return m.handleMouseClick(msg), nil
 	case tea.MouseWheelMsg:
-		listWidth := max(m.width/3, config.FileListMinWidth)
-		if msg.X < listWidth {
-			if msg.Button == tea.MouseWheelUp {
-				m.cursor = max(0, m.cursor-config.DefaultMouseScrollLines)
-			} else {
-				m.cursor = min(len(m.themes)-1, m.cursor+config.DefaultMouseScrollLines)
-			}
-		}
-		return m, nil
+		return m.handleMouseWheel(msg), nil
 	}
 	return m, nil
+}
+
+func (m ThemePreviewModel) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "q", "esc", "ctrl+c":
+		return m, tea.Quit
+	case "enter":
+		m.selected = m.themes[m.cursor]
+		return m, tea.Quit
+	case "up", "k":
+		if m.cursor > 0 {
+			m.cursor--
+		}
+	case "down", "j":
+		if m.cursor < len(m.themes)-1 {
+			m.cursor++
+		}
+	}
+	return m, nil
+}
+
+func (m ThemePreviewModel) handleMouseClick(msg tea.MouseClickMsg) ThemePreviewModel {
+	if msg.Button == tea.MouseLeft {
+		listWidth := max(m.width/3, config.FileListMinWidth)
+		if msg.X < listWidth {
+			index := msg.Y - 2 + m.scrollOffset()
+			if index >= 0 && index < len(m.themes) {
+				m.cursor = index
+			}
+		}
+	}
+	return m
+}
+
+func (m ThemePreviewModel) handleMouseWheel(msg tea.MouseWheelMsg) ThemePreviewModel {
+	listWidth := max(m.width/3, config.FileListMinWidth)
+	if msg.X < listWidth {
+		if msg.Button == tea.MouseWheelUp {
+			m.cursor = max(0, m.cursor-config.DefaultMouseScrollLines)
+		} else {
+			m.cursor = min(len(m.themes)-1, m.cursor+config.DefaultMouseScrollLines)
+		}
+	}
+	return m
 }
 
 func (m ThemePreviewModel) scrollOffset() int {

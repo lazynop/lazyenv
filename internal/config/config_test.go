@@ -67,6 +67,10 @@ func TestTomlTagsMatchExample(t *testing.T) {
 }
 
 func TestLoadNoConfigFile(t *testing.T) {
+	// Isolate from user's global config
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
+
 	dir := t.TempDir()
 	cfg, warnings := Load(dir, "")
 	assert.Empty(t, warnings)
@@ -344,6 +348,9 @@ func TestLoadFullReturnsPath(t *testing.T) {
 }
 
 func TestLoadFullNoConfig(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
+
 	dir := t.TempDir()
 	r := LoadFull(dir, "")
 	assert.Empty(t, r.Path)
