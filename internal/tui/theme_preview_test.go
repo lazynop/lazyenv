@@ -219,3 +219,60 @@ func TestThemePreviewSelectedMethod(t *testing.T) {
 	m = updated.(ThemePreviewModel)
 	assert.Equal(t, m.themes[0], m.Selected())
 }
+
+func TestThemePreviewMouseClick(t *testing.T) {
+	m := NewThemePreview()
+	require.Greater(t, len(m.themes), 5, "need at least 5 themes")
+
+	// Send WindowSizeMsg first so width/height are set
+	updated, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	m = updated.(ThemePreviewModel)
+
+	// Click in left panel (X=5 < listWidth=26) at Y=6
+	// index = Y - 2 + scrollOffset() = 6 - 2 + 0 = 4
+	updated, _ = m.Update(tea.MouseClickMsg{X: 5, Y: 6, Button: tea.MouseLeft})
+	m = updated.(ThemePreviewModel)
+
+	assert.Equal(t, 4, m.cursor, "click at Y=6 with offset=0 should set cursor to 4")
+}
+
+func TestThemePreviewMouseWheel(t *testing.T) {
+	m := NewThemePreview()
+	require.Greater(t, len(m.themes), 3, "need at least 4 themes")
+
+	// Send WindowSizeMsg first
+	updated, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	m = updated.(ThemePreviewModel)
+
+	// WheelDown in left panel: cursor = min(len-1, 0+3) = 3
+	updated, _ = m.Update(tea.MouseWheelMsg{X: 5, Y: 5, Button: tea.MouseWheelDown})
+	m = updated.(ThemePreviewModel)
+
+	assert.Equal(t, 3, m.cursor, "WheelDown should advance cursor by 3")
+}
+
+func TestThemePreviewScrollOffset(t *testing.T) {
+	m := NewThemePreview()
+
+	// Set height so contentHeight = max(24-4, 1) = 20
+	updated, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	m = updated.(ThemePreviewModel)
+
+	// cursor=0 < contentHeight=20 → offset should be 0
+	m.cursor = 0
+	assert.Equal(t, 0, m.scrollOffset(), "scrollOffset should be 0 when cursor < contentHeight")
+
+	// cursor=5 < contentHeight=20 → offset should still be 0
+	m.cursor = 5
+	assert.Equal(t, 0, m.scrollOffset(), "scrollOffset should be 0 when cursor < contentHeight")
+
+	// cursor=20 >= contentHeight=20 → offset = 20 - 20 + 1 = 1
+	require.Greater(t, len(m.themes), 20, "need more than 20 themes for this test")
+	m.cursor = 20
+	assert.Equal(t, 1, m.scrollOffset(), "scrollOffset should be positive when cursor >= contentHeight")
+
+	// cursor=25 >= contentHeight=20 → offset = 25 - 20 + 1 = 6
+	require.Greater(t, len(m.themes), 25, "need more than 25 themes for this test")
+	m.cursor = 25
+	assert.Equal(t, 6, m.scrollOffset(), "scrollOffset should increase with cursor")
+}
