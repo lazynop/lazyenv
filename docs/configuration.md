@@ -13,29 +13,7 @@ Create a `.lazyenvrc` file (TOML) in your project root, or `~/.config/lazyenv/co
 | `sort`         | `"position"`    | Variable list sort order: `"position"` preserves file order, `"alphabetical"` sorts by key name. Toggleable at runtime with `o`.  |
 | `theme`        | See description | Built-in color theme. When empty, `default-dark` or `default-light` is used automatically based on terminal background detection. |
 
-Available themes:
-
-| Theme              | Type  |
-| ------------------ | ----- |
-| `catppuccin-latte` | Light |
-| `catppuccin-mocha` | Dark  |
-| `cyberpunk`        | Dark  |
-| `default-dark`     | Dark  |
-| `default-light`    | Light |
-| `dracula`          | Dark  |
-| `everforest`       | Dark  |
-| `gruvbox-dark`     | Dark  |
-| `gruvbox-light`    | Light |
-| `kanagawa`         | Dark  |
-| `monokai-pro`      | Dark  |
-| `nord`             | Dark  |
-| `one-dark`         | Dark  |
-| `rose-pine`        | Dark  |
-| `solarized-dark`   | Dark  |
-| `solarized-light`  | Light |
-| `tokyo-night`      | Dark  |
-
-Run `lazyenv --list-themes` to see all available themes.
+Run `lazyenv --list-themes` to see all available themes, or `lazyenv --themes` to browse them interactively with a live preview.
 
 ## [files]
 
