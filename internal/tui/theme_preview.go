@@ -89,8 +89,37 @@ func (m ThemePreviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor++
 			}
 		}
+	case tea.MouseClickMsg:
+		if msg.Button == tea.MouseLeft {
+			listWidth := max(m.width/3, config.FileListMinWidth)
+			if msg.X < listWidth {
+				index := msg.Y - 2 + m.scrollOffset()
+				if index >= 0 && index < len(m.themes) {
+					m.cursor = index
+				}
+			}
+		}
+		return m, nil
+	case tea.MouseWheelMsg:
+		listWidth := max(m.width/3, config.FileListMinWidth)
+		if msg.X < listWidth {
+			if msg.Button == tea.MouseWheelUp {
+				m.cursor = max(0, m.cursor-3)
+			} else {
+				m.cursor = min(len(m.themes)-1, m.cursor+3)
+			}
+		}
+		return m, nil
 	}
 	return m, nil
+}
+
+func (m ThemePreviewModel) scrollOffset() int {
+	contentHeight := max(m.height-4, 1)
+	if m.cursor >= contentHeight {
+		return m.cursor - contentHeight + 1
+	}
+	return 0
 }
 
 // Selected returns the theme name chosen by the user, or "" if they quit.
@@ -135,12 +164,7 @@ func (m ThemePreviewModel) renderThemeList(width int, rc resolvedColors) string 
 		Render(fmt.Sprintf(" Themes (%d)", len(m.themes)))
 
 	contentHeight := max(m.height-4, 1) // borders + title + status bar
-
-	// Scrolling: keep cursor visible
-	offset := 0
-	if m.cursor >= contentHeight {
-		offset = m.cursor - contentHeight + 1
-	}
+	offset := m.scrollOffset()
 
 	var lines []string
 	for i := offset; i < len(m.themes) && i < offset+contentHeight; i++ {
