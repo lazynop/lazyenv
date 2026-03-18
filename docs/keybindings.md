@@ -78,3 +78,12 @@ Multi-file grid showing which variables exist in which files.
 | `Esc`     | Return to main view                           |
 
 All modal prompts (editing, delete confirmation, search) follow standard conventions: `Enter` to confirm, `Esc` to cancel.
+
+## Theme preview (`--themes`)
+
+| Key            | Action                                         |
+| -------------- | ---------------------------------------------- |
+| `↑` / `k`      | Previous theme                                 |
+| `↓` / `j`      | Next theme                                     |
+| `Enter`        | Select theme and print config snippet          |
+| `q` / `Esc`    | Quit without selection                         |

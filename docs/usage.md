@@ -32,6 +32,7 @@ lazyenv ./services -r
 |      | `--check-config` | Validate configuration file and exit. Shows search paths and any errors found.                              |
 |      | `--show-config`  | Print the effective configuration (TOML) and exit.                                                          |
 |      | `--list-themes`  | List available built-in themes and exit.                                                                    |
+|      | `--themes`       | Interactive theme preview. Browse all built-in themes and see their colors live.                             |
 | `-v` | `--version`      | Show version, commit, and build date.                                                                       |
 | `-h` | `--help`         | Show help.                                                                                                  |
 
@@ -56,7 +57,7 @@ The following flags have a corresponding config file key:
 | `-G`            | `no-git-check` |
 | `--no-theme-bg` | `no-theme-bg`  |
 
-Flags without a config equivalent (`--show-config`, `--list-themes`, `--version`, `--help`) are one-shot actions that print output and exit.
+Flags without a config equivalent (`--show-config`, `--list-themes`, `--themes`, `--version`, `--help`) are one-shot actions that print output and exit.
 
 See [Configuration](configuration.md) for all available config file options.
 

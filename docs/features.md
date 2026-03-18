@@ -66,3 +66,7 @@ Saves preserve comments, blank lines, quoting style, and key ordering — your f
 ## Search and sort
 
 Filter variables by name or value with `/`. Toggle between original position and alphabetical sorting with `o`.
+
+## Theme preview
+
+Browse all built-in themes interactively with `lazyenv --themes`. The two-panel view shows every theme's full color palette — swatch, name, and hex value — updating live as you navigate. Press Enter to get the config snippet for your chosen theme.
