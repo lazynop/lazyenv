@@ -22,7 +22,8 @@ Browse, compare, edit and validate environment variables from your terminal.
 - Secret masking, gitignore check, automatic backup
 - Clipboard support (OSC 52), search and sort
 - Round-trip fidelity: saves preserve comments, blank lines, quoting
-- TOML configuration with 15 built-in color themes
+- TOML configuration: layout, colors, file patterns, behaviors
+- 33 built-in color themes with interactive preview (`--themes`)
 
 ## Install
 

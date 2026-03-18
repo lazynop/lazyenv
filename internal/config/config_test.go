@@ -274,13 +274,17 @@ func TestLoadUnknownTheme(t *testing.T) {
 
 func TestThemeNames(t *testing.T) {
 	names := ThemeNames()
-	assert.Len(t, names, 17)
+	assert.Len(t, names, 33)
 	assert.Contains(t, names, "dracula")
 	assert.Contains(t, names, "catppuccin-mocha")
 	assert.Contains(t, names, "nord")
 	assert.Contains(t, names, "tokyo-night")
 	assert.Contains(t, names, "rose-pine")
 	assert.Contains(t, names, "cyberpunk")
+	assert.Contains(t, names, "github-dark")
+	assert.Contains(t, names, "ayu-mirage")
+	assert.Contains(t, names, "synthwave-84")
+	assert.Contains(t, names, "vesper")
 	// verify sorted
 	for i := 1; i < len(names); i++ {
 		assert.True(t, names[i-1] < names[i], "themes should be sorted")
