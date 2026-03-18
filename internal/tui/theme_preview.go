@@ -103,10 +103,7 @@ func (m ThemePreviewModel) View() tea.View {
 		return tea.NewView("")
 	}
 
-	listWidth := m.width / 3
-	if listWidth < 20 {
-		listWidth = 20
-	}
+	listWidth := max(m.width/3, config.FileListMinWidth)
 	showcaseWidth := m.width - listWidth - 4 // borders
 
 	tc := m.currentColors()
