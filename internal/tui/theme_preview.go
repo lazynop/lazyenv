@@ -121,7 +121,9 @@ func (m ThemePreviewModel) View() tea.View {
 	// Join panels side by side
 	panels := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
 
-	return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, panels, statusBar))
+	view := tea.NewView(lipgloss.JoinVertical(lipgloss.Left, panels, statusBar))
+	view.BackgroundColor = rc.bg
+	return view
 }
 
 func (m ThemePreviewModel) currentColors() themes.Colors {
