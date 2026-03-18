@@ -57,7 +57,7 @@ The following flags have a corresponding config file key:
 | `-G`            | `no-git-check` |
 | `--no-theme-bg` | `no-theme-bg`  |
 
-Flags without a config equivalent (`--show-config`, `--list-themes`, `--themes`, `--version`, `--help`) are one-shot actions that print output and exit.
+Flags without a config equivalent (`--check-config`, `--show-config`, `--list-themes`, `--themes`, `--version`, `--help`) are one-shot actions that print output and exit.
 
 See [Configuration](configuration.md) for all available config file options.
 

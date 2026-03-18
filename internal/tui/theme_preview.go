@@ -12,32 +12,63 @@ import (
 	"github.com/lazynop/lazyenv/internal/config/themes"
 )
 
+// resolvedColors holds theme colors converted to color.Color for rendering.
+type resolvedColors struct {
+	primary  color.Color
+	warning  color.Color
+	err      color.Color
+	success  color.Color
+	muted    color.Color
+	fg       color.Color
+	bg       color.Color
+	border   color.Color
+	cursorBg color.Color
+	modified color.Color
+	added    color.Color
+	deleted  color.Color
+}
+
+func resolveThemeColors(tc themes.Colors) resolvedColors {
+	return resolvedColors{
+		primary:  lipgloss.Color(tc.Primary),
+		warning:  lipgloss.Color(tc.Warning),
+		err:      lipgloss.Color(tc.Error),
+		success:  lipgloss.Color(tc.Success),
+		muted:    lipgloss.Color(tc.Muted),
+		fg:       lipgloss.Color(tc.Fg),
+		bg:       lipgloss.Color(tc.Bg),
+		border:   lipgloss.Color(tc.Border),
+		cursorBg: lipgloss.Color(tc.CursorBg),
+		modified: lipgloss.Color(tc.Modified),
+		added:    lipgloss.Color(tc.Added),
+		deleted:  lipgloss.Color(tc.Deleted),
+	}
+}
+
 // ThemePreviewModel is a standalone Bubble Tea model for browsing themes.
 type ThemePreviewModel struct {
-	themes   []string
-	cursor   int
-	selected string // non-empty if user pressed Enter
-	width    int
-	height   int
-	isDark   bool
+	themes      []string
+	searchPaths []string
+	cursor      int
+	selected    string // non-empty if user pressed Enter
+	width       int
+	height      int
 }
 
 // NewThemePreview returns a new theme preview model.
 func NewThemePreview() ThemePreviewModel {
 	return ThemePreviewModel{
-		themes: config.ThemeNames(),
+		themes:      config.ThemeNames(),
+		searchPaths: config.ConfigSearchPaths(".", ""),
 	}
 }
 
 func (m ThemePreviewModel) Init() tea.Cmd {
-	return tea.RequestBackgroundColor
+	return nil
 }
 
 func (m ThemePreviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.BackgroundColorMsg:
-		m.isDark = msg.IsDark()
-		return m, nil
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
@@ -78,11 +109,14 @@ func (m ThemePreviewModel) View() tea.View {
 	}
 	showcaseWidth := m.width - listWidth - 4 // borders
 
-	left := m.renderThemeList(listWidth)
-	right := m.renderShowcase(showcaseWidth)
+	tc := m.currentColors()
+	rc := resolveThemeColors(tc)
+
+	left := m.renderThemeList(listWidth, rc)
+	right := m.renderShowcase(showcaseWidth, tc, rc)
 
 	// Status bar
-	statusBar := m.renderStatusBar()
+	statusBar := m.renderStatusBar(rc)
 
 	// Join panels side by side
 	panels := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
@@ -95,21 +129,12 @@ func (m ThemePreviewModel) currentColors() themes.Colors {
 	return c
 }
 
-func (m ThemePreviewModel) renderThemeList(width int) string {
-	tc := m.currentColors()
-	primary := lipgloss.Color(tc.Primary)
-	fg := lipgloss.Color(tc.Fg)
-	muted := lipgloss.Color(tc.Muted)
-	border := lipgloss.Color(tc.Border)
-	cursorBg := lipgloss.Color(tc.CursorBg)
+func (m ThemePreviewModel) renderThemeList(width int, rc resolvedColors) string {
 
-	title := lipgloss.NewStyle().Bold(true).Foreground(primary).
+	title := lipgloss.NewStyle().Bold(true).Foreground(rc.primary).
 		Render(fmt.Sprintf(" Themes (%d)", len(m.themes)))
 
-	contentHeight := m.height - 4 // borders + title + status bar
-	if contentHeight < 1 {
-		contentHeight = 1
-	}
+	contentHeight := max(m.height-4, 1) // borders + title + status bar
 
 	// Scrolling: keep cursor visible
 	offset := 0
@@ -121,11 +146,11 @@ func (m ThemePreviewModel) renderThemeList(width int) string {
 	for i := offset; i < len(m.themes) && i < offset+contentHeight; i++ {
 		name := m.themes[i]
 		if i == m.cursor {
-			style := lipgloss.NewStyle().Bold(true).Foreground(fg).Background(cursorBg).
+			style := lipgloss.NewStyle().Bold(true).Foreground(rc.fg).Background(rc.cursorBg).
 				Width(width - 2)
 			lines = append(lines, style.Render("▸ "+name))
 		} else {
-			style := lipgloss.NewStyle().Foreground(muted).Width(width - 2)
+			style := lipgloss.NewStyle().Foreground(rc.muted).Width(width - 2)
 			lines = append(lines, style.Render("  "+name))
 		}
 	}
@@ -134,23 +159,17 @@ func (m ThemePreviewModel) renderThemeList(width int) string {
 
 	panel := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(border).
+		BorderForeground(rc.border).
 		Width(width).
 		Height(m.height - 2) // status bar
 
 	return panel.Render(title + "\n" + content)
 }
 
-func (m ThemePreviewModel) renderShowcase(width int) string {
-	tc := m.currentColors()
+func (m ThemePreviewModel) renderShowcase(width int, tc themes.Colors, rc resolvedColors) string {
 	themeName := m.themes[m.cursor]
 
-	primary := lipgloss.Color(tc.Primary)
-	fg := lipgloss.Color(tc.Fg)
-	muted := lipgloss.Color(tc.Muted)
-	border := lipgloss.Color(tc.Border)
-
-	title := lipgloss.NewStyle().Bold(true).Foreground(primary).
+	title := lipgloss.NewStyle().Bold(true).Foreground(rc.primary).
 		Render(" " + themeName)
 
 	// Color list: swatch + name + hex
@@ -182,59 +201,53 @@ func (m ThemePreviewModel) renderShowcase(width int) string {
 		swatch := lipgloss.NewStyle().Foreground(lipgloss.Color(c.value)).Render("██")
 		name := lipgloss.NewStyle().Foreground(lipgloss.Color(c.value)).
 			Width(10).Render(c.name)
-		hexStr := lipgloss.NewStyle().Foreground(muted).Render(hex)
+		hexStr := lipgloss.NewStyle().Foreground(rc.muted).Render(hex)
 		colorLines = append(colorLines, fmt.Sprintf("  %s %s %s", swatch, name, hexStr))
 	}
 
 	colorSection := strings.Join(colorLines, "\n")
 
 	// Config box
-	configBox := m.renderConfigBox(width-4, themeName, primary, fg, muted, border)
+	configBox := m.renderConfigBox(width-4, themeName, rc)
 
 	content := title + "\n\n" + colorSection + "\n\n" + configBox
 
 	panel := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(border).
+		BorderForeground(rc.border).
 		Width(width).
 		Height(m.height - 2) // status bar
 
 	return panel.Render(content)
 }
 
-func (m ThemePreviewModel) renderConfigBox(width int, themeName string, primary, fg, muted, border color.Color) string {
-	title := lipgloss.NewStyle().Bold(true).Foreground(primary).
+func (m ThemePreviewModel) renderConfigBox(width int, themeName string, rc resolvedColors) string {
+	title := lipgloss.NewStyle().Bold(true).Foreground(rc.primary).
 		Render("Config files (priority)")
 
-	searchPaths := config.ConfigSearchPaths(".", "")
-
 	var lines []string
-	for i, p := range searchPaths {
-		lines = append(lines, lipgloss.NewStyle().Foreground(fg).
+	for i, p := range m.searchPaths {
+		lines = append(lines, lipgloss.NewStyle().Foreground(rc.fg).
 			Render(fmt.Sprintf("  %d. %s", i+1, p)))
 	}
 
-	snippet := lipgloss.NewStyle().Foreground(muted).
+	snippet := lipgloss.NewStyle().Foreground(rc.muted).
 		Render(fmt.Sprintf("  theme = %q", themeName))
 
 	content := title + "\n" + strings.Join(lines, "\n") + "\n\n" + snippet
 
 	box := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(border).
+		BorderForeground(rc.border).
 		Width(width).
 		Padding(0, 1)
 
 	return box.Render(content)
 }
 
-func (m ThemePreviewModel) renderStatusBar() string {
-	tc := m.currentColors()
-	primary := lipgloss.Color(tc.Primary)
-	muted := lipgloss.Color(tc.Muted)
-
-	keyStyle := lipgloss.NewStyle().Bold(true).Foreground(primary)
-	descStyle := lipgloss.NewStyle().Foreground(muted)
+func (m ThemePreviewModel) renderStatusBar(rc resolvedColors) string {
+	keyStyle := lipgloss.NewStyle().Bold(true).Foreground(rc.primary)
+	descStyle := lipgloss.NewStyle().Foreground(rc.muted)
 
 	bar := fmt.Sprintf(" %s %s  %s %s  %s %s",
 		keyStyle.Render("↑↓/jk"), descStyle.Render("navigate"),

@@ -2,6 +2,7 @@
 .agents/
 .serena/
 .cache/
+.superpowers/
 site/
 public/
 bin/
