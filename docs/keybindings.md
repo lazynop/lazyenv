@@ -87,3 +87,16 @@ All modal prompts (editing, delete confirmation, search) follow standard convent
 | `↓` / `j`      | Next theme                                     |
 | `Enter`        | Select theme and print config snippet          |
 | `q` / `Esc`    | Quit without selection                         |
+
+## Mouse
+
+Mouse is enabled by default. Disable with `--no-mouse` or `no-mouse = true` in config.
+
+| Action                | Effect                                   |
+| --------------------- | ---------------------------------------- |
+| Click on file         | Select the file                          |
+| Click on variable     | Select the variable                      |
+| Click on panel        | Switch focus to that panel               |
+| Click on diff entry   | Select the entry                         |
+| Click on matrix cell  | Move cursor to that cell                 |
+| Scroll wheel          | Scroll the panel under the mouse cursor  |

@@ -9,6 +9,7 @@ Create a `.lazyenvrc` file (TOML) in your project root, or `~/.config/lazyenv/co
 | `no-backup`    | `false`         | Skip creating `.bak` backup files before the first save of each file in a session.                                                |
 | `no-git-check` | `false`         | Skip checking if files are covered by `.gitignore`. Auto-disabled if `git` is not available.                                      |
 | `no-theme-bg`  | `false`         | Discard the theme's background color, keeping the terminal's native background. Useful for transparent terminals.                 |
+| `no-mouse`     | `false`         | Disable mouse support. Useful in terminals or multiplexers with mouse conflicts.                                                  |
 | `sort`         | `"position"`    | Variable list sort order: `"position"` preserves file order, `"alphabetical"` sorts by key name. Toggleable at runtime with `o`.  |
 | `theme`        | See description | Built-in color theme. When empty, `default-dark` or `default-light` is used automatically based on terminal background detection. |
 

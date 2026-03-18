@@ -67,6 +67,10 @@ Saves preserve comments, blank lines, quoting style, and key ordering — your f
 
 Filter variables by name or value with `/`. Toggle between original position and alphabetical sorting with `o`.
 
+## Mouse support
+
+Click to select files, variables, diff entries, and matrix cells. Scroll wheel navigates the panel under the mouse cursor. Disable with `--no-mouse` or `no-mouse = true` in config.
+
 ## Theme preview
 
 Browse all built-in themes interactively with `lazyenv --themes`. The two-panel view shows every theme's full color palette — swatch, name, and hex value — updating live as you navigate. Press Enter to get the config snippet for your chosen theme.
