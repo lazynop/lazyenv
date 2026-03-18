@@ -274,7 +274,7 @@ func TestLoadUnknownTheme(t *testing.T) {
 
 func TestThemeNames(t *testing.T) {
 	names := ThemeNames()
-	assert.Len(t, names, 33)
+	assert.Len(t, names, 44)
 	assert.Contains(t, names, "dracula")
 	assert.Contains(t, names, "catppuccin-mocha")
 	assert.Contains(t, names, "nord")
