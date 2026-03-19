@@ -348,13 +348,13 @@ func (m *DiffViewModel) renderDiffEntry(e model.DiffEntry, isCursor bool, keyWid
 	leftLine := fmt.Sprintf("  %s  %s", key, valA)
 	rightLine := fmt.Sprintf("  %s  %s  %s", key, valB, statusChar)
 
-	if e.Status == model.DiffRemoved {
+	if e.Status == model.DiffRemoved || e.Status == model.DiffAdded {
 		missing := padRight(truncate("(missing)", valWidth), valWidth)
-		leftLine = fmt.Sprintf("  %s  %s", key, missing)
-	}
-	if e.Status == model.DiffAdded {
-		missing := padRight(truncate("(missing)", valWidth), valWidth)
-		rightLine = fmt.Sprintf("  %s  %s  %s", key, missing, statusChar)
+		if e.Status == model.DiffRemoved {
+			leftLine = fmt.Sprintf("  %s  %s", key, missing)
+		} else {
+			rightLine = fmt.Sprintf("  %s  %s  %s", key, missing, statusChar)
+		}
 	}
 
 	if isCursor {
