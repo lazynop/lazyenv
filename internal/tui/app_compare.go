@@ -27,9 +27,9 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, a.keys.PrevDiff):
 		a.diffView.PrevDiff()
 	case key.Matches(msg, a.keys.Right):
-		return a.handleCompareCopy(a.diffView.CopyToRight, a.diffView.FileB.Name)
+		return a.handleCompareCopy(true)
 	case key.Matches(msg, a.keys.Left):
-		return a.handleCompareCopy(a.diffView.CopyToLeft, a.diffView.FileA.Name)
+		return a.handleCompareCopy(false)
 	case key.Matches(msg, a.keys.Filter):
 		return a.handleCompareFilter()
 	case key.Matches(msg, a.keys.Save):
@@ -44,9 +44,17 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	return a, nil
 }
 
-func (a App) handleCompareCopy(copyFn func() string, targetName string) (tea.Model, tea.Cmd) {
-	if k := copyFn(); k != "" {
-		a.statusBar.SetMessage(k + " → " + targetName)
+func (a App) handleCompareCopy(toRight bool) (tea.Model, tea.Cmd) {
+	var k, target string
+	if toRight {
+		k = a.diffView.CopyToRight()
+		target = a.diffView.FileB.Name
+	} else {
+		k = a.diffView.CopyToLeft()
+		target = a.diffView.FileA.Name
+	}
+	if k != "" {
+		a.statusBar.SetMessage(k + " → " + target)
 		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	}
 	return a, nil
