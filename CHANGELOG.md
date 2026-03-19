@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] - 2026-03-19
+
+### Added
+- Configurable secret detection via `[secrets]` config section with `safe_patterns`, `extra_patterns`, and `value_heuristic` options
+- Shannon entropy-based value heuristic replacing the simple length+alphanumeric check, reducing false positives on hostnames and URLs
+- Built-in detection rules documented in configuration docs
+
+### Fixed
+- False positive in secret detection for long hostnames/URLs (e.g. `db-prod-ap-03.internal`)
+- Diff view not refreshing visually after copy operations due to stale method value in Go value semantics
+- Missing `(missing)` placeholder in compare view for added/removed keys
+- `AddVar` not setting `IsSecret` on newly added variables
+
+### Improved
+- Deduplicated missing placeholder computation in diff entry rendering
+
 ## [0.4.0] - 2026-03-18
 
 ### Added
