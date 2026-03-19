@@ -105,7 +105,7 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 				return a, clearMessageAfter(a.config.Layout.ErrorMessageTimeout)
 			}
 			// Re-parse to refresh RawLines
-			refreshed, err := parser.ParseFile(f.Path)
+			refreshed, err := parser.ParseFile(f.Path, a.config.Secrets)
 			if err == nil {
 				refreshed.GitWarning = f.GitWarning
 				for i, existing := range a.fileList.Files {

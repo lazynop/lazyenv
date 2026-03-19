@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -73,7 +75,7 @@ func TestEscapeDouble(t *testing.T) {
 }
 
 func TestReconstructLineSingleQuoted(t *testing.T) {
-	ef := ParseBytes(".env", []byte("FOO='original'\n"))
+	ef := ParseBytes(".env", []byte("FOO='original'\n"), config.SecretsConfig{})
 	ef.UpdateVar(0, "updated value")
 
 	output := string(Marshal(ef))
@@ -81,7 +83,7 @@ func TestReconstructLineSingleQuoted(t *testing.T) {
 }
 
 func TestReconstructLineExportWithComment(t *testing.T) {
-	ef := ParseBytes(".env", []byte("export FOO=bar # keep this\n"))
+	ef := ParseBytes(".env", []byte("export FOO=bar # keep this\n"), config.SecretsConfig{})
 	ef.UpdateVar(0, "baz")
 
 	output := string(Marshal(ef))
@@ -89,7 +91,7 @@ func TestReconstructLineExportWithComment(t *testing.T) {
 }
 
 func TestReconstructLineDoubleQuotedEscape(t *testing.T) {
-	ef := ParseBytes(".env", []byte("FOO=\"old\"\n"))
+	ef := ParseBytes(".env", []byte("FOO=\"old\"\n"), config.SecretsConfig{})
 	ef.UpdateVar(0, "has \"quotes\" and\nnewline")
 
 	output := string(Marshal(ef))
@@ -98,13 +100,13 @@ func TestReconstructLineDoubleQuotedEscape(t *testing.T) {
 
 func TestMarshalPreservesUnmodified(t *testing.T) {
 	input := "# Header comment\n\nFOO=bar\nBAZ=qux\n"
-	ef := ParseBytes(".env", []byte(input))
+	ef := ParseBytes(".env", []byte(input), config.SecretsConfig{})
 	// No modifications — output should be identical
 	assert.Equal(t, input, string(Marshal(ef)))
 }
 
 func TestWriteFileNoPath(t *testing.T) {
-	ef := ParseBytes(".env", []byte("FOO=bar\n"))
+	ef := ParseBytes(".env", []byte("FOO=bar\n"), config.SecretsConfig{})
 	// Path is empty by default from ParseBytes
 	err := WriteFile(ef)
 	require.Error(t, err)

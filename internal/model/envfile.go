@@ -68,12 +68,13 @@ func (ef *EnvFile) UpdateVar(idx int, newValue string) {
 }
 
 // AddVar appends a new variable to the file.
-func (ef *EnvFile) AddVar(key, value string) {
+func (ef *EnvFile) AddVar(key, value string, isSecret bool) {
 	v := EnvVar{
 		Key:        key,
 		Value:      value,
 		LineNum:    len(ef.Lines) + 1,
 		QuoteStyle: QuoteNone,
+		IsSecret:   isSecret,
 		IsEmpty:    value == "",
 		Modified:   true,
 		IsNew:      true,

@@ -5,13 +5,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBasicKeyValue(t *testing.T) {
-	ef := ParseBytes(".env", []byte("FOO=bar\n"))
+	ef := ParseBytes(".env", []byte("FOO=bar\n"), config.SecretsConfig{})
 
 	require.Len(t, ef.Vars, 1)
 	assert.Equal(t, "FOO", ef.Vars[0].Key)
@@ -20,7 +21,7 @@ func TestBasicKeyValue(t *testing.T) {
 }
 
 func TestDoubleQuotedValue(t *testing.T) {
-	ef := ParseBytes(".env", []byte("FOO=\"hello world\"\n"))
+	ef := ParseBytes(".env", []byte("FOO=\"hello world\"\n"), config.SecretsConfig{})
 
 	require.Len(t, ef.Vars, 1)
 	assert.Equal(t, "hello world", ef.Vars[0].Value)
@@ -28,7 +29,7 @@ func TestDoubleQuotedValue(t *testing.T) {
 }
 
 func TestSingleQuotedValue(t *testing.T) {
-	ef := ParseBytes(".env", []byte("FOO='hello world'\n"))
+	ef := ParseBytes(".env", []byte("FOO='hello world'\n"), config.SecretsConfig{})
 
 	require.Len(t, ef.Vars, 1)
 	assert.Equal(t, "hello world", ef.Vars[0].Value)
@@ -36,14 +37,14 @@ func TestSingleQuotedValue(t *testing.T) {
 }
 
 func TestMultilineDoubleQuoted(t *testing.T) {
-	ef := ParseBytes(".env", []byte("MULTI=\"line1\nline2\nline3\"\n"))
+	ef := ParseBytes(".env", []byte("MULTI=\"line1\nline2\nline3\"\n"), config.SecretsConfig{})
 
 	require.Len(t, ef.Vars, 1)
 	assert.Equal(t, "line1\nline2\nline3", ef.Vars[0].Value)
 }
 
 func TestExportPrefix(t *testing.T) {
-	ef := ParseBytes(".env", []byte("export NODE_ENV=production\n"))
+	ef := ParseBytes(".env", []byte("export NODE_ENV=production\n"), config.SecretsConfig{})
 
 	require.Len(t, ef.Vars, 1)
 	assert.Equal(t, "NODE_ENV", ef.Vars[0].Key)
@@ -52,7 +53,7 @@ func TestExportPrefix(t *testing.T) {
 }
 
 func TestEmptyValue(t *testing.T) {
-	ef := ParseBytes(".env", []byte("EMPTY=\nALSO_EMPTY=\"\"\n"))
+	ef := ParseBytes(".env", []byte("EMPTY=\nALSO_EMPTY=\"\"\n"), config.SecretsConfig{})
 
 	require.Len(t, ef.Vars, 2)
 	assert.Empty(t, ef.Vars[0].Value)
@@ -62,7 +63,7 @@ func TestEmptyValue(t *testing.T) {
 }
 
 func TestComments(t *testing.T) {
-	ef := ParseBytes(".env", []byte("# This is a comment\nFOO=bar\n"))
+	ef := ParseBytes(".env", []byte("# This is a comment\nFOO=bar\n"), config.SecretsConfig{})
 
 	require.Len(t, ef.Vars, 1)
 	require.Len(t, ef.Lines, 2)
@@ -70,7 +71,7 @@ func TestComments(t *testing.T) {
 }
 
 func TestInlineComment(t *testing.T) {
-	ef := ParseBytes(".env", []byte("FOO=bar # this is inline\n"))
+	ef := ParseBytes(".env", []byte("FOO=bar # this is inline\n"), config.SecretsConfig{})
 
 	require.Len(t, ef.Vars, 1)
 	assert.Equal(t, "bar", ef.Vars[0].Value)
@@ -78,7 +79,7 @@ func TestInlineComment(t *testing.T) {
 }
 
 func TestBlankLines(t *testing.T) {
-	ef := ParseBytes(".env", []byte("FOO=bar\n\nBAZ=qux\n"))
+	ef := ParseBytes(".env", []byte("FOO=bar\n\nBAZ=qux\n"), config.SecretsConfig{})
 
 	require.Len(t, ef.Vars, 2)
 	require.Len(t, ef.Lines, 3)
@@ -87,14 +88,14 @@ func TestBlankLines(t *testing.T) {
 
 func TestEscapeSequences(t *testing.T) {
 	input := "FOO=\"hello \\\"world\\\" \\\\path\\nnewline\"\n"
-	ef := ParseBytes(".env", []byte(input))
+	ef := ParseBytes(".env", []byte(input), config.SecretsConfig{})
 
 	require.Len(t, ef.Vars, 1)
 	assert.Equal(t, "hello \"world\" \\path\nnewline", ef.Vars[0].Value)
 }
 
 func TestDuplicateDetection(t *testing.T) {
-	ef := ParseBytes(".env", []byte("FOO=first\nBAR=baz\nFOO=second\n"))
+	ef := ParseBytes(".env", []byte("FOO=first\nBAR=baz\nFOO=second\n"), config.SecretsConfig{})
 
 	require.Len(t, ef.Vars, 3)
 	assert.True(t, ef.Vars[0].IsDuplicate, "first FOO should be duplicate")
@@ -103,7 +104,7 @@ func TestDuplicateDetection(t *testing.T) {
 }
 
 func TestInvalidLinesTreatedAsComments(t *testing.T) {
-	ef := ParseBytes(".env", []byte("not a valid line\nFOO=bar\n"))
+	ef := ParseBytes(".env", []byte("not a valid line\nFOO=bar\n"), config.SecretsConfig{})
 
 	require.Len(t, ef.Vars, 1)
 	assert.Equal(t, model.LineComment, ef.Lines[0].Type)
@@ -112,36 +113,36 @@ func TestInvalidLinesTreatedAsComments(t *testing.T) {
 func TestRoundTripFidelity(t *testing.T) {
 	input := "# Database config\nDB_HOST=localhost              # primary host\nDB_PORT=5432\nDB_PASSWORD=\"super secret\"\n\n# API settings\nexport API_KEY='sk-12345'\nEMPTY=\nQUOTED_EMPTY=\"\"\n\n# Multiline\nMULTI=\"line1\nline2\nline3\"\n"
 
-	ef := ParseBytes(".env", []byte(input))
+	ef := ParseBytes(".env", []byte(input), config.SecretsConfig{})
 	output := Marshal(ef)
 
 	assert.Equal(t, input, string(output))
 }
 
 func TestModifiedVarWriteBack(t *testing.T) {
-	ef := ParseBytes(".env", []byte("FOO=old\nBAR=keep\n"))
+	ef := ParseBytes(".env", []byte("FOO=old\nBAR=keep\n"), config.SecretsConfig{})
 	ef.UpdateVar(0, "new")
 
 	assert.Equal(t, "FOO=new\nBAR=keep\n", string(Marshal(ef)))
 }
 
 func TestModifiedQuotedVarWriteBack(t *testing.T) {
-	ef := ParseBytes(".env", []byte("FOO=\"old value\"\n"))
+	ef := ParseBytes(".env", []byte("FOO=\"old value\"\n"), config.SecretsConfig{})
 	ef.UpdateVar(0, "new value")
 
 	assert.Equal(t, "FOO=\"new value\"\n", string(Marshal(ef)))
 }
 
 func TestAddVar(t *testing.T) {
-	ef := ParseBytes(".env", []byte("FOO=bar\n"))
-	ef.AddVar("NEW", "val")
+	ef := ParseBytes(".env", []byte("FOO=bar\n"), config.SecretsConfig{})
+	ef.AddVar("NEW", "val", false)
 
 	require.Len(t, ef.Vars, 2)
 	assert.Equal(t, "FOO=bar\nNEW=val\n", string(Marshal(ef)))
 }
 
 func TestDeleteVar(t *testing.T) {
-	ef := ParseBytes(".env", []byte("FOO=bar\nBAZ=qux\nQUX=end\n"))
+	ef := ParseBytes(".env", []byte("FOO=bar\nBAZ=qux\nQUX=end\n"), config.SecretsConfig{})
 	ef.DeleteVar(1) // delete BAZ
 
 	require.Len(t, ef.Vars, 2)
@@ -149,7 +150,7 @@ func TestDeleteVar(t *testing.T) {
 }
 
 func TestSecretDetection(t *testing.T) {
-	ef := ParseBytes(".env", []byte("DB_PASSWORD=secret123\nAPI_KEY=sk-12345\nNORMAL=hello\n"))
+	ef := ParseBytes(".env", []byte("DB_PASSWORD=secret123\nAPI_KEY=sk-12345\nNORMAL=hello\n"), config.SecretsConfig{})
 
 	assert.True(t, ef.Vars[0].IsSecret, "DB_PASSWORD should be secret")
 	assert.True(t, ef.Vars[1].IsSecret, "API_KEY should be secret")
@@ -157,7 +158,7 @@ func TestSecretDetection(t *testing.T) {
 }
 
 func TestPlaceholderDetection(t *testing.T) {
-	ef := ParseBytes(".env", []byte("A=changeme\nB=TODO\nC=your_api_key_here\nD=real_value\n"))
+	ef := ParseBytes(".env", []byte("A=changeme\nB=TODO\nC=your_api_key_here\nD=real_value\n"), config.SecretsConfig{})
 
 	assert.True(t, ef.Vars[0].IsPlaceholder, "changeme should be placeholder")
 	assert.True(t, ef.Vars[1].IsPlaceholder, "TODO should be placeholder")
@@ -171,7 +172,7 @@ func TestWriteFileAtomic(t *testing.T) {
 
 	require.NoError(t, os.WriteFile(path, []byte("FOO=bar\n"), 0644))
 
-	ef, err := ParseFile(path)
+	ef, err := ParseFile(path, config.SecretsConfig{})
 	require.NoError(t, err)
 
 	ef.UpdateVar(0, "baz")
@@ -183,21 +184,21 @@ func TestWriteFileAtomic(t *testing.T) {
 }
 
 func TestExportPrefixWriteBack(t *testing.T) {
-	ef := ParseBytes(".env", []byte("export FOO=bar\n"))
+	ef := ParseBytes(".env", []byte("export FOO=bar\n"), config.SecretsConfig{})
 	ef.UpdateVar(0, "baz")
 
 	assert.Equal(t, "export FOO=baz\n", string(Marshal(ef)))
 }
 
 func TestInlineCommentWriteBack(t *testing.T) {
-	ef := ParseBytes(".env", []byte("FOO=bar # comment\n"))
+	ef := ParseBytes(".env", []byte("FOO=bar # comment\n"), config.SecretsConfig{})
 	ef.UpdateVar(0, "baz")
 
 	assert.Equal(t, "FOO=baz # comment\n", string(Marshal(ef)))
 }
 
 func TestVarByKey(t *testing.T) {
-	ef := ParseBytes(".env", []byte("FOO=first\nFOO=second\n"))
+	ef := ParseBytes(".env", []byte("FOO=first\nFOO=second\n"), config.SecretsConfig{})
 
 	v := ef.VarByKey("FOO")
 	require.NotNil(t, v)
@@ -238,20 +239,20 @@ func TestIsValidKey(t *testing.T) {
 
 func TestParseSingleQuotedEdgeCases(t *testing.T) {
 	// Unterminated single quote
-	ef := ParseBytes(".env", []byte("FOO='no closing quote\n"))
+	ef := ParseBytes(".env", []byte("FOO='no closing quote\n"), config.SecretsConfig{})
 	require.Len(t, ef.Vars, 1)
 	assert.Equal(t, "no closing quote", ef.Vars[0].Value)
 	assert.Equal(t, model.QuoteSingle, ef.Vars[0].QuoteStyle)
 
 	// Empty single-quoted value
-	ef = ParseBytes(".env", []byte("FOO=''\n"))
+	ef = ParseBytes(".env", []byte("FOO=''\n"), config.SecretsConfig{})
 	require.Len(t, ef.Vars, 1)
 	assert.Equal(t, "", ef.Vars[0].Value)
 	assert.Equal(t, model.QuoteSingle, ef.Vars[0].QuoteStyle)
 	assert.True(t, ef.Vars[0].IsEmpty)
 
 	// Single-quoted value with inline comment
-	ef = ParseBytes(".env", []byte("FOO='bar' # comment\n"))
+	ef = ParseBytes(".env", []byte("FOO='bar' # comment\n"), config.SecretsConfig{})
 	require.Len(t, ef.Vars, 1)
 	assert.Equal(t, "bar", ef.Vars[0].Value)
 	assert.Equal(t, "comment", ef.Vars[0].Comment)
@@ -277,14 +278,14 @@ func TestProcessEscapesEdgeCases(t *testing.T) {
 
 func TestParseDoubleQuotedUnterminated(t *testing.T) {
 	// Unterminated double quote: value extends to EOF
-	ef := ParseBytes(".env", []byte("FOO=\"no closing\n"))
+	ef := ParseBytes(".env", []byte("FOO=\"no closing\n"), config.SecretsConfig{})
 	require.Len(t, ef.Vars, 1)
 	assert.Equal(t, "no closing", ef.Vars[0].Value)
 	assert.Equal(t, model.QuoteDouble, ef.Vars[0].QuoteStyle)
 }
 
 func TestExportWithTab(t *testing.T) {
-	ef := ParseBytes(".env", []byte("export\tFOO=bar\n"))
+	ef := ParseBytes(".env", []byte("export\tFOO=bar\n"), config.SecretsConfig{})
 	require.Len(t, ef.Vars, 1)
 	assert.Equal(t, "FOO", ef.Vars[0].Key)
 	assert.True(t, ef.Vars[0].HasExport)
@@ -292,7 +293,7 @@ func TestExportWithTab(t *testing.T) {
 
 func TestKeyWithNoEquals(t *testing.T) {
 	// A line with no = sign should be treated as a comment
-	ef := ParseBytes(".env", []byte("NOEQUALS\nFOO=bar\n"))
+	ef := ParseBytes(".env", []byte("NOEQUALS\nFOO=bar\n"), config.SecretsConfig{})
 	require.Len(t, ef.Vars, 1)
 	assert.Equal(t, "FOO", ef.Vars[0].Key)
 	assert.Equal(t, model.LineComment, ef.Lines[0].Type)

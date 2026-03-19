@@ -40,7 +40,7 @@ func (a App) handleSave() (App, tea.Cmd) {
 	}
 
 	// Re-parse to refresh RawLines
-	refreshed, err := parser.ParseFile(f.Path)
+	refreshed, err := parser.ParseFile(f.Path, a.config.Secrets)
 	if err != nil {
 		a.statusBar.SetMessage(warn + "Saved but refresh failed: " + err.Error())
 		return a, clearMessageAfter(a.config.Layout.ErrorMessageTimeout)
@@ -73,7 +73,7 @@ func (a App) handleReset() (App, tea.Cmd) {
 		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	}
 
-	refreshed, err := parser.ParseFile(f.Path)
+	refreshed, err := parser.ParseFile(f.Path, a.config.Secrets)
 	if err != nil {
 		a.statusBar.SetMessage("Error reloading: " + err.Error())
 		return a, clearMessageAfter(a.config.Layout.ErrorMessageTimeout)

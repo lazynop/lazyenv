@@ -10,6 +10,7 @@ import (
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/util"
 )
 
 // MatrixModel manages the completeness matrix view.
@@ -25,7 +26,8 @@ type MatrixModel struct {
 
 	sortMode model.SortMode
 
-	layout config.LayoutConfig
+	layout  config.LayoutConfig
+	secrets config.SecretsConfig
 
 	Width  int
 	Height int
@@ -38,7 +40,7 @@ type MatrixModel struct {
 }
 
 // NewMatrixModel creates a matrix model from the loaded files.
-func NewMatrixModel(files []*model.EnvFile, layout config.LayoutConfig) MatrixModel {
+func NewMatrixModel(files []*model.EnvFile, layout config.LayoutConfig, secrets config.SecretsConfig) MatrixModel {
 	entries, names := model.ComputeMatrix(files)
 	ti := textinput.New()
 	ti.CharLimit = 256
@@ -47,6 +49,7 @@ func NewMatrixModel(files []*model.EnvFile, layout config.LayoutConfig) MatrixMo
 		entries:   entries,
 		fileNames: names,
 		layout:    layout,
+		secrets:   secrets,
 		editor:    ti,
 	}
 }
@@ -168,7 +171,7 @@ func (m *MatrixModel) ConfirmEdit() {
 		return
 	}
 	f := m.files[m.editFile]
-	f.AddVar(m.editKey, m.editor.Value())
+	f.AddVar(m.editKey, m.editor.Value(), util.IsSecret(m.editKey, m.editor.Value(), m.secrets))
 	m.editing = false
 	m.recompute()
 }

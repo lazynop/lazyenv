@@ -112,7 +112,7 @@ func TestVarListRefreshAfterAdd(t *testing.T) {
 	vl.SetFile(f)
 	assert.Equal(t, 1, len(vl.displayIndices))
 
-	f.AddVar("BAR", "val")
+	f.AddVar("BAR", "val", false)
 	vl.Refresh()
 	assert.Equal(t, 2, len(vl.displayIndices))
 }

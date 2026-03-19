@@ -36,6 +36,16 @@ diff-padding = 10
 file-list-width = 0                  # 0 = auto (1/4 screen, min 20), > 0 = fixed width
 mouse-scroll-lines = 1               # lines per mouse wheel event
 
+# Secret detection tuning.
+# Pattern convention: "_HOST" → suffix, "PUBLIC_" → prefix, "DATABASE_HOST" → exact.
+[secrets]
+# Key patterns to never treat as secret (overrides built-in detection).
+# safe_patterns = ["_HOST", "_URL", "_ENDPOINT"]
+# Key patterns to always treat as secret (in addition to built-ins).
+# extra_patterns = ["_CREDENTIAL"]
+# Enable entropy-based value heuristic (flags random-looking values ≥16 chars).
+value_heuristic = true
+
 # Color overrides (hex). When using a theme, these override individual colors.
 # Leave empty or omit to use the theme or auto-detected defaults.
 [colors]

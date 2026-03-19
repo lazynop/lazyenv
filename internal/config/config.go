@@ -14,15 +14,31 @@ type Config struct {
 	Sort       string `toml:"sort"`            // "position" | "alphabetical"
 	Theme      string `toml:"theme,omitempty"` // built-in theme name (e.g. "dracula", "nord")
 
-	Layout LayoutConfig `toml:"layout"`
-	Colors ColorConfig  `toml:"colors"`
-	Files  FileConfig   `toml:"files"`
+	Layout  LayoutConfig  `toml:"layout"`
+	Colors  ColorConfig   `toml:"colors"`
+	Files   FileConfig    `toml:"files"`
+	Secrets SecretsConfig `toml:"secrets"`
 }
 
 // FileConfig holds file detection patterns.
 type FileConfig struct {
 	Include []string `toml:"include"` // glob patterns to include (e.g. ".env", ".env.*", "*.env")
 	Exclude []string `toml:"exclude"` // glob patterns to exclude (e.g. "*.bak")
+}
+
+// SecretsConfig holds secret detection tuning options.
+type SecretsConfig struct {
+	SafePatterns   []string `toml:"safe_patterns"`   // key patterns to never treat as secret
+	ExtraPatterns  []string `toml:"extra_patterns"`  // key patterns to always treat as secret
+	ValueHeuristic *bool    `toml:"value_heuristic"` // nil = default true
+}
+
+// ValueHeuristicEnabled returns whether value-based heuristic detection is enabled.
+func (s SecretsConfig) ValueHeuristicEnabled() bool {
+	if s.ValueHeuristic == nil {
+		return true
+	}
+	return *s.ValueHeuristic
 }
 
 // FileListMinWidth is the minimum allowed width for the file list panel.

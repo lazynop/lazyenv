@@ -13,7 +13,7 @@ import (
 )
 
 // ScanDir finds and parses all .env files in the given directory.
-func ScanDir(path string, recursive bool, fileCfg config.FileConfig) ([]*model.EnvFile, error) {
+func ScanDir(path string, recursive bool, fileCfg config.FileConfig, secrets config.SecretsConfig) ([]*model.EnvFile, error) {
 	var files []*model.EnvFile
 
 	walkFn := func(p string, d os.DirEntry, err error) error {
@@ -37,7 +37,7 @@ func ScanDir(path string, recursive bool, fileCfg config.FileConfig) ([]*model.E
 		}
 
 		if isEnvFile(d.Name(), fileCfg) {
-			ef, err := parser.ParseFile(p)
+			ef, err := parser.ParseFile(p, secrets)
 			if err != nil {
 				return nil // skip unparseable files
 			}

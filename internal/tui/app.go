@@ -12,6 +12,7 @@ import (
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/util"
 )
 
 // AppMode represents the current application mode.
@@ -107,7 +108,7 @@ func NewApp(cfg config.Config, warnings []string) App {
 		fileList:       NewFileListModel(),
 		varList:        varList,
 		statusBar:      NewStatusBarModel(),
-		diffView:       NewDiffViewModel(cfg.Layout),
+		diffView:       NewDiffViewModel(cfg.Layout, cfg.Secrets),
 		editor:         NewEditorModel(),
 		searchInput:    ti,
 		backedUpPaths:  make(map[string]bool),
@@ -118,7 +119,7 @@ func (a App) Init() tea.Cmd {
 	noGitCheck := a.config.NoGitCheck
 	cmds := []tea.Cmd{
 		func() tea.Msg {
-			files, err := ScanDir(a.config.Dir, a.config.Recursive, a.config.Files)
+			files, err := ScanDir(a.config.Dir, a.config.Recursive, a.config.Files, a.config.Secrets)
 			if err == nil && !noGitCheck {
 				CheckGitIgnore(files)
 			}
@@ -444,7 +445,7 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 			a.statusBar.SetMessage("Need at least 2 files for matrix")
 			return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 		}
-		a.matrixView = NewMatrixModel(a.fileList.Files, a.config.Layout)
+		a.matrixView = NewMatrixModel(a.fileList.Files, a.config.Layout, a.config.Secrets)
 		a.matrixView.Width = a.width
 		a.matrixView.Height = a.height - 1
 		a.mode = ModeMatrix
@@ -585,7 +586,7 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				return a, a.editor.input.Focus()
 			}
 			// Got the value, add the variable
-			a.varList.File.AddVar(a.editor.addKey, result.Value)
+			a.varList.File.AddVar(a.editor.addKey, result.Value, util.IsSecret(a.editor.addKey, result.Value, a.config.Secrets))
 			a.varList.Refresh()
 			a.statusBar.SetMessage("Added " + a.editor.addKey)
 		} else {

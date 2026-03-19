@@ -61,6 +61,39 @@ mouse-scroll-lines = 1
 | `file-list-width`          | `0`     | Width of the file list panel. `0` = auto (1/4 of screen). Min 20. File names truncate to fit. |
 | `mouse-scroll-lines`       | `1`     | Number of lines scrolled per mouse wheel event.                                                |
 
+## [secrets]
+
+Customize how secret detection works. By default, keys are detected as secrets by name patterns and values by entropy-based heuristic.
+
+```toml
+[secrets]
+safe_patterns = ["_HOST", "_URL", "_ENDPOINT"]
+extra_patterns = ["_CREDENTIAL"]
+value_heuristic = false
+```
+
+| Key               | Default | Description                                                                                     |
+| ----------------- | ------- | ----------------------------------------------------------------------------------------------- |
+| `safe_patterns`   | `[]`    | Key patterns to never treat as secret, overriding all built-in detection.                       |
+| `extra_patterns`  | `[]`    | Key patterns to always treat as secret, in addition to built-ins.                               |
+| `value_heuristic` | `true`  | Enable entropy-based value heuristic. When false, only key name and value prefix matching apply. |
+
+**Pattern convention:** `_HOST` (starts with `_`) matches as suffix, `PUBLIC_` (ends with `_`) matches as prefix, `DATABASE_HOST` matches as exact key name. Case insensitive.
+
+### Built-in detection rules
+
+Keys are detected as secrets if they match any of the following (case insensitive):
+
+| Rule           | Patterns                                                                             |
+| -------------- | ------------------------------------------------------------------------------------ |
+| Exact match    | `PASSWORD`, `SECRET`, `TOKEN`, `API_KEY`, `ACCESS_KEY`, `PRIVATE_KEY`                |
+| Suffix match   | `_KEY`, `_SECRET`, `_TOKEN`, `_PASSWORD`, `_PASS`, `_API_KEY`, `_AUTH`, `_CREDENTIAL`, `_PRIVATE` |
+| Prefix match   | `SECRET_`, `TOKEN_`, `AUTH_`, `PRIVATE_`                                             |
+| Value prefix   | `sk-`, `pk-`, `ghp_`, `gho_`, `Bearer ` (always active, even with `value_heuristic = false`) |
+| Value entropy  | Values ≥16 chars with mixed case + digits and Shannon entropy ≥4.0 bits/char (gated by `value_heuristic`) |
+
+`safe_patterns` is checked first and overrides everything, including built-in rules and `extra_patterns`.
+
 ## [colors]
 
 Hex color overrides. These override individual theme colors. Leave empty or omit to use the theme or auto-detected defaults.

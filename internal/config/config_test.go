@@ -382,6 +382,62 @@ func TestLoadFullCustomPathOverridesProject(t *testing.T) {
 	assert.False(t, r.Config.Recursive, "project config should not be loaded")
 }
 
+func TestDefaultSecretsConfig(t *testing.T) {
+	s := DefaultConfig().Secrets
+	assert.Nil(t, s.SafePatterns)
+	assert.Nil(t, s.ExtraPatterns)
+	assert.Nil(t, s.ValueHeuristic)
+	assert.True(t, s.ValueHeuristicEnabled(), "default should be true")
+}
+
+func TestValueHeuristicEnabled(t *testing.T) {
+	// nil → true (default)
+	assert.True(t, SecretsConfig{}.ValueHeuristicEnabled())
+
+	// explicit true
+	v := true
+	assert.True(t, SecretsConfig{ValueHeuristic: &v}.ValueHeuristicEnabled())
+
+	// explicit false
+	f := false
+	assert.False(t, SecretsConfig{ValueHeuristic: &f}.ValueHeuristicEnabled())
+}
+
+func TestLoadSecretsConfig(t *testing.T) {
+	dir := t.TempDir()
+	content := []byte("[secrets]\nsafe_patterns = [\"_HOST\", \"_URL\"]\nextra_patterns = [\"_CREDENTIAL\"]\nvalue_heuristic = false\n")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
+
+	cfg, warnings := Load(dir, "")
+	assert.Empty(t, warnings)
+	assert.Equal(t, []string{"_HOST", "_URL"}, cfg.Secrets.SafePatterns)
+	assert.Equal(t, []string{"_CREDENTIAL"}, cfg.Secrets.ExtraPatterns)
+	require.NotNil(t, cfg.Secrets.ValueHeuristic)
+	assert.False(t, *cfg.Secrets.ValueHeuristic)
+}
+
+func TestLoadSecretsEmptyPatternWarns(t *testing.T) {
+	dir := t.TempDir()
+	content := []byte("[secrets]\nsafe_patterns = [\"_HOST\", \"\"]\n")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
+
+	cfg, warnings := Load(dir, "")
+	assert.Len(t, warnings, 1)
+	assert.Contains(t, warnings[0], "empty string")
+	assert.Equal(t, DefaultConfig(), cfg)
+}
+
+func TestLoadSecretsNormalizesCase(t *testing.T) {
+	dir := t.TempDir()
+	content := []byte("[secrets]\nsafe_patterns = [\"_host\", \"public_\"]\nextra_patterns = [\"_credential\"]\n")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
+
+	cfg, warnings := Load(dir, "")
+	assert.Empty(t, warnings)
+	assert.Equal(t, []string{"_HOST", "PUBLIC_"}, cfg.Secrets.SafePatterns)
+	assert.Equal(t, []string{"_CREDENTIAL"}, cfg.Secrets.ExtraPatterns)
+}
+
 func TestDefaultColorsEmpty(t *testing.T) {
 	c := DefaultConfig().Colors
 

@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/lazynop/lazyenv/internal/parser"
 )
@@ -20,7 +21,7 @@ func newTestAppWithDiskFile(t *testing.T, content string) (App, string) {
 	envPath := filepath.Join(dir, ".env")
 	require.NoError(t, os.WriteFile(envPath, []byte(content), 0644))
 
-	f, err := parser.ParseFile(envPath)
+	f, err := parser.ParseFile(envPath, config.SecretsConfig{})
 	require.NoError(t, err)
 	f.GitWarning = true
 
@@ -71,11 +72,11 @@ func TestCompareSavePreservesGitWarning(t *testing.T) {
 	require.NoError(t, os.WriteFile(pathA, []byte("FOO=a\n"), 0644))
 	require.NoError(t, os.WriteFile(pathB, []byte("FOO=b\n"), 0644))
 
-	fA, err := parser.ParseFile(pathA)
+	fA, err := parser.ParseFile(pathA, config.SecretsConfig{})
 	require.NoError(t, err)
 	fA.GitWarning = true
 
-	fB, err := parser.ParseFile(pathB)
+	fB, err := parser.ParseFile(pathB, config.SecretsConfig{})
 	require.NoError(t, err)
 	fB.GitWarning = true
 
@@ -107,11 +108,11 @@ func TestCompareResetPreservesGitWarning(t *testing.T) {
 	require.NoError(t, os.WriteFile(pathA, []byte("FOO=a\n"), 0644))
 	require.NoError(t, os.WriteFile(pathB, []byte("FOO=b\n"), 0644))
 
-	fA, err := parser.ParseFile(pathA)
+	fA, err := parser.ParseFile(pathA, config.SecretsConfig{})
 	require.NoError(t, err)
 	fA.GitWarning = true
 
-	fB, err := parser.ParseFile(pathB)
+	fB, err := parser.ParseFile(pathB, config.SecretsConfig{})
 	require.NoError(t, err)
 	fB.GitWarning = true
 
@@ -142,11 +143,11 @@ func TestSaveFromMatrixPreservesGitWarning(t *testing.T) {
 	require.NoError(t, os.WriteFile(pathA, []byte("FOO=a\n"), 0644))
 	require.NoError(t, os.WriteFile(pathB, []byte("BAR=b\n"), 0644))
 
-	fA, err := parser.ParseFile(pathA)
+	fA, err := parser.ParseFile(pathA, config.SecretsConfig{})
 	require.NoError(t, err)
 	fA.GitWarning = true
 
-	fB, err := parser.ParseFile(pathB)
+	fB, err := parser.ParseFile(pathB, config.SecretsConfig{})
 	require.NoError(t, err)
 	fB.GitWarning = true
 
@@ -156,7 +157,7 @@ func TestSaveFromMatrixPreservesGitWarning(t *testing.T) {
 	app.varList.SetFile(fA)
 
 	// Add a var to file B via AddVar (simulating matrix add).
-	fB.AddVar("FOO", "from_matrix")
+	fB.AddVar("FOO", "from_matrix", false)
 	require.True(t, fB.Modified)
 
 	// Save file B.

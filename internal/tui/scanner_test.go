@@ -30,7 +30,7 @@ func TestScanDirFindsEnvFiles(t *testing.T) {
 		"not-an-env.txt": "ignored\n",
 	})
 
-	files, err := ScanDir(dir, false, config.DefaultConfig().Files)
+	files, err := ScanDir(dir, false, config.DefaultConfig().Files, config.SecretsConfig{})
 
 	require.NoError(t, err)
 	require.Len(t, files, 3)
@@ -50,7 +50,7 @@ func TestScanDirNonRecursive(t *testing.T) {
 		"sub/.env": "SUB=val\n",
 	})
 
-	files, err := ScanDir(dir, false, config.DefaultConfig().Files)
+	files, err := ScanDir(dir, false, config.DefaultConfig().Files, config.SecretsConfig{})
 
 	require.NoError(t, err)
 	require.Len(t, files, 1, "non-recursive should only find root .env")
@@ -63,7 +63,7 @@ func TestScanDirRecursive(t *testing.T) {
 		"sub/deep/.env": "DEEP=val\n",
 	})
 
-	files, err := ScanDir(dir, true, config.DefaultConfig().Files)
+	files, err := ScanDir(dir, true, config.DefaultConfig().Files, config.SecretsConfig{})
 
 	require.NoError(t, err)
 	require.Len(t, files, 3)
@@ -75,7 +75,7 @@ func TestScanDirSkipsNodeModules(t *testing.T) {
 		"node_modules/pkg/.env": "SKIP=me\n",
 	})
 
-	files, err := ScanDir(dir, true, config.DefaultConfig().Files)
+	files, err := ScanDir(dir, true, config.DefaultConfig().Files, config.SecretsConfig{})
 
 	require.NoError(t, err)
 	require.Len(t, files, 1)
@@ -87,7 +87,7 @@ func TestScanDirSkipsHiddenDirs(t *testing.T) {
 		".hidden/.env": "SKIP=me\n",
 	})
 
-	files, err := ScanDir(dir, true, config.DefaultConfig().Files)
+	files, err := ScanDir(dir, true, config.DefaultConfig().Files, config.SecretsConfig{})
 
 	require.NoError(t, err)
 	require.Len(t, files, 1)
@@ -101,7 +101,7 @@ func TestScanDirSortsByDepthThenName(t *testing.T) {
 		".env":           "D=4\n",
 	})
 
-	files, err := ScanDir(dir, true, config.DefaultConfig().Files)
+	files, err := ScanDir(dir, true, config.DefaultConfig().Files, config.SecretsConfig{})
 
 	require.NoError(t, err)
 	require.Len(t, files, 4)
@@ -113,7 +113,7 @@ func TestScanDirSortsByDepthThenName(t *testing.T) {
 func TestScanDirEmptyDir(t *testing.T) {
 	dir := t.TempDir()
 
-	files, err := ScanDir(dir, false, config.DefaultConfig().Files)
+	files, err := ScanDir(dir, false, config.DefaultConfig().Files, config.SecretsConfig{})
 
 	require.NoError(t, err)
 	assert.Empty(t, files)
@@ -131,10 +131,10 @@ func TestScanDirDotPathRecursive(t *testing.T) {
 	require.NoError(t, os.Chdir(dir))
 	t.Cleanup(func() { os.Chdir(origDir) })
 
-	files, err := ScanDir(".", true, config.DefaultConfig().Files)
+	files, err := ScanDir(".", true, config.DefaultConfig().Files, config.SecretsConfig{})
 
 	require.NoError(t, err)
-	require.Len(t, files, 2, `ScanDir(".", true, config.DefaultConfig().Files) should find files recursively`)
+	require.Len(t, files, 2, `ScanDir(".", true, config.DefaultConfig().Files, config.SecretsConfig{}) should find files recursively`)
 }
 
 func TestIsEnvFile(t *testing.T) {
@@ -187,7 +187,7 @@ func TestScanDirCustomExclude(t *testing.T) {
 		Exclude: []string{".env.local"},
 	}
 
-	files, err := ScanDir(dir, false, cfg)
+	files, err := ScanDir(dir, false, cfg, config.SecretsConfig{})
 	require.NoError(t, err)
 	require.Len(t, files, 1)
 	assert.Equal(t, ".env", files[0].Name)

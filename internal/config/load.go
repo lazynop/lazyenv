@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 
 	toml "github.com/pelletier/go-toml/v2"
 )
@@ -88,11 +90,30 @@ func merge(defaults Config, rawData []byte) (Config, []string) {
 		return defaults, warns
 	}
 
+	result.Secrets = normalizeSecrets(result.Secrets)
 	result.Colors = resolveColors(result.Theme, result.Colors)
 	if result.NoThemeBg {
 		result.Colors.Bg = ""
 	}
 	return result, nil
+}
+
+// normalizeSecrets uppercases patterns so matchesPattern can skip ToUpper per call.
+func normalizeSecrets(s SecretsConfig) SecretsConfig {
+	s.SafePatterns = upperAll(s.SafePatterns)
+	s.ExtraPatterns = upperAll(s.ExtraPatterns)
+	return s
+}
+
+func upperAll(ss []string) []string {
+	if ss == nil {
+		return nil
+	}
+	out := make([]string, len(ss))
+	for i, s := range ss {
+		out[i] = strings.ToUpper(s)
+	}
+	return out
 }
 
 func validate(cfg Config) []string {
@@ -133,6 +154,13 @@ func validate(cfg Config) []string {
 
 	if l.MouseScrollLines < 0 {
 		warns = append(warns, fmt.Sprintf("invalid mouse-scroll-lines: %d (must be >= 0)", l.MouseScrollLines))
+	}
+
+	if slices.Contains(cfg.Secrets.SafePatterns, "") {
+		warns = append(warns, "empty string in secrets.safe_patterns")
+	}
+	if slices.Contains(cfg.Secrets.ExtraPatterns, "") {
+		warns = append(warns, "empty string in secrets.extra_patterns")
 	}
 
 	return warns

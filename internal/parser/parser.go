@@ -4,12 +4,13 @@ import (
 	"os"
 	"strings"
 
+	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/lazynop/lazyenv/internal/util"
 )
 
 // ParseFile reads and parses an .env file from disk.
-func ParseFile(path string) (*model.EnvFile, error) {
+func ParseFile(path string, secrets config.SecretsConfig) (*model.EnvFile, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
@@ -18,13 +19,13 @@ func ParseFile(path string) (*model.EnvFile, error) {
 	if idx := strings.LastIndex(path, "/"); idx >= 0 {
 		name = path[idx+1:]
 	}
-	ef := ParseBytes(name, data)
+	ef := ParseBytes(name, data, secrets)
 	ef.Path = path
 	return ef, nil
 }
 
 // ParseBytes parses .env content from raw bytes.
-func ParseBytes(name string, data []byte) *model.EnvFile {
+func ParseBytes(name string, data []byte, secrets config.SecretsConfig) *model.EnvFile {
 	ef := &model.EnvFile{
 		Name: name,
 	}
@@ -95,7 +96,7 @@ func ParseBytes(name string, data []byte) *model.EnvFile {
 			LineNum:       lineNum,
 			QuoteStyle:    quoteStyle,
 			HasExport:     hasExport,
-			IsSecret:      util.IsSecret(key, value),
+			IsSecret:      util.IsSecret(key, value, secrets),
 			IsEmpty:       value == "",
 			IsPlaceholder: util.IsPlaceholderValue(value),
 			IsDuplicate:   isDuplicate,

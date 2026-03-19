@@ -68,7 +68,7 @@ func TestUpdateVarOutOfBounds(t *testing.T) {
 func TestAddVar(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
 
-	ef.AddVar("NEW", "val")
+	ef.AddVar("NEW", "val", false)
 
 	require.Len(t, ef.Vars, 2)
 	assert.Equal(t, "NEW", ef.Vars[1].Key)
@@ -82,10 +82,20 @@ func TestAddVar(t *testing.T) {
 	assert.Equal(t, 1, ef.Lines[1].VarIdx)
 }
 
+func TestAddVarSetsIsSecret(t *testing.T) {
+	ef := newTestFile()
+
+	ef.AddVar("SECRET_KEY", "val", true)
+	assert.True(t, ef.Vars[0].IsSecret, "IsSecret should be set from parameter")
+
+	ef.AddVar("NORMAL", "val", false)
+	assert.False(t, ef.Vars[1].IsSecret)
+}
+
 func TestAddVarEmpty(t *testing.T) {
 	ef := newTestFile()
 
-	ef.AddVar("KEY", "")
+	ef.AddVar("KEY", "", false)
 
 	require.Len(t, ef.Vars, 1)
 	assert.True(t, ef.Vars[0].IsEmpty)
@@ -129,7 +139,7 @@ func TestDeleteVarTracksDeleted(t *testing.T) {
 
 func TestDeleteNewVarNotTracked(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "1"})
-	ef.AddVar("NEW", "val")
+	ef.AddVar("NEW", "val", false)
 	require.Len(t, ef.Vars, 2)
 
 	ef.DeleteVar(1) // delete the newly added var
@@ -145,7 +155,7 @@ func TestReAddDeletedVarRemovesFromDeleted(t *testing.T) {
 	ef.DeleteVar(0)
 	require.Len(t, ef.DeletedVars, 1)
 
-	ef.AddVar("FOO", "new_value")
+	ef.AddVar("FOO", "new_value", false)
 	assert.Empty(t, ef.DeletedVars, "re-adding should remove from DeletedVars")
 }
 
@@ -155,7 +165,7 @@ func TestReAddDeletedVarPreservesOriginalValue(t *testing.T) {
 	)
 
 	ef.DeleteVar(0)
-	ef.AddVar("FOO", "new_value")
+	ef.AddVar("FOO", "new_value", false)
 
 	require.Len(t, ef.Vars, 1)
 	assert.Equal(t, "new_value", ef.Vars[0].Value)

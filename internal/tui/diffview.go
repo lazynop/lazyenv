@@ -9,6 +9,7 @@ import (
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/lazynop/lazyenv/internal/parser"
+	"github.com/lazynop/lazyenv/internal/util"
 )
 
 // DiffStats holds counts of each diff type.
@@ -32,12 +33,13 @@ type DiffViewModel struct {
 	HideEqual  bool
 	Stats      DiffStats
 
-	layout config.LayoutConfig
+	layout  config.LayoutConfig
+	secrets config.SecretsConfig
 }
 
 // NewDiffViewModel creates a new diff view model.
-func NewDiffViewModel(layout config.LayoutConfig) DiffViewModel {
-	return DiffViewModel{layout: layout}
+func NewDiffViewModel(layout config.LayoutConfig, secrets config.SecretsConfig) DiffViewModel {
+	return DiffViewModel{layout: layout, secrets: secrets}
 }
 
 // SetFiles computes the diff between two files.
@@ -177,7 +179,7 @@ func (m *DiffViewModel) CopyToRight() string {
 		}
 	case model.DiffAdded:
 		// Key only in A, add to B
-		m.FileB.AddVar(e.Key, e.ValueA)
+		m.FileB.AddVar(e.Key, e.ValueA, util.IsSecret(e.Key, e.ValueA, m.secrets))
 	case model.DiffRemoved:
 		// Key only in B — copying "right" means overwrite with nothing;
 		// more useful: delete from B so they match (both gone)
@@ -216,7 +218,7 @@ func (m *DiffViewModel) CopyToLeft() string {
 		}
 	case model.DiffRemoved:
 		// Key only in B, add to A
-		m.FileA.AddVar(e.Key, e.ValueB)
+		m.FileA.AddVar(e.Key, e.ValueB, util.IsSecret(e.Key, e.ValueB, m.secrets))
 	case model.DiffAdded:
 		// Key only in A — delete from A
 		for i := len(m.FileA.Vars) - 1; i >= 0; i-- {
@@ -235,8 +237,8 @@ func (m *DiffViewModel) CopyToLeft() string {
 // Reset re-parses both files from disk, discarding in-memory edits.
 // Returns error message on failure, empty string on success.
 func (m *DiffViewModel) Reset() string {
-	newA, errA := parser.ParseFile(m.FileA.Path)
-	newB, errB := parser.ParseFile(m.FileB.Path)
+	newA, errA := parser.ParseFile(m.FileA.Path, m.secrets)
+	newB, errB := parser.ParseFile(m.FileB.Path, m.secrets)
 	if errA != nil {
 		return "Failed to reload " + m.FileA.Name
 	}

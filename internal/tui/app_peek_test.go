@@ -72,7 +72,7 @@ func TestPeekShowsNewVariableHint(t *testing.T) {
 	app.varList.Height = 20
 
 	// Add a new variable and move cursor to it.
-	f.AddVar("NEW_VAR", "some_val")
+	f.AddVar("NEW_VAR", "some_val", false)
 	app.varList.Refresh()
 	app.varList.MoveDown() // cursor on NEW_VAR
 
@@ -148,7 +148,7 @@ func TestDeletedVarsDisappearAfterReAdd(t *testing.T) {
 
 	f.DeleteVar(1) // delete BAR
 	vlm.Refresh()
-	f.AddVar("BAR", "new_val") // re-add BAR
+	f.AddVar("BAR", "new_val", false) // re-add BAR
 	vlm.Refresh()
 
 	assert.Empty(t, f.DeletedVars, "re-added var should be removed from DeletedVars")
@@ -163,8 +163,8 @@ func TestPeekAfterDeleteAndReAdd(t *testing.T) {
 	vlm.Width = 80
 	vlm.Height = 20
 
-	f.DeleteVar(0)               // delete FOO (original value: val_FOO)
-	f.AddVar("FOO", "new_value") // re-add with different value
+	f.DeleteVar(0)                      // delete FOO (original value: val_FOO)
+	f.AddVar("FOO", "new_value", false) // re-add with different value
 	vlm.Refresh()
 
 	theme := BuildTheme(true, config.ColorConfig{})

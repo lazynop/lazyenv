@@ -48,8 +48,12 @@ Yank values or full `KEY=value` lines to the clipboard using OSC 52.
 
 Sensitive keys (passwords, tokens, secrets) are automatically detected and masked. Toggle visibility with `Ctrl+S`.
 
+Detection uses key name patterns (e.g. `*_PASSWORD`, `*_TOKEN`, `*_SECRET`), known value prefixes (`sk-`, `ghp_`, `Bearer`), and entropy-based heuristic for random-looking values.
+
+Customize detection with the [`[secrets]`](configuration.md#secrets) config section — mark keys as safe, add extra patterns, or disable the value heuristic entirely.
+
 !!! warning "Detection is heuristic"
-    Masking is based on key name patterns (e.g. `*_PASSWORD`, `*_TOKEN`, `*_SECRET`). Always review your files before sharing.
+    Always review your files before sharing. Use `safe_patterns` and `extra_patterns` to fine-tune detection for your project.
 
 ## Gitignore check
 
