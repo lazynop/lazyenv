@@ -12,10 +12,11 @@ const (
 
 // DiffEntry represents a single difference between two files.
 type DiffEntry struct {
-	Key    string
-	Status DiffStatus
-	ValueA string // value in file A
-	ValueB string // value in file B
+	Key      string
+	Status   DiffStatus
+	ValueA   string // value in file A
+	ValueB   string // value in file B
+	IsSecret bool   // true if the key is secret in either file
 }
 
 // ComputeDiff compares two env files key-by-key.
@@ -24,12 +25,16 @@ type DiffEntry struct {
 func ComputeDiff(a, b *EnvFile) []DiffEntry {
 	// Build maps using last occurrence (shell semantics)
 	bMap := make(map[string]string)
+	bSecret := make(map[string]bool)
 	for _, v := range b.Vars {
 		bMap[v.Key] = v.Value
+		bSecret[v.Key] = bSecret[v.Key] || v.IsSecret
 	}
 	aMap := make(map[string]string)
+	aSecret := make(map[string]bool)
 	for _, v := range a.Vars {
 		aMap[v.Key] = v.Value
+		aSecret[v.Key] = aSecret[v.Key] || v.IsSecret
 	}
 
 	seen := make(map[string]bool)
@@ -52,27 +57,31 @@ func ComputeDiff(a, b *EnvFile) []DiffEntry {
 		}
 		seen[v.Key] = true
 		valA := aMap[v.Key]
+		secret := aSecret[v.Key] || bSecret[v.Key]
 		if valB, ok := bMap[v.Key]; ok {
 			if valA == valB {
 				entries = append(entries, DiffEntry{
-					Key:    v.Key,
-					Status: DiffEqual,
-					ValueA: valA,
-					ValueB: valB,
+					Key:      v.Key,
+					Status:   DiffEqual,
+					ValueA:   valA,
+					ValueB:   valB,
+					IsSecret: secret,
 				})
 			} else {
 				entries = append(entries, DiffEntry{
-					Key:    v.Key,
-					Status: DiffChanged,
-					ValueA: valA,
-					ValueB: valB,
+					Key:      v.Key,
+					Status:   DiffChanged,
+					ValueA:   valA,
+					ValueB:   valB,
+					IsSecret: secret,
 				})
 			}
 		} else {
 			entries = append(entries, DiffEntry{
-				Key:    v.Key,
-				Status: DiffAdded,
-				ValueA: valA,
+				Key:      v.Key,
+				Status:   DiffAdded,
+				ValueA:   valA,
+				IsSecret: secret,
 			})
 		}
 	}
@@ -86,9 +95,10 @@ func ComputeDiff(a, b *EnvFile) []DiffEntry {
 		seenB[v.Key] = true
 		if _, ok := aMap[v.Key]; !ok {
 			entries = append(entries, DiffEntry{
-				Key:    v.Key,
-				Status: DiffRemoved,
-				ValueB: bMap[v.Key],
+				Key:      v.Key,
+				Status:   DiffRemoved,
+				ValueB:   bMap[v.Key],
+				IsSecret: bSecret[v.Key],
 			})
 		}
 	}

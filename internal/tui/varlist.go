@@ -177,11 +177,10 @@ func (m *VarListModel) renderWarningIndicators(v *model.EnvVar, theme Theme) str
 
 // formatValue returns the (possibly masked and truncated) display value for a variable.
 func (m *VarListModel) formatValue(v *model.EnvVar, maxValWidth int) string {
-	value := v.Value
 	if v.IsSecret && !m.ShowSecrets {
-		value = util.MaskValue(v.Value)
+		return padRight(truncate(util.MaskValue(v.Value), maxValWidth), maxValWidth)
 	}
-	return padRight(truncate(value, maxValWidth), maxValWidth)
+	return padRight(truncate(v.Value, maxValWidth), maxValWidth)
 }
 
 // renderVarLine renders a single variable line including cursor highlighting, secret masking, and warnings.

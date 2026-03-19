@@ -117,11 +117,12 @@ func modeHints(theme Theme, mode AppMode, focus Focus, diffStats string) string 
 		return theme.EmptyWarning.Render("Select second file to compare (Enter to select, Esc to cancel)")
 	case ModeComparing:
 		return fmt.Sprintf(
-			"%s %s %s %s %s %s %s %s %s",
+			"%s %s %s %s %s %s %s %s %s %s",
 			formatHint(theme, "←/→", "copy"),
 			formatHint(theme, "e/E", "edit L/R"),
 			formatHint(theme, "n/N", "next/prev diff"),
 			formatHint(theme, "f", "filter"),
+			formatHint(theme, "^S", "secrets"),
 			formatHint(theme, "w", "save"),
 			formatHint(theme, "r", "reset"),
 			formatHint(theme, "q", "back"),

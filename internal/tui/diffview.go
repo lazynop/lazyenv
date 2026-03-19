@@ -22,16 +22,17 @@ type DiffStats struct {
 
 // DiffViewModel manages the diff/compare view.
 type DiffViewModel struct {
-	FileA      *model.EnvFile
-	FileB      *model.EnvFile
-	allEntries []model.DiffEntry
-	Entries    []model.DiffEntry // visible entries (after filtering)
-	Cursor     int
-	Offset     int
-	Width      int
-	Height     int
-	HideEqual  bool
-	Stats      DiffStats
+	FileA       *model.EnvFile
+	FileB       *model.EnvFile
+	allEntries  []model.DiffEntry
+	Entries     []model.DiffEntry // visible entries (after filtering)
+	Cursor      int
+	Offset      int
+	Width       int
+	Height      int
+	HideEqual   bool
+	ShowSecrets bool
+	Stats       DiffStats
 
 	layout  config.LayoutConfig
 	secrets config.SecretsConfig
@@ -342,10 +343,14 @@ func (m *DiffViewModel) renderDiffEntry(e model.DiffEntry, isCursor bool, keyWid
 	}
 
 	key := padRight(truncate(e.Key, keyWidth), keyWidth)
-	valA := truncate(e.ValueA, valWidth)
-	valB := truncate(e.ValueB, valWidth)
-	valA = padRight(valA, valWidth)
-	valB = padRight(valB, valWidth)
+	var valA, valB string
+	if e.IsSecret && !m.ShowSecrets {
+		valA = padRight(truncate(util.MaskValue(e.ValueA), valWidth), valWidth)
+		valB = padRight(truncate(util.MaskValue(e.ValueB), valWidth), valWidth)
+	} else {
+		valA = padRight(truncate(e.ValueA, valWidth), valWidth)
+		valB = padRight(truncate(e.ValueB, valWidth), valWidth)
+	}
 
 	leftLine := fmt.Sprintf("  %s  %s", key, valA)
 	rightLine := fmt.Sprintf("  %s  %s  %s", key, valB, statusChar)

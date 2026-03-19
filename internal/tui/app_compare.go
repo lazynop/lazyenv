@@ -16,6 +16,7 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, a.keys.Quit), key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
 		a.compareFirstFile = nil
+		a.varList.ShowSecrets = a.diffView.ShowSecrets // sync back
 		// Restore cursor to the selected file so file list and var panel stay in sync.
 		a.fileList.Cursor = a.fileList.Selected
 	case key.Matches(msg, a.keys.Up):
@@ -40,6 +41,15 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a.startCompareEdit(a.diffView.FileB)
 	case msg.String() == "r":
 		return a.handleCompareReset()
+	case key.Matches(msg, a.keys.ToggleSecret):
+		a.diffView.ShowSecrets = !a.diffView.ShowSecrets
+		a.varList.ShowSecrets = a.diffView.ShowSecrets // keep in sync
+		if a.diffView.ShowSecrets {
+			a.statusBar.SetMessage("Secrets revealed")
+		} else {
+			a.statusBar.SetMessage("Secrets hidden")
+		}
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	}
 	return a, nil
 }
@@ -203,6 +213,7 @@ func (a App) handleCompareSelectKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		second := a.fileList.CursorFile()
 		if second != nil && a.compareFirstFile != nil && second != a.compareFirstFile {
 			a.diffView.SetFiles(a.compareFirstFile, second)
+			a.diffView.ShowSecrets = a.varList.ShowSecrets
 			a.diffView.Width = a.width - 2
 			a.diffView.Height = a.height - 4
 			a.mode = ModeComparing

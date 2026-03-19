@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.2] - 2026-03-19
+
+### Added
+- Secret masking in compare view with `Ctrl+S` toggle, synced with main view
+- `^S secrets` hint in compare view status bar
+- Demo GIF and VHS tape source in README
+
+### Fixed
+- Masked values no longer show truncation artifacts (`..`) in narrow terminals
+
 ## [0.4.1] - 2026-03-19
 
 ### Added
