@@ -13,6 +13,8 @@ Browse, compare, edit and validate environment variables from your terminal.
 
 **[Documentation](https://lazynop.github.io/lazyenv/)** | **[Releases](https://github.com/lazynop/lazyenv/releases)**
 
+![lazyenv demo](docs/assets/demo.gif)
+
 ## Features
 
 - Two-panel layout with file list and variables, inline editing
