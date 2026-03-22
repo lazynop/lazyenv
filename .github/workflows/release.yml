@@ -25,6 +25,7 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
 
       - name: Ping Go module proxy
         run: curl -s "https://proxy.golang.org/github.com/lazynop/lazyenv/@v/${GITHUB_REF_NAME}.info" || true
