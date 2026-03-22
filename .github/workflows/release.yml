@@ -19,6 +19,16 @@ jobs:
         with:
           go-version: "1.26"
 
+      - name: Setup AUR SSH
+        if: ${{ secrets.AUR_KEY != '' }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$AUR_KEY" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts 2>/dev/null
+        env:
+          AUR_KEY: ${{ secrets.AUR_KEY }}
+
       - uses: goreleaser/goreleaser-action@v7
         with:
           version: latest
@@ -26,6 +36,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          AUR_KEY: ~/.ssh/aur
 
       - name: Ping Go module proxy
         run: curl -s "https://proxy.golang.org/github.com/lazynop/lazyenv/@v/${GITHUB_REF_NAME}.info" || true
