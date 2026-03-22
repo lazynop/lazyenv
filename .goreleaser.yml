@@ -102,3 +102,24 @@ brews:
       bin.install "lazyenv"
     test: |
       system bin/"lazyenv", "--version"
+
+aurs:
+  - name: lazyenv-bin
+    homepage: https://lazynop.github.io/lazyenv/
+    description: "TUI for managing .env files"
+    license: "MIT"
+    private_key: "{{ .Env.AUR_KEY }}"
+    git_url: "ssh://aur@aur.archlinux.org/lazyenv-bin.git"
+    skip_upload: auto
+    maintainers:
+      - "lazynop"
+    provides:
+      - lazyenv
+    conflicts:
+      - lazyenv
+    package: |-
+      install -Dm755 "./lazyenv" "${pkgdir}/usr/bin/lazyenv"
+      install -Dm644 "./LICENSE" "${pkgdir}/usr/share/licenses/lazyenv-bin/LICENSE"
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
