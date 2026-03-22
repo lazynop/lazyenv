@@ -2,38 +2,7 @@
 
 ## From releases
 
-Download the latest binary from [GitHub Releases](https://github.com/lazynop/lazyenv/releases). Builds are available for amd64 and arm64.
-
-=== "Linux"
-
-    Download the `.tar.gz` archive for your architecture, extract and move to your `$PATH`:
-
-    ```bash
-    tar xzf lazyenv_*_linux_amd64.tar.gz
-    sudo mv lazyenv /usr/local/bin/
-    ```
-
-=== "macOS"
-
-    Download the `.tar.gz` archive for your architecture:
-
-    ```bash
-    tar xzf lazyenv_*_darwin_arm64.tar.gz
-    sudo mv lazyenv /usr/local/bin/
-    ```
-
-=== "Windows"
-
-    Download the `.zip` archive, extract it, and add the folder to your `PATH`.
-
-=== "FreeBSD"
-
-    Download the `.tar.gz` archive for your architecture:
-
-    ```bash
-    tar xzf lazyenv_*_freebsd_amd64.tar.gz
-    sudo mv lazyenv /usr/local/bin/
-    ```
+Download the latest binary for your platform from [GitHub Releases](https://github.com/lazynop/lazyenv/releases). Builds are available for Linux, macOS, Windows, and FreeBSD (amd64 and arm64).
 
 ## Homebrew (macOS & Linux)
 
