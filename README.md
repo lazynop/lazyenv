@@ -30,9 +30,25 @@ Browse, compare, edit and validate environment variables from your terminal.
 
 ## Install
 
-Download a binary from [Releases](https://github.com/lazynop/lazyenv/releases) (Linux, macOS, Windows, FreeBSD — amd64/arm64).
+**Homebrew** (macOS & Linux):
 
-Or install from source (requires Go 1.26+):
+```
+brew install lazynop/tap/lazyenv
+```
+
+**mise:**
+
+```
+mise use -g lazyenv
+```
+
+**AUR** (Arch Linux):
+
+```
+yay -S lazyenv-bin
+```
+
+Or download a binary from [Releases](https://github.com/lazynop/lazyenv/releases), or install from source (requires Go 1.26+):
 
 ```
 go install github.com/lazynop/lazyenv@latest
