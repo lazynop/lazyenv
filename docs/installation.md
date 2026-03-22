@@ -35,6 +35,26 @@ Download the latest binary from [GitHub Releases](https://github.com/lazynop/laz
     sudo mv lazyenv /usr/local/bin/
     ```
 
+## Homebrew (macOS & Linux)
+
+```bash
+brew install lazynop/tap/lazyenv
+```
+
+## mise
+
+```bash
+mise use -g lazyenv
+```
+
+## AUR (Arch Linux)
+
+Install with your preferred AUR helper:
+
+```bash
+yay -S lazyenv-bin
+```
+
 ## From source
 
 Requires Go 1.26+.
