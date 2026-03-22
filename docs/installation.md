@@ -55,6 +55,13 @@ Install with your preferred AUR helper:
 yay -S lazyenv-bin
 ```
 
+## Scoop (Windows)
+
+```powershell
+scoop bucket add lazynop https://github.com/lazynop/scoop-bucket
+scoop install lazyenv
+```
+
 ## From source
 
 Requires Go 1.26+.

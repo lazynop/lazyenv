@@ -123,3 +123,18 @@ aurs:
     commit_author:
       name: goreleaserbot
       email: bot@goreleaser.com
+
+scoops:
+  - name: lazyenv
+    repository:
+      owner: lazynop
+      name: scoop-bucket
+      branch: main
+      token: "{{ .Env.SCOOP_BUCKET_TOKEN }}"
+    homepage: https://lazynop.github.io/lazyenv/
+    description: "TUI for managing .env files"
+    license: MIT
+    skip_upload: auto
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com

@@ -48,6 +48,13 @@ mise use -g lazyenv
 yay -S lazyenv-bin
 ```
 
+**Scoop** (Windows):
+
+```
+scoop bucket add lazynop https://github.com/lazynop/scoop-bucket
+scoop install lazyenv
+```
+
 Or download a binary from [Releases](https://github.com/lazynop/lazyenv/releases), or install from source (requires Go 1.26+):
 
 ```
