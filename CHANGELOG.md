@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.3] - 2026-03-22
+
+### Added
+- Homebrew tap for macOS and Linux (`brew install lazynop/tap/lazyenv`)
+- Scoop bucket for Windows (`scoop install lazyenv`)
+- AUR package for Arch Linux (`yay -S lazyenv-bin`)
+
 ## [0.4.2] - 2026-03-19
 
 ### Added

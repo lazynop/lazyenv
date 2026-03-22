@@ -36,12 +36,6 @@ Browse, compare, edit and validate environment variables from your terminal.
 brew install lazynop/tap/lazyenv
 ```
 
-**mise:**
-
-```
-mise use -g lazyenv
-```
-
 **AUR** (Arch Linux):
 
 ```

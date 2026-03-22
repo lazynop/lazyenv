@@ -41,12 +41,6 @@ Download the latest binary from [GitHub Releases](https://github.com/lazynop/laz
 brew install lazynop/tap/lazyenv
 ```
 
-## mise
-
-```bash
-mise use -g lazyenv
-```
-
 ## AUR (Arch Linux)
 
 Install with your preferred AUR helper:
