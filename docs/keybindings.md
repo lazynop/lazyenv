@@ -59,6 +59,7 @@ Side-by-side diff between two `.env` files.
 | `f`       | Toggle filter: show differences only     |
 | `w`       | Save both files (if modified)            |
 | `r`       | Reset both files to saved state          |
+| `Ctrl+S`  | Toggle secret masking                    |
 | `q`       | Return to main view                      |
 | `Esc`     | Return to main view                      |
 
