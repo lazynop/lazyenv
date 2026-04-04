@@ -35,6 +35,7 @@ const (
 	ModeConfigError
 	ModeCreateFile
 	ModeDuplicateFile
+	ModeConfirmDeleteFile
 )
 
 // Focus represents which panel has focus.
@@ -387,6 +388,8 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a.handleCreateFileKey(msg)
 	case ModeDuplicateFile:
 		return a.handleDuplicateFileKey(msg)
+	case ModeConfirmDeleteFile:
+		return a.handleConfirmDeleteFileKey(msg)
 	case ModeConfigError:
 		return a, tea.Quit
 	}
@@ -431,6 +434,21 @@ func (a App) handleNormalKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				a.duplicateFileInput.SetValue(f.Name + ".copy")
 				a.mode = ModeDuplicateFile
 				return a, a.duplicateFileInput.Focus()
+			}
+		}
+		if key.Matches(msg, a.keys.DeleteFile) {
+			f := a.fileList.SelectedFile()
+			if f == nil {
+				f = a.fileList.CursorFile()
+			}
+			if f != nil {
+				if f.Modified {
+					a.statusBar.SetMessage("Save or reset changes before deleting")
+					return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+				}
+				a.mode = ModeConfirmDeleteFile
+				a.statusBar.SetMessage("Delete " + f.Name + "? (y/n)")
+				return a, nil
 			}
 		}
 	}
@@ -814,6 +832,57 @@ func (a App) finaliseNewFile(path string, successMsg string) (tea.Model, tea.Cmd
 
 	a.statusBar.SetMessage(successMsg)
 	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+}
+
+func (a App) handleConfirmDeleteFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch {
+	case key.Matches(msg, a.keys.Confirm):
+		f := a.fileList.SelectedFile()
+		if f == nil {
+			f = a.fileList.CursorFile()
+		}
+		a.mode = ModeNormal
+		if f == nil {
+			return a, nil
+		}
+
+		if err := os.Remove(f.Path); err != nil {
+			a.statusBar.SetMessage("Error deleting file: " + err.Error())
+			return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		}
+
+		// Remove from file list
+		idx := -1
+		for i, ef := range a.fileList.Files {
+			if ef.Path == f.Path {
+				idx = i
+				break
+			}
+		}
+		if idx >= 0 {
+			a.fileList.Files = append(a.fileList.Files[:idx], a.fileList.Files[idx+1:]...)
+		}
+
+		if len(a.fileList.Files) == 0 {
+			a.fileList.Cursor = 0
+			a.fileList.Selected = 0
+			a.varList.SetFile(nil)
+		} else {
+			if a.fileList.Cursor >= len(a.fileList.Files) {
+				a.fileList.Cursor = len(a.fileList.Files) - 1
+			}
+			a.fileList.Selected = a.fileList.Cursor
+			a.varList.SetFile(a.fileList.Files[a.fileList.Cursor])
+		}
+
+		a.statusBar.SetMessage("Deleted " + f.Name)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+
+	case key.Matches(msg, a.keys.Deny), key.Matches(msg, a.keys.Escape):
+		a.mode = ModeNormal
+		a.statusBar.ClearMessage()
+	}
+	return a, nil
 }
 
 func (a App) handleMatrixKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {

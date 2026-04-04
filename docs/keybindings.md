@@ -12,6 +12,7 @@ Keybindings are context-sensitive: each screen only responds to the keys listed 
 | `Enter`        | Select file and switch focus to variable panel    |
 | `n`            | Create new `.env` file in the scan directory      |
 | `C`            | Duplicate selected file with a new name           |
+| `D`            | Delete file from disk (with confirmation)         |
 | `c`            | Start compare: select a second file for diff view |
 | `m`            | Open completeness matrix (requires 2+ files)      |
 | `w`            | Save current file                                 |

@@ -32,6 +32,7 @@ type KeyMap struct {
 	Peek          key.Binding
 	CreateFile    key.Binding
 	DuplicateFile key.Binding
+	DeleteFile    key.Binding
 }
 
 // DefaultKeyMap returns the default keybindings.
@@ -148,6 +149,10 @@ func DefaultKeyMap() KeyMap {
 		DuplicateFile: key.NewBinding(
 			key.WithKeys("C"),
 			key.WithHelp("C", "duplicate file"),
+		),
+		DeleteFile: key.NewBinding(
+			key.WithKeys("D"),
+			key.WithHelp("D", "delete file"),
 		),
 	}
 }
