@@ -2,7 +2,14 @@
 
 ## Browse and edit
 
-Two-panel layout: file list on the left, variables on the right. Navigate with arrow keys or vim bindings (`hjkl`). Edit values inline, add new variables, delete existing ones. Create, duplicate, or delete `.env` files without leaving the TUI.
+Two-panel layout: file list on the left, variables on the right. Navigate with arrow keys or vim bindings (`hjkl`). Edit values inline, add new variables, delete existing ones.
+
+## File management
+
+Create, duplicate, and delete `.env` files without leaving the TUI. Press `n` to create, `C` to duplicate the selected file with a new name, or `D` to delete (with confirmation). Unsaved changes must be saved or reset before deleting.
+
+!!! tip "Quick environment setup"
+    Duplicate an existing file to bootstrap a new environment: `.env` → `.env.staging`, then compare and tweak the differences.
 
 ## Compare and sync
 
