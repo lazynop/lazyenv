@@ -26,6 +26,18 @@ func TestDuplicateFile_EntersModeOnC(t *testing.T) {
 	assert.Equal(t, ".env.copy", app.duplicateFileInput.Value())
 }
 
+func TestDuplicateFile_EntersModeOnC_DotEnvSuffix(t *testing.T) {
+	f := makeTestFile("demo.env", "FOO")
+	app := newTestApp([]*model.EnvFile{f})
+	app.focus = FocusFiles
+
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "C"})
+	app = updated.(App)
+
+	assert.Equal(t, ModeDuplicateFile, app.mode)
+	assert.Equal(t, "demo.copy.env", app.duplicateFileInput.Value())
+}
+
 func TestDuplicateFile_NoFileNoOp(t *testing.T) {
 	app := newTestApp(nil)
 	app.focus = FocusFiles

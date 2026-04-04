@@ -431,7 +431,7 @@ func (a App) handleNormalKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			}
 			if f != nil {
 				a.duplicateSource = f
-				a.duplicateFileInput.SetValue(f.Name + ".copy")
+				a.duplicateFileInput.SetValue(duplicateName(f.Name))
 				a.mode = ModeDuplicateFile
 				return a, a.duplicateFileInput.Focus()
 			}
@@ -799,6 +799,15 @@ func (a App) confirmDuplicateFile() (tea.Model, tea.Cmd) {
 	}
 
 	return a.finaliseNewFile(destPath, "Duplicated "+src.Name+" → "+name)
+}
+
+// duplicateName suggests a copy name that preserves the .env extension.
+// ".env" → ".env.copy", ".env.local" → ".env.local.copy", "demo.env" → "demo.copy.env"
+func duplicateName(name string) string {
+	if strings.HasSuffix(name, ".env") && !strings.HasPrefix(name, ".env") {
+		return name[:len(name)-4] + ".copy.env"
+	}
+	return name + ".copy"
 }
 
 // validateFileName checks that name has no path separators and matches
