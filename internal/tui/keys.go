@@ -4,33 +4,34 @@ import "charm.land/bubbles/v2/key"
 
 // KeyMap defines all keybindings for the app.
 type KeyMap struct {
-	Up           key.Binding
-	Down         key.Binding
-	Left         key.Binding
-	Right        key.Binding
-	Enter        key.Binding
-	Edit         key.Binding
-	Add          key.Binding
-	Delete       key.Binding
-	Compare      key.Binding
-	Search       key.Binding
-	Save         key.Binding
-	Reset        key.Binding
-	ToggleSecret key.Binding
-	ToggleSort   key.Binding
-	Help         key.Binding
-	Quit         key.Binding
-	Escape       key.Binding
-	Confirm      key.Binding
-	Deny         key.Binding
-	NextDiff     key.Binding
-	PrevDiff     key.Binding
-	Filter       key.Binding
-	Matrix       key.Binding
-	YankValue    key.Binding
-	YankLine     key.Binding
-	Peek         key.Binding
-	CreateFile   key.Binding
+	Up            key.Binding
+	Down          key.Binding
+	Left          key.Binding
+	Right         key.Binding
+	Enter         key.Binding
+	Edit          key.Binding
+	Add           key.Binding
+	Delete        key.Binding
+	Compare       key.Binding
+	Search        key.Binding
+	Save          key.Binding
+	Reset         key.Binding
+	ToggleSecret  key.Binding
+	ToggleSort    key.Binding
+	Help          key.Binding
+	Quit          key.Binding
+	Escape        key.Binding
+	Confirm       key.Binding
+	Deny          key.Binding
+	NextDiff      key.Binding
+	PrevDiff      key.Binding
+	Filter        key.Binding
+	Matrix        key.Binding
+	YankValue     key.Binding
+	YankLine      key.Binding
+	Peek          key.Binding
+	CreateFile    key.Binding
+	DuplicateFile key.Binding
 }
 
 // DefaultKeyMap returns the default keybindings.
@@ -143,6 +144,10 @@ func DefaultKeyMap() KeyMap {
 		CreateFile: key.NewBinding(
 			key.WithKeys("n"),
 			key.WithHelp("n", "new file"),
+		),
+		DuplicateFile: key.NewBinding(
+			key.WithKeys("C"),
+			key.WithHelp("C", "duplicate file"),
 		),
 	}
 }

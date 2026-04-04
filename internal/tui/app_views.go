@@ -39,6 +39,7 @@ func (a App) viewHelp() string {
     Y              Copy KEY=value to clipboard
     p              Peek original value (toggle)
     n              Create new .env file
+    C              Duplicate file with new name
     w              Save changes
     r              Reset file (discard changes)
     c              Compare two files (diff view)

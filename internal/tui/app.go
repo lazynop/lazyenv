@@ -34,6 +34,7 @@ const (
 	ModeMatrixEditing
 	ModeConfigError
 	ModeCreateFile
+	ModeDuplicateFile
 )
 
 // Focus represents which panel has focus.
@@ -89,8 +90,10 @@ type App struct {
 	compareEditFile   *model.EnvFile // which file is being edited in compare mode
 	compareEditVarIdx int            // var index in that file
 
-	// Create file state
-	createFileInput textinput.Model
+	// Create/duplicate file state
+	createFileInput    textinput.Model
+	duplicateFileInput textinput.Model
+	duplicateSource    *model.EnvFile // source file for duplication
 }
 
 // NewApp creates a new App model.
@@ -103,27 +106,31 @@ func NewApp(cfg config.Config, warnings []string) App {
 	cfi.Placeholder = ".env.example"
 	cfi.CharLimit = 256
 
+	dfi := textinput.New()
+	dfi.CharLimit = 256
+
 	varList := NewVarListModel(cfg.Layout)
 	if cfg.Sort == "alphabetical" {
 		varList.SortAlpha = true
 	}
 
 	return App{
-		config:          cfg,
-		configWarnings:  warnings,
-		keys:            DefaultKeyMap(),
-		theme:           BuildTheme(true, cfg.Colors), // default to dark, will update on BackgroundColorMsg
-		hasDarkBg:       true,
-		focus:           FocusFiles,
-		mode:            ModeNormal,
-		fileList:        NewFileListModel(),
-		varList:         varList,
-		statusBar:       NewStatusBarModel(),
-		diffView:        NewDiffViewModel(cfg.Layout, cfg.Secrets),
-		editor:          NewEditorModel(),
-		searchInput:     ti,
-		createFileInput: cfi,
-		backedUpPaths:   make(map[string]bool),
+		config:             cfg,
+		configWarnings:     warnings,
+		keys:               DefaultKeyMap(),
+		theme:              BuildTheme(true, cfg.Colors), // default to dark, will update on BackgroundColorMsg
+		hasDarkBg:          true,
+		focus:              FocusFiles,
+		mode:               ModeNormal,
+		fileList:           NewFileListModel(),
+		varList:            varList,
+		statusBar:          NewStatusBarModel(),
+		diffView:           NewDiffViewModel(cfg.Layout, cfg.Secrets),
+		editor:             NewEditorModel(),
+		searchInput:        ti,
+		createFileInput:    cfi,
+		duplicateFileInput: dfi,
+		backedUpPaths:      make(map[string]bool),
 	}
 }
 
@@ -378,6 +385,8 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a.handleMatrixEditingKey(msg)
 	case ModeCreateFile:
 		return a.handleCreateFileKey(msg)
+	case ModeDuplicateFile:
+		return a.handleDuplicateFileKey(msg)
 	case ModeConfigError:
 		return a, tea.Quit
 	}
@@ -405,11 +414,25 @@ func (a App) handleNormalKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 
-	// File-focused: create new file
-	if a.focus == FocusFiles && key.Matches(msg, a.keys.CreateFile) {
-		a.createFileInput.SetValue("")
-		a.mode = ModeCreateFile
-		return a, a.createFileInput.Focus()
+	// File-focused actions
+	if a.focus == FocusFiles {
+		if key.Matches(msg, a.keys.CreateFile) {
+			a.createFileInput.SetValue("")
+			a.mode = ModeCreateFile
+			return a, a.createFileInput.Focus()
+		}
+		if key.Matches(msg, a.keys.DuplicateFile) {
+			f := a.fileList.SelectedFile()
+			if f == nil {
+				f = a.fileList.CursorFile()
+			}
+			if f != nil {
+				a.duplicateSource = f
+				a.duplicateFileInput.SetValue(f.Name + ".copy")
+				a.mode = ModeDuplicateFile
+				return a, a.duplicateFileInput.Focus()
+			}
+		}
 	}
 
 	// Global actions (Compare/Save/Reset/Toggle/Search/Matrix)
@@ -687,14 +710,8 @@ func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
 		return a, nil
 	}
 
-	if strings.ContainsAny(name, "/\\") {
-		a.statusBar.SetMessage("Invalid name: must not contain path separators")
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
-	}
-
-	// Must match configured .env file patterns
-	if !isEnvFile(name, a.config.Files) {
-		a.statusBar.SetMessage("Invalid name: must match .env file patterns")
+	if msg, ok := a.validateFileName(name); !ok {
+		a.statusBar.SetMessage(msg)
 		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	}
 
@@ -710,9 +727,79 @@ func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
 		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	}
 
-	ef, err := parser.ParseFile(fullPath, a.config.Secrets)
+	return a.finaliseNewFile(fullPath, "Created "+name)
+}
+
+func (a App) handleDuplicateFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch {
+	case key.Matches(msg, a.keys.Escape):
+		a.mode = ModeNormal
+		a.duplicateSource = nil
+		return a, nil
+	case key.Matches(msg, a.keys.Enter):
+		return a.confirmDuplicateFile()
+	default:
+		var cmd tea.Cmd
+		a.duplicateFileInput, cmd = a.duplicateFileInput.Update(msg)
+		return a, cmd
+	}
+}
+
+func (a App) confirmDuplicateFile() (tea.Model, tea.Cmd) {
+	a.mode = ModeNormal
+	src := a.duplicateSource
+	a.duplicateSource = nil
+
+	name := strings.TrimSpace(a.duplicateFileInput.Value())
+	if name == "" || src == nil {
+		return a, nil
+	}
+
+	if msg, ok := a.validateFileName(name); !ok {
+		a.statusBar.SetMessage(msg)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	}
+
+	// Place beside the source so it appears in the same watched directory
+	destPath := filepath.Join(filepath.Dir(src.Path), name)
+
+	if _, err := os.Stat(destPath); err == nil {
+		a.statusBar.SetMessage("File already exists: " + name)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	}
+
+	// Copy raw bytes to preserve comments, formatting, and round-trip fidelity
+	data, err := os.ReadFile(src.Path)
 	if err != nil {
-		os.Remove(fullPath)
+		a.statusBar.SetMessage("Error reading source: " + err.Error())
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	}
+
+	if err := os.WriteFile(destPath, data, 0644); err != nil {
+		a.statusBar.SetMessage("Error creating file: " + err.Error())
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	}
+
+	return a.finaliseNewFile(destPath, "Duplicated "+src.Name+" → "+name)
+}
+
+// validateFileName checks that name has no path separators and matches
+// the configured .env file patterns. Returns (message, false) on failure.
+func (a App) validateFileName(name string) (string, bool) {
+	if strings.ContainsAny(name, "/\\") {
+		return "Invalid name: must not contain path separators", false
+	}
+	if !isEnvFile(name, a.config.Files) {
+		return "Invalid name: must match .env file patterns", false
+	}
+	return "", true
+}
+
+// finaliseNewFile parses, registers, and selects a newly created file.
+func (a App) finaliseNewFile(path string, successMsg string) (tea.Model, tea.Cmd) {
+	ef, err := parser.ParseFile(path, a.config.Secrets)
+	if err != nil {
+		os.Remove(path)
 		a.statusBar.SetMessage("Error parsing new file: " + err.Error())
 		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	}
@@ -725,7 +812,7 @@ func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
 	a.fileList.SetCursor(len(a.fileList.Files) - 1)
 	a.varList.SetFile(ef)
 
-	a.statusBar.SetMessage("Created " + name)
+	a.statusBar.SetMessage(successMsg)
 	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 }
 
@@ -842,6 +929,9 @@ func (a App) View() tea.View {
 		} else if a.mode == ModeCreateFile {
 			createBar := a.theme.StatusBar.Width(a.width).Render("  New file: " + a.createFileInput.View())
 			content = lipgloss.JoinVertical(lipgloss.Left, panels, createBar, statusBarContent)
+		} else if a.mode == ModeDuplicateFile {
+			dupBar := a.theme.StatusBar.Width(a.width).Render("  Duplicate as: " + a.duplicateFileInput.View())
+			content = lipgloss.JoinVertical(lipgloss.Left, panels, dupBar, statusBarContent)
 		} else {
 			content = lipgloss.JoinVertical(lipgloss.Left, panels, statusBarContent)
 		}
