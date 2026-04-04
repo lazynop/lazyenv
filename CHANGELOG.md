@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-04-05
+
+### Added
+- Create new `.env` files from the TUI (`n` key in file list)
+- Duplicate selected file with a new name (`C` key), preserving comments and formatting
+- Delete files from disk with confirmation (`D` key), blocks if unsaved changes exist
+
 ## [0.4.3] - 2026-03-22
 
 ### Added
