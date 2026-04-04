@@ -103,8 +103,9 @@ func modeHints(theme Theme, mode AppMode, focus Focus, diffStats string) string 
 			)
 		}
 		return fmt.Sprintf(
-			"%s %s %s %s %s %s %s %s",
+			"%s %s %s %s %s %s %s %s %s",
 			formatHint(theme, "enter", "select"),
+			formatHint(theme, "n", "new"),
 			formatHint(theme, "c", "compare"),
 			formatHint(theme, "m", "matrix"),
 			formatHint(theme, "o", "sort"),
@@ -137,6 +138,8 @@ func modeHints(theme Theme, mode AppMode, focus Focus, diffStats string) string 
 		return theme.MutedItem.Render("Press Esc or ? to close help")
 	case ModeSearching:
 		return theme.MutedItem.Render("Type to search, Esc to close")
+	case ModeCreateFile:
+		return theme.MutedItem.Render("Enter to create, Esc to cancel")
 	case ModeMatrix:
 		return fmt.Sprintf(
 			"%s %s %s %s",

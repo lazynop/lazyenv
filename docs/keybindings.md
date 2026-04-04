@@ -10,6 +10,7 @@ Keybindings are context-sensitive: each screen only responds to the keys listed 
 | `↓` / `j`      | Move cursor down                                  |
 | `→` / `l`      | Switch focus to variable panel                    |
 | `Enter`        | Select file and switch focus to variable panel    |
+| `n`            | Create new `.env` file in the scan directory      |
 | `c`            | Start compare: select a second file for diff view |
 | `m`            | Open completeness matrix (requires 2+ files)      |
 | `w`            | Save current file                                 |

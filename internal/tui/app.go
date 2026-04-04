@@ -2,6 +2,8 @@ package tui
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -12,6 +14,7 @@ import (
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/parser"
 	"github.com/lazynop/lazyenv/internal/util"
 )
 
@@ -30,6 +33,7 @@ const (
 	ModeMatrix
 	ModeMatrixEditing
 	ModeConfigError
+	ModeCreateFile
 )
 
 // Focus represents which panel has focus.
@@ -84,6 +88,9 @@ type App struct {
 	compareFirstFile  *model.EnvFile
 	compareEditFile   *model.EnvFile // which file is being edited in compare mode
 	compareEditVarIdx int            // var index in that file
+
+	// Create file state
+	createFileInput textinput.Model
 }
 
 // NewApp creates a new App model.
@@ -92,26 +99,31 @@ func NewApp(cfg config.Config, warnings []string) App {
 	ti.Placeholder = "Search..."
 	ti.CharLimit = 100
 
+	cfi := textinput.New()
+	cfi.Placeholder = ".env.example"
+	cfi.CharLimit = 256
+
 	varList := NewVarListModel(cfg.Layout)
 	if cfg.Sort == "alphabetical" {
 		varList.SortAlpha = true
 	}
 
 	return App{
-		config:         cfg,
-		configWarnings: warnings,
-		keys:           DefaultKeyMap(),
-		theme:          BuildTheme(true, cfg.Colors), // default to dark, will update on BackgroundColorMsg
-		hasDarkBg:      true,
-		focus:          FocusFiles,
-		mode:           ModeNormal,
-		fileList:       NewFileListModel(),
-		varList:        varList,
-		statusBar:      NewStatusBarModel(),
-		diffView:       NewDiffViewModel(cfg.Layout, cfg.Secrets),
-		editor:         NewEditorModel(),
-		searchInput:    ti,
-		backedUpPaths:  make(map[string]bool),
+		config:          cfg,
+		configWarnings:  warnings,
+		keys:            DefaultKeyMap(),
+		theme:           BuildTheme(true, cfg.Colors), // default to dark, will update on BackgroundColorMsg
+		hasDarkBg:       true,
+		focus:           FocusFiles,
+		mode:            ModeNormal,
+		fileList:        NewFileListModel(),
+		varList:         varList,
+		statusBar:       NewStatusBarModel(),
+		diffView:        NewDiffViewModel(cfg.Layout, cfg.Secrets),
+		editor:          NewEditorModel(),
+		searchInput:     ti,
+		createFileInput: cfi,
+		backedUpPaths:   make(map[string]bool),
 	}
 }
 
@@ -364,6 +376,8 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a.handleMatrixKey(msg)
 	case ModeMatrixEditing:
 		return a.handleMatrixEditingKey(msg)
+	case ModeCreateFile:
+		return a.handleCreateFileKey(msg)
 	case ModeConfigError:
 		return a, tea.Quit
 	}
@@ -389,6 +403,13 @@ func (a App) handleNormalKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	// Var-focused actions (Edit/Add/Delete/Yank/Peek)
 	if m, cmd, handled := a.handleNormalVarAction(msg); handled {
 		return m, cmd
+	}
+
+	// File-focused: create new file
+	if a.focus == FocusFiles && key.Matches(msg, a.keys.CreateFile) {
+		a.createFileInput.SetValue("")
+		a.mode = ModeCreateFile
+		return a, a.createFileInput.Focus()
 	}
 
 	// Global actions (Compare/Save/Reset/Toggle/Search/Matrix)
@@ -644,6 +665,70 @@ func (a App) handleSearchKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	}
 }
 
+func (a App) handleCreateFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch {
+	case key.Matches(msg, a.keys.Escape):
+		a.mode = ModeNormal
+		return a, nil
+	case key.Matches(msg, a.keys.Enter):
+		return a.confirmCreateFile()
+	default:
+		var cmd tea.Cmd
+		a.createFileInput, cmd = a.createFileInput.Update(msg)
+		return a, cmd
+	}
+}
+
+func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
+	a.mode = ModeNormal
+
+	name := strings.TrimSpace(a.createFileInput.Value())
+	if name == "" {
+		return a, nil
+	}
+
+	if strings.ContainsAny(name, "/\\") {
+		a.statusBar.SetMessage("Invalid name: must not contain path separators")
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	}
+
+	// Must match configured .env file patterns
+	if !isEnvFile(name, a.config.Files) {
+		a.statusBar.SetMessage("Invalid name: must match .env file patterns")
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	}
+
+	fullPath := filepath.Join(a.config.Dir, name)
+
+	if _, err := os.Stat(fullPath); err == nil {
+		a.statusBar.SetMessage("File already exists: " + name)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	}
+
+	if err := os.WriteFile(fullPath, nil, 0644); err != nil {
+		a.statusBar.SetMessage("Error creating file: " + err.Error())
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	}
+
+	ef, err := parser.ParseFile(fullPath, a.config.Secrets)
+	if err != nil {
+		os.Remove(fullPath)
+		a.statusBar.SetMessage("Error parsing new file: " + err.Error())
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	}
+
+	if !a.config.NoGitCheck {
+		CheckGitIgnore([]*model.EnvFile{ef})
+	}
+
+	a.fileList.Files = append(a.fileList.Files, ef)
+	a.fileList.SetCursor(len(a.fileList.Files) - 1)
+	a.varList.SetFile(ef)
+
+	a.statusBar.SetMessage("Created " + name)
+	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+}
+
 func (a App) handleMatrixKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Quit), key.Matches(msg, a.keys.Escape):
@@ -754,6 +839,9 @@ func (a App) View() tea.View {
 		} else if a.mode == ModeEditing {
 			editorBar := a.theme.StatusBar.Width(a.width).Render("  " + a.editor.View())
 			content = lipgloss.JoinVertical(lipgloss.Left, panels, editorBar, statusBarContent)
+		} else if a.mode == ModeCreateFile {
+			createBar := a.theme.StatusBar.Width(a.width).Render("  New file: " + a.createFileInput.View())
+			content = lipgloss.JoinVertical(lipgloss.Left, panels, createBar, statusBarContent)
 		} else {
 			content = lipgloss.JoinVertical(lipgloss.Left, panels, statusBarContent)
 		}

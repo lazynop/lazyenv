@@ -2,7 +2,7 @@
 
 ## Browse and edit
 
-Two-panel layout: file list on the left, variables on the right. Navigate with arrow keys or vim bindings (`hjkl`). Edit values inline, add new variables, delete existing ones.
+Two-panel layout: file list on the left, variables on the right. Navigate with arrow keys or vim bindings (`hjkl`). Edit values inline, add new variables, delete existing ones. Create new `.env` files without leaving the TUI.
 
 ## Compare and sync
 
