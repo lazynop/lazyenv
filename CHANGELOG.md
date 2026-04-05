@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.1] - 2026-04-05
+
+### Added
+- Rename `.env` files from the TUI (`R` key in file list)
+
 ## [0.5.0] - 2026-04-05
 
 ### Added

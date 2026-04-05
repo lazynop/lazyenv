@@ -143,6 +143,8 @@ func modeHints(theme Theme, mode AppMode, focus Focus, diffStats string) string 
 		return theme.MutedItem.Render("Enter to duplicate, Esc to cancel")
 	case ModeConfirmDeleteFile:
 		return theme.DuplicateWarn.Render("Delete file from disk? (y/n)")
+	case ModeRenameFile:
+		return theme.MutedItem.Render("Enter to rename, Esc to cancel")
 	case ModeMatrix:
 		return fmt.Sprintf(
 			"%s %s %s %s",

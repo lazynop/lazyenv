@@ -33,6 +33,7 @@ type KeyMap struct {
 	CreateFile    key.Binding
 	DuplicateFile key.Binding
 	DeleteFile    key.Binding
+	RenameFile    key.Binding
 }
 
 // DefaultKeyMap returns the default keybindings.
@@ -153,6 +154,10 @@ func DefaultKeyMap() KeyMap {
 		DeleteFile: key.NewBinding(
 			key.WithKeys("D"),
 			key.WithHelp("D", "delete file"),
+		),
+		RenameFile: key.NewBinding(
+			key.WithKeys("R"),
+			key.WithHelp("R", "rename file"),
 		),
 	}
 }

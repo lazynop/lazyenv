@@ -36,6 +36,7 @@ const (
 	ModeCreateFile
 	ModeDuplicateFile
 	ModeConfirmDeleteFile
+	ModeRenameFile
 )
 
 // Focus represents which panel has focus.
@@ -91,10 +92,12 @@ type App struct {
 	compareEditFile   *model.EnvFile // which file is being edited in compare mode
 	compareEditVarIdx int            // var index in that file
 
-	// Create/duplicate file state
+	// Create/duplicate/rename file state
 	createFileInput    textinput.Model
 	duplicateFileInput textinput.Model
 	duplicateSource    *model.EnvFile // source file for duplication
+	renameFileInput    textinput.Model
+	renameSource       *model.EnvFile // file being renamed
 }
 
 // NewApp creates a new App model.
@@ -109,6 +112,9 @@ func NewApp(cfg config.Config, warnings []string) App {
 
 	dfi := textinput.New()
 	dfi.CharLimit = 256
+
+	rfi := textinput.New()
+	rfi.CharLimit = 256
 
 	varList := NewVarListModel(cfg.Layout)
 	if cfg.Sort == "alphabetical" {
@@ -131,6 +137,7 @@ func NewApp(cfg config.Config, warnings []string) App {
 		searchInput:        ti,
 		createFileInput:    cfi,
 		duplicateFileInput: dfi,
+		renameFileInput:    rfi,
 		backedUpPaths:      make(map[string]bool),
 	}
 }
@@ -390,6 +397,8 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a.handleDuplicateFileKey(msg)
 	case ModeConfirmDeleteFile:
 		return a.handleConfirmDeleteFileKey(msg)
+	case ModeRenameFile:
+		return a.handleRenameFileKey(msg)
 	case ModeConfigError:
 		return a, tea.Quit
 	}
@@ -417,44 +426,61 @@ func (a App) handleNormalKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 
-	// File-focused actions
+	// File-focused actions (Create/Duplicate/Delete/Rename)
 	if a.focus == FocusFiles {
-		if key.Matches(msg, a.keys.CreateFile) {
-			a.createFileInput.SetValue("")
-			a.mode = ModeCreateFile
-			return a, a.createFileInput.Focus()
-		}
-		if key.Matches(msg, a.keys.DuplicateFile) {
-			f := a.fileList.SelectedFile()
-			if f == nil {
-				f = a.fileList.CursorFile()
-			}
-			if f != nil {
-				a.duplicateSource = f
-				a.duplicateFileInput.SetValue(duplicateName(f.Name))
-				a.mode = ModeDuplicateFile
-				return a, a.duplicateFileInput.Focus()
-			}
-		}
-		if key.Matches(msg, a.keys.DeleteFile) {
-			f := a.fileList.SelectedFile()
-			if f == nil {
-				f = a.fileList.CursorFile()
-			}
-			if f != nil {
-				if f.Modified {
-					a.statusBar.SetMessage("Save or reset changes before deleting")
-					return a, clearMessageAfter(a.config.Layout.MessageTimeout)
-				}
-				a.mode = ModeConfirmDeleteFile
-				a.statusBar.SetMessage("Delete " + f.Name + "? (y/n)")
-				return a, nil
-			}
+		if m, cmd, handled := a.handleNormalFileAction(msg); handled {
+			return m, cmd
 		}
 	}
 
 	// Global actions (Compare/Save/Reset/Toggle/Search/Matrix)
 	return a.handleNormalGlobalAction(msg)
+}
+
+func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bool) {
+	switch {
+	case key.Matches(msg, a.keys.CreateFile):
+		a.createFileInput.SetValue("")
+		a.mode = ModeCreateFile
+		return a, a.createFileInput.Focus(), true
+	}
+
+	f := a.fileList.SelectedFile()
+	if f == nil {
+		f = a.fileList.CursorFile()
+	}
+	if f == nil {
+		return a, nil, false
+	}
+
+	switch {
+	case key.Matches(msg, a.keys.DuplicateFile):
+		a.duplicateSource = f
+		a.duplicateFileInput.SetValue(duplicateName(f.Name))
+		a.mode = ModeDuplicateFile
+		return a, a.duplicateFileInput.Focus(), true
+
+	case key.Matches(msg, a.keys.DeleteFile):
+		if f.Modified {
+			a.statusBar.SetMessage("Save or reset changes before deleting")
+			return a, clearMessageAfter(a.config.Layout.MessageTimeout), true
+		}
+		a.mode = ModeConfirmDeleteFile
+		a.statusBar.SetMessage("Delete " + f.Name + "? (y/n)")
+		return a, nil, true
+
+	case key.Matches(msg, a.keys.RenameFile):
+		if f.Modified {
+			a.statusBar.SetMessage("Save or reset changes before renaming")
+			return a, clearMessageAfter(a.config.Layout.MessageTimeout), true
+		}
+		a.renameSource = f
+		a.renameFileInput.SetValue(f.Name)
+		a.mode = ModeRenameFile
+		return a, a.renameFileInput.Focus(), true
+	}
+
+	return a, nil, false
 }
 
 func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
@@ -728,15 +754,9 @@ func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
 		return a, nil
 	}
 
-	if msg, ok := a.validateFileName(name); !ok {
-		a.statusBar.SetMessage(msg)
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
-	}
-
-	fullPath := filepath.Join(a.config.Dir, name)
-
-	if _, err := os.Stat(fullPath); err == nil {
-		a.statusBar.SetMessage("File already exists: " + name)
+	fullPath, errMsg := a.validateNewPath(name, a.config.Dir)
+	if errMsg != "" {
+		a.statusBar.SetMessage(errMsg)
 		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	}
 
@@ -773,16 +793,10 @@ func (a App) confirmDuplicateFile() (tea.Model, tea.Cmd) {
 		return a, nil
 	}
 
-	if msg, ok := a.validateFileName(name); !ok {
-		a.statusBar.SetMessage(msg)
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
-	}
-
 	// Place beside the source so it appears in the same watched directory
-	destPath := filepath.Join(filepath.Dir(src.Path), name)
-
-	if _, err := os.Stat(destPath); err == nil {
-		a.statusBar.SetMessage("File already exists: " + name)
+	destPath, errMsg := a.validateNewPath(name, filepath.Dir(src.Path))
+	if errMsg != "" {
+		a.statusBar.SetMessage(errMsg)
 		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 	}
 
@@ -810,16 +824,20 @@ func duplicateName(name string) string {
 	return name + ".copy"
 }
 
-// validateFileName checks that name has no path separators and matches
-// the configured .env file patterns. Returns (message, false) on failure.
-func (a App) validateFileName(name string) (string, bool) {
+// validateNewPath checks that name is valid and the target path doesn't already exist.
+// Returns the full path on success, or an error message on failure.
+func (a App) validateNewPath(name, dir string) (string, string) {
 	if strings.ContainsAny(name, "/\\") {
-		return "Invalid name: must not contain path separators", false
+		return "", "Invalid name: must not contain path separators"
 	}
 	if !isEnvFile(name, a.config.Files) {
-		return "Invalid name: must match .env file patterns", false
+		return "", "Invalid name: must match .env file patterns"
 	}
-	return "", true
+	path := filepath.Join(dir, name)
+	if _, err := os.Stat(path); err == nil {
+		return "", "File already exists: " + name
+	}
+	return path, ""
 }
 
 // finaliseNewFile parses, registers, and selects a newly created file.
@@ -892,6 +910,63 @@ func (a App) handleConfirmDeleteFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd
 		a.statusBar.ClearMessage()
 	}
 	return a, nil
+}
+
+func (a App) handleRenameFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch {
+	case key.Matches(msg, a.keys.Escape):
+		a.mode = ModeNormal
+		a.renameSource = nil
+		return a, nil
+	case key.Matches(msg, a.keys.Enter):
+		return a.confirmRenameFile()
+	default:
+		var cmd tea.Cmd
+		a.renameFileInput, cmd = a.renameFileInput.Update(msg)
+		return a, cmd
+	}
+}
+
+func (a App) confirmRenameFile() (tea.Model, tea.Cmd) {
+	a.mode = ModeNormal
+	src := a.renameSource
+	a.renameSource = nil
+
+	name := strings.TrimSpace(a.renameFileInput.Value())
+	if name == "" || src == nil || name == src.Name {
+		return a, nil
+	}
+
+	newPath, errMsg := a.validateNewPath(name, filepath.Dir(src.Path))
+	if errMsg != "" {
+		a.statusBar.SetMessage(errMsg)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	}
+
+	if err := os.Rename(src.Path, newPath); err != nil {
+		a.statusBar.SetMessage("Error renaming file: " + err.Error())
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	}
+
+	if a.backedUpPaths[src.Path] {
+		delete(a.backedUpPaths, src.Path)
+		a.backedUpPaths[newPath] = true
+	}
+
+	oldName := src.Name
+	src.Path = newPath
+	src.Name = name
+
+	// Re-check gitignore — the new name may have different coverage
+	if !a.config.NoGitCheck {
+		src.GitWarning = false
+		CheckGitIgnore([]*model.EnvFile{src})
+	}
+
+	a.varList.SetFile(src)
+
+	a.statusBar.SetMessage("Renamed " + oldName + " → " + name)
+	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 }
 
 func (a App) handleMatrixKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
@@ -1010,6 +1085,9 @@ func (a App) View() tea.View {
 		} else if a.mode == ModeDuplicateFile {
 			dupBar := a.theme.StatusBar.Width(a.width).Render("  Duplicate as: " + a.duplicateFileInput.View())
 			content = lipgloss.JoinVertical(lipgloss.Left, panels, dupBar, statusBarContent)
+		} else if a.mode == ModeRenameFile {
+			renameBar := a.theme.StatusBar.Width(a.width).Render("  Rename: " + a.renameFileInput.View())
+			content = lipgloss.JoinVertical(lipgloss.Left, panels, renameBar, statusBarContent)
 		} else {
 			content = lipgloss.JoinVertical(lipgloss.Left, panels, statusBarContent)
 		}

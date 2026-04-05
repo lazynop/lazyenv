@@ -6,7 +6,7 @@ Two-panel layout: file list on the left, variables on the right. Navigate with a
 
 ## File management
 
-Create, duplicate, and delete `.env` files without leaving the TUI. Press `n` to create, `C` to duplicate the selected file with a new name, or `D` to delete (with confirmation). Unsaved changes must be saved or reset before deleting.
+Create, duplicate, rename, and delete `.env` files without leaving the TUI. Press `n` to create, `C` to duplicate, `R` to rename, or `D` to delete (with confirmation). Unsaved changes must be saved or reset before renaming or deleting.
 
 !!! tip "Quick environment setup"
     Duplicate an existing file to bootstrap a new environment: `.env` → `.env.staging`, then compare and tweak the differences.

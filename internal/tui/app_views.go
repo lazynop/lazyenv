@@ -41,6 +41,7 @@ func (a App) viewHelp() string {
     n              Create new .env file
     C              Duplicate file with new name
     D              Delete file from disk
+    R              Rename file
     w              Save changes
     r              Reset file (discard changes)
     c              Compare two files (diff view)
