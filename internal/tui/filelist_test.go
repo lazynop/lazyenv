@@ -183,3 +183,66 @@ func TestFileListViewWithFiles(t *testing.T) {
 	view := fl.View(theme)
 	assert.Contains(t, view, ".env")
 }
+
+func TestFileListViewShowsVarCount(t *testing.T) {
+	f := makeTestFile(".env", "FOO", "BAR", "BAZ")
+
+	var fl FileListModel
+	fl.Files = append(fl.Files, f)
+	fl.Width = 40
+	fl.Height = 10
+
+	theme := BuildTheme(true, config.ColorConfig{})
+	view := fl.View(theme)
+	// Right-aligned count: number appears after gap
+	assert.Contains(t, view, "3")
+}
+
+func TestFileListViewShowsZeroVarCount(t *testing.T) {
+	f := makeTestFile(".env")
+
+	var fl FileListModel
+	fl.Files = append(fl.Files, f)
+	fl.Width = 40
+	fl.Height = 10
+
+	theme := BuildTheme(true, config.ColorConfig{})
+	view := fl.View(theme)
+	assert.Contains(t, view, "0")
+}
+
+func TestFileListViewVarCountUpdatesAfterAdd(t *testing.T) {
+	f := makeTestFile(".env", "FOO")
+
+	var fl FileListModel
+	fl.Files = append(fl.Files, f)
+	fl.Width = 40
+	fl.Height = 10
+
+	theme := BuildTheme(true, config.ColorConfig{})
+
+	view := fl.View(theme)
+	assert.Contains(t, view, "1")
+
+	f.AddVar("BAR", "val", false)
+	view = fl.View(theme)
+	assert.Contains(t, view, "2")
+}
+
+func TestFileListViewVarCountUpdatesAfterDelete(t *testing.T) {
+	f := makeTestFile(".env", "FOO", "BAR", "BAZ")
+
+	var fl FileListModel
+	fl.Files = append(fl.Files, f)
+	fl.Width = 40
+	fl.Height = 10
+
+	theme := BuildTheme(true, config.ColorConfig{})
+
+	view := fl.View(theme)
+	assert.Contains(t, view, "3")
+
+	f.DeleteVar(0)
+	view = fl.View(theme)
+	assert.Contains(t, view, "2")
+}

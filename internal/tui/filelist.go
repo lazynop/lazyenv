@@ -114,34 +114,29 @@ func (m *FileListModel) View(theme Theme) string {
 
 	var lines []string
 	end := min(m.Offset+visible, len(m.Files))
+	inner := m.Width - 4 // panel width minus borders
 
 	for i := m.Offset; i < end; i++ {
 		f := m.Files[i]
+		varCount := fmt.Sprintf("%d", len(f.Vars))
 
-		// Truncate file name to fit panel width.
-		// Available space: panel width - borders(4) - indicator(2) - gitWarn(2) - modified(1)
-		name := truncate(f.Name, max(m.Width-9, 1))
-
-		// Git warning prefix
-		gitWarn := ""
+		// Layout: indicator(2) + warn(0|2) + name + gap + varCount + modified(0|1)
+		warnLen := 0
 		if f.GitWarning {
-			gitWarn = theme.GitWarning.Render("! ")
+			warnLen = 2
 		}
-
-		// Indicators
-		indicator := "  "
-		if i == m.Selected {
-			indicator = "● "
-		}
-
-		modified := ""
+		modLen := 0
 		if f.Modified {
-			modified = theme.ModifiedMarker.Render("*")
+			modLen = 1
 		}
+		// Space for name: inner - indicator - warn - gap(1 min) - varCount - modified
+		nameMax := max(inner-2-warnLen-1-len(varCount)-modLen, 1)
+		name := truncate(f.Name, nameMax)
+		// Gap fills remaining space to push varCount to the right
+		gap := max(inner-2-warnLen-len(name)-len(varCount)-modLen, 1)
 
 		var line string
 		if i == m.Cursor && m.Focused {
-			// Cursor: build raw string directly (no styled segments to strip)
 			warn := ""
 			if f.GitWarning {
 				warn = "! "
@@ -150,8 +145,12 @@ func (m *FileListModel) View(theme Theme) string {
 			if f.Modified {
 				mod = "*"
 			}
-			raw := fmt.Sprintf("%s%s%s%s", indicator, warn, name, mod)
-			line = theme.CursorItem.Render(padRight(raw, m.Width-4))
+			sel := "  "
+			if i == m.Selected {
+				sel = "● "
+			}
+			raw := fmt.Sprintf("%s%s%s%s%s%s", sel, warn, name, strings.Repeat(" ", gap), varCount, mod)
+			line = theme.CursorItem.Render(padRight(raw, inner))
 		} else {
 			// Style each segment individually to avoid ANSI reset leaking
 			var itemStyle lipgloss.Style
@@ -160,10 +159,28 @@ func (m *FileListModel) View(theme Theme) string {
 			} else {
 				itemStyle = theme.NormalItem
 			}
-			line = fmt.Sprintf("%s%s%s%s",
+
+			gitWarn := ""
+			if f.GitWarning {
+				gitWarn = theme.GitWarning.Render("! ")
+			}
+
+			indicator := "  "
+			if i == m.Selected {
+				indicator = "● "
+			}
+
+			modified := ""
+			if f.Modified {
+				modified = theme.ModifiedMarker.Render("*")
+			}
+
+			line = fmt.Sprintf("%s%s%s%s%s%s",
 				itemStyle.Render(indicator),
 				gitWarn,
 				itemStyle.Render(name),
+				itemStyle.Render(strings.Repeat(" ", gap)),
+				theme.MutedItem.Render(varCount),
 				modified)
 		}
 
