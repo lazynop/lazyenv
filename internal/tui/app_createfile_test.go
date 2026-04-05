@@ -14,7 +14,7 @@ func TestCreateFile_EntersModeOnN(t *testing.T) {
 	app := newTestApp(nil)
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "n"})
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "N"})
 	app = updated.(App)
 
 	assert.Equal(t, ModeCreateFile, app.mode)
@@ -24,7 +24,7 @@ func TestCreateFile_OnlyFromFocusFiles(t *testing.T) {
 	app := newTestApp(nil)
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "n"})
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "N"})
 	app = updated.(App)
 
 	assert.NotEqual(t, ModeCreateFile, app.mode)

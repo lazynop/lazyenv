@@ -18,7 +18,7 @@ Browse, compare, edit and validate environment variables from your terminal.
 ## Features
 
 - Two-panel layout with file list and variables, inline editing
-- Create, duplicate, rename, and delete `.env` files without leaving the TUI
+- File management: create, duplicate, rename, delete, and generate templates — all without leaving the TUI
 - Side-by-side diff between two files with bidirectional copy
 - Completeness matrix showing which variables exist across files
 - Change tracking: new, modified, deleted, duplicate, empty, placeholder

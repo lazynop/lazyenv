@@ -34,6 +34,7 @@ type KeyMap struct {
 	DuplicateFile key.Binding
 	DeleteFile    key.Binding
 	RenameFile    key.Binding
+	TemplateFile  key.Binding
 }
 
 // DefaultKeyMap returns the default keybindings.
@@ -144,8 +145,8 @@ func DefaultKeyMap() KeyMap {
 			key.WithHelp("p", "peek original"),
 		),
 		CreateFile: key.NewBinding(
-			key.WithKeys("n"),
-			key.WithHelp("n", "new file"),
+			key.WithKeys("N"),
+			key.WithHelp("N", "new file"),
 		),
 		DuplicateFile: key.NewBinding(
 			key.WithKeys("C"),
@@ -158,6 +159,10 @@ func DefaultKeyMap() KeyMap {
 		RenameFile: key.NewBinding(
 			key.WithKeys("R"),
 			key.WithHelp("R", "rename file"),
+		),
+		TemplateFile: key.NewBinding(
+			key.WithKeys("T"),
+			key.WithHelp("T", "template"),
 		),
 	}
 }

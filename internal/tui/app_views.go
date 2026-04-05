@@ -38,10 +38,11 @@ func (a App) viewHelp() string {
     y              Copy value to clipboard
     Y              Copy KEY=value to clipboard
     p              Peek original value (toggle)
-    n              Create new .env file
+    N              Create new .env file
     C              Duplicate file with new name
     D              Delete file from disk
     R              Rename file
+    T              Create template (keys only, no values)
     w              Save changes
     r              Reset file (discard changes)
     c              Compare two files (diff view)

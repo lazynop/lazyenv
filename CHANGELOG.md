@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.2] - 2026-04-05
+
+### Added
+- Create template from selected file (`T` key) — preserves comments and structure, strips values
+
+### Changed
+- File management keys now all uppercase: `N` (create), `C` (duplicate), `D` (delete), `R` (rename), `T` (template)
+
 ## [0.5.1] - 2026-04-05
 
 ### Added

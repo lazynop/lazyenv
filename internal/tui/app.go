@@ -37,6 +37,7 @@ const (
 	ModeDuplicateFile
 	ModeConfirmDeleteFile
 	ModeRenameFile
+	ModeTemplateFile
 )
 
 // Focus represents which panel has focus.
@@ -98,6 +99,8 @@ type App struct {
 	duplicateSource    *model.EnvFile // source file for duplication
 	renameFileInput    textinput.Model
 	renameSource       *model.EnvFile // file being renamed
+	templateFileInput  textinput.Model
+	templateSource     *model.EnvFile // source file for template
 }
 
 // NewApp creates a new App model.
@@ -115,6 +118,9 @@ func NewApp(cfg config.Config, warnings []string) App {
 
 	rfi := textinput.New()
 	rfi.CharLimit = 256
+
+	tfi := textinput.New()
+	tfi.CharLimit = 256
 
 	varList := NewVarListModel(cfg.Layout)
 	if cfg.Sort == "alphabetical" {
@@ -138,6 +144,7 @@ func NewApp(cfg config.Config, warnings []string) App {
 		createFileInput:    cfi,
 		duplicateFileInput: dfi,
 		renameFileInput:    rfi,
+		templateFileInput:  tfi,
 		backedUpPaths:      make(map[string]bool),
 	}
 }
@@ -391,14 +398,10 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a.handleMatrixKey(msg)
 	case ModeMatrixEditing:
 		return a.handleMatrixEditingKey(msg)
-	case ModeCreateFile:
-		return a.handleCreateFileKey(msg)
-	case ModeDuplicateFile:
-		return a.handleDuplicateFileKey(msg)
+	case ModeCreateFile, ModeDuplicateFile, ModeRenameFile, ModeTemplateFile:
+		return a.handleFileInputKey(msg)
 	case ModeConfirmDeleteFile:
 		return a.handleConfirmDeleteFileKey(msg)
-	case ModeRenameFile:
-		return a.handleRenameFileKey(msg)
 	case ModeConfigError:
 		return a, tea.Quit
 	}
@@ -478,6 +481,12 @@ func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bo
 		a.renameFileInput.SetValue(f.Name)
 		a.mode = ModeRenameFile
 		return a, a.renameFileInput.Focus(), true
+
+	case key.Matches(msg, a.keys.TemplateFile):
+		a.templateSource = f
+		a.templateFileInput.SetValue(templateName(f.Name))
+		a.mode = ModeTemplateFile
+		return a, a.templateFileInput.Focus(), true
 	}
 
 	return a, nil, false
@@ -732,16 +741,41 @@ func (a App) handleSearchKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	}
 }
 
-func (a App) handleCreateFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+// handleFileInputKey handles text input for all file-operation modes
+// (create, duplicate, rename, template). They share the same interaction:
+// Escape cancels, Enter confirms, other keys go to the text input.
+func (a App) handleFileInputKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
+		a.duplicateSource = nil
+		a.renameSource = nil
+		a.templateSource = nil
 		return a, nil
 	case key.Matches(msg, a.keys.Enter):
-		return a.confirmCreateFile()
+		switch a.mode {
+		case ModeCreateFile:
+			return a.confirmCreateFile()
+		case ModeDuplicateFile:
+			return a.confirmDuplicateFile()
+		case ModeRenameFile:
+			return a.confirmRenameFile()
+		case ModeTemplateFile:
+			return a.confirmTemplateFile()
+		}
+		return a, nil
 	default:
 		var cmd tea.Cmd
-		a.createFileInput, cmd = a.createFileInput.Update(msg)
+		switch a.mode {
+		case ModeCreateFile:
+			a.createFileInput, cmd = a.createFileInput.Update(msg)
+		case ModeDuplicateFile:
+			a.duplicateFileInput, cmd = a.duplicateFileInput.Update(msg)
+		case ModeRenameFile:
+			a.renameFileInput, cmd = a.renameFileInput.Update(msg)
+		case ModeTemplateFile:
+			a.templateFileInput, cmd = a.templateFileInput.Update(msg)
+		}
 		return a, cmd
 	}
 }
@@ -766,21 +800,6 @@ func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
 	}
 
 	return a.finaliseNewFile(fullPath, "Created "+name)
-}
-
-func (a App) handleDuplicateFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	switch {
-	case key.Matches(msg, a.keys.Escape):
-		a.mode = ModeNormal
-		a.duplicateSource = nil
-		return a, nil
-	case key.Matches(msg, a.keys.Enter):
-		return a.confirmDuplicateFile()
-	default:
-		var cmd tea.Cmd
-		a.duplicateFileInput, cmd = a.duplicateFileInput.Update(msg)
-		return a, cmd
-	}
 }
 
 func (a App) confirmDuplicateFile() (tea.Model, tea.Cmd) {
@@ -815,14 +834,18 @@ func (a App) confirmDuplicateFile() (tea.Model, tea.Cmd) {
 	return a.finaliseNewFile(destPath, "Duplicated "+src.Name+" → "+name)
 }
 
-// duplicateName suggests a copy name that preserves the .env extension.
-// ".env" → ".env.copy", ".env.local" → ".env.local.copy", "demo.env" → "demo.copy.env"
-func duplicateName(name string) string {
+// insertBeforeExt inserts a suffix before .env for names ending with .env,
+// or appends it for names starting with .env (e.g. ".env.local").
+// "demo.env" + "copy" → "demo.copy.env", ".env" + "copy" → ".env.copy"
+func insertBeforeExt(name, suffix string) string {
 	if strings.HasSuffix(name, ".env") && !strings.HasPrefix(name, ".env") {
-		return name[:len(name)-4] + ".copy.env"
+		return name[:len(name)-4] + "." + suffix + ".env"
 	}
-	return name + ".copy"
+	return name + "." + suffix
 }
+
+func duplicateName(name string) string { return insertBeforeExt(name, "copy") }
+func templateName(name string) string  { return insertBeforeExt(name, "example") }
 
 // validateNewPath checks that name is valid and the target path doesn't already exist.
 // Returns the full path on success, or an error message on failure.
@@ -912,21 +935,6 @@ func (a App) handleConfirmDeleteFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd
 	return a, nil
 }
 
-func (a App) handleRenameFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	switch {
-	case key.Matches(msg, a.keys.Escape):
-		a.mode = ModeNormal
-		a.renameSource = nil
-		return a, nil
-	case key.Matches(msg, a.keys.Enter):
-		return a.confirmRenameFile()
-	default:
-		var cmd tea.Cmd
-		a.renameFileInput, cmd = a.renameFileInput.Update(msg)
-		return a, cmd
-	}
-}
-
 func (a App) confirmRenameFile() (tea.Model, tea.Cmd) {
 	a.mode = ModeNormal
 	src := a.renameSource
@@ -967,6 +975,48 @@ func (a App) confirmRenameFile() (tea.Model, tea.Cmd) {
 
 	a.statusBar.SetMessage("Renamed " + oldName + " → " + name)
 	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+}
+
+func (a App) confirmTemplateFile() (tea.Model, tea.Cmd) {
+	a.mode = ModeNormal
+	src := a.templateSource
+	a.templateSource = nil
+
+	name := strings.TrimSpace(a.templateFileInput.Value())
+	if name == "" || src == nil {
+		return a, nil
+	}
+
+	destPath, errMsg := a.validateNewPath(name, filepath.Dir(src.Path))
+	if errMsg != "" {
+		a.statusBar.SetMessage(errMsg)
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	}
+
+	var b strings.Builder
+	for i, line := range src.Lines {
+		if i > 0 {
+			b.WriteByte('\n')
+		}
+		if line.Type != model.LineVariable || line.VarIdx < 0 || line.VarIdx >= len(src.Vars) {
+			b.WriteString(line.Content)
+			continue
+		}
+		v := src.Vars[line.VarIdx]
+		if v.HasExport {
+			b.WriteString("export ")
+		}
+		b.WriteString(v.Key)
+		b.WriteByte('=')
+	}
+	b.WriteByte('\n')
+
+	if err := os.WriteFile(destPath, []byte(b.String()), 0644); err != nil {
+		a.statusBar.SetMessage("Error creating file: " + err.Error())
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	}
+
+	return a.finaliseNewFile(destPath, "Template from "+src.Name+" → "+name)
 }
 
 func (a App) handleMatrixKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
@@ -1072,22 +1122,8 @@ func (a App) View() tea.View {
 
 		statusBarContent := a.statusBar.View(a.theme, a.mode, a.focus, fileName, varCount)
 
-		// Search bar
-		if a.mode == ModeSearching {
-			searchBar := a.theme.StatusBar.Width(a.width).Render("  / " + a.searchInput.View())
-			content = lipgloss.JoinVertical(lipgloss.Left, panels, searchBar, statusBarContent)
-		} else if a.mode == ModeEditing {
-			editorBar := a.theme.StatusBar.Width(a.width).Render("  " + a.editor.View())
-			content = lipgloss.JoinVertical(lipgloss.Left, panels, editorBar, statusBarContent)
-		} else if a.mode == ModeCreateFile {
-			createBar := a.theme.StatusBar.Width(a.width).Render("  New file: " + a.createFileInput.View())
-			content = lipgloss.JoinVertical(lipgloss.Left, panels, createBar, statusBarContent)
-		} else if a.mode == ModeDuplicateFile {
-			dupBar := a.theme.StatusBar.Width(a.width).Render("  Duplicate as: " + a.duplicateFileInput.View())
-			content = lipgloss.JoinVertical(lipgloss.Left, panels, dupBar, statusBarContent)
-		} else if a.mode == ModeRenameFile {
-			renameBar := a.theme.StatusBar.Width(a.width).Render("  Rename: " + a.renameFileInput.View())
-			content = lipgloss.JoinVertical(lipgloss.Left, panels, renameBar, statusBarContent)
+		if inputBar := a.inputBarView(); inputBar != "" {
+			content = lipgloss.JoinVertical(lipgloss.Left, panels, inputBar, statusBarContent)
 		} else {
 			content = lipgloss.JoinVertical(lipgloss.Left, panels, statusBarContent)
 		}
@@ -1100,6 +1136,25 @@ func (a App) View() tea.View {
 		view.MouseMode = tea.MouseModeCellMotion
 	}
 	return view
+}
+
+func (a App) inputBarView() string {
+	bar := a.theme.StatusBar.Width(a.width)
+	switch a.mode {
+	case ModeSearching:
+		return bar.Render("  / " + a.searchInput.View())
+	case ModeEditing:
+		return bar.Render("  " + a.editor.View())
+	case ModeCreateFile:
+		return bar.Render("  New file: " + a.createFileInput.View())
+	case ModeDuplicateFile:
+		return bar.Render("  Duplicate as: " + a.duplicateFileInput.View())
+	case ModeRenameFile:
+		return bar.Render("  Rename: " + a.renameFileInput.View())
+	case ModeTemplateFile:
+		return bar.Render("  Template as: " + a.templateFileInput.View())
+	}
+	return ""
 }
 
 func (a *App) updateLayout() {
