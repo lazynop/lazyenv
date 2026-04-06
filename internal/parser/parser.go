@@ -149,7 +149,7 @@ func parseLine(lines []string, i int) (string, string, string, model.QuoteStyle,
 	}
 
 	key := strings.TrimSpace(before)
-	if key == "" || !isValidKey(key) {
+	if key == "" || !IsValidKey(key) {
 		return "", "", "", model.QuoteNone, false, "", 0
 	}
 
@@ -298,7 +298,8 @@ func processEscapes(s string) string {
 	return b.String()
 }
 
-func isValidKey(key string) bool {
+// IsValidKey checks whether a string is a valid .env variable key.
+func IsValidKey(key string) bool {
 	for i, r := range key {
 		if r == '_' || (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') {
 			continue

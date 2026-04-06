@@ -232,7 +232,7 @@ func TestIsValidKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("key_"+tt.key, func(t *testing.T) {
-			assert.Equal(t, tt.want, isValidKey(tt.key))
+			assert.Equal(t, tt.want, IsValidKey(tt.key))
 		})
 	}
 }

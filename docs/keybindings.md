@@ -32,6 +32,7 @@ Keybindings are context-sensitive: each screen only responds to the keys listed 
 | `↓` / `j`      | Move cursor down                             |
 | `←` / `h`      | Switch focus to file panel                   |
 | `e`            | Edit selected variable value                 |
+| `E`            | Rename selected variable key                 |
 | `a`            | Add new variable                             |
 | `d`            | Delete selected variable (with confirmation) |
 | `y`            | Copy value to clipboard (OSC 52)             |

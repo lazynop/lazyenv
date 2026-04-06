@@ -17,21 +17,23 @@ const (
 
 // EditorResult is returned when editing finishes.
 type EditorResult struct {
-	Value     string
-	VarIndex  int
-	IsAdd     bool
-	AddStep   addStep
-	Cancelled bool
+	Value       string
+	VarIndex    int
+	IsAdd       bool
+	IsRenameKey bool
+	AddStep     addStep
+	Cancelled   bool
 }
 
 // EditorModel manages inline editing of variable values.
 type EditorModel struct {
-	input    textinput.Model
-	varIndex int
-	isAdd    bool
-	addStep  addStep
-	addKey   string // stored key name during add flow
-	label    string
+	input       textinput.Model
+	varIndex    int
+	isAdd       bool
+	isRenameKey bool
+	addStep     addStep
+	addKey      string // stored key name during add flow
+	label       string
 }
 
 // NewEditorModel creates a new editor model.
@@ -50,14 +52,27 @@ func (m *EditorModel) StartEdit(v *model.EnvVar, idx int) {
 	m.input.CursorEnd()
 	m.varIndex = idx
 	m.isAdd = false
+	m.isRenameKey = false
 	m.label = fmt.Sprintf("Edit %s: ", v.Key)
 	m.input.Placeholder = "new value"
+}
+
+// StartEditKey begins editing an existing variable's key name.
+func (m *EditorModel) StartEditKey(v *model.EnvVar, idx int) {
+	m.input.SetValue(v.Key)
+	m.input.CursorEnd()
+	m.varIndex = idx
+	m.isAdd = false
+	m.isRenameKey = true
+	m.label = "Rename key: "
+	m.input.Placeholder = "NEW_KEY_NAME"
 }
 
 // StartAdd begins the add flow (key name first).
 func (m *EditorModel) StartAdd() {
 	m.input.SetValue("")
 	m.isAdd = true
+	m.isRenameKey = false
 	m.addStep = addStepKey
 	m.addKey = ""
 	m.label = "New key: "
@@ -76,10 +91,11 @@ func (m *EditorModel) StartAddValue(key string) {
 // Finish completes the current editing operation.
 func (m *EditorModel) Finish() EditorResult {
 	return EditorResult{
-		Value:    m.input.Value(),
-		VarIndex: m.varIndex,
-		IsAdd:    m.isAdd,
-		AddStep:  m.addStep,
+		Value:       m.input.Value(),
+		VarIndex:    m.varIndex,
+		IsAdd:       m.isAdd,
+		IsRenameKey: m.isRenameKey,
+		AddStep:     m.addStep,
 	}
 }
 

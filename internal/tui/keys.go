@@ -10,6 +10,7 @@ type KeyMap struct {
 	Right         key.Binding
 	Enter         key.Binding
 	Edit          key.Binding
+	EditKey       key.Binding
 	Add           key.Binding
 	Delete        key.Binding
 	Compare       key.Binding
@@ -62,7 +63,11 @@ func DefaultKeyMap() KeyMap {
 		),
 		Edit: key.NewBinding(
 			key.WithKeys("e"),
-			key.WithHelp("e", "edit"),
+			key.WithHelp("e", "edit value"),
+		),
+		EditKey: key.NewBinding(
+			key.WithKeys("E"),
+			key.WithHelp("E", "rename key"),
 		),
 		Add: key.NewBinding(
 			key.WithKeys("a"),

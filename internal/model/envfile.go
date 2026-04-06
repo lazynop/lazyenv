@@ -67,6 +67,16 @@ func (ef *EnvFile) UpdateVar(idx int, newValue string) {
 	ef.Modified = true
 }
 
+// RenameVar updates the key of a variable by index.
+func (ef *EnvFile) RenameVar(idx int, newKey string) {
+	if idx < 0 || idx >= len(ef.Vars) {
+		return
+	}
+	ef.Vars[idx].Key = newKey
+	ef.Vars[idx].Modified = true
+	ef.Modified = true
+}
+
 // AddVar appends a new variable to the file.
 func (ef *EnvFile) AddVar(key, value string, isSecret bool) {
 	v := EnvVar{

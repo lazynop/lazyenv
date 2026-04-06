@@ -33,6 +33,7 @@ func (a App) viewHelp() string {
 
   Actions
     e              Edit variable value
+    E              Rename variable key
     a              Add new variable
     d              Delete variable (with confirmation)
     y              Copy value to clipboard

@@ -621,6 +621,15 @@ func (a App) handleNormalVarAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, boo
 			return a, a.editor.input.Focus(), true
 		}
 
+	case key.Matches(msg, a.keys.EditKey):
+		v := a.varList.SelectedVar()
+		if v != nil {
+			idx := a.varList.SelectedVarIndex()
+			a.editor.StartEditKey(v, idx)
+			a.mode = ModeEditing
+			return a, a.editor.input.Focus(), true
+		}
+
 	case key.Matches(msg, a.keys.Add):
 		if a.varList.File != nil {
 			a.editor.StartAdd()
@@ -675,14 +684,15 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		if result.Cancelled {
 			return a, nil
 		}
+		if result.IsRenameKey {
+			return a.confirmRenameKey(result)
+		}
 		if result.IsAdd {
 			if result.AddStep == addStepKey {
-				// Just got the key, now need value
 				a.editor.StartAddValue(result.Value)
 				a.mode = ModeEditing
 				return a, a.editor.input.Focus()
 			}
-			// Got the value, add the variable
 			a.varList.File.AddVar(a.editor.addKey, result.Value, util.IsSecret(a.editor.addKey, result.Value, a.config.Secrets))
 			a.varList.Refresh()
 			a.statusBar.SetMessage("Added " + a.editor.addKey)
@@ -697,6 +707,39 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.editor.input, cmd = a.editor.input.Update(msg)
 		return a, cmd
 	}
+}
+
+func (a App) confirmRenameKey(result EditorResult) (tea.Model, tea.Cmd) {
+	newKey := strings.TrimSpace(result.Value)
+	idx := result.VarIndex
+	f := a.varList.File
+
+	if f == nil || idx < 0 || idx >= len(f.Vars) {
+		return a, nil
+	}
+
+	oldKey := f.Vars[idx].Key
+	if newKey == "" || newKey == oldKey {
+		return a, nil
+	}
+
+	if !parser.IsValidKey(newKey) {
+		a.statusBar.SetMessage("Invalid key name")
+		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	}
+
+	for i, v := range f.Vars {
+		if i != idx && v.Key == newKey {
+			a.statusBar.SetMessage("Key already exists: " + newKey)
+			return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		}
+	}
+
+	f.RenameVar(idx, newKey)
+	f.Vars[idx].IsSecret = util.IsSecret(newKey, f.Vars[idx].Value, a.config.Secrets)
+	a.varList.Refresh()
+	a.statusBar.SetMessage("Renamed " + oldKey + " → " + newKey)
+	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
 }
 
 func (a App) handleConfirmDeleteKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
