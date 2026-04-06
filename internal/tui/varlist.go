@@ -284,11 +284,16 @@ func (m *VarListModel) renderVarLines(visible, keyWidth, maxValWidth int, theme 
 
 // viewTitle returns the panel title string.
 func (m *VarListModel) viewTitle(theme Theme) string {
-	fileName := ""
-	if m.File != nil {
-		fileName = m.File.Name
+	if m.File == nil {
+		return theme.PanelTitle.Render("Variables")
 	}
-	return theme.PanelTitle.Render(fmt.Sprintf("Variables (%s)", fileName))
+	total := len(m.File.Vars)
+	displayed := len(m.displayIndices)
+	count := fmt.Sprintf("%d", total)
+	if m.SearchQuery != "" && displayed != total {
+		count = fmt.Sprintf("%d/%d", displayed, total)
+	}
+	return theme.PanelTitle.Render(m.File.Name) + " " + theme.MutedItem.Render(fmt.Sprintf("(%s vars)", count))
 }
 
 // View renders the variable list panel.

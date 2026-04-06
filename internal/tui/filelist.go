@@ -101,7 +101,7 @@ func (m *FileListModel) CursorFile() *model.EnvFile {
 
 // View renders the file list panel.
 func (m *FileListModel) View(theme Theme) string {
-	title := theme.PanelTitle.Render("Files")
+	title := theme.PanelTitle.Render("Files") + " " + theme.MutedItem.Render(fmt.Sprintf("(%d)", len(m.Files)))
 
 	if len(m.Files) == 0 {
 		content := theme.MutedItem.Render("  No .env files found")
