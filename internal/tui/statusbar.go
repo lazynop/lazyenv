@@ -86,19 +86,17 @@ func modeHints(theme Theme, mode AppMode, focus Focus, diffStats string) string 
 	case ModeNormal:
 		if focus == FocusVars {
 			return fmt.Sprintf(
-				"%s %s %s %s %s %s %s %s %s %s %s %s %s",
+				"%s %s %s %s %s %s %s %s %s %s %s",
 				formatHint(theme, "e", "edit"),
+				formatHint(theme, "E", "rename"),
 				formatHint(theme, "a", "add"),
 				formatHint(theme, "d", "del"),
 				formatHint(theme, "y", "yank"),
 				formatHint(theme, "p", "peek"),
-				formatHint(theme, "c", "compare"),
-				formatHint(theme, "m", "matrix"),
 				formatHint(theme, "/", "search"),
 				formatHint(theme, "o", "sort"),
 				formatHint(theme, "w", "save"),
 				formatHint(theme, "r", "reset"),
-				formatHint(theme, "?", "help"),
 				formatHint(theme, "q", "quit"),
 			)
 		}
