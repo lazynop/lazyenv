@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.3] - 2026-04-06
+
+### Added
+- Rename variable key inline (`E` key) with validation and duplicate detection
+- Variable count shown right-aligned in file list panel
+- File and variable counts in panel titles (`Files (5)`, `.env (12 vars)`, filtered `3/12 vars`)
+
+### Changed
+- Variable panel status bar hints: removed compare/matrix/help (discoverable via `?`), added `E` rename
+
 ## [0.5.2] - 2026-04-05
 
 ### Added
