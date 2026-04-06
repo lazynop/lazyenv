@@ -465,8 +465,7 @@ func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bo
 
 	case key.Matches(msg, a.keys.DeleteFile):
 		if f.Modified {
-			a.statusBar.SetMessage("Save or reset changes before deleting")
-			return a, clearMessageAfter(a.config.Layout.MessageTimeout), true
+			return a, a.flashMessage("Save or reset changes before deleting"), true
 		}
 		a.mode = ModeConfirmDeleteFile
 		a.statusBar.SetMessage("Delete " + f.Name + "? (y/n)")
@@ -474,8 +473,7 @@ func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bo
 
 	case key.Matches(msg, a.keys.RenameFile):
 		if f.Modified {
-			a.statusBar.SetMessage("Save or reset changes before renaming")
-			return a, clearMessageAfter(a.config.Layout.MessageTimeout), true
+			return a, a.flashMessage("Save or reset changes before renaming"), true
 		}
 		a.renameSource = f
 		a.renameFileInput.SetValue(f.Name)
@@ -517,20 +515,16 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 	case key.Matches(msg, a.keys.ToggleSecret):
 		a.varList.ShowSecrets = !a.varList.ShowSecrets
 		if a.varList.ShowSecrets {
-			a.statusBar.SetMessage("Secrets revealed")
-		} else {
-			a.statusBar.SetMessage("Secrets hidden")
+			return a, a.flashMessage("Secrets revealed")
 		}
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("Secrets hidden")
 
 	case key.Matches(msg, a.keys.ToggleSort):
 		a.varList.ToggleSort()
 		if a.varList.SortAlpha {
-			a.statusBar.SetMessage("Sorted alphabetically")
-		} else {
-			a.statusBar.SetMessage("Sorted by position")
+			return a, a.flashMessage("Sorted alphabetically")
 		}
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("Sorted by position")
 
 	case key.Matches(msg, a.keys.Search):
 		a.mode = ModeSearching
@@ -539,8 +533,7 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 
 	case key.Matches(msg, a.keys.Matrix):
 		if len(a.fileList.Files) < 2 {
-			a.statusBar.SetMessage("Need at least 2 files for matrix")
-			return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+			return a, a.flashMessage("Need at least 2 files for matrix")
 		}
 		a.matrixView = NewMatrixModel(a.fileList.Files, a.config.Layout, a.config.Secrets)
 		a.matrixView.Width = a.width
@@ -647,10 +640,9 @@ func (a App) handleNormalVarAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, boo
 	case key.Matches(msg, a.keys.YankValue):
 		v := a.varList.SelectedVar()
 		if v != nil {
-			a.statusBar.SetMessage(fmt.Sprintf("Copied %s value to clipboard", v.Key))
 			return a, tea.Batch(
 				tea.SetClipboard(v.Value),
-				clearMessageAfter(a.config.Layout.MessageTimeout),
+				a.flashMessage(fmt.Sprintf("Copied %s value to clipboard", v.Key)),
 			), true
 		}
 
@@ -658,10 +650,9 @@ func (a App) handleNormalVarAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, boo
 		v := a.varList.SelectedVar()
 		if v != nil {
 			line := v.Key + "=" + v.Value
-			a.statusBar.SetMessage(fmt.Sprintf("Copied %s to clipboard", v.Key+"=..."))
 			return a, tea.Batch(
 				tea.SetClipboard(line),
-				clearMessageAfter(a.config.Layout.MessageTimeout),
+				a.flashMessage(fmt.Sprintf("Copied %s to clipboard", v.Key+"=...")),
 			), true
 		}
 
@@ -695,13 +686,11 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			}
 			a.varList.File.AddVar(a.editor.addKey, result.Value, util.IsSecret(a.editor.addKey, result.Value, a.config.Secrets))
 			a.varList.Refresh()
-			a.statusBar.SetMessage("Added " + a.editor.addKey)
-		} else {
-			a.varList.File.UpdateVar(result.VarIndex, result.Value)
-			a.varList.Refresh()
-			a.statusBar.SetMessage("Modified " + a.varList.File.Vars[result.VarIndex].Key)
+			return a, a.flashMessage("Added " + a.editor.addKey)
 		}
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		a.varList.File.UpdateVar(result.VarIndex, result.Value)
+		a.varList.Refresh()
+		return a, a.flashMessage("Modified " + a.varList.File.Vars[result.VarIndex].Key)
 	default:
 		var cmd tea.Cmd
 		a.editor.input, cmd = a.editor.input.Update(msg)
@@ -724,36 +713,33 @@ func (a App) confirmRenameKey(result EditorResult) (tea.Model, tea.Cmd) {
 	}
 
 	if !parser.IsValidKey(newKey) {
-		a.statusBar.SetMessage("Invalid key name")
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("Invalid key name")
 	}
 
 	for i, v := range f.Vars {
 		if i != idx && v.Key == newKey {
-			a.statusBar.SetMessage("Key already exists: " + newKey)
-			return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+			return a, a.flashMessage("Key already exists: " + newKey)
 		}
 	}
 
 	f.RenameVar(idx, newKey)
 	f.Vars[idx].IsSecret = util.IsSecret(newKey, f.Vars[idx].Value, a.config.Secrets)
 	a.varList.Refresh()
-	a.statusBar.SetMessage("Renamed " + oldKey + " → " + newKey)
-	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	return a, a.flashMessage("Renamed " + oldKey + " → " + newKey)
 }
 
 func (a App) handleConfirmDeleteKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Confirm):
+		a.mode = ModeNormal
 		idx := a.varList.SelectedVarIndex()
 		if idx >= 0 {
 			name := a.varList.File.Vars[idx].Key
 			a.varList.File.DeleteVar(idx)
 			a.varList.Refresh()
-			a.statusBar.SetMessage("Deleted " + name)
+			return a, a.flashMessage("Deleted " + name)
 		}
-		a.mode = ModeNormal
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, nil
 	case key.Matches(msg, a.keys.Deny), key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
 	}
@@ -833,13 +819,11 @@ func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
 
 	fullPath, errMsg := a.validateNewPath(name, a.config.Dir)
 	if errMsg != "" {
-		a.statusBar.SetMessage(errMsg)
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage(errMsg)
 	}
 
 	if err := os.WriteFile(fullPath, nil, 0644); err != nil {
-		a.statusBar.SetMessage("Error creating file: " + err.Error())
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("Error creating file: " + err.Error())
 	}
 
 	return a.finaliseNewFile(fullPath, "Created "+name)
@@ -858,20 +842,17 @@ func (a App) confirmDuplicateFile() (tea.Model, tea.Cmd) {
 	// Place beside the source so it appears in the same watched directory
 	destPath, errMsg := a.validateNewPath(name, filepath.Dir(src.Path))
 	if errMsg != "" {
-		a.statusBar.SetMessage(errMsg)
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage(errMsg)
 	}
 
 	// Copy raw bytes to preserve comments, formatting, and round-trip fidelity
 	data, err := os.ReadFile(src.Path)
 	if err != nil {
-		a.statusBar.SetMessage("Error reading source: " + err.Error())
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("Error reading source: " + err.Error())
 	}
 
 	if err := os.WriteFile(destPath, data, 0644); err != nil {
-		a.statusBar.SetMessage("Error creating file: " + err.Error())
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("Error creating file: " + err.Error())
 	}
 
 	return a.finaliseNewFile(destPath, "Duplicated "+src.Name+" → "+name)
@@ -911,8 +892,7 @@ func (a App) finaliseNewFile(path string, successMsg string) (tea.Model, tea.Cmd
 	ef, err := parser.ParseFile(path, a.config.Secrets)
 	if err != nil {
 		os.Remove(path)
-		a.statusBar.SetMessage("Error parsing new file: " + err.Error())
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("Error parsing new file: " + err.Error())
 	}
 
 	if !a.config.NoGitCheck {
@@ -923,8 +903,7 @@ func (a App) finaliseNewFile(path string, successMsg string) (tea.Model, tea.Cmd
 	a.fileList.SetCursor(len(a.fileList.Files) - 1)
 	a.varList.SetFile(ef)
 
-	a.statusBar.SetMessage(successMsg)
-	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	return a, a.flashMessage(successMsg)
 }
 
 func (a App) handleConfirmDeleteFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
@@ -940,8 +919,7 @@ func (a App) handleConfirmDeleteFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd
 		}
 
 		if err := os.Remove(f.Path); err != nil {
-			a.statusBar.SetMessage("Error deleting file: " + err.Error())
-			return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+			return a, a.flashMessage("Error deleting file: " + err.Error())
 		}
 
 		// Remove from file list
@@ -968,8 +946,7 @@ func (a App) handleConfirmDeleteFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd
 			a.varList.SetFile(a.fileList.Files[a.fileList.Cursor])
 		}
 
-		a.statusBar.SetMessage("Deleted " + f.Name)
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("Deleted " + f.Name)
 
 	case key.Matches(msg, a.keys.Deny), key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
@@ -990,13 +967,11 @@ func (a App) confirmRenameFile() (tea.Model, tea.Cmd) {
 
 	newPath, errMsg := a.validateNewPath(name, filepath.Dir(src.Path))
 	if errMsg != "" {
-		a.statusBar.SetMessage(errMsg)
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage(errMsg)
 	}
 
 	if err := os.Rename(src.Path, newPath); err != nil {
-		a.statusBar.SetMessage("Error renaming file: " + err.Error())
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("Error renaming file: " + err.Error())
 	}
 
 	if a.backedUpPaths[src.Path] {
@@ -1016,8 +991,7 @@ func (a App) confirmRenameFile() (tea.Model, tea.Cmd) {
 
 	a.varList.SetFile(src)
 
-	a.statusBar.SetMessage("Renamed " + oldName + " → " + name)
-	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	return a, a.flashMessage("Renamed " + oldName + " → " + name)
 }
 
 func (a App) confirmTemplateFile() (tea.Model, tea.Cmd) {
@@ -1032,8 +1006,7 @@ func (a App) confirmTemplateFile() (tea.Model, tea.Cmd) {
 
 	destPath, errMsg := a.validateNewPath(name, filepath.Dir(src.Path))
 	if errMsg != "" {
-		a.statusBar.SetMessage(errMsg)
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage(errMsg)
 	}
 
 	var b strings.Builder
@@ -1055,8 +1028,7 @@ func (a App) confirmTemplateFile() (tea.Model, tea.Cmd) {
 	b.WriteByte('\n')
 
 	if err := os.WriteFile(destPath, []byte(b.String()), 0644); err != nil {
-		a.statusBar.SetMessage("Error creating file: " + err.Error())
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("Error creating file: " + err.Error())
 	}
 
 	return a.finaliseNewFile(destPath, "Template from "+src.Name+" → "+name)
@@ -1077,11 +1049,9 @@ func (a App) handleMatrixKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, a.keys.ToggleSort):
 		a.matrixView.ToggleSort()
 		if a.matrixView.sortMode == model.SortCompleteness {
-			a.statusBar.SetMessage("Sorted by completeness")
-		} else {
-			a.statusBar.SetMessage("Sorted alphabetically")
+			return a, a.flashMessage("Sorted by completeness")
 		}
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("Sorted alphabetically")
 	case key.Matches(msg, a.keys.Add):
 		cmd := a.matrixView.StartEdit()
 		if a.matrixView.editing {
@@ -1089,9 +1059,9 @@ func (a App) handleMatrixKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return a, cmd
 		}
 		if a.matrixView.message != "" {
-			a.statusBar.SetMessage(a.matrixView.message)
+			flashMsg := a.matrixView.message
 			a.matrixView.message = ""
-			return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+			return a, a.flashMessage(flashMsg)
 		}
 	}
 	return a, nil
@@ -1106,8 +1076,7 @@ func (a App) handleMatrixEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, a.keys.Enter):
 		a.matrixView.ConfirmEdit()
 		a.mode = ModeMatrix
-		a.statusBar.SetMessage("Variable added")
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("Variable added")
 	default:
 		var cmd tea.Cmd
 		a.matrixView.editor, cmd = a.matrixView.editor.Update(msg)
@@ -1224,4 +1193,16 @@ func clearMessageAfter(d time.Duration) tea.Cmd {
 	return tea.Tick(d, func(time.Time) tea.Msg {
 		return ClearMessageMsg{}
 	})
+}
+
+// flashMessage sets a transient status bar message and returns the auto-clear cmd.
+func (a *App) flashMessage(msg string) tea.Cmd {
+	a.statusBar.SetMessage(msg)
+	return clearMessageAfter(a.config.Layout.MessageTimeout)
+}
+
+// flashError sets a transient error message with a longer timeout.
+func (a *App) flashError(msg string) tea.Cmd {
+	a.statusBar.SetMessage(msg)
+	return clearMessageAfter(a.config.Layout.ErrorMessageTimeout)
 }

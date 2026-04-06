@@ -45,11 +45,9 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.diffView.ShowSecrets = !a.diffView.ShowSecrets
 		a.varList.ShowSecrets = a.diffView.ShowSecrets // keep in sync
 		if a.diffView.ShowSecrets {
-			a.statusBar.SetMessage("Secrets revealed")
-		} else {
-			a.statusBar.SetMessage("Secrets hidden")
+			return a, a.flashMessage("Secrets revealed")
 		}
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("Secrets hidden")
 	}
 	return a, nil
 }
@@ -64,8 +62,7 @@ func (a App) handleCompareCopy(toRight bool) (tea.Model, tea.Cmd) {
 		target = a.diffView.FileA.Name
 	}
 	if k != "" {
-		a.statusBar.SetMessage(k + " → " + target)
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage(k + " → " + target)
 	}
 	return a, nil
 }
@@ -73,35 +70,30 @@ func (a App) handleCompareCopy(toRight bool) (tea.Model, tea.Cmd) {
 func (a App) handleCompareFilter() (tea.Model, tea.Cmd) {
 	a.diffView.ToggleFilter()
 	if a.diffView.HideEqual {
-		a.statusBar.SetMessage("Showing differences only")
-	} else {
-		a.statusBar.SetMessage("Showing all entries")
+		return a, a.flashMessage("Showing differences only")
 	}
-	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	return a, a.flashMessage("Showing all entries")
 }
 
 func (a App) handleCompareReset() (App, tea.Cmd) {
 	if errMsg := a.diffView.Reset(); errMsg != "" {
-		a.statusBar.SetMessage(errMsg)
-	} else {
-		// Update file references in the main list too
-		for i, f := range a.fileList.Files {
-			if f.Path == a.diffView.FileA.Path {
-				a.fileList.Files[i] = a.diffView.FileA
-				if a.fileList.Selected == i {
-					a.varList.SetFile(a.diffView.FileA)
-				}
-			}
-			if f.Path == a.diffView.FileB.Path {
-				a.fileList.Files[i] = a.diffView.FileB
-				if a.fileList.Selected == i {
-					a.varList.SetFile(a.diffView.FileB)
-				}
+		return a, a.flashMessage(errMsg)
+	}
+	for i, f := range a.fileList.Files {
+		if f.Path == a.diffView.FileA.Path {
+			a.fileList.Files[i] = a.diffView.FileA
+			if a.fileList.Selected == i {
+				a.varList.SetFile(a.diffView.FileA)
 			}
 		}
-		a.statusBar.SetMessage("Reset to saved state")
+		if f.Path == a.diffView.FileB.Path {
+			a.fileList.Files[i] = a.diffView.FileB
+			if a.fileList.Selected == i {
+				a.varList.SetFile(a.diffView.FileB)
+			}
+		}
 	}
-	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	return a, a.flashMessage("Reset to saved state")
 }
 
 func (a App) handleCompareSave() (App, tea.Cmd) {
@@ -111,8 +103,7 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 		if f != nil && f.Modified {
 			warn.WriteString(a.backupIfNeeded(f.Path))
 			if err := parser.WriteFile(f); err != nil {
-				a.statusBar.SetMessage("Error saving " + f.Name + ": " + err.Error())
-				return a, clearMessageAfter(a.config.Layout.ErrorMessageTimeout)
+				return a, a.flashError("Error saving " + f.Name + ": " + err.Error())
 			}
 			// Re-parse to refresh RawLines
 			refreshed, err := parser.ParseFile(f.Path, a.config.Secrets)
@@ -136,15 +127,13 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 			saved = append(saved, f.Name)
 		}
 	}
-	if len(saved) == 0 {
-		a.statusBar.SetMessage("No changes to save")
-	} else {
-		a.statusBar.SetMessage(warn.String() + "Saved " + strings.Join(saved, ", "))
-	}
 	// Recompute diff after save
 	a.diffView.allEntries = model.ComputeDiff(a.diffView.FileA, a.diffView.FileB)
 	a.diffView.recompute()
-	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	if len(saved) == 0 {
+		return a, a.flashMessage("No changes to save")
+	}
+	return a, a.flashMessage(warn.String() + "Saved " + strings.Join(saved, ", "))
 }
 
 func (a App) startCompareEdit(file *model.EnvFile) (tea.Model, tea.Cmd) {
@@ -164,8 +153,7 @@ func (a App) startCompareEdit(file *model.EnvFile) (tea.Model, tea.Cmd) {
 
 	if varIdx < 0 {
 		// Key doesn't exist in this file
-		a.statusBar.SetMessage(e.Key + " not in " + file.Name)
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage(e.Key + " not in " + file.Name)
 	}
 
 	a.compareEditFile = file
@@ -188,8 +176,7 @@ func (a App) handleEditingCompareKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.diffView.allEntries = model.ComputeDiff(a.diffView.FileA, a.diffView.FileB)
 		a.diffView.recompute()
 		a.mode = ModeComparing
-		a.statusBar.SetMessage("Modified " + a.compareEditFile.Vars[a.compareEditVarIdx].Key)
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("Modified " + a.compareEditFile.Vars[a.compareEditVarIdx].Key)
 	default:
 		var cmd tea.Cmd
 		a.editor.input, cmd = a.editor.input.Update(msg)

@@ -24,30 +24,25 @@ func (a App) backupIfNeeded(path string) string {
 func (a App) handleSave() (App, tea.Cmd) {
 	f := a.varList.File
 	if f == nil {
-		a.statusBar.SetMessage("No file selected")
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("No file selected")
 	}
 	if !f.Modified {
-		a.statusBar.SetMessage("No changes to save")
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("No changes to save")
 	}
 
 	warn := a.backupIfNeeded(f.Path)
 
 	if err := parser.WriteFile(f); err != nil {
-		a.statusBar.SetMessage("Error saving: " + err.Error())
-		return a, clearMessageAfter(a.config.Layout.ErrorMessageTimeout)
+		return a, a.flashError("Error saving: " + err.Error())
 	}
 
 	// Re-parse to refresh RawLines
 	refreshed, err := parser.ParseFile(f.Path, a.config.Secrets)
 	if err != nil {
-		a.statusBar.SetMessage(warn + "Saved but refresh failed: " + err.Error())
-		return a, clearMessageAfter(a.config.Layout.ErrorMessageTimeout)
+		return a, a.flashError(warn + "Saved but refresh failed: " + err.Error())
 	}
 	refreshed.GitWarning = f.GitWarning
 
-	// Replace file in the list
 	for i, existing := range a.fileList.Files {
 		if existing.Path == f.Path {
 			a.fileList.Files[i] = refreshed
@@ -58,25 +53,21 @@ func (a App) handleSave() (App, tea.Cmd) {
 		}
 	}
 
-	a.statusBar.SetMessage(warn + "Saved " + f.Name)
-	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	return a, a.flashMessage(warn + "Saved " + f.Name)
 }
 
 func (a App) handleReset() (App, tea.Cmd) {
 	f := a.varList.File
 	if f == nil {
-		a.statusBar.SetMessage("No file selected")
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("No file selected")
 	}
 	if !f.Modified {
-		a.statusBar.SetMessage("No changes to reset")
-		return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+		return a, a.flashMessage("No changes to reset")
 	}
 
 	refreshed, err := parser.ParseFile(f.Path, a.config.Secrets)
 	if err != nil {
-		a.statusBar.SetMessage("Error reloading: " + err.Error())
-		return a, clearMessageAfter(a.config.Layout.ErrorMessageTimeout)
+		return a, a.flashError("Error reloading: " + err.Error())
 	}
 	refreshed.GitWarning = f.GitWarning
 
@@ -90,6 +81,5 @@ func (a App) handleReset() (App, tea.Cmd) {
 		}
 	}
 
-	a.statusBar.SetMessage("Reset to saved state")
-	return a, clearMessageAfter(a.config.Layout.MessageTimeout)
+	return a, a.flashMessage("Reset to saved state")
 }
