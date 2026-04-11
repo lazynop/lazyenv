@@ -173,87 +173,42 @@ func parseLine(lines []string, i int) (string, string, string, model.QuoteStyle,
 }
 
 func parseDoubleQuoted(lines []string, startIdx int, rest string) (string, string, string, int) {
-	// rest starts with "
-	content := rest[1:] // skip opening quote
-
-	var valueParts []string
-	rawLines := []string{lines[startIdx]}
-	consumed := 1
-
-	for {
-		// Scan for closing unescaped quote
-		j := 0
-		for j < len(content) {
-			if content[j] == '\\' && j+1 < len(content) {
-				j += 2 // skip escape sequence
-				continue
-			}
-			if content[j] == '"' {
-				// Found closing quote
-				valueParts = append(valueParts, content[:j])
-				remainder := strings.TrimSpace(content[j+1:])
-				value := processEscapes(strings.Join(valueParts, "\n"))
-
-				// Check for inline comment after closing quote
-				comment := ""
-				if strings.HasPrefix(remainder, "#") {
-					comment = remainder[1:]
-					if len(comment) > 0 && comment[0] == ' ' {
-						comment = comment[1:]
-					}
-				}
-
-				return value, comment, strings.Join(rawLines, "\n"), consumed
-			}
-			j++
-		}
-
-		// No closing quote on this line — multiline
-		valueParts = append(valueParts, content)
-		consumed++
-		if startIdx+consumed-1 >= len(lines) {
-			// Unterminated quote — return what we have
-			return processEscapes(strings.Join(valueParts, "\n")), "", strings.Join(rawLines, "\n"), consumed
-		}
-		nextLine := lines[startIdx+consumed-1]
-		rawLines = append(rawLines, nextLine)
-		content = nextLine
-	}
+	return parseQuoted(lines, startIdx, rest, findClosingDoubleQuote, processEscapes)
 }
 
 func parseSingleQuoted(lines []string, startIdx int, rest string) (string, string, string, int) {
-	// rest starts with '
-	content := rest[1:] // skip opening quote
+	return parseQuoted(lines, startIdx, rest, findClosingSingleQuote, identityTransform)
+}
 
+// parseQuoted reads a (possibly multi-line) quoted value starting at lines[startIdx].
+// rest is the substring after the `=` sign, including the opening quote char.
+// findClose locates the closing quote on a given content slice (or -1), and
+// transform maps the raw joined value into the final form (e.g. escape processing).
+func parseQuoted(
+	lines []string,
+	startIdx int,
+	rest string,
+	findClose func(string) int,
+	transform func(string) string,
+) (string, string, string, int) {
+	content := rest[1:] // skip opening quote
 	var valueParts []string
 	rawLines := []string{lines[startIdx]}
 	consumed := 1
 
 	for {
-		// Find closing single quote on this line.
-		// No escape processing in single-quoted values (shell semantics).
-		if idx := strings.Index(content, "'"); idx >= 0 {
+		if idx := findClose(content); idx >= 0 {
 			valueParts = append(valueParts, content[:idx])
 			remainder := strings.TrimSpace(content[idx+1:])
-			value := strings.Join(valueParts, "\n")
-
-			comment := ""
-			if strings.HasPrefix(remainder, "#") {
-				comment = remainder[1:]
-				if len(comment) > 0 && comment[0] == ' ' {
-					comment = comment[1:]
-				}
-			}
-
-			return value, comment, strings.Join(rawLines, "\n"), consumed
+			value := transform(strings.Join(valueParts, "\n"))
+			return value, extractInlineComment(remainder), strings.Join(rawLines, "\n"), consumed
 		}
 
-		// No closing quote on this line — multiline
+		// No closing quote on this line — consume the next one.
 		valueParts = append(valueParts, content)
 		consumed++
 		if startIdx+consumed-1 >= len(lines) {
-			// Unterminated — return what we have
-			return strings.Join(valueParts, "\n"), "", strings.Join(rawLines, "\n"), consumed
+			return transform(strings.Join(valueParts, "\n")), "", strings.Join(rawLines, "\n"), consumed
 		}
 		nextLine := lines[startIdx+consumed-1]
 		rawLines = append(rawLines, nextLine)
@@ -261,22 +216,54 @@ func parseSingleQuoted(lines []string, startIdx int, rest string) (string, strin
 	}
 }
 
+// findClosingDoubleQuote returns the index of the first unescaped `"` in content,
+// or -1 if none is present.
+func findClosingDoubleQuote(content string) int {
+	for j := 0; j < len(content); j++ {
+		if content[j] == '\\' && j+1 < len(content) {
+			j++ // skip the next char, loop increments past it
+			continue
+		}
+		if content[j] == '"' {
+			return j
+		}
+	}
+	return -1
+}
+
+// findClosingSingleQuote returns the index of the first `'` in content, or -1.
+// Single-quoted values have no escape mechanism in shell semantics.
+func findClosingSingleQuote(content string) int {
+	return strings.Index(content, "'")
+}
+
+func identityTransform(s string) string { return s }
+
+// extractInlineComment returns the comment text from a remainder string that
+// starts with `#`, trimming at most one leading space. Returns empty string
+// when there is no `#` at the start of remainder.
+func extractInlineComment(remainder string) string {
+	if !strings.HasPrefix(remainder, "#") {
+		return ""
+	}
+	comment := remainder[1:]
+	if len(comment) > 0 && comment[0] == ' ' {
+		return comment[1:]
+	}
+	return comment
+}
+
 func parseUnquoted(rest string) (string, string) {
-	// For unquoted values, inline comments are preceded by whitespace + #
+	// Inline comments on unquoted values are delimited by whitespace + `#`.
 	value := rest
 	comment := ""
 
-	// Find first occurrence of whitespace followed by #
 	for j := 0; j < len(value); j++ {
 		if value[j] == ' ' || value[j] == '\t' {
-			remaining := value[j:]
-			trimRemaining := strings.TrimLeft(remaining, " \t")
+			trimRemaining := strings.TrimLeft(value[j:], " \t")
 			if strings.HasPrefix(trimRemaining, "#") {
 				value = value[:j]
-				comment = trimRemaining[1:]
-				if len(comment) > 0 && comment[0] == ' ' {
-					comment = comment[1:]
-				}
+				comment = extractInlineComment(trimRemaining)
 				break
 			}
 		}

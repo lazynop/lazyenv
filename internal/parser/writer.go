@@ -9,39 +9,32 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// NormalizeForWrite adjusts quote styles for variables whose current Value
-// cannot be safely serialized in their current style. Two cases are handled:
+// NormalizeForWrite upgrades QuoteStyle for any var whose current Value
+// cannot round-trip safely in its current style. Two cases are handled:
+// QuoteSingle with an embedded `'` (shell has no escape inside '...'), and
+// QuoteNone with an embedded `\n`/`\r`/`\t` (line separators break the
+// KEY=VALUE format). Both upgrade to QuoteDouble because escapeDouble can
+// serialize all three escape sequences.
 //
-//  1. QuoteSingle + Value contains '  → upgrade to QuoteDouble. POSIX shell
-//     single quotes have no escape mechanism, so re-parsing would silently
-//     truncate at the first embedded '.
-//
-//  2. QuoteNone + Value contains \n, \r or \t → upgrade to QuoteDouble. An
-//     unquoted value is a single whitespace-free shell token, so embedded
-//     line separators or tabs corrupt the file on write and the parser
-//     truncates at the first newline on the next read.
-//
-// Both cases upgrade to QuoteDouble because escapeDouble (writer.go) knows
-// how to escape ', ", \, \n, \r and \t, so the serialized form round-trips
-// perfectly back through processEscapes on re-parse.
-//
-// Returns the keys of the variables whose quote style was changed, in file
-// order. Idempotent: a second call on the same file is a no-op.
-func NormalizeForWrite(ef *model.EnvFile) []string {
-	var changed []string
+// Production callers should use WriteFile, which invokes this automatically.
+// NormalizeForWrite remains exported for direct unit testing. Idempotent.
+func NormalizeForWrite(ef *model.EnvFile) {
 	for i := range ef.Vars {
 		v := &ef.Vars[i]
 		if needsQuoteUpgrade(v) {
 			v.QuoteStyle = model.QuoteDouble
+			// Force reconstruction so Marshal picks reconstructLine instead
+			// of the raw (stale) line.Content. Every upstream path that can
+			// produce an upgrade candidate (UpdateVar, AddVar) already marks
+			// the var Modified with a correct OriginalValue, so this
+			// assignment is a no-op on those paths; it only matters if a
+			// future path mutates Value/QuoteStyle without going through
+			// UpdateVar.
 			v.Modified = true
-			changed = append(changed, v.Key)
 		}
 	}
-	return changed
 }
 
-// needsQuoteUpgrade reports whether v's current Value cannot be safely
-// serialized in its current QuoteStyle. See NormalizeForWrite for the rules.
 func needsQuoteUpgrade(v *model.EnvVar) bool {
 	switch v.QuoteStyle {
 	case model.QuoteSingle:
@@ -135,11 +128,14 @@ func escapeDouble(s string) string {
 }
 
 // WriteFile writes an EnvFile to disk atomically (temp file + rename).
+// It normalizes quote styles for round-trip safety before serializing,
+// which may mutate ef.Vars (QuoteStyle and Modified fields) in place.
 func WriteFile(ef *model.EnvFile) error {
 	if ef.Path == "" {
 		return fmt.Errorf("no file path set")
 	}
 
+	NormalizeForWrite(ef)
 	data := Marshal(ef)
 
 	dir := filepath.Dir(ef.Path)

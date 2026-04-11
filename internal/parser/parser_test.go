@@ -307,8 +307,7 @@ func TestMultilineSingleQuoted(t *testing.T) {
 	assert.Equal(t, "line1\nline2\nline3", ef.Vars[0].Value)
 	assert.Equal(t, model.QuoteSingle, ef.Vars[0].QuoteStyle)
 
-	// The whole multiline value must be captured as a single LineVariable entry,
-	// not split into a variable line + orphan comment lines.
+	// One LineVariable, no phantom comment lines for the continuations.
 	require.Len(t, ef.Lines, 1)
 	assert.Equal(t, model.LineVariable, ef.Lines[0].Type)
 }

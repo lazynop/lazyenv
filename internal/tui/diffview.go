@@ -343,17 +343,13 @@ func (m *DiffViewModel) renderDiffEntry(e model.DiffEntry, isCursor bool, keyWid
 	}
 
 	key := padRight(truncate(e.Key, keyWidth), keyWidth)
-	var valA, valB string
-	// Flatten embedded control chars (\n, \t, \r) to single-row glyphs so
-	// the status markers at the end of each row stay aligned. See
-	// flattenValue in varlist.go for the mapping.
+	valueA, valueB := e.ValueA, e.ValueB
 	if e.IsSecret && !m.ShowSecrets {
-		valA = padRight(truncate(flattenValue(util.MaskValue(e.ValueA)), valWidth), valWidth)
-		valB = padRight(truncate(flattenValue(util.MaskValue(e.ValueB)), valWidth), valWidth)
-	} else {
-		valA = padRight(truncate(flattenValue(e.ValueA), valWidth), valWidth)
-		valB = padRight(truncate(flattenValue(e.ValueB), valWidth), valWidth)
+		valueA = util.MaskValue(valueA)
+		valueB = util.MaskValue(valueB)
 	}
+	valA := padRight(truncate(flattenValue(valueA), valWidth), valWidth)
+	valB := padRight(truncate(flattenValue(valueB), valWidth), valWidth)
 
 	leftLine := fmt.Sprintf("  %s  %s", key, valA)
 	rightLine := fmt.Sprintf("  %s  %s  %s", key, valB, statusChar)

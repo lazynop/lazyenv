@@ -102,8 +102,6 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 	for _, f := range []*model.EnvFile{a.diffView.FileA, a.diffView.FileB} {
 		if f != nil && f.Modified {
 			warn.WriteString(a.backupIfNeeded(f.Path))
-			// See handleSave for rationale: ' cannot live inside '...' in shell.
-			parser.NormalizeForWrite(f)
 			if err := parser.WriteFile(f); err != nil {
 				return a, a.flashError("Error saving " + f.Name + ": " + err.Error())
 			}

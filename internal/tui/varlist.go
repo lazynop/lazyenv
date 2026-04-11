@@ -175,47 +175,26 @@ func (m *VarListModel) renderWarningIndicators(v *model.EnvVar, theme Theme) str
 	return mod + issue
 }
 
-// formatValue returns the (possibly masked, flattened and truncated) display
-// value for a variable. Control characters (\n, \t, \r) are replaced with
-// width-1 visible glyphs so the value renders on a single row and never
-// misaligns the status indicators that follow it.
+// formatValue returns the masked, flattened, truncated and padded display
+// value for a variable, ready to be emitted into a single-row table cell.
 func (m *VarListModel) formatValue(v *model.EnvVar, maxValWidth int) string {
+	value := v.Value
 	if v.IsSecret && !m.ShowSecrets {
-		return padRight(truncate(flattenValue(util.MaskValue(v.Value)), maxValWidth), maxValWidth)
+		value = util.MaskValue(value)
 	}
-	return padRight(truncate(flattenValue(v.Value), maxValWidth), maxValWidth)
+	return padRight(truncate(flattenValue(value), maxValWidth), maxValWidth)
 }
 
-// flattenValue replaces embedded control characters with width-1 visible
-// glyphs suitable for a single-row table cell:
-//
-//	\n → ↵ (U+21B5)
-//	\t → ⇥ (U+21E5)
-//	\r → ↩ (U+21A9)
-//
-// All three glyphs are in the Unicode Arrows block and widely supported by
-// every modern monospace font. Fast-path returns the input unchanged when
-// none of the targeted characters are present.
-func flattenValue(s string) string {
-	if !strings.ContainsAny(s, "\n\t\r") {
-		return s
-	}
-	var b strings.Builder
-	b.Grow(len(s))
-	for _, r := range s {
-		switch r {
-		case '\n':
-			b.WriteRune('↵')
-		case '\t':
-			b.WriteRune('⇥')
-		case '\r':
-			b.WriteRune('↩')
-		default:
-			b.WriteRune(r)
-		}
-	}
-	return b.String()
-}
+// controlCharReplacer maps control chars to width-1 glyphs from the Unicode
+// Arrows block, so values render on a single row without breaking the panel
+// layout. It is zero-alloc for inputs that contain none of the targets.
+var controlCharReplacer = strings.NewReplacer(
+	"\n", "↵", // U+21B5
+	"\t", "⇥", // U+21E5
+	"\r", "↩", // U+21A9
+)
+
+func flattenValue(s string) string { return controlCharReplacer.Replace(s) }
 
 // renderVarLine renders a single variable line including cursor highlighting, secret masking, and warnings.
 func (m *VarListModel) renderVarLine(i int, v *model.EnvVar, keyWidth, maxValWidth int, theme Theme) string {

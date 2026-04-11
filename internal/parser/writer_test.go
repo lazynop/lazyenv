@@ -118,9 +118,8 @@ func TestNormalizeForWriteSingleQuoteWithApostrophe(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO='original'\n"), config.SecretsConfig{})
 	ef.UpdateVar(0, "it's a trap")
 
-	changed := NormalizeForWrite(ef)
+	NormalizeForWrite(ef)
 
-	require.Equal(t, []string{"FOO"}, changed)
 	assert.Equal(t, model.QuoteDouble, ef.Vars[0].QuoteStyle)
 	assert.True(t, ef.Vars[0].Modified)
 }
@@ -129,32 +128,26 @@ func TestNormalizeForWriteNoApostropheNoOp(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO='original'\n"), config.SecretsConfig{})
 	ef.UpdateVar(0, "plain value")
 
-	changed := NormalizeForWrite(ef)
+	NormalizeForWrite(ef)
 
-	assert.Empty(t, changed)
 	assert.Equal(t, model.QuoteSingle, ef.Vars[0].QuoteStyle)
 }
 
 func TestNormalizeForWriteDoubleQuoteUnchanged(t *testing.T) {
-	// A QuoteDouble var with ' in value is perfectly valid shell; leave it alone.
 	ef := ParseBytes(".env", []byte("FOO=\"original\"\n"), config.SecretsConfig{})
 	ef.UpdateVar(0, "it's fine")
 
-	changed := NormalizeForWrite(ef)
+	NormalizeForWrite(ef)
 
-	assert.Empty(t, changed)
 	assert.Equal(t, model.QuoteDouble, ef.Vars[0].QuoteStyle)
 }
 
 func TestNormalizeForWriteUnquotedSafeValueUnchanged(t *testing.T) {
-	// A QuoteNone var whose value has only safe characters must stay
-	// QuoteNone — normalization only kicks in for unsafe content.
 	ef := ParseBytes(".env", []byte("FOO=original\n"), config.SecretsConfig{})
 	ef.UpdateVar(0, "anything_safe")
 
-	changed := NormalizeForWrite(ef)
+	NormalizeForWrite(ef)
 
-	assert.Empty(t, changed)
 	assert.Equal(t, model.QuoteNone, ef.Vars[0].QuoteStyle)
 }
 
@@ -162,29 +155,23 @@ func TestNormalizeForWriteMultipleVars(t *testing.T) {
 	ef := ParseBytes(".env", []byte("A='x'\nB='y'\nC='z'\n"), config.SecretsConfig{})
 	ef.UpdateVar(0, "has ' apostrophe")
 	ef.UpdateVar(2, "also 'quoted'")
-	// B is untouched and should remain QuoteSingle.
 
-	changed := NormalizeForWrite(ef)
+	NormalizeForWrite(ef)
 
-	assert.Equal(t, []string{"A", "C"}, changed)
 	assert.Equal(t, model.QuoteDouble, ef.Vars[0].QuoteStyle)
-	assert.Equal(t, model.QuoteSingle, ef.Vars[1].QuoteStyle)
+	assert.Equal(t, model.QuoteSingle, ef.Vars[1].QuoteStyle, "B untouched")
 	assert.Equal(t, model.QuoteDouble, ef.Vars[2].QuoteStyle)
 }
 
-func TestNormalizeForWriteThenMarshal(t *testing.T) {
-	// End-to-end: an apostrophe in a single-quoted value round-trips safely
-	// after normalization — on disk it becomes a double-quoted value.
+func TestNormalizeForWriteSingleQuoteToDoubleMarshal(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO='original'\n"), config.SecretsConfig{})
 	ef.UpdateVar(0, "it's a trap")
 
 	NormalizeForWrite(ef)
-	output := string(Marshal(ef))
+	out := string(Marshal(ef))
+	assert.Equal(t, "FOO=\"it's a trap\"\n", out)
 
-	assert.Equal(t, "FOO=\"it's a trap\"\n", output)
-
-	// Re-parse must recover the exact same value.
-	re := ParseBytes(".env", []byte(output), config.SecretsConfig{})
+	re := ParseBytes(".env", []byte(out), config.SecretsConfig{})
 	require.Len(t, re.Vars, 1)
 	assert.Equal(t, "it's a trap", re.Vars[0].Value)
 	assert.Equal(t, model.QuoteDouble, re.Vars[0].QuoteStyle)
@@ -194,97 +181,39 @@ func TestNormalizeForWriteIdempotent(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO='original'\n"), config.SecretsConfig{})
 	ef.UpdateVar(0, "it's a trap")
 
-	first := NormalizeForWrite(ef)
-	second := NormalizeForWrite(ef)
+	NormalizeForWrite(ef)
+	NormalizeForWrite(ef) // second call must be a no-op
 
-	assert.Equal(t, []string{"FOO"}, first)
-	assert.Empty(t, second, "second call must be a no-op")
 	assert.Equal(t, model.QuoteDouble, ef.Vars[0].QuoteStyle)
 }
 
-func TestNormalizeForWriteQuoteNoneWithNewline(t *testing.T) {
-	// An unquoted value that contains a newline cannot survive the
-	// parser round-trip (the parser splits on \n), so NormalizeForWrite
-	// must upgrade it to QuoteDouble which escapeDouble can serialize
-	// safely via \n escapes.
-	ef := ParseBytes(".env", []byte("EXISTING=ok\n"), config.SecretsConfig{})
-	ef.AddVar("MULTI", "line1\nline2\nline3", false)
-
-	changed := NormalizeForWrite(ef)
-
-	assert.Equal(t, []string{"MULTI"}, changed)
-	multi := ef.VarByKey("MULTI")
-	require.NotNil(t, multi)
-	assert.Equal(t, model.QuoteDouble, multi.QuoteStyle)
-	assert.True(t, multi.Modified)
-}
-
-func TestNormalizeForWriteQuoteNoneWithCR(t *testing.T) {
-	ef := ParseBytes(".env", []byte("A=b\n"), config.SecretsConfig{})
-	ef.AddVar("CR", "before\rafter", false)
-
-	changed := NormalizeForWrite(ef)
-
-	assert.Equal(t, []string{"CR"}, changed)
-	cr := ef.VarByKey("CR")
-	require.NotNil(t, cr)
-	assert.Equal(t, model.QuoteDouble, cr.QuoteStyle)
-}
-
-func TestNormalizeForWriteQuoteNoneWithTab(t *testing.T) {
-	// A raw tab is a word separator in shell, so a QuoteNone value with
-	// a tab is not shell-sourceable. Upgrade to QuoteDouble which will
-	// serialize the tab as the \t escape.
-	ef := ParseBytes(".env", []byte("A=b\n"), config.SecretsConfig{})
-	ef.AddVar("TAB", "col1\tcol2", false)
-
-	changed := NormalizeForWrite(ef)
-
-	assert.Equal(t, []string{"TAB"}, changed)
-	tab := ef.VarByKey("TAB")
-	require.NotNil(t, tab)
-	assert.Equal(t, model.QuoteDouble, tab.QuoteStyle)
-}
-
-func TestNormalizeForWriteQuoteNoneMultilineRoundTrip(t *testing.T) {
-	// Reproduces the compare-copy bug: a var added via AddVar (which
-	// defaults to QuoteNone) with a multiline value must round-trip
-	// through marshal + re-parse without losing anything past the first
-	// line.
-	ef := ParseBytes(".env", []byte("EXISTING=ok\n"), config.SecretsConfig{})
-	ef.AddVar("MULTI", "line1\nline2\nline3", false)
-
-	NormalizeForWrite(ef)
-	out := string(Marshal(ef))
-	re := ParseBytes(".env", []byte(out), config.SecretsConfig{})
-
-	multi := re.VarByKey("MULTI")
-	require.NotNil(t, multi)
-	assert.Equal(t, "line1\nline2\nline3", multi.Value,
-		"multiline value must survive the full save + re-parse round-trip")
-
-	// The new var should be the only phantom-free entry in the output:
-	// no orphan LineComment rows must appear for line2/line3.
-	for _, v := range re.Vars {
-		if v.Key == "line2" || v.Key == "line3" {
-			t.Fatalf("phantom variable %q detected — normalization failed to escape the newlines", v.Key)
-		}
+func TestNormalizeForWriteQuoteNoneControlChars(t *testing.T) {
+	// Reproduces the compare-copy bug: a var added via AddVar (QuoteNone
+	// by default) with any of \n, \r, \t in the value must round-trip
+	// through marshal + re-parse without losing data past the first line.
+	cases := []struct {
+		name  string
+		value string
+	}{
+		{"newline", "line1\nline2\nline3"},
+		{"cr", "before\rafter"},
+		{"tab", "col1\tcol2"},
+		{"crlf", "line1\r\nline2\r\nline3"},
 	}
-}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ef := ParseBytes(".env", []byte("EXISTING=ok\n"), config.SecretsConfig{})
+			ef.AddVar("V", tc.value, false)
 
-func TestNormalizeForWriteQuoteNoneCRLFEscapeRoundTrip(t *testing.T) {
-	// The very scenario the user hit: CRLF_TEST copied via compare mode,
-	// containing real \r\n byte pairs in Value (as produced by
-	// processEscapes from "\r\n" source escapes in a double-quoted file).
-	ef := ParseBytes(".env", []byte("EXISTING=ok\n"), config.SecretsConfig{})
-	ef.AddVar("CRLF", "line1\r\nline2\r\nline3", false)
+			NormalizeForWrite(ef)
+			out := string(Marshal(ef))
+			re := ParseBytes(".env", []byte(out), config.SecretsConfig{})
 
-	NormalizeForWrite(ef)
-	out := string(Marshal(ef))
-	re := ParseBytes(".env", []byte(out), config.SecretsConfig{})
-
-	crlf := re.VarByKey("CRLF")
-	require.NotNil(t, crlf)
-	assert.Equal(t, "line1\r\nline2\r\nline3", crlf.Value,
-		"CRLF sequence must survive the round-trip via escape encoding")
+			v := re.VarByKey("V")
+			require.NotNil(t, v)
+			assert.Equal(t, tc.value, v.Value)
+			assert.Equal(t, model.QuoteDouble, v.QuoteStyle)
+			require.Len(t, re.Vars, 2, "no phantom vars must leak out of the round-trip")
+		})
+	}
 }

@@ -32,12 +32,6 @@ func (a App) handleSave() (App, tea.Cmd) {
 
 	warn := a.backupIfNeeded(f.Path)
 
-	// Silently downgrade any single-quoted var whose value contains ' to
-	// double-quote before writing. Shell has no escape for ' inside '...',
-	// so this prevents data corruption on re-read. The switch is silent by
-	// design — no user-facing notification.
-	parser.NormalizeForWrite(f)
-
 	if err := parser.WriteFile(f); err != nil {
 		return a, a.flashError("Error saving: " + err.Error())
 	}

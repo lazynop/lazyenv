@@ -171,11 +171,6 @@ func TestFlash_ToggleSecrets(t *testing.T) {
 
 func TestFlash_SaveSilentlyDowngradesSingleQuoteWithApostrophe(t *testing.T) {
 	app, envPath := newTestAppWithDiskFile(t, "FOO='original'\n")
-
-	// Simulate a user editing the value to contain an apostrophe. Shell
-	// single quotes cannot escape ', so on save the writer must silently
-	// switch to double-quote. The flash must stay identical to a normal
-	// save — no user-facing notification about the style change.
 	app.fileList.Files[0].UpdateVar(0, "it's a trap")
 	require.True(t, app.fileList.Files[0].Modified)
 
@@ -185,13 +180,9 @@ func TestFlash_SaveSilentlyDowngradesSingleQuoteWithApostrophe(t *testing.T) {
 	assert.Contains(t, app.statusBar.Message, "Saved")
 	assert.NotContains(t, app.statusBar.Message, "double-quote",
 		"downgrade must be silent — no mention in the flash")
-	assert.NotContains(t, app.statusBar.Message, "→",
-		"downgrade must be silent — no mention in the flash")
+	assert.NotContains(t, app.statusBar.Message, "→")
 	assert.NotNil(t, cmd)
 
-	// On disk the value must be valid shell: double-quoted with the
-	// apostrophe preserved verbatim. This is the correctness guarantee
-	// that justifies the silent switch.
 	data, err := os.ReadFile(envPath)
 	require.NoError(t, err)
 	assert.Equal(t, "FOO=\"it's a trap\"\n", string(data))
