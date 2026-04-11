@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.4] - 2026-04-11
+
+### Added
+- Control characters in values (`\n`, `\t`, `\r`) render as width-1 glyphs (`↵`, `⇥`, `↩`) in the variable list and compare view, keeping multiline values on a single row.
+
+### Fixed
+- Multiline single-quoted values (`KEY='line1\nline2'`) were truncated at the first line on parse. Compare between two files whose values shared a first line falsely reported equality.
+- Copying a multiline value in compare mode and saving corrupted the target file — the writer emitted raw control bytes for unquoted values, breaking the `.env` format on re-read.
+- Values containing newlines or tabs broke the variable panel row layout and pushed status indicators off their row.
+- Masked secrets showed replacement character glyphs at narrow column widths because the column truncator sliced mid-UTF-8 sequence.
+- `truncate` panicked on negative column widths.
+
 ## [0.5.3] - 2026-04-06
 
 ### Added
