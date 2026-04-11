@@ -298,3 +298,72 @@ func TestKeyWithNoEquals(t *testing.T) {
 	assert.Equal(t, "FOO", ef.Vars[0].Key)
 	assert.Equal(t, model.LineComment, ef.Lines[0].Type)
 }
+
+func TestMultilineSingleQuoted(t *testing.T) {
+	ef := ParseBytes(".env", []byte("MULTI='line1\nline2\nline3'\n"), config.SecretsConfig{})
+
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "MULTI", ef.Vars[0].Key)
+	assert.Equal(t, "line1\nline2\nline3", ef.Vars[0].Value)
+	assert.Equal(t, model.QuoteSingle, ef.Vars[0].QuoteStyle)
+
+	// The whole multiline value must be captured as a single LineVariable entry,
+	// not split into a variable line + orphan comment lines.
+	require.Len(t, ef.Lines, 1)
+	assert.Equal(t, model.LineVariable, ef.Lines[0].Type)
+}
+
+func TestMultilineSingleQuotedRoundTrip(t *testing.T) {
+	input := "MULTI='line1\nline2\nline3'\n"
+	ef := ParseBytes(".env", []byte(input), config.SecretsConfig{})
+	assert.Equal(t, input, string(Marshal(ef)))
+}
+
+func TestMultilineSingleQuotedFollowedByVar(t *testing.T) {
+	ef := ParseBytes(".env", []byte("MULTI='line1\nline2'\nNEXT=value\n"), config.SecretsConfig{})
+
+	require.Len(t, ef.Vars, 2)
+	assert.Equal(t, "MULTI", ef.Vars[0].Key)
+	assert.Equal(t, "line1\nline2", ef.Vars[0].Value)
+	assert.Equal(t, model.QuoteSingle, ef.Vars[0].QuoteStyle)
+	assert.Equal(t, "NEXT", ef.Vars[1].Key)
+	assert.Equal(t, "value", ef.Vars[1].Value)
+}
+
+func TestMultilineSingleQuotedNoPhantomVariable(t *testing.T) {
+	// A continuation line containing an '=' must NOT be parsed as a separate
+	// phantom variable. It is part of the single-quoted value.
+	ef := ParseBytes(".env", []byte("NOTE='Short summary\nitem=value'\n"), config.SecretsConfig{})
+
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "NOTE", ef.Vars[0].Key)
+	assert.Equal(t, "Short summary\nitem=value", ef.Vars[0].Value)
+}
+
+func TestMultilineSingleQuotedWithInlineComment(t *testing.T) {
+	ef := ParseBytes(".env", []byte("MULTI='line1\nline2' # trailing comment\n"), config.SecretsConfig{})
+
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "line1\nline2", ef.Vars[0].Value)
+	assert.Equal(t, "trailing comment", ef.Vars[0].Comment)
+}
+
+func TestModifiedMultilineSingleQuotedWriteBack(t *testing.T) {
+	ef := ParseBytes(".env", []byte("MULTI='line1\nline2'\n"), config.SecretsConfig{})
+	ef.UpdateVar(0, "newline1\nnewline2\nnewline3")
+
+	assert.Equal(t, "MULTI='newline1\nnewline2\nnewline3'\n", string(Marshal(ef)))
+}
+
+func TestMultilineSingleQuotedCompareValuesDiffer(t *testing.T) {
+	// Regression test for the compare false-negative: two single-quoted
+	// multiline values that share the first line but differ on the second
+	// must end up with different Value fields after parse.
+	efA := ParseBytes("a.env", []byte("MSG='first line\nsecond A'\n"), config.SecretsConfig{})
+	efB := ParseBytes("b.env", []byte("MSG='first line\nsecond B'\n"), config.SecretsConfig{})
+
+	require.Len(t, efA.Vars, 1)
+	require.Len(t, efB.Vars, 1)
+	assert.NotEqual(t, efA.Vars[0].Value, efB.Vars[0].Value,
+		"values that differ only on the second line must not parse equal")
+}

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lazynop/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/stretchr/testify/require"
 )
 
@@ -111,4 +112,91 @@ func TestWriteFileNoPath(t *testing.T) {
 	err := WriteFile(ef)
 	require.Error(t, err)
 	assert.ErrorContains(t, err, "no file path set")
+}
+
+func TestNormalizeForWriteSingleQuoteWithApostrophe(t *testing.T) {
+	ef := ParseBytes(".env", []byte("FOO='original'\n"), config.SecretsConfig{})
+	ef.UpdateVar(0, "it's a trap")
+
+	changed := NormalizeForWrite(ef)
+
+	require.Equal(t, []string{"FOO"}, changed)
+	assert.Equal(t, model.QuoteDouble, ef.Vars[0].QuoteStyle)
+	assert.True(t, ef.Vars[0].Modified)
+}
+
+func TestNormalizeForWriteNoApostropheNoOp(t *testing.T) {
+	ef := ParseBytes(".env", []byte("FOO='original'\n"), config.SecretsConfig{})
+	ef.UpdateVar(0, "plain value")
+
+	changed := NormalizeForWrite(ef)
+
+	assert.Empty(t, changed)
+	assert.Equal(t, model.QuoteSingle, ef.Vars[0].QuoteStyle)
+}
+
+func TestNormalizeForWriteDoubleQuoteUnchanged(t *testing.T) {
+	// A QuoteDouble var with ' in value is perfectly valid shell; leave it alone.
+	ef := ParseBytes(".env", []byte("FOO=\"original\"\n"), config.SecretsConfig{})
+	ef.UpdateVar(0, "it's fine")
+
+	changed := NormalizeForWrite(ef)
+
+	assert.Empty(t, changed)
+	assert.Equal(t, model.QuoteDouble, ef.Vars[0].QuoteStyle)
+}
+
+func TestNormalizeForWriteUnquotedUnchanged(t *testing.T) {
+	// QuoteNone is out of scope for this normalization.
+	ef := ParseBytes(".env", []byte("FOO=original\n"), config.SecretsConfig{})
+	ef.UpdateVar(0, "anything")
+
+	changed := NormalizeForWrite(ef)
+
+	assert.Empty(t, changed)
+	assert.Equal(t, model.QuoteNone, ef.Vars[0].QuoteStyle)
+}
+
+func TestNormalizeForWriteMultipleVars(t *testing.T) {
+	ef := ParseBytes(".env", []byte("A='x'\nB='y'\nC='z'\n"), config.SecretsConfig{})
+	ef.UpdateVar(0, "has ' apostrophe")
+	ef.UpdateVar(2, "also 'quoted'")
+	// B is untouched and should remain QuoteSingle.
+
+	changed := NormalizeForWrite(ef)
+
+	assert.Equal(t, []string{"A", "C"}, changed)
+	assert.Equal(t, model.QuoteDouble, ef.Vars[0].QuoteStyle)
+	assert.Equal(t, model.QuoteSingle, ef.Vars[1].QuoteStyle)
+	assert.Equal(t, model.QuoteDouble, ef.Vars[2].QuoteStyle)
+}
+
+func TestNormalizeForWriteThenMarshal(t *testing.T) {
+	// End-to-end: an apostrophe in a single-quoted value round-trips safely
+	// after normalization — on disk it becomes a double-quoted value.
+	ef := ParseBytes(".env", []byte("FOO='original'\n"), config.SecretsConfig{})
+	ef.UpdateVar(0, "it's a trap")
+
+	NormalizeForWrite(ef)
+	output := string(Marshal(ef))
+
+	assert.Equal(t, "FOO=\"it's a trap\"\n", output)
+
+	// Re-parse must recover the exact same value.
+	re := ParseBytes(".env", []byte(output), config.SecretsConfig{})
+	require.Len(t, re.Vars, 1)
+	assert.Equal(t, "it's a trap", re.Vars[0].Value)
+	assert.Equal(t, model.QuoteDouble, re.Vars[0].QuoteStyle)
+}
+
+func TestNormalizeForWriteIdempotent(t *testing.T) {
+	ef := ParseBytes(".env", []byte("FOO='original'\n"), config.SecretsConfig{})
+	ef.UpdateVar(0, "it's a trap")
+
+	first := NormalizeForWrite(ef)
+	second := NormalizeForWrite(ef)
+
+	assert.Equal(t, []string{"FOO"}, first)
+	assert.Empty(t, second, "second call must be a no-op")
+	assert.Equal(t, model.QuoteDouble, ef.Vars[0].QuoteStyle)
 }

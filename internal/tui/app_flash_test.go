@@ -168,3 +168,51 @@ func TestFlash_ToggleSecrets(t *testing.T) {
 	assert.Contains(t, app.statusBar.Message, "Secrets")
 	assert.NotNil(t, cmd)
 }
+
+func TestFlash_SaveSilentlyDowngradesSingleQuoteWithApostrophe(t *testing.T) {
+	app, envPath := newTestAppWithDiskFile(t, "FOO='original'\n")
+
+	// Simulate a user editing the value to contain an apostrophe. Shell
+	// single quotes cannot escape ', so on save the writer must silently
+	// switch to double-quote. The flash must stay identical to a normal
+	// save — no user-facing notification about the style change.
+	app.fileList.Files[0].UpdateVar(0, "it's a trap")
+	require.True(t, app.fileList.Files[0].Modified)
+
+	updated, cmd := app.Update(tea.KeyPressMsg{Text: "w"})
+	app = updated.(App)
+
+	assert.Contains(t, app.statusBar.Message, "Saved")
+	assert.NotContains(t, app.statusBar.Message, "double-quote",
+		"downgrade must be silent — no mention in the flash")
+	assert.NotContains(t, app.statusBar.Message, "→",
+		"downgrade must be silent — no mention in the flash")
+	assert.NotNil(t, cmd)
+
+	// On disk the value must be valid shell: double-quoted with the
+	// apostrophe preserved verbatim. This is the correctness guarantee
+	// that justifies the silent switch.
+	data, err := os.ReadFile(envPath)
+	require.NoError(t, err)
+	assert.Equal(t, "FOO=\"it's a trap\"\n", string(data))
+}
+
+func TestFlash_SaveSingleQuoteSafeNoDowngradeMessage(t *testing.T) {
+	app, envPath := newTestAppWithDiskFile(t, "FOO='original'\n")
+
+	// A safe update (no apostrophe in value) must not trigger the downgrade
+	// suffix and must preserve the user's single-quote style on disk.
+	app.fileList.Files[0].UpdateVar(0, "plain update")
+	require.True(t, app.fileList.Files[0].Modified)
+
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "w"})
+	app = updated.(App)
+
+	assert.Contains(t, app.statusBar.Message, "Saved")
+	assert.NotContains(t, app.statusBar.Message, "double-quote",
+		"no quote style change happened; flash must not mention it")
+
+	data, err := os.ReadFile(envPath)
+	require.NoError(t, err)
+	assert.Equal(t, "FOO='plain update'\n", string(data))
+}

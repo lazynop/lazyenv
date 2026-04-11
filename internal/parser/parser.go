@@ -162,9 +162,9 @@ func parseLine(lines []string, i int) (string, string, string, model.QuoteStyle,
 		return key, value, comment, model.QuoteDouble, hasExport, rawContent, consumed
 	}
 	if len(rest) > 0 && rest[0] == '\'' {
-		// Single-quoted value
-		value, comment := parseSingleQuoted(rest)
-		return key, value, comment, model.QuoteSingle, hasExport, line, 1
+		// Single-quoted value — may span multiple lines
+		value, comment, rawContent, consumed := parseSingleQuoted(lines, i, rest)
+		return key, value, comment, model.QuoteSingle, hasExport, rawContent, consumed
 	}
 
 	// Unquoted value
@@ -221,26 +221,44 @@ func parseDoubleQuoted(lines []string, startIdx int, rest string) (string, strin
 	}
 }
 
-func parseSingleQuoted(rest string) (string, string) {
+func parseSingleQuoted(lines []string, startIdx int, rest string) (string, string, string, int) {
 	// rest starts with '
-	content := rest[1:]
-	// Find closing single quote (no escape processing in single quotes)
-	before, after, ok := strings.Cut(content, "'")
-	if !ok {
-		// Unterminated — take everything
-		return content, ""
-	}
-	value := before
-	remainder := strings.TrimSpace(after)
+	content := rest[1:] // skip opening quote
 
-	comment := ""
-	if strings.HasPrefix(remainder, "#") {
-		comment = remainder[1:]
-		if len(comment) > 0 && comment[0] == ' ' {
-			comment = comment[1:]
+	var valueParts []string
+	rawLines := []string{lines[startIdx]}
+	consumed := 1
+
+	for {
+		// Find closing single quote on this line.
+		// No escape processing in single-quoted values (shell semantics).
+		if idx := strings.Index(content, "'"); idx >= 0 {
+			valueParts = append(valueParts, content[:idx])
+			remainder := strings.TrimSpace(content[idx+1:])
+			value := strings.Join(valueParts, "\n")
+
+			comment := ""
+			if strings.HasPrefix(remainder, "#") {
+				comment = remainder[1:]
+				if len(comment) > 0 && comment[0] == ' ' {
+					comment = comment[1:]
+				}
+			}
+
+			return value, comment, strings.Join(rawLines, "\n"), consumed
 		}
+
+		// No closing quote on this line — multiline
+		valueParts = append(valueParts, content)
+		consumed++
+		if startIdx+consumed-1 >= len(lines) {
+			// Unterminated — return what we have
+			return strings.Join(valueParts, "\n"), "", strings.Join(rawLines, "\n"), consumed
+		}
+		nextLine := lines[startIdx+consumed-1]
+		rawLines = append(rawLines, nextLine)
+		content = nextLine
 	}
-	return value, comment
 }
 
 func parseUnquoted(rest string) (string, string) {

@@ -9,6 +9,30 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
+// NormalizeForWrite adjusts quote styles for variables whose current Value
+// cannot be safely serialized in their current style. Specifically, a
+// QuoteSingle variable whose value contains a ' character is downgraded to
+// QuoteDouble, because POSIX shell single quotes have no escape mechanism and
+// re-parsing such a value would silently truncate it.
+//
+// Returns the keys of the variables whose quote style was changed, in file
+// order. Callers (typically TUI save handlers) use this to surface a flash
+// message explaining the silent switch to the user.
+//
+// Idempotent: a second call on the same file is a no-op.
+func NormalizeForWrite(ef *model.EnvFile) []string {
+	var changed []string
+	for i := range ef.Vars {
+		v := &ef.Vars[i]
+		if v.QuoteStyle == model.QuoteSingle && strings.ContainsRune(v.Value, '\'') {
+			v.QuoteStyle = model.QuoteDouble
+			v.Modified = true
+			changed = append(changed, v.Key)
+		}
+	}
+	return changed
+}
+
 // Marshal serializes an EnvFile back to bytes.
 // Unmodified lines are emitted as-is for round-trip fidelity.
 // Modified lines are reconstructed from EnvVar metadata.
