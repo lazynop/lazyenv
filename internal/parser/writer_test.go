@@ -146,10 +146,11 @@ func TestNormalizeForWriteDoubleQuoteUnchanged(t *testing.T) {
 	assert.Equal(t, model.QuoteDouble, ef.Vars[0].QuoteStyle)
 }
 
-func TestNormalizeForWriteUnquotedUnchanged(t *testing.T) {
-	// QuoteNone is out of scope for this normalization.
+func TestNormalizeForWriteUnquotedSafeValueUnchanged(t *testing.T) {
+	// A QuoteNone var whose value has only safe characters must stay
+	// QuoteNone — normalization only kicks in for unsafe content.
 	ef := ParseBytes(".env", []byte("FOO=original\n"), config.SecretsConfig{})
-	ef.UpdateVar(0, "anything")
+	ef.UpdateVar(0, "anything_safe")
 
 	changed := NormalizeForWrite(ef)
 
@@ -199,4 +200,91 @@ func TestNormalizeForWriteIdempotent(t *testing.T) {
 	assert.Equal(t, []string{"FOO"}, first)
 	assert.Empty(t, second, "second call must be a no-op")
 	assert.Equal(t, model.QuoteDouble, ef.Vars[0].QuoteStyle)
+}
+
+func TestNormalizeForWriteQuoteNoneWithNewline(t *testing.T) {
+	// An unquoted value that contains a newline cannot survive the
+	// parser round-trip (the parser splits on \n), so NormalizeForWrite
+	// must upgrade it to QuoteDouble which escapeDouble can serialize
+	// safely via \n escapes.
+	ef := ParseBytes(".env", []byte("EXISTING=ok\n"), config.SecretsConfig{})
+	ef.AddVar("MULTI", "line1\nline2\nline3", false)
+
+	changed := NormalizeForWrite(ef)
+
+	assert.Equal(t, []string{"MULTI"}, changed)
+	multi := ef.VarByKey("MULTI")
+	require.NotNil(t, multi)
+	assert.Equal(t, model.QuoteDouble, multi.QuoteStyle)
+	assert.True(t, multi.Modified)
+}
+
+func TestNormalizeForWriteQuoteNoneWithCR(t *testing.T) {
+	ef := ParseBytes(".env", []byte("A=b\n"), config.SecretsConfig{})
+	ef.AddVar("CR", "before\rafter", false)
+
+	changed := NormalizeForWrite(ef)
+
+	assert.Equal(t, []string{"CR"}, changed)
+	cr := ef.VarByKey("CR")
+	require.NotNil(t, cr)
+	assert.Equal(t, model.QuoteDouble, cr.QuoteStyle)
+}
+
+func TestNormalizeForWriteQuoteNoneWithTab(t *testing.T) {
+	// A raw tab is a word separator in shell, so a QuoteNone value with
+	// a tab is not shell-sourceable. Upgrade to QuoteDouble which will
+	// serialize the tab as the \t escape.
+	ef := ParseBytes(".env", []byte("A=b\n"), config.SecretsConfig{})
+	ef.AddVar("TAB", "col1\tcol2", false)
+
+	changed := NormalizeForWrite(ef)
+
+	assert.Equal(t, []string{"TAB"}, changed)
+	tab := ef.VarByKey("TAB")
+	require.NotNil(t, tab)
+	assert.Equal(t, model.QuoteDouble, tab.QuoteStyle)
+}
+
+func TestNormalizeForWriteQuoteNoneMultilineRoundTrip(t *testing.T) {
+	// Reproduces the compare-copy bug: a var added via AddVar (which
+	// defaults to QuoteNone) with a multiline value must round-trip
+	// through marshal + re-parse without losing anything past the first
+	// line.
+	ef := ParseBytes(".env", []byte("EXISTING=ok\n"), config.SecretsConfig{})
+	ef.AddVar("MULTI", "line1\nline2\nline3", false)
+
+	NormalizeForWrite(ef)
+	out := string(Marshal(ef))
+	re := ParseBytes(".env", []byte(out), config.SecretsConfig{})
+
+	multi := re.VarByKey("MULTI")
+	require.NotNil(t, multi)
+	assert.Equal(t, "line1\nline2\nline3", multi.Value,
+		"multiline value must survive the full save + re-parse round-trip")
+
+	// The new var should be the only phantom-free entry in the output:
+	// no orphan LineComment rows must appear for line2/line3.
+	for _, v := range re.Vars {
+		if v.Key == "line2" || v.Key == "line3" {
+			t.Fatalf("phantom variable %q detected — normalization failed to escape the newlines", v.Key)
+		}
+	}
+}
+
+func TestNormalizeForWriteQuoteNoneCRLFEscapeRoundTrip(t *testing.T) {
+	// The very scenario the user hit: CRLF_TEST copied via compare mode,
+	// containing real \r\n byte pairs in Value (as produced by
+	// processEscapes from "\r\n" source escapes in a double-quoted file).
+	ef := ParseBytes(".env", []byte("EXISTING=ok\n"), config.SecretsConfig{})
+	ef.AddVar("CRLF", "line1\r\nline2\r\nline3", false)
+
+	NormalizeForWrite(ef)
+	out := string(Marshal(ef))
+	re := ParseBytes(".env", []byte(out), config.SecretsConfig{})
+
+	crlf := re.VarByKey("CRLF")
+	require.NotNil(t, crlf)
+	assert.Equal(t, "line1\r\nline2\r\nline3", crlf.Value,
+		"CRLF sequence must survive the round-trip via escape encoding")
 }

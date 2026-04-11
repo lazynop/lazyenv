@@ -117,6 +117,48 @@ func TestVarListRefreshAfterAdd(t *testing.T) {
 	assert.Equal(t, 2, len(vl.displayIndices))
 }
 
+func TestFlattenValue(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{"plain_ascii", "hello world", "hello world"},
+		{"empty", "", ""},
+		{"single_newline", "line1\nline2", "line1↵line2"},
+		{"single_tab", "col1\tcol2", "col1⇥col2"},
+		{"single_cr", "before\rafter", "before↩after"},
+		{"mixed_all_three", "a\nb\tc\rd", "a↵b⇥c↩d"},
+		{"multiple_newlines", "a\nb\nc", "a↵b↵c"},
+		{"trailing_newline", "end\n", "end↵"},
+		{"leading_newline", "\nstart", "↵start"},
+		{"crlf_pair", "line\r\nnext", "line↩↵next"},
+		{"no_control_chars_fast_path", "unchanged utf8 àèìòù", "unchanged utf8 àèìòù"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, flattenValue(tt.in))
+		})
+	}
+}
+
+func TestVarListFormatValueFlattensControlChars(t *testing.T) {
+	// A multiline or tabbed value must never contribute raw control chars to
+	// the rendered line — that would break panel layout and push the warning
+	// indicators to the wrong row.
+	vl := NewVarListModel(config.DefaultConfig().Layout)
+	v := &model.EnvVar{Value: "first line\nsecond line\tcol\rend"}
+
+	out := vl.formatValue(v, 60)
+
+	assert.NotContains(t, out, "\n", "rendered value must not contain raw newlines")
+	assert.NotContains(t, out, "\t", "rendered value must not contain raw tabs")
+	assert.NotContains(t, out, "\r", "rendered value must not contain raw carriage returns")
+	assert.Contains(t, out, "↵", "newlines must be replaced with the visible marker")
+	assert.Contains(t, out, "⇥", "tabs must be replaced with the visible marker")
+	assert.Contains(t, out, "↩", "carriage returns must be replaced with the visible marker")
+}
+
 func TestVarListScrolling(t *testing.T) {
 	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F", "G", "H")
 	vl := NewVarListModel(config.DefaultConfig().Layout)

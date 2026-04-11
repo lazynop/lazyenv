@@ -10,27 +10,46 @@ import (
 )
 
 // NormalizeForWrite adjusts quote styles for variables whose current Value
-// cannot be safely serialized in their current style. Specifically, a
-// QuoteSingle variable whose value contains a ' character is downgraded to
-// QuoteDouble, because POSIX shell single quotes have no escape mechanism and
-// re-parsing such a value would silently truncate it.
+// cannot be safely serialized in their current style. Two cases are handled:
+//
+//  1. QuoteSingle + Value contains '  → upgrade to QuoteDouble. POSIX shell
+//     single quotes have no escape mechanism, so re-parsing would silently
+//     truncate at the first embedded '.
+//
+//  2. QuoteNone + Value contains \n, \r or \t → upgrade to QuoteDouble. An
+//     unquoted value is a single whitespace-free shell token, so embedded
+//     line separators or tabs corrupt the file on write and the parser
+//     truncates at the first newline on the next read.
+//
+// Both cases upgrade to QuoteDouble because escapeDouble (writer.go) knows
+// how to escape ', ", \, \n, \r and \t, so the serialized form round-trips
+// perfectly back through processEscapes on re-parse.
 //
 // Returns the keys of the variables whose quote style was changed, in file
-// order. Callers (typically TUI save handlers) use this to surface a flash
-// message explaining the silent switch to the user.
-//
-// Idempotent: a second call on the same file is a no-op.
+// order. Idempotent: a second call on the same file is a no-op.
 func NormalizeForWrite(ef *model.EnvFile) []string {
 	var changed []string
 	for i := range ef.Vars {
 		v := &ef.Vars[i]
-		if v.QuoteStyle == model.QuoteSingle && strings.ContainsRune(v.Value, '\'') {
+		if needsQuoteUpgrade(v) {
 			v.QuoteStyle = model.QuoteDouble
 			v.Modified = true
 			changed = append(changed, v.Key)
 		}
 	}
 	return changed
+}
+
+// needsQuoteUpgrade reports whether v's current Value cannot be safely
+// serialized in its current QuoteStyle. See NormalizeForWrite for the rules.
+func needsQuoteUpgrade(v *model.EnvVar) bool {
+	switch v.QuoteStyle {
+	case model.QuoteSingle:
+		return strings.ContainsRune(v.Value, '\'')
+	case model.QuoteNone:
+		return strings.ContainsAny(v.Value, "\n\r\t")
+	}
+	return false
 }
 
 // Marshal serializes an EnvFile back to bytes.

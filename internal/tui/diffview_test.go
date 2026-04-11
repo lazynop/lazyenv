@@ -21,6 +21,37 @@ func makeDiffFiles() (*model.EnvFile, *model.EnvFile) {
 	return a, b
 }
 
+func TestDiffViewRenderEntryFlattensControlChars(t *testing.T) {
+	// A diff entry whose values contain embedded newlines/tabs/CRs must
+	// render on a single row in each panel. If raw control chars leaked
+	// through, the status markers (=, ≠, +, -) would land on the wrong
+	// visual row and the two panels would drift out of alignment.
+	a := makeTestFile(".env", "MULTI")
+	b := makeTestFile(".env.prod", "MULTI")
+	a.Vars[0].Value = "left1\nleft2\tcol\rend"
+	b.Vars[0].Value = "right1\nright2"
+
+	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv.SetFiles(a, b)
+	theme := BuildTheme(true, config.ColorConfig{})
+
+	left, right := dv.renderDiffEntry(dv.Entries[0], false, 10, 40, 60, theme)
+
+	// Strip ANSI styling so we compare against the actual rendered text.
+	leftText := stripAnsi(left)
+	rightText := stripAnsi(right)
+
+	assert.NotContains(t, leftText, "\n", "left panel line must not contain a raw newline")
+	assert.NotContains(t, leftText, "\t", "left panel line must not contain a raw tab")
+	assert.NotContains(t, leftText, "\r", "left panel line must not contain a raw CR")
+	assert.Contains(t, leftText, "↵")
+	assert.Contains(t, leftText, "⇥")
+	assert.Contains(t, leftText, "↩")
+
+	assert.NotContains(t, rightText, "\n", "right panel line must not contain a raw newline")
+	assert.Contains(t, rightText, "↵")
+}
+
 func TestDiffViewSetFiles(t *testing.T) {
 	a, b := makeDiffFiles()
 	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
