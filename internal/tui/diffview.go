@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
+	"github.com/mattn/go-runewidth"
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
@@ -374,12 +375,20 @@ func (m *DiffViewModel) renderDiffEntry(e model.DiffEntry, isCursor bool, keyWid
 	return leftLine, rightLine
 }
 
-func truncate(s string, maxLen int) string {
-	if len(s) <= maxLen {
+// truncate fits s into maxCols display columns, appending ".." when the
+// string is actually shortened. It operates on Unicode display width (via
+// go-runewidth, the same oracle lipgloss.Width uses), so multi-byte runes
+// like secret bullets or flatten glyphs are never sliced mid-sequence.
+func truncate(s string, maxCols int) string {
+	if maxCols <= 0 {
+		return ""
+	}
+	if runewidth.StringWidth(s) <= maxCols {
 		return s
 	}
-	if maxLen <= 2 {
-		return s[:maxLen]
+	if maxCols <= 2 {
+		// Not enough room for the ".." ellipsis — hard-truncate with no tail.
+		return runewidth.Truncate(s, maxCols, "")
 	}
-	return s[:maxLen-2] + ".."
+	return runewidth.Truncate(s, maxCols, "..")
 }

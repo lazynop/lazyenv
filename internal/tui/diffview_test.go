@@ -21,6 +21,50 @@ func makeDiffFiles() (*model.EnvFile, *model.EnvFile) {
 	return a, b
 }
 
+func TestTruncate(t *testing.T) {
+	tests := []struct {
+		name    string
+		in      string
+		maxCols int
+		want    string
+	}{
+		// ── Pure ASCII ──
+		{"ascii_fits", "hello", 10, "hello"},
+		{"ascii_exact", "hello", 5, "hello"},
+		{"ascii_truncate", "hello world", 8, "hello .."},
+		{"ascii_truncate_hello_world_5", "hello world", 5, "hel.."},
+		{"ascii_truncate_tight", "hello", 4, "he.."},
+		{"empty", "", 5, ""},
+
+		// ── Bullets (U+2022, 1 col, 3 bytes) — the secret-masking case ──
+		// The value is 15 bytes but 5 columns. The old byte-based truncate
+		// would slice mid-sequence and produce tofu `•�..`.
+		{"bullets_fit_exactly", "•••••", 5, "•••••"},
+		{"bullets_byte_over_col_under", "•••••", 6, "•••••"},
+		{"bullets_col_over_truncate", "••••••", 5, "•••.."},
+		{"bullets_no_tofu_at_4_cols", "•••••", 4, "••.."},
+		{"bullets_three_cols_keeps_ellipsis", "•••••", 3, "•.."},
+		{"bullets_no_tofu_at_7_cols", "••••••••", 7, "•••••.."},
+
+		// ── Arrow glyphs from flattenValue (U+21B5, U+21E5, U+21A9) ──
+		{"arrow_truncate", "line1↵line2", 7, "line1.."},
+		{"tab_arrow_truncate", "a⇥b⇥c⇥d", 5, "a⇥b.."},
+
+		// ── Degenerate cases: maxCols ≤ 2 has no room for ".." ellipsis ──
+		{"maxlen_zero", "anything", 0, ""},
+		{"maxlen_negative", "anything", -5, ""},
+		{"maxlen_one_ascii", "hello", 1, "h"},
+		{"maxlen_two_ascii", "hello", 2, "he"},
+		{"maxlen_two_bullets", "•••••", 2, "••"},
+		{"maxlen_one_bullet", "•••••", 1, "•"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, truncate(tt.in, tt.maxCols))
+		})
+	}
+}
+
 func TestDiffViewRenderEntryFlattensControlChars(t *testing.T) {
 	// A diff entry whose values contain embedded newlines/tabs/CRs must
 	// render on a single row in each panel. If raw control chars leaked

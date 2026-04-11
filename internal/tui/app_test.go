@@ -97,15 +97,6 @@ func TestViewHelp(t *testing.T) {
 	assert.Contains(t, help, "Press Esc or ? to close")
 }
 
-func TestTruncate(t *testing.T) {
-	assert.Equal(t, "hello", truncate("hello", 10))
-	assert.Equal(t, "hello", truncate("hello", 5))
-	assert.Equal(t, "hel..", truncate("hello world", 5))
-	assert.Equal(t, "he", truncate("hello", 2))
-	assert.Equal(t, "", truncate("", 5))
-	assert.Equal(t, "h", truncate("hello", 1))
-}
-
 func TestNavigationUpDownInFilePanel(t *testing.T) {
 	f1 := makeTestFile(".env", "A")
 	f2 := makeTestFile(".env.prod", "B")
