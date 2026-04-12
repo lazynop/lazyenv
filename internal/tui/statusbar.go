@@ -138,7 +138,7 @@ func modeHints(theme Theme, mode AppMode, focus Focus, diffStats string) string 
 		)
 	case ModeEditing:
 		return theme.MutedItem.Render("Enter to confirm, Esc to cancel")
-	case ModeConfirmDelete:
+	case ModeConfirmDelete, ModeConfirmMatrixDelete:
 		return theme.DuplicateWarn.Render("Delete variable? (y/n)")
 	case ModeHelp:
 		return theme.MutedItem.Render("Press Esc or ? to close help")
@@ -156,9 +156,10 @@ func modeHints(theme Theme, mode AppMode, focus Focus, diffStats string) string 
 		return theme.MutedItem.Render("Enter to create template, Esc to cancel")
 	case ModeMatrix:
 		return fmt.Sprintf(
-			"%s %s %s %s",
+			"%s %s %s %s %s",
 			formatHint(theme, "↑↓←→", "navigate"),
 			formatHint(theme, "a", "add missing"),
+			formatHint(theme, "d", "delete"),
 			formatHint(theme, "o", "sort"),
 			formatHint(theme, "q", "back"),
 		)

@@ -80,6 +80,7 @@ Multi-file grid showing which variables exist in which files.
 | `←` / `h` | Move cursor left                              |
 | `→` / `l` | Move cursor right                             |
 | `a`       | Add missing variable to the file under cursor |
+| `d`       | Delete variable from the file under cursor    |
 | `o`       | Toggle sort (alphabetical / completeness)     |
 | `q`       | Return to main view                           |
 | `Esc`     | Return to main view                           |

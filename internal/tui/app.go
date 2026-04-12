@@ -38,6 +38,7 @@ const (
 	ModeConfirmDeleteFile
 	ModeRenameFile
 	ModeTemplateFile
+	ModeConfirmMatrixDelete
 )
 
 // Focus represents which panel has focus.
@@ -325,7 +326,7 @@ func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 		a = a.scrollDiffView(up)
 	case ModeCompareSelect:
 		a = a.scrollFileList(up)
-	case ModeMatrix, ModeMatrixEditing:
+	case ModeMatrix, ModeMatrixEditing, ModeConfirmMatrixDelete:
 		a = a.scrollMatrix(up)
 	}
 	return a
@@ -405,6 +406,8 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a.handleFileInputKey(msg)
 	case ModeConfirmDeleteFile:
 		return a.handleConfirmDeleteFileKey(msg)
+	case ModeConfirmMatrixDelete:
+		return a.handleConfirmMatrixDeleteKey(msg)
 	case ModeConfigError:
 		return a, tea.Quit
 	}
@@ -1078,10 +1081,19 @@ func (a App) handleMatrixKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return a, a.flashMessage("Sorted by completeness")
 		}
 		return a, a.flashMessage("Sorted alphabetically")
+	case key.Matches(msg, a.keys.Add), key.Matches(msg, a.keys.Delete):
+		return a.handleMatrixEdit(msg)
+	}
+	return a, nil
+}
+
+func (a App) handleMatrixEdit(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	if cmd := a.readOnlyFlash(); cmd != nil {
+		return a, cmd
+	}
+
+	switch {
 	case key.Matches(msg, a.keys.Add):
-		if cmd := a.readOnlyFlash(); cmd != nil {
-			return a, cmd
-		}
 		cmd := a.matrixView.StartEdit()
 		if a.matrixView.editing {
 			a.mode = ModeMatrixEditing
@@ -1092,6 +1104,36 @@ func (a App) handleMatrixKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			a.matrixView.message = ""
 			return a, a.flashMessage(flashMsg)
 		}
+	case key.Matches(msg, a.keys.Delete):
+		if len(a.matrixView.entries) == 0 {
+			return a, nil
+		}
+		entry := a.matrixView.entries[a.matrixView.cursorRow]
+		if !entry.Present[a.matrixView.cursorCol] {
+			return a, a.flashMessage("Variable not present in this file")
+		}
+		a.mode = ModeConfirmMatrixDelete
+		a.statusBar.SetMessage(fmt.Sprintf("Delete %s from %s? (y/n)", entry.Key, a.matrixView.fileNames[a.matrixView.cursorCol]))
+	}
+	return a, nil
+}
+
+func (a App) handleConfirmMatrixDeleteKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch {
+	case key.Matches(msg, a.keys.Confirm):
+		a.mode = ModeMatrix
+		deletedFile := a.matrixView.files[a.matrixView.cursorCol]
+		key, fileName := a.matrixView.DeleteAtCursor()
+		if key != "" {
+			if a.varList.File == deletedFile {
+				a.varList.Refresh()
+			}
+			return a, a.flashMessage("Deleted " + key + " from " + fileName)
+		}
+		return a, nil
+	case key.Matches(msg, a.keys.Deny), key.Matches(msg, a.keys.Escape):
+		a.mode = ModeMatrix
+		a.statusBar.ClearMessage()
 	}
 	return a, nil
 }
@@ -1134,7 +1176,7 @@ func (a App) View() tea.View {
 		editorBar := a.theme.StatusBar.Width(a.width).Render("  " + a.editor.View())
 		statusBarContent := a.statusBar.View(a.theme, ModeEditing, a.focus, "", 0)
 		content = lipgloss.JoinVertical(lipgloss.Left, diffContent, editorBar, statusBarContent)
-	case ModeMatrix:
+	case ModeMatrix, ModeConfirmMatrixDelete:
 		matrixContent := a.matrixView.View(a.theme)
 		statusBarContent := a.statusBar.View(a.theme, a.mode, a.focus, "", 0)
 		content = lipgloss.JoinVertical(lipgloss.Left, matrixContent, statusBarContent)

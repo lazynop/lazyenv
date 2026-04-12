@@ -155,3 +155,136 @@ func TestMatrixAddVariableFlow(t *testing.T) {
 	require.NotNil(t, found, "B should exist in f2 after adding")
 	assert.Equal(t, "added_value", found.Value)
 }
+
+func TestMatrixDeleteVariableConfirm(t *testing.T) {
+	f1 := makeTestFile(".env", "A", "B")
+	f2 := makeTestFile(".env.local", "A", "B")
+	app := newTestApp([]*model.EnvFile{f1, f2})
+
+	// Open matrix
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "m"})
+	app = updated.(App)
+	require.Equal(t, ModeMatrix, app.mode)
+
+	// Cursor at row=0 (A), col=0 (f1) — A is present
+	require.True(t, app.matrixView.entries[0].Present[0])
+
+	// Press 'd' to delete
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "d"})
+	app = updated.(App)
+	assert.Equal(t, ModeConfirmMatrixDelete, app.mode)
+	assert.Contains(t, app.statusBar.Message, "Delete")
+	assert.Contains(t, app.statusBar.Message, "A")
+
+	// Confirm with 'y'
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "y"})
+	app = updated.(App)
+	assert.Equal(t, ModeMatrix, app.mode)
+
+	// Verify A was deleted from f1
+	assert.Nil(t, f1.VarByKey("A"), "A should be deleted from f1")
+	assert.True(t, f1.Modified)
+}
+
+func TestMatrixDeleteVariableDeny(t *testing.T) {
+	f1 := makeTestFile(".env", "A", "B")
+	f2 := makeTestFile(".env.local", "A")
+	app := newTestApp([]*model.EnvFile{f1, f2})
+
+	// Open matrix
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "m"})
+	app = updated.(App)
+	require.Equal(t, ModeMatrix, app.mode)
+
+	// Press 'd'
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "d"})
+	app = updated.(App)
+	assert.Equal(t, ModeConfirmMatrixDelete, app.mode)
+
+	// Deny with 'n'
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "n"})
+	app = updated.(App)
+	assert.Equal(t, ModeMatrix, app.mode)
+	assert.NotNil(t, f1.VarByKey("A"), "A should still exist after deny")
+}
+
+func TestMatrixDeleteVariableEscape(t *testing.T) {
+	f1 := makeTestFile(".env", "A", "B")
+	f2 := makeTestFile(".env.local", "A")
+	app := newTestApp([]*model.EnvFile{f1, f2})
+
+	// Open matrix
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "m"})
+	app = updated.(App)
+
+	// Press 'd' then Escape
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "d"})
+	app = updated.(App)
+	updated, _ = app.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
+	app = updated.(App)
+
+	assert.Equal(t, ModeMatrix, app.mode)
+	assert.NotNil(t, f1.VarByKey("A"), "A should still exist after escape")
+}
+
+func TestMatrixDeleteThenReturnToNormal(t *testing.T) {
+	f1 := makeTestFile(".env", "A", "B", "C")
+	f2 := makeTestFile(".env.local", "A", "B", "C")
+	app := newTestApp([]*model.EnvFile{f1, f2})
+	// Select f1 so varList shows f1's vars
+	app.varList.SetFile(f1)
+
+	// Open matrix
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "m"})
+	app = updated.(App)
+
+	// Delete A from f1 (row=0, col=0)
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "d"})
+	app = updated.(App)
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "y"})
+	app = updated.(App)
+
+	// After recompute: A still in entries (exists in f2), cursor at row=0 col=0 = A in f1 (now ✗).
+	// Move to row=1 (B) which is still present in f1.
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "j"})
+	app = updated.(App)
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "d"})
+	app = updated.(App)
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "y"})
+	app = updated.(App)
+
+	assert.Equal(t, ModeMatrix, app.mode)
+	require.Len(t, f1.Vars, 1, "f1 should have 1 var left")
+
+	// Return to normal — this should NOT panic
+	assert.NotPanics(t, func() {
+		updated, _ = app.Update(tea.KeyPressMsg{Text: "q"})
+		app = updated.(App)
+		// Force a View render to trigger calcColumnWidths
+		app.View()
+	})
+	assert.Equal(t, ModeNormal, app.mode)
+}
+
+func TestMatrixDeleteNotPresent(t *testing.T) {
+	f1 := makeTestFile(".env", "A", "B")
+	f2 := makeTestFile(".env.local", "A")
+	app := newTestApp([]*model.EnvFile{f1, f2})
+
+	// Open matrix
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "m"})
+	app = updated.(App)
+
+	// Navigate to B in f2 (not present)
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "j"}) // down to B
+	app = updated.(App)
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "l"}) // right to f2
+	app = updated.(App)
+	require.False(t, app.matrixView.entries[1].Present[1], "B should be missing in f2")
+
+	// Press 'd' — should flash message, not enter confirm
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "d"})
+	app = updated.(App)
+	assert.Equal(t, ModeMatrix, app.mode, "should stay in matrix mode")
+	assert.Contains(t, app.statusBar.Message, "not present")
+}

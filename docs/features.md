@@ -22,7 +22,7 @@ Side-by-side diff between any two `.env` files. Copy values in either direction,
 
 ## Completeness matrix
 
-Multi-file grid view showing which variables exist in which files. Spot missing entries at a glance and add them inline.
+Multi-file grid view showing which variables exist in which files. Spot missing entries at a glance, add them inline with `a`, or delete them from a specific file with `d`.
 
 !!! example "Use case"
     You have `.env`, `.env.staging`, and `.env.production`. The matrix instantly shows you which variables are missing from which environment.

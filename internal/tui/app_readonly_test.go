@@ -257,6 +257,24 @@ func TestReadOnlyBlocksCompareSave(t *testing.T) {
 
 // --- Matrix mode ---
 
+func TestReadOnlyBlocksMatrixDelete(t *testing.T) {
+	f1 := makeTestFile(".env", "FOO")
+	f2 := makeTestFile(".env.local", "FOO")
+	app := newReadOnlyApp([]*model.EnvFile{f1, f2})
+
+	// Enter matrix mode
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "m"})
+	app = updated.(App)
+	assert.Equal(t, ModeMatrix, app.mode)
+
+	// Try to delete — should be blocked
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "d"})
+	app = updated.(App)
+
+	assert.Equal(t, ModeMatrix, app.mode, "should not enter confirm delete")
+	assert.Contains(t, app.statusBar.Message, "Read-only")
+}
+
 func TestReadOnlyBlocksMatrixAdd(t *testing.T) {
 	f1 := makeTestFile(".env", "FOO")
 	f2 := makeTestFile(".env.local", "BAR")

@@ -176,6 +176,28 @@ func (m *MatrixModel) ConfirmEdit() {
 	m.recompute()
 }
 
+// DeleteAtCursor deletes the variable at the current cursor position.
+// Returns the deleted key name and file name, or empty strings if nothing was deleted.
+func (m *MatrixModel) DeleteAtCursor() (string, string) {
+	if len(m.entries) == 0 {
+		return "", ""
+	}
+	entry := m.entries[m.cursorRow]
+	if !entry.Present[m.cursorCol] {
+		return "", ""
+	}
+	f := m.files[m.cursorCol]
+	for i := len(f.Vars) - 1; i >= 0; i-- {
+		if f.Vars[i].Key == entry.Key {
+			f.DeleteVar(i)
+			break
+		}
+	}
+	fileName := m.fileNames[m.cursorCol]
+	m.recompute()
+	return entry.Key, fileName
+}
+
 // CancelEdit cancels inline editing.
 func (m *MatrixModel) CancelEdit() {
 	m.editing = false
