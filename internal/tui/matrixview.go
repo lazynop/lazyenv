@@ -129,8 +129,14 @@ func (m *MatrixModel) ensureHorizontalVisible() {
 	}
 }
 
+func (m *MatrixModel) counterWidth() int {
+	// " X/Y" where X and Y have the same digit count as len(fileNames)
+	digits := len(fmt.Sprintf("%d", len(m.fileNames)))
+	return 1 + digits + 1 + digits // space + digits + slash + digits
+}
+
 func (m *MatrixModel) visibleCols() int {
-	available := m.Width - m.layout.MatrixKeyWidth - 2
+	available := m.Width - m.layout.MatrixKeyWidth - m.counterWidth() - 2
 	if available < m.layout.MatrixColWidth {
 		return 1
 	}
@@ -244,7 +250,7 @@ func (m *MatrixModel) renderBodyRow(ri, endCol int, checkMark, crossMark string,
 			if entry.Present[ci] {
 				cell = theme.SelectedItem.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+checkMark))
 			} else {
-				cell = theme.DiffRemoved.Underline(true).Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+crossMark))
+				cell = theme.DiffRemoved.Bold(true).Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+crossMark))
 			}
 		} else if entry.Present[ci] {
 			cell = theme.DiffEqual.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+checkMark))
@@ -253,6 +259,23 @@ func (m *MatrixModel) renderBodyRow(ri, endCol int, checkMark, crossMark string,
 		}
 		row.WriteString(cell)
 	}
+
+	// Row counter: present/total, right-aligned
+	present := 0
+	for _, p := range entry.Present {
+		if p {
+			present++
+		}
+	}
+	total := len(entry.Present)
+	totalWidth := len(fmt.Sprintf("%d", total))
+	counter := fmt.Sprintf(" %*d/%d", totalWidth, present, total)
+	if present == total {
+		row.WriteString(theme.DiffEqual.Render(counter))
+	} else {
+		row.WriteString(theme.MutedItem.Render(counter))
+	}
+
 	return row.String()
 }
 

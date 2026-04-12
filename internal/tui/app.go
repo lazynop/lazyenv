@@ -185,6 +185,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.diffView.Height = a.height - 4
 		a.matrixView.Width = a.width
 		a.matrixView.Height = a.height - 1
+		a.statusBar.Width = a.width
 		return a, nil
 
 	case tea.BackgroundColorMsg:
