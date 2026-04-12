@@ -12,6 +12,11 @@ import (
 )
 
 func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	// Mutating actions (copy, edit, save) — blocked in read-only mode
+	if key.Matches(msg, a.keys.Right, a.keys.Left, a.keys.Save, a.keys.Edit) || msg.String() == "E" {
+		return a.handleComparingEdit(msg)
+	}
+
 	switch {
 	case key.Matches(msg, a.keys.Quit), key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
@@ -27,18 +32,8 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.diffView.NextDiff()
 	case key.Matches(msg, a.keys.PrevDiff):
 		a.diffView.PrevDiff()
-	case key.Matches(msg, a.keys.Right):
-		return a.handleCompareCopy(true)
-	case key.Matches(msg, a.keys.Left):
-		return a.handleCompareCopy(false)
 	case key.Matches(msg, a.keys.Filter):
 		return a.handleCompareFilter()
-	case key.Matches(msg, a.keys.Save):
-		return a.handleCompareSave()
-	case key.Matches(msg, a.keys.Edit): // e = edit left
-		return a.startCompareEdit(a.diffView.FileA)
-	case msg.String() == "E": // E = edit right
-		return a.startCompareEdit(a.diffView.FileB)
 	case msg.String() == "r":
 		return a.handleCompareReset()
 	case key.Matches(msg, a.keys.ToggleSecret):
@@ -50,6 +45,27 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a, a.flashMessage("Secrets hidden")
 	}
 	return a, nil
+}
+
+func (a App) handleComparingEdit(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	if cmd := a.readOnlyFlash(); cmd != nil {
+		return a, cmd
+	}
+
+	switch {
+	case key.Matches(msg, a.keys.Right):
+		return a.handleCompareCopy(true)
+	case key.Matches(msg, a.keys.Left):
+		return a.handleCompareCopy(false)
+	case key.Matches(msg, a.keys.Save):
+		return a.handleCompareSave()
+	case key.Matches(msg, a.keys.Edit):
+		return a.startCompareEdit(a.diffView.FileA)
+	case msg.String() == "E":
+		return a.startCompareEdit(a.diffView.FileB)
+	default:
+		return a, nil
+	}
 }
 
 func (a App) handleCompareCopy(toRight bool) (tea.Model, tea.Cmd) {

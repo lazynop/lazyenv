@@ -21,6 +21,7 @@ func TestDefaultConfig(t *testing.T) {
 	assert.False(t, cfg.ShowAll)
 	assert.False(t, cfg.NoGitCheck)
 	assert.False(t, cfg.NoBackup)
+	assert.False(t, cfg.ReadOnly)
 }
 
 func TestDefaultLayoutValues(t *testing.T) {
@@ -87,6 +88,16 @@ func TestLoadProjectConfig(t *testing.T) {
 	assert.True(t, cfg.Recursive)
 	assert.Equal(t, "alphabetical", cfg.Sort)
 	assert.Equal(t, 30, cfg.Layout.VarListMaxKeyWidth)
+}
+
+func TestLoadReadOnly(t *testing.T) {
+	dir := t.TempDir()
+	content := []byte("read-only = true\n")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
+
+	cfg, warnings := Load(dir, "")
+	assert.Empty(t, warnings)
+	assert.True(t, cfg.ReadOnly)
 }
 
 func TestLoadMalformedConfig(t *testing.T) {

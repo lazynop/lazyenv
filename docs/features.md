@@ -80,6 +80,12 @@ Saves preserve comments, blank lines, quoting style, and key ordering — your f
 
 Filter variables by name or value with `/`. Toggle between original position and alphabetical sorting with `o`.
 
+## Read-only mode
+
+Disable all write operations with `--read-only` or `read-only = true` in config. Editing keybindings (edit, add, delete, save, copy in diff view) are suppressed, and a `[READ-ONLY]` badge is shown in the status bar. Navigation, search, diff view (read-only), peek, yank, and matrix view remain fully functional.
+
+Useful for safely inspecting production `.env` files without risk of accidental modifications.
+
 ## Mouse support
 
 Click to select files, variables, diff entries, and matrix cells. Scroll wheel navigates the panel under the mouse cursor. Disable with `--no-mouse` or `no-mouse = true` in config.

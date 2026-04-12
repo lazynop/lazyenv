@@ -11,6 +11,7 @@ type Config struct {
 	NoBackup   bool   `toml:"no-backup"`
 	NoThemeBg  bool   `toml:"no-theme-bg"`
 	NoMouse    bool   `toml:"no-mouse"`
+	ReadOnly   bool   `toml:"read-only"`
 	Sort       string `toml:"sort"`            // "position" | "alphabetical"
 	Theme      string `toml:"theme,omitempty"` // built-in theme name (e.g. "dracula", "nord")
 

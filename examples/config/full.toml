@@ -8,6 +8,7 @@ show-secrets = false
 no-backup = false
 no-git-check = false
 no-mouse = false
+read-only = false
 sort = "position"                 # "position" | "alphabetical"
 
 # Built-in theme preset. Available: catppuccin-latte, catppuccin-mocha,

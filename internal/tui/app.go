@@ -127,6 +127,9 @@ func NewApp(cfg config.Config, warnings []string) App {
 		varList.SortAlpha = true
 	}
 
+	sb := NewStatusBarModel()
+	sb.ReadOnly = cfg.ReadOnly
+
 	return App{
 		config:             cfg,
 		configWarnings:     warnings,
@@ -137,7 +140,7 @@ func NewApp(cfg config.Config, warnings []string) App {
 		mode:               ModeNormal,
 		fileList:           NewFileListModel(),
 		varList:            varList,
-		statusBar:          NewStatusBarModel(),
+		statusBar:          sb,
 		diffView:           NewDiffViewModel(cfg.Layout, cfg.Secrets),
 		editor:             NewEditorModel(),
 		searchInput:        ti,
@@ -441,6 +444,11 @@ func (a App) handleNormalKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 }
 
 func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bool) {
+	// Block mutating file actions in read-only mode
+	if a.config.ReadOnly && key.Matches(msg, a.keys.CreateFile, a.keys.DuplicateFile, a.keys.DeleteFile, a.keys.RenameFile, a.keys.TemplateFile) {
+		return a, a.readOnlyFlash(), true
+	}
+
 	switch {
 	case key.Matches(msg, a.keys.CreateFile):
 		a.createFileInput.SetValue("")
@@ -507,6 +515,9 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 		}
 
 	case key.Matches(msg, a.keys.Save):
+		if cmd := a.readOnlyFlash(); cmd != nil {
+			return a, cmd
+		}
 		return a.handleSave()
 
 	case key.Matches(msg, a.keys.Reset):
@@ -604,6 +615,44 @@ func (a App) handleNormalVarAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, boo
 		return a, nil, false
 	}
 
+	// Mutating actions (edit, add, delete) — blocked in read-only mode
+	if key.Matches(msg, a.keys.Edit, a.keys.EditKey, a.keys.Add, a.keys.Delete) {
+		return a.handleNormalVarEdit(msg)
+	}
+
+	switch {
+	case key.Matches(msg, a.keys.YankValue):
+		v := a.varList.SelectedVar()
+		if v != nil {
+			return a, tea.Batch(
+				tea.SetClipboard(v.Value),
+				a.flashMessage(fmt.Sprintf("Copied %s value to clipboard", v.Key)),
+			), true
+		}
+
+	case key.Matches(msg, a.keys.YankLine):
+		v := a.varList.SelectedVar()
+		if v != nil {
+			line := v.Key + "=" + v.Value
+			return a, tea.Batch(
+				tea.SetClipboard(line),
+				a.flashMessage(fmt.Sprintf("Copied %s to clipboard", v.Key+"=...")),
+			), true
+		}
+
+	case key.Matches(msg, a.keys.Peek):
+		a.varList.Peeking = !a.varList.Peeking
+		return a, nil, true
+	}
+
+	return a, nil, false
+}
+
+func (a App) handleNormalVarEdit(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bool) {
+	if cmd := a.readOnlyFlash(); cmd != nil {
+		return a, cmd, true
+	}
+
 	switch {
 	case key.Matches(msg, a.keys.Edit):
 		v := a.varList.SelectedVar()
@@ -636,29 +685,6 @@ func (a App) handleNormalVarAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, boo
 			a.mode = ModeConfirmDelete
 			return a, nil, true
 		}
-
-	case key.Matches(msg, a.keys.YankValue):
-		v := a.varList.SelectedVar()
-		if v != nil {
-			return a, tea.Batch(
-				tea.SetClipboard(v.Value),
-				a.flashMessage(fmt.Sprintf("Copied %s value to clipboard", v.Key)),
-			), true
-		}
-
-	case key.Matches(msg, a.keys.YankLine):
-		v := a.varList.SelectedVar()
-		if v != nil {
-			line := v.Key + "=" + v.Value
-			return a, tea.Batch(
-				tea.SetClipboard(line),
-				a.flashMessage(fmt.Sprintf("Copied %s to clipboard", v.Key+"=...")),
-			), true
-		}
-
-	case key.Matches(msg, a.keys.Peek):
-		a.varList.Peeking = !a.varList.Peeking
-		return a, nil, true
 	}
 
 	return a, nil, false
@@ -1053,6 +1079,9 @@ func (a App) handleMatrixKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 		return a, a.flashMessage("Sorted alphabetically")
 	case key.Matches(msg, a.keys.Add):
+		if cmd := a.readOnlyFlash(); cmd != nil {
+			return a, cmd
+		}
 		cmd := a.matrixView.StartEdit()
 		if a.matrixView.editing {
 			a.mode = ModeMatrixEditing
@@ -1193,6 +1222,14 @@ func clearMessageAfter(d time.Duration) tea.Cmd {
 	return tea.Tick(d, func(time.Time) tea.Msg {
 		return ClearMessageMsg{}
 	})
+}
+
+// readOnlyFlash returns a flash command if read-only mode is active, or nil otherwise.
+func (a *App) readOnlyFlash() tea.Cmd {
+	if !a.config.ReadOnly {
+		return nil
+	}
+	return a.flashMessage("Read-only mode — editing disabled")
 }
 
 // flashMessage sets a transient status bar message and returns the auto-clear cmd.

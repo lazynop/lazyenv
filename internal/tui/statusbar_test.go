@@ -120,6 +120,26 @@ func TestStatusBarViewCompareSelect(t *testing.T) {
 	assert.Contains(t, view, "Select second file")
 }
 
+func TestStatusBarReadOnlyBadge(t *testing.T) {
+	sb := NewStatusBarModel()
+	sb.Width = 120
+	sb.ReadOnly = true
+	theme := BuildTheme(true, config.ColorConfig{})
+
+	view := sb.View(theme, ModeNormal, FocusFiles, ".env", 5)
+	assert.Contains(t, view, "READ-ONLY")
+	assert.Contains(t, view, ".env")
+}
+
+func TestStatusBarNoReadOnlyBadge(t *testing.T) {
+	sb := NewStatusBarModel()
+	sb.Width = 120
+	theme := BuildTheme(true, config.ColorConfig{})
+
+	view := sb.View(theme, ModeNormal, FocusFiles, ".env", 5)
+	assert.NotContains(t, view, "READ-ONLY")
+}
+
 func TestStatusBarMessageOverridesHints(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120

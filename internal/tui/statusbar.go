@@ -9,9 +9,10 @@ import (
 
 // StatusBarModel manages the bottom status bar.
 type StatusBarModel struct {
-	Width   int
-	Message string // transient message (e.g. "Saved!")
-	Mode    string // current mode label
+	Width    int
+	ReadOnly bool   // show [READ-ONLY] badge
+	Message  string // transient message (e.g. "Saved!")
+	Mode     string // current mode label
 }
 
 // NewStatusBarModel creates a new status bar model.
@@ -40,10 +41,18 @@ func (m *StatusBarModel) View(theme Theme, mode AppMode, focus Focus, fileName s
 	// Left side: keybinding hints based on mode and focus
 	hints := modeHints(theme, mode, focus, diffStats)
 
-	// Right side: file info
+	// Right side: file info + read-only badge
 	right := ""
+	if m.ReadOnly {
+		right = theme.EmptyWarning.Render("[READ-ONLY]")
+	}
 	if fileName != "" {
-		right = theme.MutedItem.Render(fmt.Sprintf("%s  %d vars", fileName, varCount))
+		fileInfo := theme.MutedItem.Render(fmt.Sprintf("%s  %d vars", fileName, varCount))
+		if right != "" {
+			right = right + "  " + fileInfo
+		} else {
+			right = fileInfo
+		}
 	}
 
 	// Transient message overrides hints
