@@ -6,6 +6,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
@@ -138,6 +139,80 @@ func TestApp_SessionStats_Rename(t *testing.T) {
 	assert.Equal(t, []string{
 		newPath + " (renamed from " + oldPath + ") — 1 added, 0 changed, 0 deleted",
 	}, app.sessionStats.Summary())
+}
+
+func TestApp_SessionStats_EndToEnd(t *testing.T) {
+	dir := t.TempDir()
+	localPath := dir + "/.env.local"
+	stagingPath := dir + "/.env.staging"
+	require.NoError(t, os.WriteFile(localPath, []byte("FOO=1\nBAR=2\n"), 0644))
+	require.NoError(t, os.WriteFile(stagingPath, []byte("X=a\nY=b\n"), 0644))
+
+	cfg := config.DefaultConfig()
+	cfg.Dir = dir
+	cfg.NoBackup = true
+	cfg.NoGitCheck = true
+	app := NewApp(cfg, nil)
+
+	localEf, err := parser.ParseFile(localPath, cfg.Secrets)
+	require.NoError(t, err)
+	stagingEf, err := parser.ParseFile(stagingPath, cfg.Secrets)
+	require.NoError(t, err)
+	out, _ := app.Update(FilesLoadedMsg{Files: []*model.EnvFile{localEf, stagingEf}})
+	app = out.(App)
+
+	// 1. Edit .env.local (change FOO 1 → 99) and save.
+	app.varList.File.UpdateVar(0, "99")
+	app, _ = app.handleSave()
+
+	// 2. Duplicate .env.staging → .env.backup.
+	app.duplicateSource = stagingEf
+	app.duplicateFileInput.SetValue(".env.backup")
+	app.mode = ModeDuplicateFile
+	m, _ := app.confirmDuplicateFile()
+	app = m.(App)
+
+	// 3. Create .env.new from scratch, add NEW=val, save.
+	app.createFileInput.SetValue(".env.new")
+	app.mode = ModeCreateFile
+	m, _ = app.confirmCreateFile()
+	app = m.(App)
+	app.varList.File.AddVar("NEW", "val", false)
+	app, _ = app.handleSave()
+
+	// 4. Rename .env.local → .env.dev.
+	var localRef *model.EnvFile
+	for _, f := range app.fileList.Files {
+		if f.Path == localPath {
+			localRef = f
+			break
+		}
+	}
+	require.NotNil(t, localRef)
+	app.renameSource = localRef
+	app.renameFileInput.SetValue(".env.dev")
+	app.mode = ModeRenameFile
+	m, _ = app.confirmRenameFile()
+	app = m.(App)
+
+	// 5. Delete .env.staging.
+	for i, f := range app.fileList.Files {
+		if f.Path == stagingPath {
+			app.fileList.SetCursor(i)
+			app.fileList.Selected = i
+			break
+		}
+	}
+	app.mode = ModeConfirmDeleteFile
+	m, _ = app.handleConfirmDeleteFileKey(tea.KeyPressMsg{Text: "y"})
+	app = m.(App)
+
+	want := "Session summary:\n" +
+		"  " + dir + "/.env.backup — duplicated from " + stagingPath + " (2 variables)\n" +
+		"  " + dir + "/.env.dev (renamed from " + localPath + ") — 0 added, 1 changed, 0 deleted\n" +
+		"  " + dir + "/.env.new — new file (1 variable)\n" +
+		"  " + stagingPath + " — deleted\n"
+	assert.Equal(t, want, app.SessionSummary())
 }
 
 func TestApp_SessionStats_Delete(t *testing.T) {
