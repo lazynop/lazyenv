@@ -868,6 +868,7 @@ func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
 		return a, a.flashMessage("Error creating file: " + err.Error())
 	}
 
+	a.sessionStats.RecordCreateScratch(fullPath, nil)
 	return a.finaliseNewFile(fullPath, "Created "+name)
 }
 

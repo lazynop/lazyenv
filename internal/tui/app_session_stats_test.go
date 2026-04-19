@@ -43,6 +43,24 @@ func TestApp_SessionStats_InitialLoadRecorded(t *testing.T) {
 	assert.Empty(t, got.sessionStats.Summary()) // no changes yet
 }
 
+func TestApp_SessionStats_CreateScratch(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config.DefaultConfig()
+	cfg.Dir = dir
+	app := NewApp(cfg, nil)
+	out, _ := app.Update(FilesLoadedMsg{Files: nil})
+	app = out.(App)
+
+	app.createFileInput.SetValue(".env.new")
+	app.mode = ModeCreateFile
+	m, _ := app.confirmCreateFile()
+	app = m.(App)
+
+	assert.Equal(t, []string{
+		dir + "/.env.new — new file (0 variables)",
+	}, app.sessionStats.Summary())
+}
+
 func TestApp_SessionStats_HandleSave(t *testing.T) {
 	dir := t.TempDir()
 	path := dir + "/.env"
