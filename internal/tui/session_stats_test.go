@@ -133,3 +133,32 @@ func TestStats_CreateScratch_ThenSaveMoreVars(t *testing.T) {
 	})
 	assert.Equal(t, []string{"/p/.env.new — new file (2 variables)"}, s.Summary())
 }
+
+func TestStats_CreateDuplicate_NoEdits(t *testing.T) {
+	s := NewSessionStats()
+	src := []model.EnvVar{
+		{Key: "FOO", Value: "1"},
+		{Key: "BAR", Value: "2"},
+	}
+	s.RecordCreateDuplicate("/p/.env.copy", "/p/.env.local", src)
+	assert.Equal(t, []string{
+		"/p/.env.copy — duplicated from /p/.env.local (2 variables)",
+	}, s.Summary())
+}
+
+func TestStats_CreateDuplicate_WithEdits(t *testing.T) {
+	s := NewSessionStats()
+	// Create a duplicate of a 2-var file.
+	s.RecordCreateDuplicate("/p/.env.copy", "/p/.env.local", []model.EnvVar{
+		{Key: "FOO", Value: "1"},
+		{Key: "BAR", Value: "2"},
+	})
+	// After edits: changed FOO, deleted BAR, added BAZ.
+	s.RecordSave("/p/.env.copy", []model.EnvVar{
+		{Key: "FOO", Value: "99"},
+		{Key: "BAZ", Value: "3"},
+	})
+	assert.Equal(t, []string{
+		"/p/.env.copy — duplicated from /p/.env.local, 1 added, 1 changed, 1 deleted",
+	}, s.Summary())
+}

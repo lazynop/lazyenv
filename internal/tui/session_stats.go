@@ -90,6 +90,16 @@ func (s *SessionStats) RecordCreateTemplate(path, source string, vars []model.En
 	s.final[path] = snap
 }
 
+// RecordCreateDuplicate registers a byte-for-byte copy of source.
+func (s *SessionStats) RecordCreateDuplicate(path, source string, vars []model.EnvVar) {
+	if s == nil {
+		return
+	}
+	snap := snapshot(vars)
+	s.created[path] = createOrigin{kind: createDuplicate, source: source, initialVars: snap}
+	s.final[path] = snap
+}
+
 func pluralVars(n int) string {
 	if n == 1 {
 		return "1 variable"
@@ -154,7 +164,12 @@ func (s *SessionStats) Summary() []string {
 			case createTemplate:
 				rows = append(rows, row{path, fmt.Sprintf("%s — from template %s (%s)", path, co.source, pluralVars(len(content)))})
 			case createDuplicate:
-				// Filled in T6.
+				a, c, d := diff(co.initialVars, content)
+				if a == 0 && c == 0 && d == 0 {
+					rows = append(rows, row{path, fmt.Sprintf("%s — duplicated from %s (%s)", path, co.source, pluralVars(len(content)))})
+				} else {
+					rows = append(rows, row{path, fmt.Sprintf("%s — duplicated from %s, %d added, %d changed, %d deleted", path, co.source, a, c, d)})
+				}
 			}
 			continue
 		}
