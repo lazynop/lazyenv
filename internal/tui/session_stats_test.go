@@ -231,3 +231,12 @@ func TestStats_RenameBackToOrigin_WithEdits(t *testing.T) {
 
 	assert.Equal(t, []string{"/p/a — 0 added, 1 changed, 0 deleted"}, s.Summary())
 }
+
+func TestStats_RenameThenDelete_ReportsOriginDeleted(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordInitialLoad("/p/a", []model.EnvVar{{Key: "FOO", Value: "1"}})
+	s.RecordRename("/p/a", "/p/b")
+	s.RecordDelete("/p/b")
+
+	assert.Equal(t, []string{"/p/a — deleted"}, s.Summary())
+}
