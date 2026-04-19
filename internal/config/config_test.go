@@ -22,6 +22,7 @@ func TestDefaultConfig(t *testing.T) {
 	assert.False(t, cfg.NoGitCheck)
 	assert.False(t, cfg.NoBackup)
 	assert.False(t, cfg.ReadOnly)
+	assert.True(t, cfg.SessionSummary)
 }
 
 func TestDefaultLayoutValues(t *testing.T) {

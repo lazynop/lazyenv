@@ -11,9 +11,10 @@ type Config struct {
 	NoBackup   bool   `toml:"no-backup"`
 	NoThemeBg  bool   `toml:"no-theme-bg"`
 	NoMouse    bool   `toml:"no-mouse"`
-	ReadOnly   bool   `toml:"read-only"`
-	Sort       string `toml:"sort"`            // "position" | "alphabetical"
-	Theme      string `toml:"theme,omitempty"` // built-in theme name (e.g. "dracula", "nord")
+	ReadOnly       bool   `toml:"read-only"`
+	SessionSummary bool   `toml:"session-summary"`
+	Sort           string `toml:"sort"`            // "position" | "alphabetical"
+	Theme          string `toml:"theme,omitempty"` // built-in theme name (e.g. "dracula", "nord")
 
 	Layout  LayoutConfig  `toml:"layout"`
 	Colors  ColorConfig   `toml:"colors"`
@@ -86,8 +87,9 @@ type ColorConfig struct {
 // DefaultConfig returns a Config with all default values.
 func DefaultConfig() Config {
 	return Config{
-		Dir:  ".",
-		Sort: "position",
+		Dir:            ".",
+		Sort:           "position",
+		SessionSummary: true,
 		Layout: LayoutConfig{
 			VarListMaxKeyWidth:   30,
 			DiffMaxKeyWidth:      25,
