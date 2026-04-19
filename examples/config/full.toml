@@ -9,6 +9,7 @@ no-backup = false
 no-git-check = false
 no-mouse = false
 read-only = false
+session-summary = true            # print a recap of disk changes on exit. --read-only forces off.
 sort = "position"                 # "position" | "alphabetical"
 
 # Built-in theme preset. Available: catppuccin-latte, catppuccin-mocha,
