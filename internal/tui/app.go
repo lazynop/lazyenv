@@ -1075,6 +1075,12 @@ func (a App) confirmTemplateFile() (tea.Model, tea.Cmd) {
 		return a, a.flashMessage("Error creating file: " + err.Error())
 	}
 
+	// Template strips values — build a keys-only var slice for the initial snapshot.
+	tmplVars := make([]model.EnvVar, 0, len(src.Vars))
+	for _, v := range src.Vars {
+		tmplVars = append(tmplVars, model.EnvVar{Key: v.Key})
+	}
+	a.sessionStats.RecordCreateTemplate(destPath, src.Path, tmplVars)
 	return a.finaliseNewFile(destPath, "Template from "+src.Name+" → "+name)
 }
 

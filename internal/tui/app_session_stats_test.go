@@ -84,6 +84,29 @@ func TestApp_SessionStats_Duplicate(t *testing.T) {
 	}, app.sessionStats.Summary())
 }
 
+func TestApp_SessionStats_Template(t *testing.T) {
+	dir := t.TempDir()
+	srcPath := dir + "/.env"
+	assert.NoError(t, os.WriteFile(srcPath, []byte("FOO=1\nBAR=2\n"), 0644))
+
+	cfg := config.DefaultConfig()
+	cfg.Dir = dir
+	app := NewApp(cfg, nil)
+	ef, _ := parser.ParseFile(srcPath, cfg.Secrets)
+	m, _ := app.Update(FilesLoadedMsg{Files: []*model.EnvFile{ef}})
+	app = m.(App)
+
+	app.templateSource = ef
+	app.templateFileInput.SetValue(".env.example")
+	app.mode = ModeTemplateFile
+	out, _ := app.confirmTemplateFile()
+	app = out.(App)
+
+	assert.Equal(t, []string{
+		dir + "/.env.example — from template " + srcPath + " (2 variables)",
+	}, app.sessionStats.Summary())
+}
+
 func TestApp_SessionStats_HandleSave(t *testing.T) {
 	dir := t.TempDir()
 	path := dir + "/.env"
