@@ -70,6 +70,33 @@ func (s *SessionStats) RecordSave(path string, vars []model.EnvVar) {
 	s.final[path] = snapshot(vars)
 }
 
+// RecordCreateScratch registers a file created from scratch (empty body).
+func (s *SessionStats) RecordCreateScratch(path string, vars []model.EnvVar) {
+	if s == nil {
+		return
+	}
+	snap := snapshot(vars)
+	s.created[path] = createOrigin{kind: createScratch, initialVars: snap}
+	s.final[path] = snap
+}
+
+// RecordCreateTemplate registers a file created as a keys-only template of src.
+func (s *SessionStats) RecordCreateTemplate(path, source string, vars []model.EnvVar) {
+	if s == nil {
+		return
+	}
+	snap := snapshot(vars)
+	s.created[path] = createOrigin{kind: createTemplate, source: source, initialVars: snap}
+	s.final[path] = snap
+}
+
+func pluralVars(n int) string {
+	if n == 1 {
+		return "1 variable"
+	}
+	return fmt.Sprintf("%d variables", n)
+}
+
 // RecordDelete registers a file deletion. If the file was created in this
 // session, the create is cancelled (net-zero).
 func (s *SessionStats) RecordDelete(path string) {
@@ -118,6 +145,17 @@ func (s *SessionStats) Summary() []string {
 
 	for path, content := range s.final {
 		if content == nil {
+			continue
+		}
+		if co, ok := s.created[path]; ok {
+			switch co.kind {
+			case createScratch:
+				rows = append(rows, row{path, fmt.Sprintf("%s — new file (%s)", path, pluralVars(len(content)))})
+			case createTemplate:
+				rows = append(rows, row{path, fmt.Sprintf("%s — from template %s (%s)", path, co.source, pluralVars(len(content)))})
+			case createDuplicate:
+				// Filled in T6.
+			}
 			continue
 		}
 		base, ok := s.initial[path]

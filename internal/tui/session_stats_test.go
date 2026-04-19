@@ -95,3 +95,41 @@ func TestStats_DeleteUnloadedPath_NotReported(t *testing.T) {
 	s.RecordDelete("/p/.env")
 	assert.Empty(t, s.Summary())
 }
+
+func TestStats_CreateScratch(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordCreateScratch("/p/.env.new", []model.EnvVar{
+		{Key: "FOO", Value: "1"},
+		{Key: "BAR", Value: "2"},
+		{Key: "BAZ", Value: "3"},
+	})
+	assert.Equal(t, []string{"/p/.env.new — new file (3 variables)"}, s.Summary())
+}
+
+func TestStats_CreateScratch_OneVariable_SingularWording(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordCreateScratch("/p/.env.new", []model.EnvVar{{Key: "FOO", Value: "1"}})
+	assert.Equal(t, []string{"/p/.env.new — new file (1 variable)"}, s.Summary())
+}
+
+func TestStats_CreateTemplate(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordCreateTemplate("/p/.env.example", "/p/.env.prod", []model.EnvVar{
+		{Key: "FOO"},
+		{Key: "BAR"},
+	})
+	assert.Equal(t, []string{
+		"/p/.env.example — from template /p/.env.prod (2 variables)",
+	}, s.Summary())
+}
+
+func TestStats_CreateScratch_ThenSaveMoreVars(t *testing.T) {
+	// Post-create saves update final; count reflects final.
+	s := NewSessionStats()
+	s.RecordCreateScratch("/p/.env.new", nil)
+	s.RecordSave("/p/.env.new", []model.EnvVar{
+		{Key: "FOO", Value: "1"},
+		{Key: "BAR", Value: "2"},
+	})
+	assert.Equal(t, []string{"/p/.env.new — new file (2 variables)"}, s.Summary())
+}
