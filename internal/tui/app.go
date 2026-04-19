@@ -102,6 +102,9 @@ type App struct {
 	renameSource       *model.EnvFile // file being renamed
 	templateFileInput  textinput.Model
 	templateSource     *model.EnvFile // source file for template
+
+	// Session statistics: nil when disabled (e.g. read-only or session-summary=false).
+	sessionStats *SessionStats
 }
 
 // NewApp creates a new App model.
@@ -131,6 +134,11 @@ func NewApp(cfg config.Config, warnings []string) App {
 	sb := NewStatusBarModel()
 	sb.ReadOnly = cfg.ReadOnly
 
+	var stats *SessionStats
+	if cfg.SessionSummary && !cfg.ReadOnly {
+		stats = NewSessionStats()
+	}
+
 	return App{
 		config:             cfg,
 		configWarnings:     warnings,
@@ -150,6 +158,7 @@ func NewApp(cfg config.Config, warnings []string) App {
 		renameFileInput:    rfi,
 		templateFileInput:  tfi,
 		backedUpPaths:      make(map[string]bool),
+		sessionStats:       stats,
 	}
 }
 
@@ -204,6 +213,9 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, nil
 		}
 		a.fileList.SetFiles(msg.Files)
+		for _, f := range msg.Files {
+			a.sessionStats.RecordInitialLoad(f.Path, f.Vars)
+		}
 		if len(msg.Files) > 0 {
 			a.varList.SetFile(msg.Files[0])
 			a.varList.ShowSecrets = a.config.ShowAll
