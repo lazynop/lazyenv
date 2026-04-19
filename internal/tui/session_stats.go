@@ -1,6 +1,9 @@
 package tui
 
 import (
+	"fmt"
+	"sort"
+
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
@@ -45,4 +48,79 @@ func snapshot(vars []model.EnvVar) map[string]string {
 		m[v.Key] = v.Value
 	}
 	return m
+}
+
+// RecordInitialLoad snapshots a file's state at session start.
+// No-op on subsequent calls with the same path.
+func (s *SessionStats) RecordInitialLoad(path string, vars []model.EnvVar) {
+	if s == nil {
+		return
+	}
+	if _, ok := s.initial[path]; ok {
+		return
+	}
+	s.initial[path] = snapshot(vars)
+}
+
+// RecordSave snapshots a file's state after a successful write to disk.
+func (s *SessionStats) RecordSave(path string, vars []model.EnvVar) {
+	if s == nil {
+		return
+	}
+	s.final[path] = snapshot(vars)
+}
+
+// diff returns (added, changed, deleted) counts between two snapshots.
+func diff(base, target map[string]string) (added, changed, deleted int) {
+	for k, vt := range target {
+		vb, ok := base[k]
+		if !ok {
+			added++
+			continue
+		}
+		if vb != vt {
+			changed++
+		}
+	}
+	for k := range base {
+		if _, ok := target[k]; !ok {
+			deleted++
+		}
+	}
+	return
+}
+
+// Summary returns one line per file with disk-level changes, alphabetically sorted.
+// Returns nil when there is nothing to report.
+func (s *SessionStats) Summary() []string {
+	if s == nil {
+		return nil
+	}
+
+	type row struct {
+		key, line string
+	}
+	var rows []row
+
+	for path, content := range s.final {
+		if content == nil {
+			continue
+		}
+		base, ok := s.initial[path]
+		if !ok {
+			continue
+		}
+		a, c, d := diff(base, content)
+		if a == 0 && c == 0 && d == 0 {
+			continue
+		}
+		rows = append(rows, row{path, fmt.Sprintf("%s — %d added, %d changed, %d deleted", path, a, c, d)})
+	}
+
+	sort.Slice(rows, func(i, j int) bool { return rows[i].key < rows[j].key })
+	out := make([]string, len(rows))
+	for i, r := range rows {
+		out[i] = r.line
+	}
+	return out
 }
