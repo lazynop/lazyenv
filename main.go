@@ -27,7 +27,8 @@ var cli struct {
 	NoBackup      *bool            `short:"B" name:"no-backup" help:"Disable .bak backup before first save."`
 	NoThemeBg     *bool            `name:"no-theme-bg" help:"Disable theme background color."`
 	NoMouse       *bool            `name:"no-mouse" help:"Disable mouse support."`
-	ReadOnly      *bool            `name:"read-only" help:"Disable all write operations."`
+	ReadOnly       *bool            `name:"read-only" help:"Disable all write operations."`
+	SessionSummary *bool            `name:"session-summary" negatable:"" help:"Print a session summary on exit (default on). Use --no-session-summary to disable."`
 	Sort          *string          `short:"s" name:"sort" help:"Sort order: position or alphabetical." enum:"position,alphabetical"`
 	FileListWidth *int             `name:"file-list-width" help:"Width of the file list panel (0=auto)."`
 	Config        string           `short:"c" name:"config" help:"Path to configuration file." type:"existingfile"`
@@ -59,6 +60,12 @@ func applyCLIOverrides(cfg *config.Config) {
 	}
 	if cli.ReadOnly != nil {
 		cfg.ReadOnly = *cli.ReadOnly
+	}
+	if cli.SessionSummary != nil {
+		cfg.SessionSummary = *cli.SessionSummary
+	}
+	if cfg.ReadOnly {
+		cfg.SessionSummary = false
 	}
 	if cli.FileListWidth != nil {
 		v := *cli.FileListWidth
