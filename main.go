@@ -171,8 +171,14 @@ func main() {
 	app := tui.NewApp(cfg, warnings)
 
 	p := tea.NewProgram(app)
-	if _, err := p.Run(); err != nil {
+	finalModel, err := p.Run()
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
+	}
+	if finalApp, ok := finalModel.(tui.App); ok {
+		if summary := finalApp.SessionSummary(); summary != "" {
+			fmt.Print(summary)
+		}
 	}
 }

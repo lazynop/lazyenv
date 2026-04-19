@@ -162,6 +162,12 @@ func NewApp(cfg config.Config, warnings []string) App {
 	}
 }
 
+// SessionSummary returns the formatted session summary (empty string if disabled
+// or nothing to report).
+func (a App) SessionSummary() string {
+	return a.sessionStats.Format()
+}
+
 func (a App) Init() tea.Cmd {
 	noGitCheck := a.config.NoGitCheck
 	cmds := []tea.Cmd{
