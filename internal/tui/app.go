@@ -898,6 +898,7 @@ func (a App) confirmDuplicateFile() (tea.Model, tea.Cmd) {
 		return a, a.flashMessage("Error creating file: " + err.Error())
 	}
 
+	a.sessionStats.RecordCreateDuplicate(destPath, src.Path, src.Vars)
 	return a.finaliseNewFile(destPath, "Duplicated "+src.Name+" → "+name)
 }
 

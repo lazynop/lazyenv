@@ -61,6 +61,29 @@ func TestApp_SessionStats_CreateScratch(t *testing.T) {
 	}, app.sessionStats.Summary())
 }
 
+func TestApp_SessionStats_Duplicate(t *testing.T) {
+	dir := t.TempDir()
+	srcPath := dir + "/.env"
+	assert.NoError(t, os.WriteFile(srcPath, []byte("FOO=1\nBAR=2\n"), 0644))
+
+	cfg := config.DefaultConfig()
+	cfg.Dir = dir
+	app := NewApp(cfg, nil)
+	ef, _ := parser.ParseFile(srcPath, cfg.Secrets)
+	m, _ := app.Update(FilesLoadedMsg{Files: []*model.EnvFile{ef}})
+	app = m.(App)
+
+	app.duplicateSource = ef
+	app.duplicateFileInput.SetValue(".env.copy")
+	app.mode = ModeDuplicateFile
+	out, _ := app.confirmDuplicateFile()
+	app = out.(App)
+
+	assert.Equal(t, []string{
+		dir + "/.env.copy — duplicated from " + srcPath + " (2 variables)",
+	}, app.sessionStats.Summary())
+}
+
 func TestApp_SessionStats_HandleSave(t *testing.T) {
 	dir := t.TempDir()
 	path := dir + "/.env"
