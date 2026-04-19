@@ -121,6 +121,30 @@ func (s *SessionStats) RecordDelete(path string) {
 	s.final[path] = nil
 }
 
+// RecordRename registers a file rename. Handles chain collapse and
+// rename-back-to-origin (no rename recorded in that case).
+func (s *SessionStats) RecordRename(oldPath, newPath string) {
+	if s == nil {
+		return
+	}
+	origin := oldPath
+	if prev, ok := s.renames[oldPath]; ok {
+		origin = prev
+		delete(s.renames, oldPath)
+	}
+	if origin != newPath {
+		s.renames[newPath] = origin
+	}
+	if f, ok := s.final[oldPath]; ok {
+		s.final[newPath] = f
+		delete(s.final, oldPath)
+	}
+	if co, ok := s.created[oldPath]; ok {
+		s.created[newPath] = co
+		delete(s.created, oldPath)
+	}
+}
+
 // diff returns (added, changed, deleted) counts between two snapshots.
 func diff(base, target map[string]string) (added, changed, deleted int) {
 	for k, vt := range target {
@@ -171,6 +195,11 @@ func (s *SessionStats) Summary() []string {
 					rows = append(rows, row{path, fmt.Sprintf("%s — duplicated from %s, %d added, %d changed, %d deleted", path, co.source, a, c, d)})
 				}
 			}
+			continue
+		}
+		if origin, ok := s.renames[path]; ok {
+			a, c, d := diff(s.initial[origin], content)
+			rows = append(rows, row{path, fmt.Sprintf("%s (renamed from %s) — %d added, %d changed, %d deleted", path, origin, a, c, d)})
 			continue
 		}
 		base, ok := s.initial[path]

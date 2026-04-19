@@ -169,3 +169,34 @@ func TestStats_CreateThenDelete_NetZero(t *testing.T) {
 	s.RecordDelete("/p/.env.new")
 	assert.Empty(t, s.Summary())
 }
+
+func TestStats_Rename_NoEdits(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordInitialLoad("/p/.env.local", []model.EnvVar{{Key: "FOO", Value: "1"}})
+	s.RecordRename("/p/.env.local", "/p/.env.dev")
+	s.RecordSave("/p/.env.dev", []model.EnvVar{{Key: "FOO", Value: "1"}})
+	assert.Equal(t, []string{
+		"/p/.env.dev (renamed from /p/.env.local) — 0 added, 0 changed, 0 deleted",
+	}, s.Summary())
+}
+
+func TestStats_Rename_WithEdits(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordInitialLoad("/p/.env.local", []model.EnvVar{
+		{Key: "FOO", Value: "1"},
+		{Key: "BAR", Value: "2"},
+	})
+	s.RecordSave("/p/.env.local", []model.EnvVar{
+		{Key: "FOO", Value: "1"},
+		{Key: "BAR", Value: "2"},
+	})
+	s.RecordRename("/p/.env.local", "/p/.env.dev")
+	s.RecordSave("/p/.env.dev", []model.EnvVar{
+		{Key: "FOO", Value: "1"},
+		{Key: "BAR", Value: "changed"},
+		{Key: "BAZ", Value: "3"},
+	})
+	assert.Equal(t, []string{
+		"/p/.env.dev (renamed from /p/.env.local) — 1 added, 1 changed, 0 deleted",
+	}, s.Summary())
+}
