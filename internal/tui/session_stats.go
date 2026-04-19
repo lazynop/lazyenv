@@ -70,6 +70,20 @@ func (s *SessionStats) RecordSave(path string, vars []model.EnvVar) {
 	s.final[path] = snapshot(vars)
 }
 
+// RecordDelete registers a file deletion. If the file was created in this
+// session, the create is cancelled (net-zero).
+func (s *SessionStats) RecordDelete(path string) {
+	if s == nil {
+		return
+	}
+	if _, wasCreated := s.created[path]; wasCreated {
+		delete(s.created, path)
+		delete(s.final, path)
+		return
+	}
+	s.final[path] = nil
+}
+
 // diff returns (added, changed, deleted) counts between two snapshots.
 func diff(base, target map[string]string) (added, changed, deleted int) {
 	for k, vt := range target {
@@ -115,6 +129,21 @@ func (s *SessionStats) Summary() []string {
 			continue
 		}
 		rows = append(rows, row{path, fmt.Sprintf("%s — %d added, %d changed, %d deleted", path, a, c, d)})
+	}
+
+	// Pass 2: deletions.
+	for path, content := range s.final {
+		if content != nil {
+			continue
+		}
+		target := path
+		if origin, ok := s.renames[path]; ok {
+			target = origin
+		}
+		if _, hadInitial := s.initial[target]; !hadInitial {
+			continue
+		}
+		rows = append(rows, row{target, fmt.Sprintf("%s — deleted", target)})
 	}
 
 	sort.Slice(rows, func(i, j int) bool { return rows[i].key < rows[j].key })

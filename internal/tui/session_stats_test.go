@@ -80,3 +80,18 @@ func TestStats_NilReceiver_Safe(t *testing.T) {
 	s.RecordSave("/p/.env", nil)
 	assert.Empty(t, s.Summary())
 }
+
+func TestStats_DeleteExistingFile(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordInitialLoad("/p/.env", []model.EnvVar{{Key: "FOO", Value: "1"}})
+	s.RecordDelete("/p/.env")
+
+	assert.Equal(t, []string{"/p/.env — deleted"}, s.Summary())
+}
+
+func TestStats_DeleteUnloadedPath_NotReported(t *testing.T) {
+	// Deleting a file we never had in `initial` (shouldn't happen in practice).
+	s := NewSessionStats()
+	s.RecordDelete("/p/.env")
+	assert.Empty(t, s.Summary())
+}
