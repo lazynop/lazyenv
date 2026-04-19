@@ -162,3 +162,10 @@ func TestStats_CreateDuplicate_WithEdits(t *testing.T) {
 		"/p/.env.copy — duplicated from /p/.env.local, 1 added, 1 changed, 1 deleted",
 	}, s.Summary())
 }
+
+func TestStats_CreateThenDelete_NetZero(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordCreateScratch("/p/.env.new", []model.EnvVar{{Key: "FOO", Value: "1"}})
+	s.RecordDelete("/p/.env.new")
+	assert.Empty(t, s.Summary())
+}
