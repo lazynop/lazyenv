@@ -41,8 +41,9 @@ func NewSessionStats() *SessionStats {
 	}
 }
 
-// snapshot builds a key→value map from []EnvVar using shell semantics
-// (last occurrence wins for duplicate keys).
+// snapshot builds a key→value map from vars using shell semantics: later
+// occurrences of a duplicate key overwrite earlier ones, matching what a shell
+// would see when sourcing the file.
 func snapshot(vars []model.EnvVar) map[string]string {
 	m := make(map[string]string, len(vars))
 	for _, v := range vars {
@@ -51,8 +52,8 @@ func snapshot(vars []model.EnvVar) map[string]string {
 	return m
 }
 
-// RecordInitialLoad snapshots a file's state at session start.
-// No-op on subsequent calls with the same path.
+// RecordInitialLoad is idempotent: only the first call for a given path wins,
+// so the baseline always reflects the true session-start state.
 func (s *SessionStats) RecordInitialLoad(path string, vars []model.EnvVar) {
 	if s == nil {
 		return
@@ -63,7 +64,6 @@ func (s *SessionStats) RecordInitialLoad(path string, vars []model.EnvVar) {
 	s.initial[path] = snapshot(vars)
 }
 
-// RecordSave snapshots a file's state after a successful write to disk.
 func (s *SessionStats) RecordSave(path string, vars []model.EnvVar) {
 	if s == nil {
 		return
@@ -71,33 +71,30 @@ func (s *SessionStats) RecordSave(path string, vars []model.EnvVar) {
 	s.final[path] = snapshot(vars)
 }
 
-// RecordCreateScratch registers a file created from scratch (empty body).
 func (s *SessionStats) RecordCreateScratch(path string, vars []model.EnvVar) {
-	if s == nil {
-		return
-	}
-	snap := snapshot(vars)
-	s.created[path] = createOrigin{kind: createScratch, initialVars: snap}
-	s.final[path] = snap
+	s.recordCreate(path, createScratch, "", vars)
 }
 
-// RecordCreateTemplate registers a file created as a keys-only template of src.
 func (s *SessionStats) RecordCreateTemplate(path, source string, vars []model.EnvVar) {
-	if s == nil {
-		return
-	}
-	snap := snapshot(vars)
-	s.created[path] = createOrigin{kind: createTemplate, source: source, initialVars: snap}
-	s.final[path] = snap
+	s.recordCreate(path, createTemplate, source, vars)
 }
 
-// RecordCreateDuplicate registers a byte-for-byte copy of source.
 func (s *SessionStats) RecordCreateDuplicate(path, source string, vars []model.EnvVar) {
+	s.recordCreate(path, createDuplicate, source, vars)
+}
+
+func (s *SessionStats) recordCreate(path string, kind createKind, source string, vars []model.EnvVar) {
 	if s == nil {
 		return
 	}
 	snap := snapshot(vars)
-	s.created[path] = createOrigin{kind: createDuplicate, source: source, initialVars: snap}
+	origin := createOrigin{kind: kind, source: source}
+	// initialVars is only consulted for createDuplicate (diff against post-create edits).
+	// Storing it for scratch/template would be dead weight.
+	if kind == createDuplicate {
+		origin.initialVars = snap
+	}
+	s.created[path] = origin
 	s.final[path] = snap
 }
 
@@ -108,8 +105,8 @@ func pluralVars(n int) string {
 	return fmt.Sprintf("%d variables", n)
 }
 
-// RecordDelete registers a file deletion. If the file was created in this
-// session, the create is cancelled (net-zero).
+// RecordDelete cancels a same-session create (net-zero) rather than recording
+// a delete for paths that didn't exist at session start.
 func (s *SessionStats) RecordDelete(path string) {
 	if s == nil {
 		return
@@ -122,8 +119,8 @@ func (s *SessionStats) RecordDelete(path string) {
 	s.final[path] = nil
 }
 
-// RecordRename registers a file rename. Handles chain collapse and
-// rename-back-to-origin (no rename recorded in that case).
+// RecordRename collapses chains (a→b→c is recorded as c from a) and detects
+// rename-back-to-origin (a→b→a leaves no trace).
 func (s *SessionStats) RecordRename(oldPath, newPath string) {
 	if s == nil {
 		return
@@ -146,7 +143,6 @@ func (s *SessionStats) RecordRename(oldPath, newPath string) {
 	}
 }
 
-// diff returns (added, changed, deleted) counts between two snapshots.
 func diff(base, target map[string]string) (added, changed, deleted int) {
 	for k, vt := range target {
 		vb, ok := base[k]
@@ -167,7 +163,7 @@ func diff(base, target map[string]string) (added, changed, deleted int) {
 }
 
 // Summary returns one line per file with disk-level changes, alphabetically sorted.
-// Returns nil when there is nothing to report.
+// nil when there is nothing to report.
 func (s *SessionStats) Summary() []string {
 	if s == nil {
 		return nil
@@ -201,18 +197,15 @@ func (s *SessionStats) Summary() []string {
 	return out
 }
 
-// formatLiveRow formats the row for a path whose final state is present on disk.
-// Returns ok=false when there is nothing to report (content==nil, net-zero, etc.).
 func (s *SessionStats) formatLiveRow(path string, content map[string]string) (string, bool) {
 	if content == nil {
 		return "", false
 	}
 	if co, ok := s.created[path]; ok {
-		return formatCreatedRow(path, co, content), true
+		return s.formatCreatedRow(path, co, content), true
 	}
 	if origin, ok := s.renames[path]; ok {
-		a, c, d := diff(s.initial[origin], content)
-		return fmt.Sprintf("%s (renamed from %s) — %d added, %d changed, %d deleted", path, origin, a, c, d), true
+		return fmt.Sprintf("%s (renamed from %s) — %s", path, origin, diffCounts(s.initial[origin], content)), true
 	}
 	base, ok := s.initial[path]
 	if !ok {
@@ -222,11 +215,9 @@ func (s *SessionStats) formatLiveRow(path string, content map[string]string) (st
 	if a == 0 && c == 0 && d == 0 {
 		return "", false
 	}
-	return fmt.Sprintf("%s — %d added, %d changed, %d deleted", path, a, c, d), true
+	return fmt.Sprintf("%s — %s", path, formatCounts(a, c, d)), true
 }
 
-// formatDeletedRow formats the row for a deleted path, mapping back to the
-// rename origin when applicable.
 func (s *SessionStats) formatDeletedRow(path string) (string, string, bool) {
 	target := path
 	if origin, ok := s.renames[path]; ok {
@@ -238,8 +229,7 @@ func (s *SessionStats) formatDeletedRow(path string) (string, string, bool) {
 	return target, fmt.Sprintf("%s — deleted", target), true
 }
 
-// formatCreatedRow formats the row for a path created during the session.
-func formatCreatedRow(path string, co createOrigin, content map[string]string) string {
+func (s *SessionStats) formatCreatedRow(path string, co createOrigin, content map[string]string) string {
 	switch co.kind {
 	case createScratch:
 		return fmt.Sprintf("%s — new file (%s)", path, pluralVars(len(content)))
@@ -250,13 +240,22 @@ func formatCreatedRow(path string, co createOrigin, content map[string]string) s
 		if a == 0 && c == 0 && d == 0 {
 			return fmt.Sprintf("%s — duplicated from %s (%s)", path, co.source, pluralVars(len(content)))
 		}
-		return fmt.Sprintf("%s — duplicated from %s, %d added, %d changed, %d deleted", path, co.source, a, c, d)
+		return fmt.Sprintf("%s — duplicated from %s, %s", path, co.source, formatCounts(a, c, d))
 	}
 	return ""
 }
 
-// Format returns the full stdout-ready summary block (including trailing newline),
-// or "" when there is nothing to report.
+func formatCounts(added, changed, deleted int) string {
+	return fmt.Sprintf("%d added, %d changed, %d deleted", added, changed, deleted)
+}
+
+func diffCounts(base, target map[string]string) string {
+	a, c, d := diff(base, target)
+	return formatCounts(a, c, d)
+}
+
+// Format returns the stdout-ready summary block (with trailing newline), or ""
+// when there is nothing to report.
 func (s *SessionStats) Format() string {
 	lines := s.Summary()
 	if len(lines) == 0 {

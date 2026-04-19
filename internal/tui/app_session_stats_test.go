@@ -45,6 +45,26 @@ func TestApp_SessionStats_InitialLoadRecorded(t *testing.T) {
 	assert.Empty(t, got.sessionStats.Summary()) // no changes yet
 }
 
+// setupStatsFixture bootstraps a tempdir with a single .env file loaded into
+// an App with SessionStats enabled. Returns the post-load app, the parsed
+// EnvFile, the tempdir and the file path.
+func setupStatsFixture(t *testing.T, name, body string) (App, *model.EnvFile, string, string) {
+	t.Helper()
+	dir := t.TempDir()
+	path := dir + "/" + name
+	require.NoError(t, os.WriteFile(path, []byte(body), 0644))
+
+	cfg := config.DefaultConfig()
+	cfg.Dir = dir
+	cfg.NoBackup = true
+	app := NewApp(cfg, nil)
+
+	ef, err := parser.ParseFile(path, cfg.Secrets)
+	require.NoError(t, err)
+	out, _ := app.Update(FilesLoadedMsg{Files: []*model.EnvFile{ef}})
+	return out.(App), ef, dir, path
+}
+
 func TestApp_SessionStats_CreateScratch(t *testing.T) {
 	dir := t.TempDir()
 	cfg := config.DefaultConfig()
@@ -64,16 +84,7 @@ func TestApp_SessionStats_CreateScratch(t *testing.T) {
 }
 
 func TestApp_SessionStats_Duplicate(t *testing.T) {
-	dir := t.TempDir()
-	srcPath := dir + "/.env"
-	assert.NoError(t, os.WriteFile(srcPath, []byte("FOO=1\nBAR=2\n"), 0644))
-
-	cfg := config.DefaultConfig()
-	cfg.Dir = dir
-	app := NewApp(cfg, nil)
-	ef, _ := parser.ParseFile(srcPath, cfg.Secrets)
-	m, _ := app.Update(FilesLoadedMsg{Files: []*model.EnvFile{ef}})
-	app = m.(App)
+	app, ef, dir, srcPath := setupStatsFixture(t, ".env", "FOO=1\nBAR=2\n")
 
 	app.duplicateSource = ef
 	app.duplicateFileInput.SetValue(".env.copy")
@@ -87,16 +98,7 @@ func TestApp_SessionStats_Duplicate(t *testing.T) {
 }
 
 func TestApp_SessionStats_Template(t *testing.T) {
-	dir := t.TempDir()
-	srcPath := dir + "/.env"
-	assert.NoError(t, os.WriteFile(srcPath, []byte("FOO=1\nBAR=2\n"), 0644))
-
-	cfg := config.DefaultConfig()
-	cfg.Dir = dir
-	app := NewApp(cfg, nil)
-	ef, _ := parser.ParseFile(srcPath, cfg.Secrets)
-	m, _ := app.Update(FilesLoadedMsg{Files: []*model.EnvFile{ef}})
-	app = m.(App)
+	app, ef, dir, srcPath := setupStatsFixture(t, ".env", "FOO=1\nBAR=2\n")
 
 	app.templateSource = ef
 	app.templateFileInput.SetValue(".env.example")
@@ -110,17 +112,7 @@ func TestApp_SessionStats_Template(t *testing.T) {
 }
 
 func TestApp_SessionStats_Rename(t *testing.T) {
-	dir := t.TempDir()
-	oldPath := dir + "/.env.local"
-	assert.NoError(t, os.WriteFile(oldPath, []byte("FOO=1\n"), 0644))
-
-	cfg := config.DefaultConfig()
-	cfg.Dir = dir
-	cfg.NoBackup = true
-	app := NewApp(cfg, nil)
-	ef, _ := parser.ParseFile(oldPath, cfg.Secrets)
-	m, _ := app.Update(FilesLoadedMsg{Files: []*model.EnvFile{ef}})
-	app = m.(App)
+	app, ef, dir, oldPath := setupStatsFixture(t, ".env.local", "FOO=1\n")
 
 	app.renameSource = ef
 	app.renameFileInput.SetValue(".env.dev")
@@ -129,10 +121,9 @@ func TestApp_SessionStats_Rename(t *testing.T) {
 	app = out.(App)
 
 	newPath := dir + "/.env.dev"
-	// After rename without save, final for the new path is not set yet → no output.
+	// Without save, final for the new path isn't populated yet.
 	assert.Empty(t, app.sessionStats.Summary())
 
-	// Force a save to populate `final` under the new path.
 	app.varList.File.AddVar("BAR", "2", false)
 	app, _ = app.handleSave()
 
@@ -216,16 +207,7 @@ func TestApp_SessionStats_EndToEnd(t *testing.T) {
 }
 
 func TestApp_SessionStats_Delete(t *testing.T) {
-	dir := t.TempDir()
-	path := dir + "/.env"
-	assert.NoError(t, os.WriteFile(path, []byte("FOO=1\n"), 0644))
-
-	cfg := config.DefaultConfig()
-	cfg.Dir = dir
-	app := NewApp(cfg, nil)
-	ef, _ := parser.ParseFile(path, cfg.Secrets)
-	m, _ := app.Update(FilesLoadedMsg{Files: []*model.EnvFile{ef}})
-	app = m.(App)
+	app, _, _, path := setupStatsFixture(t, ".env", "FOO=1\n")
 
 	app.mode = ModeConfirmDeleteFile
 	out, _ := app.handleConfirmDeleteFileKey(tea.KeyPressMsg{Text: "y"})
@@ -235,21 +217,8 @@ func TestApp_SessionStats_Delete(t *testing.T) {
 }
 
 func TestApp_SessionStats_HandleSave(t *testing.T) {
-	dir := t.TempDir()
-	path := dir + "/.env"
-	assert.NoError(t, os.WriteFile(path, []byte("FOO=1\n"), 0644))
+	app, _, _, path := setupStatsFixture(t, ".env", "FOO=1\n")
 
-	cfg := config.DefaultConfig()
-	cfg.Dir = dir
-	cfg.NoBackup = true
-	app := NewApp(cfg, nil)
-
-	ef, err := parser.ParseFile(path, cfg.Secrets)
-	assert.NoError(t, err)
-	out, _ := app.Update(FilesLoadedMsg{Files: []*model.EnvFile{ef}})
-	app = out.(App)
-
-	// Mutate in memory, then save.
 	app.varList.File.UpdateVar(0, "99")
 	app, _ = app.handleSave()
 
