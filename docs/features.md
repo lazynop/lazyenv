@@ -86,6 +86,24 @@ Disable all write operations with `--read-only` or `read-only = true` in config.
 
 Useful for safely inspecting production `.env` files without risk of accidental modifications.
 
+## Session summary
+
+When you exit lazyenv, a recap of disk-level changes is printed to stdout. It lists only files that actually changed on disk during the session — created, deleted, renamed, duplicated, templated, or with different content from session start.
+
+Example:
+
+```
+Session summary:
+  .env.local                           — 2 added, 1 changed, 0 deleted
+  .env.dev (renamed from .env.local)   — 0 added, 2 changed, 0 deleted
+  .env.backup                          — duplicated from .env.local, 1 changed, 2 deleted
+  .env.fresh                           — new file (3 variables)
+  .env.schema                          — from template .env.production (8 variables)
+  .env.old                             — deleted
+```
+
+Silent when nothing changed. Disable via `session-summary = false` in config or the `--no-session-summary` flag. `--read-only` disables it implicitly.
+
 ## Mouse support
 
 Click to select files, variables, diff entries, and matrix cells. Scroll wheel navigates the panel under the mouse cursor. Disable with `--no-mouse` or `no-mouse = true` in config.
