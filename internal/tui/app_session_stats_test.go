@@ -1,12 +1,14 @@
 package tui
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 func TestApp_SessionStats_InitDisabledByReadOnly(t *testing.T) {
@@ -39,4 +41,26 @@ func TestApp_SessionStats_InitialLoadRecorded(t *testing.T) {
 	got := out.(App)
 	assert.NotNil(t, got.sessionStats)
 	assert.Empty(t, got.sessionStats.Summary()) // no changes yet
+}
+
+func TestApp_SessionStats_HandleSave(t *testing.T) {
+	dir := t.TempDir()
+	path := dir + "/.env"
+	assert.NoError(t, os.WriteFile(path, []byte("FOO=1\n"), 0644))
+
+	cfg := config.DefaultConfig()
+	cfg.Dir = dir
+	cfg.NoBackup = true
+	app := NewApp(cfg, nil)
+
+	ef, err := parser.ParseFile(path, cfg.Secrets)
+	assert.NoError(t, err)
+	out, _ := app.Update(FilesLoadedMsg{Files: []*model.EnvFile{ef}})
+	app = out.(App)
+
+	// Mutate in memory, then save.
+	app.varList.File.UpdateVar(0, "99")
+	app, _ = app.handleSave()
+
+	assert.Equal(t, []string{path + " — 0 added, 1 changed, 0 deleted"}, app.sessionStats.Summary())
 }

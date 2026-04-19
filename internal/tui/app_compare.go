@@ -125,6 +125,7 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 			refreshed, err := parser.ParseFile(f.Path, a.config.Secrets)
 			if err == nil {
 				refreshed.GitWarning = f.GitWarning
+				a.sessionStats.RecordSave(f.Path, refreshed.Vars)
 				for i, existing := range a.fileList.Files {
 					if existing.Path == f.Path {
 						a.fileList.Files[i] = refreshed
