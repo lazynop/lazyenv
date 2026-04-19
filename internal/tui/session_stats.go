@@ -179,54 +179,18 @@ func (s *SessionStats) Summary() []string {
 	var rows []row
 
 	for path, content := range s.final {
-		if content == nil {
-			continue
+		if line, ok := s.formatLiveRow(path, content); ok {
+			rows = append(rows, row{path, line})
 		}
-		if co, ok := s.created[path]; ok {
-			switch co.kind {
-			case createScratch:
-				rows = append(rows, row{path, fmt.Sprintf("%s — new file (%s)", path, pluralVars(len(content)))})
-			case createTemplate:
-				rows = append(rows, row{path, fmt.Sprintf("%s — from template %s (%s)", path, co.source, pluralVars(len(content)))})
-			case createDuplicate:
-				a, c, d := diff(co.initialVars, content)
-				if a == 0 && c == 0 && d == 0 {
-					rows = append(rows, row{path, fmt.Sprintf("%s — duplicated from %s (%s)", path, co.source, pluralVars(len(content)))})
-				} else {
-					rows = append(rows, row{path, fmt.Sprintf("%s — duplicated from %s, %d added, %d changed, %d deleted", path, co.source, a, c, d)})
-				}
-			}
-			continue
-		}
-		if origin, ok := s.renames[path]; ok {
-			a, c, d := diff(s.initial[origin], content)
-			rows = append(rows, row{path, fmt.Sprintf("%s (renamed from %s) — %d added, %d changed, %d deleted", path, origin, a, c, d)})
-			continue
-		}
-		base, ok := s.initial[path]
-		if !ok {
-			continue
-		}
-		a, c, d := diff(base, content)
-		if a == 0 && c == 0 && d == 0 {
-			continue
-		}
-		rows = append(rows, row{path, fmt.Sprintf("%s — %d added, %d changed, %d deleted", path, a, c, d)})
 	}
-
-	// Pass 2: deletions.
 	for path, content := range s.final {
 		if content != nil {
 			continue
 		}
-		target := path
-		if origin, ok := s.renames[path]; ok {
-			target = origin
+		target, line, ok := s.formatDeletedRow(path)
+		if ok {
+			rows = append(rows, row{target, line})
 		}
-		if _, hadInitial := s.initial[target]; !hadInitial {
-			continue
-		}
-		rows = append(rows, row{target, fmt.Sprintf("%s — deleted", target)})
 	}
 
 	sort.Slice(rows, func(i, j int) bool { return rows[i].key < rows[j].key })
@@ -235,6 +199,60 @@ func (s *SessionStats) Summary() []string {
 		out[i] = r.line
 	}
 	return out
+}
+
+// formatLiveRow formats the row for a path whose final state is present on disk.
+// Returns ok=false when there is nothing to report (content==nil, net-zero, etc.).
+func (s *SessionStats) formatLiveRow(path string, content map[string]string) (string, bool) {
+	if content == nil {
+		return "", false
+	}
+	if co, ok := s.created[path]; ok {
+		return formatCreatedRow(path, co, content), true
+	}
+	if origin, ok := s.renames[path]; ok {
+		a, c, d := diff(s.initial[origin], content)
+		return fmt.Sprintf("%s (renamed from %s) — %d added, %d changed, %d deleted", path, origin, a, c, d), true
+	}
+	base, ok := s.initial[path]
+	if !ok {
+		return "", false
+	}
+	a, c, d := diff(base, content)
+	if a == 0 && c == 0 && d == 0 {
+		return "", false
+	}
+	return fmt.Sprintf("%s — %d added, %d changed, %d deleted", path, a, c, d), true
+}
+
+// formatDeletedRow formats the row for a deleted path, mapping back to the
+// rename origin when applicable.
+func (s *SessionStats) formatDeletedRow(path string) (string, string, bool) {
+	target := path
+	if origin, ok := s.renames[path]; ok {
+		target = origin
+	}
+	if _, hadInitial := s.initial[target]; !hadInitial {
+		return "", "", false
+	}
+	return target, fmt.Sprintf("%s — deleted", target), true
+}
+
+// formatCreatedRow formats the row for a path created during the session.
+func formatCreatedRow(path string, co createOrigin, content map[string]string) string {
+	switch co.kind {
+	case createScratch:
+		return fmt.Sprintf("%s — new file (%s)", path, pluralVars(len(content)))
+	case createTemplate:
+		return fmt.Sprintf("%s — from template %s (%s)", path, co.source, pluralVars(len(content)))
+	case createDuplicate:
+		a, c, d := diff(co.initialVars, content)
+		if a == 0 && c == 0 && d == 0 {
+			return fmt.Sprintf("%s — duplicated from %s (%s)", path, co.source, pluralVars(len(content)))
+		}
+		return fmt.Sprintf("%s — duplicated from %s, %d added, %d changed, %d deleted", path, co.source, a, c, d)
+	}
+	return ""
 }
 
 // Format returns the full stdout-ready summary block (including trailing newline),

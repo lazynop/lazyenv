@@ -4,13 +4,13 @@ import "time"
 
 // Config holds all application configuration.
 type Config struct {
-	Dir        string `toml:"-"` // CLI-only, not in config file
-	Recursive  bool   `toml:"recursive"`
-	ShowAll    bool   `toml:"show-secrets"`
-	NoGitCheck bool   `toml:"no-git-check"`
-	NoBackup   bool   `toml:"no-backup"`
-	NoThemeBg  bool   `toml:"no-theme-bg"`
-	NoMouse    bool   `toml:"no-mouse"`
+	Dir            string `toml:"-"` // CLI-only, not in config file
+	Recursive      bool   `toml:"recursive"`
+	ShowAll        bool   `toml:"show-secrets"`
+	NoGitCheck     bool   `toml:"no-git-check"`
+	NoBackup       bool   `toml:"no-backup"`
+	NoThemeBg      bool   `toml:"no-theme-bg"`
+	NoMouse        bool   `toml:"no-mouse"`
 	ReadOnly       bool   `toml:"read-only"`
 	SessionSummary bool   `toml:"session-summary"`
 	Sort           string `toml:"sort"`            // "position" | "alphabetical"

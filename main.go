@@ -20,23 +20,23 @@ var (
 )
 
 var cli struct {
-	Path          string           `arg:"" optional:"" default:"." help:"Directory to scan." type:"existingdir"`
-	Recursive     *bool            `short:"r" help:"Scan subdirectories recursively."`
-	ShowAll       *bool            `short:"a" name:"show-all" help:"Show secrets in cleartext at startup."`
-	NoGitCheck    *bool            `short:"G" name:"no-git-check" help:"Disable .gitignore check."`
-	NoBackup      *bool            `short:"B" name:"no-backup" help:"Disable .bak backup before first save."`
-	NoThemeBg     *bool            `name:"no-theme-bg" help:"Disable theme background color."`
-	NoMouse       *bool            `name:"no-mouse" help:"Disable mouse support."`
+	Path           string           `arg:"" optional:"" default:"." help:"Directory to scan." type:"existingdir"`
+	Recursive      *bool            `short:"r" help:"Scan subdirectories recursively."`
+	ShowAll        *bool            `short:"a" name:"show-all" help:"Show secrets in cleartext at startup."`
+	NoGitCheck     *bool            `short:"G" name:"no-git-check" help:"Disable .gitignore check."`
+	NoBackup       *bool            `short:"B" name:"no-backup" help:"Disable .bak backup before first save."`
+	NoThemeBg      *bool            `name:"no-theme-bg" help:"Disable theme background color."`
+	NoMouse        *bool            `name:"no-mouse" help:"Disable mouse support."`
 	ReadOnly       *bool            `name:"read-only" help:"Disable all write operations."`
 	SessionSummary *bool            `name:"session-summary" negatable:"" help:"Print a session summary on exit (default on). Use --no-session-summary to disable."`
-	Sort          *string          `short:"s" name:"sort" help:"Sort order: position or alphabetical." enum:"position,alphabetical"`
-	FileListWidth *int             `name:"file-list-width" help:"Width of the file list panel (0=auto)."`
-	Config        string           `short:"c" name:"config" help:"Path to configuration file." type:"existingfile"`
-	CheckConfig   bool             `name:"check-config" help:"Validate configuration file and exit."`
-	ShowConfig    bool             `name:"show-config" help:"Show effective configuration and exit."`
-	ListThemes    bool             `name:"list-themes" help:"List available built-in themes and exit."`
-	Themes        bool             `name:"themes" help:"Interactive theme preview."`
-	Version       kong.VersionFlag `short:"v" help:"Show version."`
+	Sort           *string          `short:"s" name:"sort" help:"Sort order: position or alphabetical." enum:"position,alphabetical"`
+	FileListWidth  *int             `name:"file-list-width" help:"Width of the file list panel (0=auto)."`
+	Config         string           `short:"c" name:"config" help:"Path to configuration file." type:"existingfile"`
+	CheckConfig    bool             `name:"check-config" help:"Validate configuration file and exit."`
+	ShowConfig     bool             `name:"show-config" help:"Show effective configuration and exit."`
+	ListThemes     bool             `name:"list-themes" help:"List available built-in themes and exit."`
+	Themes         bool             `name:"themes" help:"Interactive theme preview."`
+	Version        kong.VersionFlag `short:"v" help:"Show version."`
 }
 
 func applyCLIOverrides(cfg *config.Config) {
@@ -61,12 +61,7 @@ func applyCLIOverrides(cfg *config.Config) {
 	if cli.ReadOnly != nil {
 		cfg.ReadOnly = *cli.ReadOnly
 	}
-	if cli.SessionSummary != nil {
-		cfg.SessionSummary = *cli.SessionSummary
-	}
-	if cfg.ReadOnly {
-		cfg.SessionSummary = false
-	}
+	applySessionSummaryOverride(cfg)
 	if cli.FileListWidth != nil {
 		v := *cli.FileListWidth
 		if v != 0 && v < config.FileListMinWidth {
@@ -84,6 +79,17 @@ func applyCLIOverrides(cfg *config.Config) {
 		if _, err := exec.LookPath("git"); err != nil {
 			cfg.NoGitCheck = true
 		}
+	}
+}
+
+// applySessionSummaryOverride resolves the final SessionSummary value: CLI flag
+// wins over config file, and --read-only forces it off.
+func applySessionSummaryOverride(cfg *config.Config) {
+	if cli.SessionSummary != nil {
+		cfg.SessionSummary = *cli.SessionSummary
+	}
+	if cfg.ReadOnly {
+		cfg.SessionSummary = false
 	}
 }
 
