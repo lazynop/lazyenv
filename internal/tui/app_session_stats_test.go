@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lazynop/lazyenv/internal/config"
@@ -137,6 +138,25 @@ func TestApp_SessionStats_Rename(t *testing.T) {
 	assert.Equal(t, []string{
 		newPath + " (renamed from " + oldPath + ") — 1 added, 0 changed, 0 deleted",
 	}, app.sessionStats.Summary())
+}
+
+func TestApp_SessionStats_Delete(t *testing.T) {
+	dir := t.TempDir()
+	path := dir + "/.env"
+	assert.NoError(t, os.WriteFile(path, []byte("FOO=1\n"), 0644))
+
+	cfg := config.DefaultConfig()
+	cfg.Dir = dir
+	app := NewApp(cfg, nil)
+	ef, _ := parser.ParseFile(path, cfg.Secrets)
+	m, _ := app.Update(FilesLoadedMsg{Files: []*model.EnvFile{ef}})
+	app = m.(App)
+
+	app.mode = ModeConfirmDeleteFile
+	out, _ := app.handleConfirmDeleteFileKey(tea.KeyPressMsg{Text: "y"})
+	app = out.(App)
+
+	assert.Equal(t, []string{path + " — deleted"}, app.sessionStats.Summary())
 }
 
 func TestApp_SessionStats_HandleSave(t *testing.T) {

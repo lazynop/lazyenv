@@ -966,6 +966,8 @@ func (a App) handleConfirmDeleteFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd
 			return a, a.flashMessage("Error deleting file: " + err.Error())
 		}
 
+		a.sessionStats.RecordDelete(f.Path)
+
 		// Remove from file list
 		idx := -1
 		for i, ef := range a.fileList.Files {
