@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/lazynop/lazyenv/internal/model"
 )
@@ -234,4 +235,21 @@ func (s *SessionStats) Summary() []string {
 		out[i] = r.line
 	}
 	return out
+}
+
+// Format returns the full stdout-ready summary block (including trailing newline),
+// or "" when there is nothing to report.
+func (s *SessionStats) Format() string {
+	lines := s.Summary()
+	if len(lines) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	b.WriteString("Session summary:\n")
+	for _, line := range lines {
+		b.WriteString("  ")
+		b.WriteString(line)
+		b.WriteByte('\n')
+	}
+	return b.String()
 }

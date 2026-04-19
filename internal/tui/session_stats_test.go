@@ -259,3 +259,24 @@ func TestStats_CreateThenRenameThenDelete_NetZero(t *testing.T) {
 
 	assert.Empty(t, s.Summary())
 }
+
+func TestStats_Format_Empty(t *testing.T) {
+	s := NewSessionStats()
+	assert.Equal(t, "", s.Format())
+}
+
+func TestStats_Format_MultipleFilesAlphabetical(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordInitialLoad("/p/.env.staging", []model.EnvVar{{Key: "X", Value: "1"}})
+	s.RecordInitialLoad("/p/.env.local", []model.EnvVar{{Key: "Y", Value: "1"}})
+	s.RecordSave("/p/.env.staging", []model.EnvVar{{Key: "X", Value: "2"}})
+	s.RecordCreateScratch("/p/.env.new", []model.EnvVar{{Key: "Z", Value: "1"}})
+	s.RecordDelete("/p/.env.local")
+
+	got := s.Format()
+	want := "Session summary:\n" +
+		"  /p/.env.local — deleted\n" +
+		"  /p/.env.new — new file (1 variable)\n" +
+		"  /p/.env.staging — 0 added, 1 changed, 0 deleted\n"
+	assert.Equal(t, want, got)
+}
