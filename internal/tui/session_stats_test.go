@@ -240,3 +240,22 @@ func TestStats_RenameThenDelete_ReportsOriginDeleted(t *testing.T) {
 
 	assert.Equal(t, []string{"/p/a — deleted"}, s.Summary())
 }
+
+func TestStats_CreateThenRename_KeepsCreateOrigin(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordCreateScratch("/p/.env.fresh", []model.EnvVar{{Key: "FOO", Value: "1"}})
+	s.RecordRename("/p/.env.fresh", "/p/.env.renamed")
+
+	assert.Equal(t, []string{
+		"/p/.env.renamed — new file (1 variable)",
+	}, s.Summary())
+}
+
+func TestStats_CreateThenRenameThenDelete_NetZero(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordCreateScratch("/p/.env.fresh", []model.EnvVar{{Key: "FOO", Value: "1"}})
+	s.RecordRename("/p/.env.fresh", "/p/.env.renamed")
+	s.RecordDelete("/p/.env.renamed")
+
+	assert.Empty(t, s.Summary())
+}
