@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2026-04-19
+
+### Added
+- Session summary on exit: prints a per-file recap of disk-level changes (added/changed/deleted vars, created/deleted/renamed files, duplicates with post-create diff, templates) to stdout when you quit. Silent if nothing changed. Disable with `session-summary = false` in config or `--no-session-summary` CLI flag; `--read-only` forces it off.
+
 ## [0.5.4] - 2026-04-11
 
 ### Added
