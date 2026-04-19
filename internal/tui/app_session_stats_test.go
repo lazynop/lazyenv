@@ -107,6 +107,38 @@ func TestApp_SessionStats_Template(t *testing.T) {
 	}, app.sessionStats.Summary())
 }
 
+func TestApp_SessionStats_Rename(t *testing.T) {
+	dir := t.TempDir()
+	oldPath := dir + "/.env.local"
+	assert.NoError(t, os.WriteFile(oldPath, []byte("FOO=1\n"), 0644))
+
+	cfg := config.DefaultConfig()
+	cfg.Dir = dir
+	cfg.NoBackup = true
+	app := NewApp(cfg, nil)
+	ef, _ := parser.ParseFile(oldPath, cfg.Secrets)
+	m, _ := app.Update(FilesLoadedMsg{Files: []*model.EnvFile{ef}})
+	app = m.(App)
+
+	app.renameSource = ef
+	app.renameFileInput.SetValue(".env.dev")
+	app.mode = ModeRenameFile
+	out, _ := app.confirmRenameFile()
+	app = out.(App)
+
+	newPath := dir + "/.env.dev"
+	// After rename without save, final for the new path is not set yet → no output.
+	assert.Empty(t, app.sessionStats.Summary())
+
+	// Force a save to populate `final` under the new path.
+	app.varList.File.AddVar("BAR", "2", false)
+	app, _ = app.handleSave()
+
+	assert.Equal(t, []string{
+		newPath + " (renamed from " + oldPath + ") — 1 added, 0 changed, 0 deleted",
+	}, app.sessionStats.Summary())
+}
+
 func TestApp_SessionStats_HandleSave(t *testing.T) {
 	dir := t.TempDir()
 	path := dir + "/.env"

@@ -1018,6 +1018,8 @@ func (a App) confirmRenameFile() (tea.Model, tea.Cmd) {
 		return a, a.flashMessage("Error renaming file: " + err.Error())
 	}
 
+	a.sessionStats.RecordRename(src.Path, newPath)
+
 	if a.backedUpPaths[src.Path] {
 		delete(a.backedUpPaths, src.Path)
 		a.backedUpPaths[newPath] = true
