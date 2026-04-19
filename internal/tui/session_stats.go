@@ -120,7 +120,9 @@ func (s *SessionStats) RecordDelete(path string) {
 }
 
 // RecordRename collapses chains (a→b→c is recorded as c from a) and detects
-// rename-back-to-origin (a→b→a leaves no trace).
+// rename-back-to-origin (a→b→a leaves no trace). The renamed path's final
+// state is seeded from the previous final (if any) or from the origin's
+// initial snapshot, so the rename is reported even without a subsequent save.
 func (s *SessionStats) RecordRename(oldPath, newPath string) {
 	if s == nil {
 		return
@@ -133,9 +135,14 @@ func (s *SessionStats) RecordRename(oldPath, newPath string) {
 	if origin != newPath {
 		s.renames[newPath] = origin
 	}
-	if f, ok := s.final[oldPath]; ok {
-		s.final[newPath] = f
+	switch {
+	case s.final[oldPath] != nil:
+		s.final[newPath] = s.final[oldPath]
 		delete(s.final, oldPath)
+	case s.initial[origin] != nil:
+		// No prior save on oldPath: on-disk content at newPath equals the
+		// baseline at origin (os.Rename moves bytes unchanged).
+		s.final[newPath] = s.initial[origin]
 	}
 	if co, ok := s.created[oldPath]; ok {
 		s.created[newPath] = co

@@ -121,11 +121,13 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 			if err := parser.WriteFile(f); err != nil {
 				return a, a.flashError("Error saving " + f.Name + ": " + err.Error())
 			}
+			// Record the stat before re-parse: the disk mutation already
+			// happened and must be reflected even if the refresh fails.
+			a.sessionStats.RecordSave(f.Path, f.Vars)
 			// Re-parse to refresh RawLines
 			refreshed, err := parser.ParseFile(f.Path, a.config.Secrets)
 			if err == nil {
 				refreshed.GitWarning = f.GitWarning
-				a.sessionStats.RecordSave(f.Path, refreshed.Vars)
 				for i, existing := range a.fileList.Files {
 					if existing.Path == f.Path {
 						a.fileList.Files[i] = refreshed

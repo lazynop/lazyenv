@@ -121,8 +121,12 @@ func TestApp_SessionStats_Rename(t *testing.T) {
 	app = out.(App)
 
 	newPath := dir + "/.env.dev"
-	// Without save, final for the new path isn't populated yet.
-	assert.Empty(t, app.sessionStats.Summary())
+	// Without a post-rename save the row is still emitted (seeded from the
+	// initial snapshot), because on-disk content at the new path equals the
+	// origin's baseline.
+	assert.Equal(t, []string{
+		newPath + " (renamed from " + oldPath + ") — 0 added, 0 changed, 0 deleted",
+	}, app.sessionStats.Summary())
 
 	app.varList.File.AddVar("BAR", "2", false)
 	app, _ = app.handleSave()

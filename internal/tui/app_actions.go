@@ -36,14 +36,16 @@ func (a App) handleSave() (App, tea.Cmd) {
 		return a, a.flashError("Error saving: " + err.Error())
 	}
 
+	// Record the stat before re-parse: the disk mutation already happened and
+	// must be reflected even if the refresh fails.
+	a.sessionStats.RecordSave(f.Path, f.Vars)
+
 	// Re-parse to refresh RawLines
 	refreshed, err := parser.ParseFile(f.Path, a.config.Secrets)
 	if err != nil {
 		return a, a.flashError(warn + "Saved but refresh failed: " + err.Error())
 	}
 	refreshed.GitWarning = f.GitWarning
-
-	a.sessionStats.RecordSave(f.Path, refreshed.Vars)
 
 	for i, existing := range a.fileList.Files {
 		if existing.Path == f.Path {

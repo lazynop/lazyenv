@@ -174,9 +174,23 @@ func TestStats_Rename_NoEdits(t *testing.T) {
 	s := NewSessionStats()
 	s.RecordInitialLoad("/p/.env.local", []model.EnvVar{{Key: "FOO", Value: "1"}})
 	s.RecordRename("/p/.env.local", "/p/.env.dev")
-	s.RecordSave("/p/.env.dev", []model.EnvVar{{Key: "FOO", Value: "1"}})
+	// No post-rename save: the renamed row is still reported (seeded from initial).
 	assert.Equal(t, []string{
 		"/p/.env.dev (renamed from /p/.env.local) — 0 added, 0 changed, 0 deleted",
+	}, s.Summary())
+}
+
+func TestStats_RenameThenRecreateAtOriginPath(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordInitialLoad("/p/.env", []model.EnvVar{{Key: "FOO", Value: "1"}})
+	s.RecordRename("/p/.env", "/p/.env.backup")
+	// A new file is created at the original path after the rename: both
+	// events must be reported (original content now lives at .backup,
+	// a fresh file exists at .env).
+	s.RecordCreateScratch("/p/.env", []model.EnvVar{{Key: "NEW", Value: "v"}})
+	assert.Equal(t, []string{
+		"/p/.env — new file (1 variable)",
+		"/p/.env.backup (renamed from /p/.env) — 0 added, 0 changed, 0 deleted",
 	}, s.Summary())
 }
 
