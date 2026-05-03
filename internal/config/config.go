@@ -14,6 +14,7 @@ type Config struct {
 	ReadOnly       bool   `toml:"read-only"`
 	SessionSummary bool   `toml:"session-summary"`
 	Sort           string `toml:"sort"`            // "position" | "alphabetical"
+	Group          bool   `toml:"group"`           // start with prefix grouping enabled
 	Theme          string `toml:"theme,omitempty"` // built-in theme name (e.g. "dracula", "nord")
 
 	Layout  LayoutConfig  `toml:"layout"`

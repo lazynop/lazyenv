@@ -24,6 +24,7 @@ lazyenv ./services -r
 | `-r` | `--recursive`    | Scan subdirectories recursively.                                                                            |
 | `-a` | `--show-all`     | Show secrets in cleartext at startup instead of masking them.                                               |
 | `-s` | `--sort`         | Sort order for variables: `position` (default, preserves file order) or `alphabetical`.                     |
+| `-g` | `--group` / `--no-group` | Start with prefix grouping enabled (default off). Toggle at runtime with `g`.                    |
 | `-B` | `--no-backup`    | Disable `.bak` backup before first save.                                                                    |
 | `-G` | `--no-git-check` | Disable `.gitignore` check. Auto-disabled if `git` is not found in `$PATH`.                                 |
 |      | `--no-theme-bg`  | Disable theme background color, keeping the terminal's native background. Useful for transparent terminals. |
@@ -56,6 +57,7 @@ The following flags have a corresponding config file key:
 | `-r`            | `recursive`    |
 | `-a`            | `show-secrets` |
 | `-s`            | `sort`         |
+| `-g`            | `group`        |
 | `-B`            | `no-backup`    |
 | `-G`            | `no-git-check` |
 | `--no-theme-bg` | `no-theme-bg`  |

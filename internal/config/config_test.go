@@ -23,6 +23,7 @@ func TestDefaultConfig(t *testing.T) {
 	assert.False(t, cfg.NoBackup)
 	assert.False(t, cfg.ReadOnly)
 	assert.True(t, cfg.SessionSummary)
+	assert.False(t, cfg.Group)
 }
 
 func TestDefaultLayoutValues(t *testing.T) {
@@ -58,6 +59,7 @@ func TestTomlTagsMatchExample(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "position", cfg.Sort)
+	assert.False(t, cfg.Group)
 	assert.False(t, cfg.Recursive)
 	assert.Equal(t, 30, cfg.Layout.VarListMaxKeyWidth)
 	assert.Equal(t, 25, cfg.Layout.DiffMaxKeyWidth)
@@ -89,6 +91,15 @@ func TestLoadProjectConfig(t *testing.T) {
 	assert.True(t, cfg.Recursive)
 	assert.Equal(t, "alphabetical", cfg.Sort)
 	assert.Equal(t, 30, cfg.Layout.VarListMaxKeyWidth)
+}
+
+func TestLoadGroup(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), []byte("group = true\n"), 0644))
+
+	cfg, warnings := Load(dir, "")
+	assert.Empty(t, warnings)
+	assert.True(t, cfg.Group)
 }
 
 func TestLoadReadOnly(t *testing.T) {

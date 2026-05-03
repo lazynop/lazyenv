@@ -101,6 +101,8 @@ Press `Enter` or `Space` (or click) on a header to collapse the group. Variables
 
 Groups follow file order; alphabetical sort (`o`) applies *inside* groups so the layout stays predictable. Search disables grouping in rendering and restores it when you clear the query. The toggle and per-group collapsed state live for the session — there's no on-disk reorder.
 
+To start with grouping already enabled, set `group = true` in your config or pass `-g` / `--group` on the command line.
+
 ## Read-only mode
 
 Disable all write operations with `--read-only` or `read-only = true` in config. Editing keybindings (edit, add, delete, save, copy in diff view) are suppressed, and a `[READ-ONLY]` badge is shown in the status bar. Navigation, search, diff view (read-only), peek, yank, and matrix view remain fully functional.

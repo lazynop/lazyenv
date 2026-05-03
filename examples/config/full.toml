@@ -11,6 +11,7 @@ no-mouse = false
 read-only = false
 session-summary = true            # print a recap of disk changes on exit. --read-only forces off.
 sort = "position"                 # "position" | "alphabetical"
+group = false                     # start with prefix grouping enabled (toggle at runtime with 'g')
 
 # Built-in theme preset. Available: catppuccin-latte, catppuccin-mocha,
 # cyberpunk, default-dark, default-light, dracula, everforest, gruvbox-dark,

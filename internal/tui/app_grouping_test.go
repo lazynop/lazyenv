@@ -7,8 +7,25 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
 )
+
+func TestApp_GroupConfigEnablesGroupingAtStart(t *testing.T) {
+	cfg := config.DefaultConfig()
+	cfg.Group = true
+
+	app := NewApp(cfg, nil)
+	f := makeTestFile(".env", "DB_HOST", "DB_PORT", "PORT")
+	app.varList.SetFile(f)
+
+	assert.True(t, app.varList.Grouping, "cfg.Group=true must enable grouping at startup")
+}
+
+func TestApp_GroupConfigDefaultDisabled(t *testing.T) {
+	app := newTestApp(nil)
+	assert.False(t, app.varList.Grouping, "grouping must default to off")
+}
 
 // newGroupingApp returns an App focused on the var panel with a file that
 // produces two named groups (DB, REDIS) plus an Ungrouped bucket.

@@ -13,6 +13,7 @@ Create a `.lazyenvrc` file (TOML) in your project root, or `~/.config/lazyenv/co
 | `read-only`    | `false`         | Disable all write operations. Editing keybindings are suppressed and a `[READ-ONLY]` badge is shown in the status bar.            |
 | `session-summary` | `true`       | Print a recap of disk-level changes (added/changed/deleted/renamed/created files) when you exit. `--read-only` forces off.        |
 | `sort`         | `"position"`    | Variable list sort order: `"position"` preserves file order, `"alphabetical"` sorts by key name. Toggleable at runtime with `o`.  |
+| `group`        | `false`         | Start with prefix grouping enabled (variables sharing a prefix collapse under headers). Toggleable at runtime with `g`.           |
 | `theme`        | See description | Built-in color theme. When empty, `default-dark` or `default-light` is used automatically based on terminal background detection. |
 
 Run `lazyenv --list-themes` to see all available themes, or `lazyenv --themes` to browse them interactively with a live preview.

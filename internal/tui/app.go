@@ -130,6 +130,7 @@ func NewApp(cfg config.Config, warnings []string) App {
 	if cfg.Sort == "alphabetical" {
 		varList.SortAlpha = true
 	}
+	varList.Grouping = cfg.Group
 
 	sb := NewStatusBarModel()
 	sb.ReadOnly = cfg.ReadOnly

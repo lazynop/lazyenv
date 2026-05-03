@@ -30,6 +30,7 @@ var cli struct {
 	ReadOnly       *bool            `name:"read-only" help:"Disable all write operations."`
 	SessionSummary *bool            `name:"session-summary" negatable:"" help:"Print a session summary on exit (default on). Use --no-session-summary to disable."`
 	Sort           *string          `short:"s" name:"sort" help:"Sort order: position or alphabetical." enum:"position,alphabetical"`
+	Group          *bool            `short:"g" name:"group" negatable:"" help:"Start with prefix grouping enabled (default off). Use --no-group to disable."`
 	FileListWidth  *int             `name:"file-list-width" help:"Width of the file list panel (0=auto)."`
 	Config         string           `short:"c" name:"config" help:"Path to configuration file." type:"existingfile"`
 	CheckConfig    bool             `name:"check-config" help:"Validate configuration file and exit."`
@@ -62,16 +63,12 @@ func applyCLIOverrides(cfg *config.Config) {
 		cfg.ReadOnly = *cli.ReadOnly
 	}
 	applySessionSummaryOverride(cfg)
-	if cli.FileListWidth != nil {
-		v := *cli.FileListWidth
-		if v != 0 && v < config.FileListMinWidth {
-			fmt.Fprintf(os.Stderr, "Warning: --file-list-width %d is below minimum %d, using %d\n", v, config.FileListMinWidth, config.FileListMinWidth)
-			v = config.FileListMinWidth
-		}
-		cfg.Layout.FileListWidth = v
-	}
+	applyFileListWidthOverride(cfg)
 	if cli.Sort != nil {
 		cfg.Sort = *cli.Sort
+	}
+	if cli.Group != nil {
+		cfg.Group = *cli.Group
 	}
 	if cli.NoGitCheck != nil {
 		cfg.NoGitCheck = *cli.NoGitCheck
@@ -80,6 +77,18 @@ func applyCLIOverrides(cfg *config.Config) {
 			cfg.NoGitCheck = true
 		}
 	}
+}
+
+func applyFileListWidthOverride(cfg *config.Config) {
+	if cli.FileListWidth == nil {
+		return
+	}
+	v := *cli.FileListWidth
+	if v != 0 && v < config.FileListMinWidth {
+		fmt.Fprintf(os.Stderr, "Warning: --file-list-width %d is below minimum %d, using %d\n", v, config.FileListMinWidth, config.FileListMinWidth)
+		v = config.FileListMinWidth
+	}
+	cfg.Layout.FileListWidth = v
 }
 
 // applySessionSummaryOverride resolves the final SessionSummary value: CLI flag
