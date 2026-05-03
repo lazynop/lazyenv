@@ -27,23 +27,59 @@ Sleep 350ms
 Enter
 Sleep 800ms
 
-# --- Navigate variables ---
+# --- Toggle prefix grouping (v0.7.0) ---
+Type "g"
+Sleep 1.5s
+
+# Cursor is on the first DB var; jump to the DATABASE header and collapse it
+Up
+Sleep 300ms
+Space
+Sleep 1.2s
+
+# Walk down to another header, collapse it too
 Down
-Sleep 250ms
 Down
-Sleep 250ms
 Down
-Sleep 250ms
 Down
-Sleep 250ms
+Down
+Down
+Sleep 300ms
+Space
+Sleep 1.2s
+
+# Re-expand both
+Space
+Sleep 600ms
+Up
+Up
+Up
+Up
+Up
+Up
+Sleep 200ms
+Space
+Sleep 800ms
+
+# Disable grouping, back to flat list
+Type "g"
+Sleep 800ms
 
 # --- Toggle secret masking ---
 Ctrl+S
 Sleep 1.2s
 Ctrl+S
-Sleep 800ms
+Sleep 700ms
 
-# --- Edit a variable ---
+# --- Navigate variables ---
+Down
+Sleep 200ms
+Down
+Sleep 200ms
+Down
+Sleep 200ms
+
+# --- Edit a variable value ---
 Type "e"
 Sleep 400ms
 Ctrl+U
@@ -57,6 +93,15 @@ Type "p"
 Sleep 1.2s
 Type "p"
 Sleep 400ms
+
+# --- Rename a variable key (E key) ---
+Type "E"
+Sleep 400ms
+Ctrl+U
+Type "RENAMED_KEY"
+Sleep 400ms
+Enter
+Sleep 1s
 
 # --- Back to file list ---
 Left
@@ -73,16 +118,12 @@ Sleep 1.5s
 # Navigate diffs
 Down
 Sleep 250ms
-Down
-Sleep 250ms
-
-# Jump to next diff
 Type "n"
 Sleep 400ms
 Type "n"
 Sleep 400ms
 
-# Filter diffs only
+# Filter to differences only
 Type "f"
 Sleep 1.2s
 Type "f"
@@ -113,9 +154,9 @@ Sleep 800ms
 Escape
 Sleep 600ms
 
-# Quit
+# Quit (session summary prints to stdout)
 Type "q"
-Sleep 400ms
+Sleep 1s
 
 # --- Theme preview ---
 Type "lazyenv --themes"
@@ -123,17 +164,15 @@ Enter
 Sleep 1.5s
 
 Down
-Sleep 300ms
+Sleep 280ms
 Down
-Sleep 300ms
+Sleep 280ms
 Down
-Sleep 300ms
+Sleep 280ms
 Down
-Sleep 300ms
+Sleep 280ms
 Down
-Sleep 300ms
-Down
-Sleep 300ms
+Sleep 280ms
 
 # Quit theme preview
 Type "q"

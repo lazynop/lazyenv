@@ -1,11 +1,12 @@
 # lazyenv
 
-[![CI](https://github.com/lazynop/lazyenv/actions/workflows/check.yml/badge.svg)](https://github.com/lazynop/lazyenv/actions/workflows/check.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/lazynop/lazyenv)](https://goreportcard.com/report/github.com/lazynop/lazyenv)
 [![GoDoc](https://pkg.go.dev/badge/github.com/lazynop/lazyenv)](https://pkg.go.dev/github.com/lazynop/lazyenv)
+[![License](https://img.shields.io/github/license/lazynop/lazyenv)](LICENSE)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/lazynop/lazyenv)](go.mod)
 [![GitHub tag](https://img.shields.io/github/tag/lazynop/lazyenv.svg)](https://github.com/lazynop/lazyenv/releases/latest)
 [![GitHub Downloads](https://img.shields.io/github/downloads/lazynop/lazyenv/total)](https://github.com/lazynop/lazyenv/releases)
-![GitHub repo size](https://img.shields.io/github/repo-size/lazynop/lazyenv)
+[![Last commit](https://img.shields.io/github/last-commit/lazynop/lazyenv)](https://github.com/lazynop/lazyenv/commits/main)
 
 TUI for managing `.env` files — written in Go with [Bubble Tea](https://github.com/charmbracelet/bubbletea).
 
