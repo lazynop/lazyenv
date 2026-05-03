@@ -71,7 +71,7 @@ func TestVarListSetCursor(t *testing.T) {
 
 func TestVarListSetCursorEmpty(t *testing.T) {
 	m := NewVarListModel(config.DefaultConfig().Layout)
-	// No file set — displayIndices is empty; should not panic
+	// No file set — displayItems is empty; should not panic
 	assert.NotPanics(t, func() {
 		m.SetCursor(0)
 		m.SetCursor(-1)
@@ -125,13 +125,13 @@ func TestMouseClickOnHeader_TogglesCollapse(t *testing.T) {
 	app = updated.(App)
 
 	require.Equal(t, FocusVars, app.focus)
-	assert.True(t, app.varList.IsCollapsed("DB"),
+	assert.True(t, app.varList.isCollapsed("DB"),
 		"clicking the DB header must toggle collapse on")
 
 	// Click again to expand.
 	updated, _ = app.Update(tea.MouseClickMsg{X: clickX, Y: 2, Button: tea.MouseLeft})
 	app = updated.(App)
-	assert.False(t, app.varList.IsCollapsed("DB"),
+	assert.False(t, app.varList.isCollapsed("DB"),
 		"second click must toggle collapse off")
 }
 
@@ -149,7 +149,7 @@ func TestMouseClickOnVar_DoesNotToggleCollapse(t *testing.T) {
 	updated, _ = app.Update(tea.MouseClickMsg{X: clickX, Y: 3, Button: tea.MouseLeft})
 	app = updated.(App)
 
-	assert.False(t, app.varList.IsCollapsed("DB"),
+	assert.False(t, app.varList.isCollapsed("DB"),
 		"clicking a var row must not collapse the group")
 	assert.Equal(t, "DB_HOST", app.varList.SelectedVar().Key)
 }

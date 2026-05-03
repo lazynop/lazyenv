@@ -311,7 +311,7 @@ func TestVarListGrouping_CollapseHidesVars(t *testing.T) {
 	require.True(t, vl.IsHeaderAtCursor())
 	ok := vl.ToggleCollapseAtCursor()
 	assert.True(t, ok)
-	assert.True(t, vl.IsCollapsed("DB"))
+	assert.True(t, vl.isCollapsed("DB"))
 	// 9 items - 3 DB vars = 6 items now (DB header still present).
 	assert.Equal(t, 6, vl.DisplayCount())
 	// No DB_* var rows must remain.
@@ -331,9 +331,9 @@ func TestVarListGrouping_ToggleCollapseExpandsAgain(t *testing.T) {
 	vl.SetCursor(0) // DB header
 
 	vl.ToggleCollapseAtCursor() // collapse DB
-	assert.True(t, vl.IsCollapsed("DB"))
+	assert.True(t, vl.isCollapsed("DB"))
 	vl.ToggleCollapseAtCursor() // expand DB
-	assert.False(t, vl.IsCollapsed("DB"))
+	assert.False(t, vl.isCollapsed("DB"))
 	assert.Equal(t, 9, vl.DisplayCount())
 }
 
@@ -349,7 +349,7 @@ func TestVarListGrouping_ToggleCollapseNoOpOnVar(t *testing.T) {
 	assert.False(t, vl.IsHeaderAtCursor())
 	ok := vl.ToggleCollapseAtCursor()
 	assert.False(t, ok, "no toggle when cursor is on a var")
-	assert.False(t, vl.IsCollapsed("DB"))
+	assert.False(t, vl.isCollapsed("DB"))
 }
 
 func TestVarListGrouping_CursorFollowsVarOnToggle(t *testing.T) {
@@ -467,16 +467,16 @@ func TestVarListGrouping_PreservesCollapsedAcrossDisable(t *testing.T) {
 	vl.ToggleGrouping()
 	vl.SetCursor(0)             // DB header
 	vl.ToggleCollapseAtCursor() // collapse DB
-	assert.True(t, vl.IsCollapsed("DB"))
+	assert.True(t, vl.isCollapsed("DB"))
 
 	vl.ToggleGrouping() // disable
 	assert.False(t, vl.Grouping)
 	// collapsed state must survive
-	assert.True(t, vl.IsCollapsed("DB"))
+	assert.True(t, vl.isCollapsed("DB"))
 
 	vl.ToggleGrouping() // re-enable
 	assert.True(t, vl.Grouping)
-	assert.True(t, vl.IsCollapsed("DB"), "DB stays collapsed after round-trip")
+	assert.True(t, vl.isCollapsed("DB"), "DB stays collapsed after round-trip")
 	// 9 items - 3 DB vars = 6
 	assert.Equal(t, 6, vl.DisplayCount())
 }

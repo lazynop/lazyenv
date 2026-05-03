@@ -77,12 +77,12 @@ func TestApp_EnterOnHeaderTogglesCollapse(t *testing.T) {
 	updated, _ := app.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 	app = updated.(App)
 
-	assert.True(t, app.varList.IsCollapsed("DB"), "DB should be collapsed after Enter on header")
+	assert.True(t, app.varList.isCollapsed("DB"), "DB should be collapsed after Enter on header")
 
 	// Pressing Enter again expands.
 	updated, _ = app.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 	app = updated.(App)
-	assert.False(t, app.varList.IsCollapsed("DB"), "DB should be expanded after second Enter")
+	assert.False(t, app.varList.isCollapsed("DB"), "DB should be expanded after second Enter")
 }
 
 func TestApp_SpaceOnHeaderTogglesCollapse(t *testing.T) {
@@ -96,7 +96,7 @@ func TestApp_SpaceOnHeaderTogglesCollapse(t *testing.T) {
 	updated, _ := app.Update(tea.KeyPressMsg{Text: " ", Code: ' '})
 	app = updated.(App)
 
-	assert.True(t, app.varList.IsCollapsed("DB"), "DB should be collapsed after Space on header")
+	assert.True(t, app.varList.isCollapsed("DB"), "DB should be collapsed after Space on header")
 }
 
 func TestApp_EnterOnVarStillWorksOnFileFocus(t *testing.T) {

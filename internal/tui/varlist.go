@@ -221,7 +221,7 @@ func (m *VarListModel) IsHeaderAtCursor() bool {
 	return m.displayItems[m.Cursor].Kind == displayItemHeader
 }
 
-func (m *VarListModel) IsCollapsed(prefix string) bool {
+func (m *VarListModel) isCollapsed(prefix string) bool {
 	return m.collapsed[prefix]
 }
 
