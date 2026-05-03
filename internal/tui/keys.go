@@ -19,6 +19,7 @@ type KeyMap struct {
 	Reset         key.Binding
 	ToggleSecret  key.Binding
 	ToggleSort    key.Binding
+	ToggleGroup   key.Binding
 	Help          key.Binding
 	Quit          key.Binding
 	Escape        key.Binding
@@ -100,6 +101,10 @@ func DefaultKeyMap() KeyMap {
 		ToggleSort: key.NewBinding(
 			key.WithKeys("o"),
 			key.WithHelp("o", "sort"),
+		),
+		ToggleGroup: key.NewBinding(
+			key.WithKeys("g"),
+			key.WithHelp("g", "toggle grouping"),
 		),
 		Help: key.NewBinding(
 			key.WithKeys("?"),

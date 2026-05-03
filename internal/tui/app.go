@@ -287,6 +287,9 @@ func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 		index := msg.Y - 2 + a.varList.Offset
 		if index >= 0 && index < a.varList.DisplayCount() {
 			a.varList.SetCursor(index)
+			if a.varList.IsHeaderAtCursor() {
+				a.varList.ToggleCollapseAtCursor()
+			}
 		}
 	}
 	return a
@@ -559,6 +562,13 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 		}
 		return a, a.flashMessage("Sorted by position")
 
+	case key.Matches(msg, a.keys.ToggleGroup):
+		groupCount := a.varList.ToggleGrouping()
+		if a.varList.Grouping {
+			return a, a.flashMessage(fmt.Sprintf("Grouping enabled (%d groups)", groupCount))
+		}
+		return a, a.flashMessage("Grouping disabled")
+
 	case key.Matches(msg, a.keys.Search):
 		a.mode = ModeSearching
 		a.searchInput.SetValue("")
@@ -625,7 +635,13 @@ func (a App) handleNormalNavigation(msg tea.KeyPressMsg) (App, bool) {
 			a.focus = FocusVars
 			a.fileList.Focused = false
 			a.varList.Focused = true
+		} else if a.varList.IsHeaderAtCursor() {
+			a.varList.ToggleCollapseAtCursor()
 		}
+		return a, true
+
+	case msg.String() == "space" && a.focus == FocusVars && a.varList.IsHeaderAtCursor():
+		a.varList.ToggleCollapseAtCursor()
 		return a, true
 	}
 
@@ -673,6 +689,9 @@ func (a App) handleNormalVarAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, boo
 func (a App) handleNormalVarEdit(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bool) {
 	if cmd := a.readOnlyFlash(); cmd != nil {
 		return a, cmd, true
+	}
+	if a.varList.IsHeaderAtCursor() {
+		return a, a.flashMessage("No variable selected"), true
 	}
 
 	switch {
