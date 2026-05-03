@@ -21,6 +21,7 @@ Keybindings are context-sensitive: each screen only responds to the keys listed 
 | `r`            | Reset current file (discard unsaved changes)      |
 | `Ctrl+S`       | Toggle secret masking                             |
 | `o`            | Toggle sort order (position / alphabetical)       |
+| `g`            | Toggle prefix grouping in the variable list       |
 | `?`            | Show help screen                                  |
 | `q` / `Ctrl+C` | Quit                                              |
 
