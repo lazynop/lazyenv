@@ -556,18 +556,10 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 		return a, a.flashMessage("Secrets hidden")
 
 	case key.Matches(msg, a.keys.ToggleSort):
-		a.varList.ToggleSort()
-		if a.varList.SortAlpha {
-			return a, a.flashMessage("Sorted alphabetically")
-		}
-		return a, a.flashMessage("Sorted by position")
+		return a, a.toggleSortFlash()
 
 	case key.Matches(msg, a.keys.ToggleGroup):
-		groupCount := a.varList.ToggleGrouping()
-		if a.varList.Grouping {
-			return a, a.flashMessage(fmt.Sprintf("Grouping enabled (%d groups)", groupCount))
-		}
-		return a, a.flashMessage("Grouping disabled")
+		return a, a.toggleGroupingFlash()
 
 	case key.Matches(msg, a.keys.Search):
 		a.mode = ModeSearching
@@ -626,26 +618,39 @@ func (a App) handleNormalNavigation(msg tea.KeyPressMsg) (App, bool) {
 		return a, true
 
 	case key.Matches(msg, a.keys.Enter):
-		if a.focus == FocusFiles {
-			a.fileList.Select()
-			f := a.fileList.SelectedFile()
-			if f != nil {
-				a.varList.SetFile(f)
-			}
-			a.focus = FocusVars
-			a.fileList.Focused = false
-			a.varList.Focused = true
-		} else if a.varList.IsHeaderAtCursor() {
-			a.varList.ToggleCollapseAtCursor()
-		}
-		return a, true
+		return a.handleNormalEnter(), true
 
-	case msg.String() == "space" && a.focus == FocusVars && a.varList.IsHeaderAtCursor():
+	case a.isSpaceCollapseToggle(msg):
 		a.varList.ToggleCollapseAtCursor()
 		return a, true
 	}
 
 	return a, false
+}
+
+// handleNormalEnter applies Enter semantics: selects the focused file and
+// switches focus when on the file panel, or toggles a group's collapsed
+// state when the cursor is on a header in the var panel.
+func (a App) handleNormalEnter() App {
+	switch {
+	case a.focus == FocusFiles:
+		a.fileList.Select()
+		if f := a.fileList.SelectedFile(); f != nil {
+			a.varList.SetFile(f)
+		}
+		a.focus = FocusVars
+		a.fileList.Focused = false
+		a.varList.Focused = true
+	case a.varList.IsHeaderAtCursor():
+		a.varList.ToggleCollapseAtCursor()
+	}
+	return a
+}
+
+// isSpaceCollapseToggle reports whether the message is a Space press that
+// should toggle a group header's collapse state.
+func (a App) isSpaceCollapseToggle(msg tea.KeyPressMsg) bool {
+	return msg.String() == "space" && a.focus == FocusVars && a.varList.IsHeaderAtCursor()
 }
 
 func (a App) handleNormalVarAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bool) {
@@ -1334,4 +1339,22 @@ func (a *App) flashMessage(msg string) tea.Cmd {
 func (a *App) flashError(msg string) tea.Cmd {
 	a.statusBar.SetMessage(msg)
 	return clearMessageAfter(a.config.Layout.ErrorMessageTimeout)
+}
+
+// toggleSortFlash flips alpha sorting and returns the appropriate flash cmd.
+func (a *App) toggleSortFlash() tea.Cmd {
+	a.varList.ToggleSort()
+	if a.varList.SortAlpha {
+		return a.flashMessage("Sorted alphabetically")
+	}
+	return a.flashMessage("Sorted by position")
+}
+
+// toggleGroupingFlash flips prefix grouping and returns the appropriate flash cmd.
+func (a *App) toggleGroupingFlash() tea.Cmd {
+	n := a.varList.ToggleGrouping()
+	if a.varList.Grouping {
+		return a.flashMessage(fmt.Sprintf("Grouping enabled (%d groups)", n))
+	}
+	return a.flashMessage("Grouping disabled")
 }
