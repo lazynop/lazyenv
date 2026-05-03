@@ -47,12 +47,12 @@ func (a App) viewHelp() string {
     w              Save changes
     r              Reset file (discard changes)
     c              Compare two files (diff view)
-                     n/N  Jump to next/prev diff
+    n/N            Jump to next/prev diff (compare mode)
     m              Completeness matrix (multi-file)
     /              Search variables
     o              Toggle sort (position / alphabetical)
     g              Toggle variable grouping by prefix
-                     Space/Enter on header: collapse/expand
+    Space/Enter    Collapse/expand group (on header)
     Ctrl+S         Toggle secret masking
 
   File Indicators
