@@ -11,6 +11,10 @@ import (
 	"github.com/lazynop/lazyenv/internal/util"
 )
 
+// ungroupedHeaderLabel is the label shown above the trailing bucket of
+// variables with a unique prefix, no '_', or a leading '_'.
+const ungroupedHeaderLabel = "UNGROUPED"
+
 // displayKind distinguishes a variable row from a group header row.
 type displayKind int
 
@@ -86,15 +90,20 @@ func (m *VarListModel) recomputeDisplay() {
 	}
 
 	m.groups = model.ComputeGroups(m.File.Vars)
+	// Show the Ungrouped header only when a named group also exists, so the
+	// single-Ungrouped case (no real groupings) keeps the linear-view feel.
+	showUngroupedHeader := m.namedGroupCount() > 0
 	for gi, g := range m.groups {
-		if !g.IsUngrouped() {
-			m.displayItems = append(m.displayItems, displayItem{
-				Kind:     displayItemHeader,
-				GroupIdx: gi,
-			})
-			if m.collapsed[g.Prefix] {
-				continue
-			}
+		if g.IsUngrouped() && !showUngroupedHeader {
+			m.appendGroupVars(g)
+			continue
+		}
+		m.displayItems = append(m.displayItems, displayItem{
+			Kind:     displayItemHeader,
+			GroupIdx: gi,
+		})
+		if m.collapsed[g.Prefix] {
+			continue
 		}
 		m.appendGroupVars(g)
 	}
@@ -371,14 +380,18 @@ func (m *VarListModel) renderHeaderLine(rowIdx int, group model.VarGroup, theme 
 	if m.collapsed[group.Prefix] {
 		arrow = "▸"
 	}
+	label := group.Prefix
+	if group.IsUngrouped() {
+		label = ungroupedHeaderLabel
+	}
 	countStr := fmt.Sprintf("(%d)", len(group.Vars))
 
 	if rowIdx == m.Cursor && m.Focused {
-		return theme.CursorItem.Render(fmt.Sprintf("  %s %s %s", arrow, group.Prefix, countStr))
+		return theme.CursorItem.Render(fmt.Sprintf("  %s %s %s", arrow, label, countStr))
 	}
 	return fmt.Sprintf("  %s %s %s",
 		theme.MutedItem.Render(arrow),
-		theme.KeyStyle.Render(group.Prefix),
+		theme.KeyStyle.Render(label),
 		theme.MutedItem.Render(countStr))
 }
 

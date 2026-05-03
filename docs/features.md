@@ -93,11 +93,12 @@ Toggle prefix-based grouping with `g`. Variables sharing a non-empty prefix (eve
 ▾ REDIS (2)
   REDIS_URL   redis://localhost
   REDIS_PORT  6379
+▾ UNGROUPED (2)
   PORT        3000
   DEBUG       true
 ```
 
-Press `Enter` or `Space` (or click) on a header to collapse the group. Variables with a unique prefix or no `_` go to a trailing "Ungrouped" section without a header.
+Press `Enter` or `Space` (or click) on any header — including `UNGROUPED` — to collapse it. The trailing `UNGROUPED` section holds variables with a unique prefix or no `_`; it only appears when at least one named group exists, so files where nothing groups stay in the linear view.
 
 Groups follow file order; alphabetical sort (`o`) applies *inside* groups so the layout stays predictable. Search disables grouping in rendering and restores it when you clear the query. The toggle and per-group collapsed state live for the session — there's no on-disk reorder.
 

@@ -290,9 +290,9 @@ func TestVarListGrouping_ToggleProducesHeaders(t *testing.T) {
 	count := vl.ToggleGrouping()
 	assert.Equal(t, 2, count, "should report 2 named groups (DB, REDIS)")
 	assert.True(t, vl.Grouping)
-	// 2 headers + 7 vars = 9 items (Ungrouped has no header)
-	assert.Equal(t, 9, vl.DisplayCount())
-	assert.Equal(t, 2, countHeaders(vl.displayItems))
+	// 3 headers (DB, REDIS, UNGROUPED) + 7 vars = 10 items
+	assert.Equal(t, 10, vl.DisplayCount())
+	assert.Equal(t, 3, countHeaders(vl.displayItems))
 	// First item must be the DB header (lowest first-occurrence index).
 	assert.Equal(t, displayItemHeader, vl.displayItems[0].Kind)
 	assert.Equal(t, "DB", vl.groups[vl.displayItems[0].GroupIdx].Prefix)
@@ -312,8 +312,8 @@ func TestVarListGrouping_CollapseHidesVars(t *testing.T) {
 	ok := vl.ToggleCollapseAtCursor()
 	assert.True(t, ok)
 	assert.True(t, vl.isCollapsed("DB"))
-	// 9 items - 3 DB vars = 6 items now (DB header still present).
-	assert.Equal(t, 6, vl.DisplayCount())
+	// 10 items - 3 DB vars = 7 items now (DB header still present).
+	assert.Equal(t, 7, vl.DisplayCount())
 	// No DB_* var rows must remain.
 	for _, item := range vl.displayItems {
 		if item.Kind == displayItemVar {
@@ -334,7 +334,7 @@ func TestVarListGrouping_ToggleCollapseExpandsAgain(t *testing.T) {
 	assert.True(t, vl.isCollapsed("DB"))
 	vl.ToggleCollapseAtCursor() // expand DB
 	assert.False(t, vl.isCollapsed("DB"))
-	assert.Equal(t, 9, vl.DisplayCount())
+	assert.Equal(t, 10, vl.DisplayCount())
 }
 
 func TestVarListGrouping_ToggleCollapseNoOpOnVar(t *testing.T) {
@@ -378,10 +378,9 @@ func TestVarListGrouping_CursorOnHeaderAfterCollapse(t *testing.T) {
 	vl.Height = 30
 	vl.ToggleGrouping()
 
-	// Move cursor to DB header position (already 0 after toggle), then to
-	// the REDIS header. With Grouping on, layout is:
+	// Move cursor to the REDIS header. With Grouping on, layout is:
 	//   0: DB header, 1..3: DB vars, 4: REDIS header, 5..6: REDIS vars,
-	//   7..8: Ungrouped vars.
+	//   7: UNGROUPED header, 8..9: ungrouped vars.
 	vl.SetCursor(4)
 	assert.True(t, vl.IsHeaderAtCursor())
 	assert.Equal(t, -1, vl.SelectedVarIndex(), "header has no var index")
@@ -394,7 +393,8 @@ func TestVarListGrouping_SearchDisablesHeaders(t *testing.T) {
 	vl.SetFile(f)
 	vl.Height = 30
 	vl.ToggleGrouping()
-	assert.Equal(t, 2, countHeaders(vl.displayItems))
+	assert.Equal(t, 3, countHeaders(vl.displayItems),
+		"DB + REDIS + UNGROUPED = 3 headers")
 
 	vl.SetSearch("DB")
 	assert.Equal(t, 0, countHeaders(vl.displayItems),
@@ -403,7 +403,7 @@ func TestVarListGrouping_SearchDisablesHeaders(t *testing.T) {
 	assert.True(t, vl.Grouping, "Grouping flag is preserved across search")
 
 	vl.SetSearch("")
-	assert.Equal(t, 2, countHeaders(vl.displayItems),
+	assert.Equal(t, 3, countHeaders(vl.displayItems),
 		"clearing search restores headers")
 }
 
@@ -416,15 +416,17 @@ func TestVarListGrouping_SortAlphaWithinGroups(t *testing.T) {
 	vl.ToggleGrouping()
 	vl.ToggleSort() // alpha on
 
-	// Layout: [DB header, DB_HOST, DB_PORT, DB_USER, DEBUG, PORT]
-	require.Equal(t, 6, vl.DisplayCount())
+	// Layout: [DB header, DB_HOST, DB_PORT, DB_USER, UNGROUPED header, DEBUG, PORT]
+	require.Equal(t, 7, vl.DisplayCount())
 	assert.Equal(t, displayItemHeader, vl.displayItems[0].Kind)
 	assert.Equal(t, "DB_HOST", f.Vars[vl.displayItems[1].VarIdx].Key)
 	assert.Equal(t, "DB_PORT", f.Vars[vl.displayItems[2].VarIdx].Key)
 	assert.Equal(t, "DB_USER", f.Vars[vl.displayItems[3].VarIdx].Key)
-	// Ungrouped (PORT, DEBUG) sorted alpha → DEBUG, PORT.
-	assert.Equal(t, "DEBUG", f.Vars[vl.displayItems[4].VarIdx].Key)
-	assert.Equal(t, "PORT", f.Vars[vl.displayItems[5].VarIdx].Key)
+	// UNGROUPED header, then PORT/DEBUG sorted alpha → DEBUG, PORT.
+	assert.Equal(t, displayItemHeader, vl.displayItems[4].Kind)
+	assert.True(t, vl.groups[vl.displayItems[4].GroupIdx].IsUngrouped())
+	assert.Equal(t, "DEBUG", f.Vars[vl.displayItems[5].VarIdx].Key)
+	assert.Equal(t, "PORT", f.Vars[vl.displayItems[6].VarIdx].Key)
 }
 
 func TestVarListGrouping_PreservesGroupOrderUnderSort(t *testing.T) {
@@ -445,8 +447,9 @@ func TestVarListGrouping_PreservesGroupOrderUnderSort(t *testing.T) {
 		"REDIS group must come first by file order, not alpha")
 }
 
-func TestVarListGrouping_UngroupedNoHeader(t *testing.T) {
-	// Only Ungrouped (no prefix shared by ≥2): no headers at all.
+func TestVarListGrouping_UngroupedAloneNoHeader(t *testing.T) {
+	// Only Ungrouped (no prefix shared by ≥2): no header — degenerates to
+	// the linear view to avoid wrapping the entire list under one section.
 	f := makeTestFile(".env", "PORT", "DEBUG", "HOST")
 	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
@@ -454,8 +457,32 @@ func TestVarListGrouping_UngroupedNoHeader(t *testing.T) {
 	vl.ToggleGrouping()
 
 	assert.Equal(t, 0, countHeaders(vl.displayItems),
-		"Ungrouped section never emits a header")
+		"single-Ungrouped case must skip the header")
 	assert.Equal(t, 3, vl.DisplayCount())
+}
+
+func TestVarListGrouping_UngroupedHeaderShownWithNamedGroups(t *testing.T) {
+	// When at least one named group exists, the trailing Ungrouped section
+	// gets its own header (collapsible like the others).
+	f := makeTestFile(".env", "DB_HOST", "DB_PORT", "PORT", "DEBUG")
+	vl := NewVarListModel(config.DefaultConfig().Layout)
+	vl.SetFile(f)
+	vl.Height = 30
+	vl.ToggleGrouping()
+
+	// Layout: DB hdr, DB_HOST, DB_PORT, UNGROUPED hdr, PORT, DEBUG
+	require.Equal(t, 6, vl.DisplayCount())
+	require.Equal(t, 2, countHeaders(vl.displayItems))
+	last := vl.displayItems[3]
+	require.Equal(t, displayItemHeader, last.Kind, "last section starts with a header")
+	assert.True(t, vl.groups[last.GroupIdx].IsUngrouped())
+
+	// And it's collapsible: collapse hides the trailing PORT and DEBUG.
+	vl.SetCursor(3)
+	require.True(t, vl.IsHeaderAtCursor())
+	vl.ToggleCollapseAtCursor()
+	assert.True(t, vl.isCollapsed("")) // empty prefix = Ungrouped
+	assert.Equal(t, 4, vl.DisplayCount(), "collapsed Ungrouped: DB hdr + 2 vars + UNGROUPED hdr")
 }
 
 func TestVarListGrouping_PreservesCollapsedAcrossDisable(t *testing.T) {
@@ -477,8 +504,8 @@ func TestVarListGrouping_PreservesCollapsedAcrossDisable(t *testing.T) {
 	vl.ToggleGrouping() // re-enable
 	assert.True(t, vl.Grouping)
 	assert.True(t, vl.isCollapsed("DB"), "DB stays collapsed after round-trip")
-	// 9 items - 3 DB vars = 6
-	assert.Equal(t, 6, vl.DisplayCount())
+	// 10 items - 3 DB vars = 7
+	assert.Equal(t, 7, vl.DisplayCount())
 }
 
 func TestVarListGrouping_RefreshAfterAddRecomputesGroups(t *testing.T) {
@@ -490,9 +517,10 @@ func TestVarListGrouping_RefreshAfterAddRecomputesGroups(t *testing.T) {
 	vl.ToggleGrouping()
 	assert.Equal(t, 0, countHeaders(vl.displayItems))
 
-	// Adding DB_PORT must form a real DB group.
+	// Adding DB_PORT must form a real DB group; PORT then sits under the
+	// trailing UNGROUPED header.
 	f.AddVar("DB_PORT", "5432", false)
 	vl.Refresh()
-	assert.Equal(t, 1, countHeaders(vl.displayItems))
+	assert.Equal(t, 2, countHeaders(vl.displayItems))
 	assert.Equal(t, "DB", vl.groups[vl.displayItems[0].GroupIdx].Prefix)
 }
