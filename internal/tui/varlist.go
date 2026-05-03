@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -9,6 +10,22 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/lazynop/lazyenv/internal/util"
 )
+
+// displayKind distinguishes a variable row from a group header row.
+type displayKind int
+
+const (
+	displayItemVar displayKind = iota
+	displayItemHeader
+)
+
+// displayItem is a single row in the rendered var list — either a variable
+// or a collapsible group header.
+type displayItem struct {
+	Kind     displayKind
+	VarIdx   int // index into File.Vars; valid when Kind == displayItemVar
+	GroupIdx int // index into groups;    valid when Kind == displayItemHeader
+}
 
 // VarListModel manages the variable list panel.
 type VarListModel struct {
@@ -22,54 +39,114 @@ type VarListModel struct {
 	SortAlpha   bool
 	SearchQuery string
 	Peeking     bool
+	Grouping    bool
 
 	layout config.LayoutConfig
 
-	// Filtered/sorted indices into File.Vars
-	displayIndices []int
+	// Computed view: groups + flattened display rows.
+	groups       []model.VarGroup
+	displayItems []displayItem
+	collapsed    map[string]bool // group prefix → collapsed flag (preserved across toggles)
 }
 
 // NewVarListModel creates a new variable list model.
 func NewVarListModel(layout config.LayoutConfig) VarListModel {
-	return VarListModel{layout: layout}
+	return VarListModel{
+		layout:    layout,
+		collapsed: make(map[string]bool),
+	}
 }
 
-// SetFile sets the active file and recomputes display indices.
+// SetFile sets the active file and recomputes display rows.
 func (m *VarListModel) SetFile(f *model.EnvFile) {
 	m.File = f
 	m.Cursor = 0
 	m.Offset = 0
 	m.Peeking = false
-	m.recomputeIndices()
+	m.recomputeDisplay()
 }
 
-// recomputeIndices builds the list of displayed variable indices.
-func (m *VarListModel) recomputeIndices() {
-	m.displayIndices = nil
+// recomputeDisplay rebuilds groups and the flat displayItems list.
+//
+// Linear view (no headers) is used when grouping is off OR when a search
+// query is active. Otherwise: emit one displayItemHeader per non-Ungrouped
+// group followed by its (optionally collapsed) vars; the Ungrouped bucket
+// is appended last with no header.
+func (m *VarListModel) recomputeDisplay() {
+	m.groups = nil
+	m.displayItems = nil
 	if m.File == nil {
 		return
 	}
 
-	for i := range m.File.Vars {
-		if m.SearchQuery != "" {
-			v := &m.File.Vars[i]
-			keyMatch := strings.Contains(strings.ToLower(v.Key), strings.ToLower(m.SearchQuery))
-			valMatch := strings.Contains(strings.ToLower(v.Value), strings.ToLower(m.SearchQuery))
-			if !keyMatch && !valMatch {
+	if !m.Grouping || m.SearchQuery != "" {
+		m.buildLinearDisplay()
+		m.clampCursor()
+		return
+	}
+
+	m.groups = model.ComputeGroups(m.File.Vars)
+	for gi, g := range m.groups {
+		if !g.IsUngrouped() {
+			m.displayItems = append(m.displayItems, displayItem{
+				Kind:     displayItemHeader,
+				GroupIdx: gi,
+			})
+			if m.collapsed[g.Prefix] {
 				continue
 			}
 		}
-		m.displayIndices = append(m.displayIndices, i)
+		m.appendGroupVars(g)
 	}
+	m.clampCursor()
+}
 
+// buildLinearDisplay emits one displayItemVar per matching variable, with
+// optional alphabetical sorting. Used for the no-grouping and search paths.
+func (m *VarListModel) buildLinearDisplay() {
+	indices := make([]int, 0, len(m.File.Vars))
+	for i := range m.File.Vars {
+		if m.SearchQuery != "" && !m.matchesSearch(&m.File.Vars[i]) {
+			continue
+		}
+		indices = append(indices, i)
+	}
 	if m.SortAlpha {
-		sort.Slice(m.displayIndices, func(a, b int) bool {
-			return m.File.Vars[m.displayIndices[a]].Key < m.File.Vars[m.displayIndices[b]].Key
+		sort.Slice(indices, func(a, b int) bool {
+			return m.File.Vars[indices[a]].Key < m.File.Vars[indices[b]].Key
 		})
 	}
+	for _, idx := range indices {
+		m.displayItems = append(m.displayItems, displayItem{Kind: displayItemVar, VarIdx: idx})
+	}
+}
 
-	if m.Cursor >= len(m.displayIndices) {
-		m.Cursor = max(0, len(m.displayIndices)-1)
+// appendGroupVars emits the var rows for a single group, applying SortAlpha
+// to the vars *within* the group while leaving group order untouched.
+func (m *VarListModel) appendGroupVars(g model.VarGroup) {
+	indices := append([]int(nil), g.Vars...)
+	if m.SortAlpha {
+		sort.Slice(indices, func(a, b int) bool {
+			return m.File.Vars[indices[a]].Key < m.File.Vars[indices[b]].Key
+		})
+	}
+	for _, idx := range indices {
+		m.displayItems = append(m.displayItems, displayItem{Kind: displayItemVar, VarIdx: idx})
+	}
+}
+
+func (m *VarListModel) matchesSearch(v *model.EnvVar) bool {
+	q := strings.ToLower(m.SearchQuery)
+	return strings.Contains(strings.ToLower(v.Key), q) ||
+		strings.Contains(strings.ToLower(v.Value), q)
+}
+
+func (m *VarListModel) clampCursor() {
+	if m.Cursor >= len(m.displayItems) {
+		m.Cursor = max(0, len(m.displayItems)-1)
+	}
+	if m.Cursor < 0 {
+		m.Cursor = 0
 	}
 }
 
@@ -85,7 +162,7 @@ func (m *VarListModel) MoveUp() {
 
 // MoveDown moves the cursor down.
 func (m *VarListModel) MoveDown() {
-	if m.Cursor < len(m.displayIndices)-1 {
+	if m.Cursor < len(m.displayItems)-1 {
 		m.Cursor++
 		visible := m.Height - 4
 		if visible > 0 && m.Cursor >= m.Offset+visible {
@@ -94,12 +171,13 @@ func (m *VarListModel) MoveDown() {
 	}
 }
 
-// SetCursor positions the cursor at the given index with bounds checking.
+// SetCursor positions the cursor at the given displayItems index with bounds
+// checking and adjusts the scroll offset to keep it visible.
 func (m *VarListModel) SetCursor(index int) {
-	if len(m.displayIndices) == 0 {
+	if len(m.displayItems) == 0 {
 		return
 	}
-	m.Cursor = max(0, min(index, len(m.displayIndices)-1))
+	m.Cursor = max(0, min(index, len(m.displayItems)-1))
 	visible := m.Height - 4
 	if visible > 0 {
 		if m.Cursor < m.Offset {
@@ -111,46 +189,124 @@ func (m *VarListModel) SetCursor(index int) {
 	}
 }
 
-// DisplayCount returns the number of displayed items.
+// DisplayCount returns the number of displayed rows (vars + headers).
 func (m *VarListModel) DisplayCount() int {
-	return len(m.displayIndices)
+	return len(m.displayItems)
 }
 
-// SelectedVar returns the currently selected variable, or nil.
+// SelectedVar returns the currently selected variable, or nil if the cursor
+// is on a header (or out of range).
 func (m *VarListModel) SelectedVar() *model.EnvVar {
-	if m.File == nil || len(m.displayIndices) == 0 {
+	idx := m.SelectedVarIndex()
+	if idx < 0 {
 		return nil
 	}
-	if m.Cursor < 0 || m.Cursor >= len(m.displayIndices) {
-		return nil
-	}
-	idx := m.displayIndices[m.Cursor]
 	return &m.File.Vars[idx]
 }
 
-// SelectedVarIndex returns the real index of the selected var in File.Vars.
+// SelectedVarIndex returns the index into File.Vars for the currently
+// selected variable, or -1 if the cursor is on a header (or out of range).
 func (m *VarListModel) SelectedVarIndex() int {
-	if m.Cursor < 0 || m.Cursor >= len(m.displayIndices) {
+	if m.File == nil || m.Cursor < 0 || m.Cursor >= len(m.displayItems) {
 		return -1
 	}
-	return m.displayIndices[m.Cursor]
+	item := m.displayItems[m.Cursor]
+	if item.Kind != displayItemVar {
+		return -1
+	}
+	return item.VarIdx
+}
+
+// IsHeaderAtCursor reports whether the row under the cursor is a group header.
+func (m *VarListModel) IsHeaderAtCursor() bool {
+	if m.Cursor < 0 || m.Cursor >= len(m.displayItems) {
+		return false
+	}
+	return m.displayItems[m.Cursor].Kind == displayItemHeader
+}
+
+// IsCollapsed reports whether the group with the given prefix is collapsed.
+// Intended for tests and introspection.
+func (m *VarListModel) IsCollapsed(prefix string) bool {
+	return m.collapsed[prefix]
 }
 
 // ToggleSort toggles alphabetical sorting.
 func (m *VarListModel) ToggleSort() {
 	m.SortAlpha = !m.SortAlpha
-	m.recomputeIndices()
+	m.recomputeDisplay()
 }
 
 // SetSearch sets the search query and refilters.
 func (m *VarListModel) SetSearch(query string) {
 	m.SearchQuery = query
-	m.recomputeIndices()
+	m.recomputeDisplay()
 }
 
-// Refresh recomputes indices after file changes.
+// Refresh recomputes display rows after file changes.
 func (m *VarListModel) Refresh() {
-	m.recomputeIndices()
+	m.recomputeDisplay()
+}
+
+// ToggleGrouping flips the Grouping flag and tries to keep the cursor on
+// the same variable across the layout change. Returns the count of
+// non-Ungrouped groups now visible (caller can use it for a flash message).
+func (m *VarListModel) ToggleGrouping() int {
+	prevVarIdx := m.SelectedVarIndex()
+	m.Grouping = !m.Grouping
+	m.recomputeDisplay()
+
+	if prevVarIdx >= 0 {
+		for i, item := range m.displayItems {
+			if item.Kind == displayItemVar && item.VarIdx == prevVarIdx {
+				m.SetCursor(i)
+				return m.namedGroupCount()
+			}
+		}
+		// Var hidden in a collapsed group: fall back to that group's header.
+		for i, item := range m.displayItems {
+			if item.Kind != displayItemHeader {
+				continue
+			}
+			if slices.Contains(m.groups[item.GroupIdx].Vars, prevVarIdx) {
+				m.SetCursor(i)
+				return m.namedGroupCount()
+			}
+		}
+	}
+	return m.namedGroupCount()
+}
+
+// ToggleCollapseAtCursor toggles the collapsed state of the group whose
+// header is under the cursor. No-op when the cursor is not on a header.
+// Returns true if a toggle happened.
+func (m *VarListModel) ToggleCollapseAtCursor() bool {
+	if !m.IsHeaderAtCursor() {
+		return false
+	}
+	gi := m.displayItems[m.Cursor].GroupIdx
+	if gi < 0 || gi >= len(m.groups) {
+		return false
+	}
+	prefix := m.groups[gi].Prefix
+	m.collapsed[prefix] = !m.collapsed[prefix]
+	m.recomputeDisplay()
+	// The header retains its position relative to items above it, so the
+	// cursor stays put — but we still re-clamp in case of edge cases.
+	m.clampCursor()
+	return true
+}
+
+// namedGroupCount returns the number of non-Ungrouped groups currently
+// computed. Used for flash messages.
+func (m *VarListModel) namedGroupCount() int {
+	n := 0
+	for _, g := range m.groups {
+		if !g.IsUngrouped() {
+			n++
+		}
+	}
+	return n
 }
 
 // renderWarningIndicators renders the modification and issue warning indicators for a variable.
@@ -197,12 +353,12 @@ var controlCharReplacer = strings.NewReplacer(
 func flattenValue(s string) string { return controlCharReplacer.Replace(s) }
 
 // renderVarLine renders a single variable line including cursor highlighting, secret masking, and warnings.
-func (m *VarListModel) renderVarLine(i int, v *model.EnvVar, keyWidth, maxValWidth int, theme Theme) string {
+func (m *VarListModel) renderVarLine(rowIdx int, v *model.EnvVar, keyWidth, maxValWidth int, theme Theme) string {
 	key := padRight(truncate(v.Key, keyWidth), keyWidth)
 	value := m.formatValue(v, maxValWidth)
 	warning := m.renderWarningIndicators(v, theme)
 
-	if i == m.Cursor && m.Focused {
+	if rowIdx == m.Cursor && m.Focused {
 		// Cursor line: render as a single styled block (no ANSI nesting)
 		return theme.CursorItem.Render(fmt.Sprintf("  %s  %s%s", key, value, stripAnsi(warning)))
 	}
@@ -216,6 +372,27 @@ func (m *VarListModel) renderVarLine(i int, v *model.EnvVar, keyWidth, maxValWid
 		theme.KeyStyle.Render(key),
 		valueStyle.Render(value),
 		warning)
+}
+
+// renderHeaderLine renders a group header row (▾ PREFIX (N) or ▸ PREFIX (N)).
+//
+// When the cursor is on this row and the panel is focused, the entire line is
+// re-rendered as a single CursorItem block (ANSI-stripped first) to avoid
+// nesting reset codes from inner Render() calls.
+func (m *VarListModel) renderHeaderLine(rowIdx int, group model.VarGroup, theme Theme) string {
+	arrow := "▾"
+	if m.collapsed[group.Prefix] {
+		arrow = "▸"
+	}
+	countStr := fmt.Sprintf("(%d)", len(group.Vars))
+
+	if rowIdx == m.Cursor && m.Focused {
+		return theme.CursorItem.Render(fmt.Sprintf("  %s %s %s", arrow, group.Prefix, countStr))
+	}
+	return fmt.Sprintf("  %s %s %s",
+		theme.MutedItem.Render(arrow),
+		theme.KeyStyle.Render(group.Prefix),
+		theme.MutedItem.Render(countStr))
 }
 
 // renderPeekLine renders the peek line for modified/new variables, or empty string if not applicable.
@@ -246,23 +423,30 @@ func (m *VarListModel) renderDeletedVars(visible, keyWidth, maxValWidth int, cur
 	return lines
 }
 
-// visibleLines returns how many variable lines can be displayed.
+// visibleLines returns how many display rows can be shown.
 func (m *VarListModel) visibleLines() int {
 	visible := max(m.Height-4, 1)
-	if m.Peeking && m.Cursor >= 0 && m.Cursor < len(m.displayIndices) {
-		v := &m.File.Vars[m.displayIndices[m.Cursor]]
-		if v.Modified || v.IsNew {
-			visible = max(visible-1, 1)
+	if m.Peeking && m.Cursor >= 0 && m.Cursor < len(m.displayItems) {
+		item := m.displayItems[m.Cursor]
+		if item.Kind == displayItemVar {
+			v := &m.File.Vars[item.VarIdx]
+			if v.Modified || v.IsNew {
+				visible = max(visible-1, 1)
+			}
 		}
 	}
 	return visible
 }
 
 // calcColumnWidths returns the key column width and max value width.
+// Headers are excluded from key-width measurement.
 func (m *VarListModel) calcColumnWidths() (int, int) {
 	keyWidth := 0
-	for _, idx := range m.displayIndices {
-		kw := len(m.File.Vars[idx].Key)
+	for _, item := range m.displayItems {
+		if item.Kind != displayItemVar {
+			continue
+		}
+		kw := len(m.File.Vars[item.VarIdx].Key)
 		if kw > keyWidth {
 			keyWidth = kw
 		}
@@ -275,20 +459,24 @@ func (m *VarListModel) calcColumnWidths() (int, int) {
 	return keyWidth, maxValWidth
 }
 
-// renderVarLines renders all visible variable lines including peek lines.
-func (m *VarListModel) renderVarLines(visible, keyWidth, maxValWidth int, theme Theme) []string {
+// renderRows renders all visible rows (vars + headers) plus peek lines.
+func (m *VarListModel) renderRows(visible, keyWidth, maxValWidth int, theme Theme) []string {
 	var lines []string
-	end := min(m.Offset+visible, len(m.displayIndices))
+	end := min(m.Offset+visible, len(m.displayItems))
 
 	for i := m.Offset; i < end; i++ {
-		idx := m.displayIndices[i]
-		v := &m.File.Vars[idx]
+		item := m.displayItems[i]
+		switch item.Kind {
+		case displayItemHeader:
+			lines = append(lines, m.renderHeaderLine(i, m.groups[item.GroupIdx], theme))
+		default: // displayItemVar
+			v := &m.File.Vars[item.VarIdx]
+			lines = append(lines, m.renderVarLine(i, v, keyWidth, maxValWidth, theme))
 
-		lines = append(lines, m.renderVarLine(i, v, keyWidth, maxValWidth, theme))
-
-		if m.Peeking && i == m.Cursor && m.Focused {
-			if peekLine := m.renderPeekLine(v, keyWidth, maxValWidth, theme); peekLine != "" {
-				lines = append(lines, peekLine)
+			if m.Peeking && i == m.Cursor && m.Focused {
+				if peekLine := m.renderPeekLine(v, keyWidth, maxValWidth, theme); peekLine != "" {
+					lines = append(lines, peekLine)
+				}
 			}
 		}
 	}
@@ -301,7 +489,12 @@ func (m *VarListModel) viewTitle(theme Theme) string {
 		return theme.PanelTitle.Render("Variables")
 	}
 	total := len(m.File.Vars)
-	displayed := len(m.displayIndices)
+	displayed := 0
+	for _, item := range m.displayItems {
+		if item.Kind == displayItemVar {
+			displayed++
+		}
+	}
 	count := fmt.Sprintf("%d", total)
 	if m.SearchQuery != "" && displayed != total {
 		count = fmt.Sprintf("%d/%d", displayed, total)
@@ -318,7 +511,7 @@ func (m *VarListModel) View(theme Theme) string {
 		return m.renderPanel(title, content, theme)
 	}
 
-	if len(m.displayIndices) == 0 {
+	if len(m.displayItems) == 0 {
 		msg := "  No variables"
 		if m.SearchQuery != "" {
 			msg = fmt.Sprintf("  No matches for %q", m.SearchQuery)
@@ -329,7 +522,7 @@ func (m *VarListModel) View(theme Theme) string {
 	visible := m.visibleLines()
 	keyWidth, maxValWidth := m.calcColumnWidths()
 
-	lines := m.renderVarLines(visible, keyWidth, maxValWidth, theme)
+	lines := m.renderRows(visible, keyWidth, maxValWidth, theme)
 	lines = append(lines, m.renderDeletedVars(visible, keyWidth, maxValWidth, len(lines), theme)...)
 
 	return m.renderPanel(title, strings.Join(lines, "\n"), theme)
