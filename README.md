@@ -23,7 +23,7 @@ Browse, compare, edit and validate environment variables from your terminal.
 - Completeness matrix showing which variables exist across files
 - Change tracking: new, modified, deleted, duplicate, empty, placeholder
 - Secret masking, gitignore check, automatic backup — all [configurable](https://lazynop.github.io/lazyenv/configuration/)
-- Clipboard support (OSC 52), search and sort
+- Clipboard support (OSC 52), search, sort, and prefix-based grouping
 - Round-trip fidelity: saves preserve comments, blank lines, quoting
 - TOML configuration: layout, colors, file patterns, behaviors
 - Mouse support: click to select, scroll wheel to navigate (disable with `--no-mouse`)

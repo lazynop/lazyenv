@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
@@ -98,6 +100,58 @@ func TestVarListDisplayCount(t *testing.T) {
 	// Reset search
 	m.SetSearch("")
 	assert.Equal(t, len(f.Vars), m.DisplayCount(), "DisplayCount should return full count after clearing search")
+}
+
+// --- Click on group header toggles collapse (E009) ---
+
+func TestMouseClickOnHeader_TogglesCollapse(t *testing.T) {
+	f := makeTestFile(".env",
+		"DB_HOST", "DB_PORT", "DB_USER",
+		"REDIS_URL", "REDIS_PORT",
+		"PORT",
+	)
+	app := newTestApp([]*model.EnvFile{f})
+	// Trigger layout so fileWidth is computed for the click X dispatch.
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	app = updated.(App)
+	app.varList.Grouping = true
+	app.varList.Refresh()
+
+	// Layout: row 0 = DB header, then DB vars, etc. Y=2 maps to row 0
+	// (Y=0 border, Y=1 title, Y=2 first item) and X must land in the var
+	// panel (X >= a.fileWidth).
+	clickX := app.fileWidth + 5
+	updated, _ = app.Update(tea.MouseClickMsg{X: clickX, Y: 2, Button: tea.MouseLeft})
+	app = updated.(App)
+
+	require.Equal(t, FocusVars, app.focus)
+	assert.True(t, app.varList.IsCollapsed("DB"),
+		"clicking the DB header must toggle collapse on")
+
+	// Click again to expand.
+	updated, _ = app.Update(tea.MouseClickMsg{X: clickX, Y: 2, Button: tea.MouseLeft})
+	app = updated.(App)
+	assert.False(t, app.varList.IsCollapsed("DB"),
+		"second click must toggle collapse off")
+}
+
+func TestMouseClickOnVar_DoesNotToggleCollapse(t *testing.T) {
+	f := makeTestFile(".env", "DB_HOST", "DB_PORT", "DB_USER")
+	app := newTestApp([]*model.EnvFile{f})
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	app = updated.(App)
+	app.varList.Grouping = true
+	app.varList.Refresh()
+
+	// Y=3 → row 1 = first DB var (DB_HOST). Click on a var must just
+	// move the cursor without toggling.
+	clickX := app.fileWidth + 5
+	updated, _ = app.Update(tea.MouseClickMsg{X: clickX, Y: 3, Button: tea.MouseLeft})
+	app = updated.(App)
+
+	assert.False(t, app.varList.IsCollapsed("DB"),
+		"clicking a var row must not collapse the group")
+	assert.Equal(t, "DB_HOST", app.varList.SelectedVar().Key)
 }
 
 // --- DiffViewModel.SetCursor ---

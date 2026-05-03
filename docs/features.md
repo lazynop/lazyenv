@@ -80,6 +80,27 @@ Saves preserve comments, blank lines, quoting style, and key ordering — your f
 
 Filter variables by name or value with `/`. Toggle between original position and alphabetical sorting with `o`.
 
+## Variable grouping
+
+Toggle prefix-based grouping with `g`. Variables sharing a non-empty prefix (everything before the first `_`) collapse under a header showing the prefix and group size:
+
+```
+▾ DB (4)
+  DB_HOST     localhost
+  DB_PORT     5432
+  DB_USER     admin
+  DB_NAME     app
+▾ REDIS (2)
+  REDIS_URL   redis://localhost
+  REDIS_PORT  6379
+  PORT        3000
+  DEBUG       true
+```
+
+Press `Enter` or `Space` (or click) on a header to collapse the group. Variables with a unique prefix or no `_` go to a trailing "Ungrouped" section without a header.
+
+Groups follow file order; alphabetical sort (`o`) applies *inside* groups so the layout stays predictable. Search disables grouping in rendering and restores it when you clear the query. The toggle and per-group collapsed state live for the session — there's no on-disk reorder.
+
 ## Read-only mode
 
 Disable all write operations with `--read-only` or `read-only = true` in config. Editing keybindings (edit, add, delete, save, copy in diff view) are suppressed, and a `[READ-ONLY]` badge is shown in the status bar. Navigation, search, diff view (read-only), peek, yank, and matrix view remain fully functional.

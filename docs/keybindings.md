@@ -45,6 +45,8 @@ Keybindings are context-sensitive: each screen only responds to the keys listed 
 | `r`            | Reset current file (discard unsaved changes) |
 | `Ctrl+S`       | Toggle secret masking                        |
 | `o`            | Toggle sort order (position / alphabetical)  |
+| `g`            | Toggle prefix grouping (`DB_*`, `REDIS_*`, …) |
+| `Enter` / `Space` | Collapse/expand group (when cursor is on a group header) |
 | `?`            | Show help screen                             |
 | `q` / `Ctrl+C` | Quit                                         |
 
@@ -104,6 +106,7 @@ Mouse is enabled by default. Disable with `--no-mouse` or `no-mouse = true` in c
 | --------------------- | ---------------------------------------- |
 | Click on file         | Select the file                          |
 | Click on variable     | Select the variable                      |
+| Click on group header | Collapse / expand the group              |
 | Click on panel        | Switch focus to that panel               |
 | Click on diff entry   | Select the entry                         |
 | Click on matrix cell  | Move cursor to that cell                 |

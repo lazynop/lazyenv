@@ -122,6 +122,17 @@ func TestReadOnlyAllowsToggleSort(t *testing.T) {
 	assert.True(t, app.varList.SortAlpha, "sort toggle should work in read-only mode")
 }
 
+func TestReadOnlyAllowsToggleGrouping(t *testing.T) {
+	f := makeTestFile(".env", "DB_HOST", "DB_PORT")
+	app := newReadOnlyApp([]*model.EnvFile{f})
+	app.focus = FocusVars
+
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "g"})
+	app = updated.(App)
+
+	assert.True(t, app.varList.Grouping, "grouping toggle should work in read-only mode")
+}
+
 func TestReadOnlyAllowsToggleSecrets(t *testing.T) {
 	f := makeTestFile(".env", "FOO")
 	app := newReadOnlyApp([]*model.EnvFile{f})
