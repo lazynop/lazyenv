@@ -2,10 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.7.0] - 2026-05-03
 
 ### Added
 - Variable grouping by prefix in the var list. Toggle with `g`: variables sharing a prefix (`DB_*`, `REDIS_*`, ...) are grouped under collapsible headers (`▾ DB (4)` / `▸ DB (4)`). Variables with a unique prefix or no `_` collect under a trailing `UNGROUPED` header (shown only when at least one named group exists). Press `enter` or `space` on any header to collapse/expand it; click a header with the mouse for the same effect. Groups appear in file order; alphabetical sort applies inside each group. Search disables grouping in rendering and restores it on clear. Set `group = true` in config or pass `-g` / `--group` to start with grouping enabled.
+
+### Fixed
+- Help screen: aligned `n/N` and `Space/Enter` action rows under the actions column.
 
 ## [0.6.0] - 2026-04-19
 
