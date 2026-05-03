@@ -620,7 +620,7 @@ func (a App) handleNormalNavigation(msg tea.KeyPressMsg) (App, bool) {
 	case key.Matches(msg, a.keys.Enter):
 		return a.handleNormalEnter(), true
 
-	case a.isSpaceCollapseToggle(msg):
+	case key.Matches(msg, a.keys.ToggleCollapse) && a.focus == FocusVars && a.varList.IsHeaderAtCursor():
 		a.varList.ToggleCollapseAtCursor()
 		return a, true
 	}
@@ -628,9 +628,6 @@ func (a App) handleNormalNavigation(msg tea.KeyPressMsg) (App, bool) {
 	return a, false
 }
 
-// handleNormalEnter applies Enter semantics: selects the focused file and
-// switches focus when on the file panel, or toggles a group's collapsed
-// state when the cursor is on a header in the var panel.
 func (a App) handleNormalEnter() App {
 	switch {
 	case a.focus == FocusFiles:
@@ -645,12 +642,6 @@ func (a App) handleNormalEnter() App {
 		a.varList.ToggleCollapseAtCursor()
 	}
 	return a
-}
-
-// isSpaceCollapseToggle reports whether the message is a Space press that
-// should toggle a group header's collapse state.
-func (a App) isSpaceCollapseToggle(msg tea.KeyPressMsg) bool {
-	return msg.String() == "space" && a.focus == FocusVars && a.varList.IsHeaderAtCursor()
 }
 
 func (a App) handleNormalVarAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bool) {
@@ -1341,7 +1332,6 @@ func (a *App) flashError(msg string) tea.Cmd {
 	return clearMessageAfter(a.config.Layout.ErrorMessageTimeout)
 }
 
-// toggleSortFlash flips alpha sorting and returns the appropriate flash cmd.
 func (a *App) toggleSortFlash() tea.Cmd {
 	a.varList.ToggleSort()
 	if a.varList.SortAlpha {
@@ -1350,7 +1340,6 @@ func (a *App) toggleSortFlash() tea.Cmd {
 	return a.flashMessage("Sorted by position")
 }
 
-// toggleGroupingFlash flips prefix grouping and returns the appropriate flash cmd.
 func (a *App) toggleGroupingFlash() tea.Cmd {
 	n := a.varList.ToggleGrouping()
 	if a.varList.Grouping {

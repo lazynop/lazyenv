@@ -15,7 +15,6 @@ type VarGroup struct {
 	Vars []int
 }
 
-// IsUngrouped reports whether the group is the trailing "Ungrouped" bucket.
 func (g VarGroup) IsUngrouped() bool {
 	return g.Prefix == ""
 }

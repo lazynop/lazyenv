@@ -4,39 +4,40 @@ import "charm.land/bubbles/v2/key"
 
 // KeyMap defines all keybindings for the app.
 type KeyMap struct {
-	Up            key.Binding
-	Down          key.Binding
-	Left          key.Binding
-	Right         key.Binding
-	Enter         key.Binding
-	Edit          key.Binding
-	EditKey       key.Binding
-	Add           key.Binding
-	Delete        key.Binding
-	Compare       key.Binding
-	Search        key.Binding
-	Save          key.Binding
-	Reset         key.Binding
-	ToggleSecret  key.Binding
-	ToggleSort    key.Binding
-	ToggleGroup   key.Binding
-	Help          key.Binding
-	Quit          key.Binding
-	Escape        key.Binding
-	Confirm       key.Binding
-	Deny          key.Binding
-	NextDiff      key.Binding
-	PrevDiff      key.Binding
-	Filter        key.Binding
-	Matrix        key.Binding
-	YankValue     key.Binding
-	YankLine      key.Binding
-	Peek          key.Binding
-	CreateFile    key.Binding
-	DuplicateFile key.Binding
-	DeleteFile    key.Binding
-	RenameFile    key.Binding
-	TemplateFile  key.Binding
+	Up             key.Binding
+	Down           key.Binding
+	Left           key.Binding
+	Right          key.Binding
+	Enter          key.Binding
+	Edit           key.Binding
+	EditKey        key.Binding
+	Add            key.Binding
+	Delete         key.Binding
+	Compare        key.Binding
+	Search         key.Binding
+	Save           key.Binding
+	Reset          key.Binding
+	ToggleSecret   key.Binding
+	ToggleSort     key.Binding
+	ToggleGroup    key.Binding
+	ToggleCollapse key.Binding
+	Help           key.Binding
+	Quit           key.Binding
+	Escape         key.Binding
+	Confirm        key.Binding
+	Deny           key.Binding
+	NextDiff       key.Binding
+	PrevDiff       key.Binding
+	Filter         key.Binding
+	Matrix         key.Binding
+	YankValue      key.Binding
+	YankLine       key.Binding
+	Peek           key.Binding
+	CreateFile     key.Binding
+	DuplicateFile  key.Binding
+	DeleteFile     key.Binding
+	RenameFile     key.Binding
+	TemplateFile   key.Binding
 }
 
 // DefaultKeyMap returns the default keybindings.
@@ -105,6 +106,10 @@ func DefaultKeyMap() KeyMap {
 		ToggleGroup: key.NewBinding(
 			key.WithKeys("g"),
 			key.WithHelp("g", "toggle grouping"),
+		),
+		ToggleCollapse: key.NewBinding(
+			key.WithKeys("space"),
+			key.WithHelp("space", "collapse/expand group"),
 		),
 		Help: key.NewBinding(
 			key.WithKeys("?"),

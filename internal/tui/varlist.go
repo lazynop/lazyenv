@@ -101,30 +101,25 @@ func (m *VarListModel) recomputeDisplay() {
 	m.clampCursor()
 }
 
-// buildLinearDisplay emits one displayItemVar per matching variable, with
-// optional alphabetical sorting. Used for the no-grouping and search paths.
 func (m *VarListModel) buildLinearDisplay() {
+	q := strings.ToLower(m.SearchQuery)
 	indices := make([]int, 0, len(m.File.Vars))
 	for i := range m.File.Vars {
-		if m.SearchQuery != "" && !m.matchesSearch(&m.File.Vars[i]) {
+		if q != "" && !matchesQuery(&m.File.Vars[i], q) {
 			continue
 		}
 		indices = append(indices, i)
 	}
-	if m.SortAlpha {
-		sort.Slice(indices, func(a, b int) bool {
-			return m.File.Vars[indices[a]].Key < m.File.Vars[indices[b]].Key
-		})
-	}
-	for _, idx := range indices {
-		m.displayItems = append(m.displayItems, displayItem{Kind: displayItemVar, VarIdx: idx})
-	}
+	m.emitVarRows(indices)
 }
 
-// appendGroupVars emits the var rows for a single group, applying SortAlpha
-// to the vars *within* the group while leaving group order untouched.
 func (m *VarListModel) appendGroupVars(g model.VarGroup) {
-	indices := append([]int(nil), g.Vars...)
+	m.emitVarRows(slices.Clone(g.Vars))
+}
+
+// emitVarRows appends one displayItemVar per index in the given slice,
+// optionally sorting alphabetically by Key first. Mutates indices in place.
+func (m *VarListModel) emitVarRows(indices []int) {
 	if m.SortAlpha {
 		sort.Slice(indices, func(a, b int) bool {
 			return m.File.Vars[indices[a]].Key < m.File.Vars[indices[b]].Key
@@ -135,10 +130,11 @@ func (m *VarListModel) appendGroupVars(g model.VarGroup) {
 	}
 }
 
-func (m *VarListModel) matchesSearch(v *model.EnvVar) bool {
-	q := strings.ToLower(m.SearchQuery)
-	return strings.Contains(strings.ToLower(v.Key), q) ||
-		strings.Contains(strings.ToLower(v.Value), q)
+// matchesQuery reports whether v's key or value contains the (already
+// lowercased) query.
+func matchesQuery(v *model.EnvVar, qLower string) bool {
+	return strings.Contains(strings.ToLower(v.Key), qLower) ||
+		strings.Contains(strings.ToLower(v.Value), qLower)
 }
 
 func (m *VarListModel) clampCursor() {
@@ -225,32 +221,27 @@ func (m *VarListModel) IsHeaderAtCursor() bool {
 	return m.displayItems[m.Cursor].Kind == displayItemHeader
 }
 
-// IsCollapsed reports whether the group with the given prefix is collapsed.
-// Intended for tests and introspection.
 func (m *VarListModel) IsCollapsed(prefix string) bool {
 	return m.collapsed[prefix]
 }
 
-// ToggleSort toggles alphabetical sorting.
 func (m *VarListModel) ToggleSort() {
 	m.SortAlpha = !m.SortAlpha
 	m.recomputeDisplay()
 }
 
-// SetSearch sets the search query and refilters.
 func (m *VarListModel) SetSearch(query string) {
 	m.SearchQuery = query
 	m.recomputeDisplay()
 }
 
-// Refresh recomputes display rows after file changes.
 func (m *VarListModel) Refresh() {
 	m.recomputeDisplay()
 }
 
-// ToggleGrouping flips the Grouping flag and tries to keep the cursor on
-// the same variable across the layout change. Returns the count of
-// non-Ungrouped groups now visible (caller can use it for a flash message).
+// ToggleGrouping flips Grouping and keeps the cursor on the previously-
+// selected var (or its containing header if the var is now hidden).
+// Returns the count of non-Ungrouped groups now visible.
 func (m *VarListModel) ToggleGrouping() int {
 	prevVarIdx := m.SelectedVarIndex()
 	m.Grouping = !m.Grouping
@@ -278,8 +269,8 @@ func (m *VarListModel) ToggleGrouping() int {
 }
 
 // ToggleCollapseAtCursor toggles the collapsed state of the group whose
-// header is under the cursor. No-op when the cursor is not on a header.
-// Returns true if a toggle happened.
+// header is under the cursor. No-op (returns false) when the cursor is
+// not on a header.
 func (m *VarListModel) ToggleCollapseAtCursor() bool {
 	if !m.IsHeaderAtCursor() {
 		return false
@@ -291,14 +282,10 @@ func (m *VarListModel) ToggleCollapseAtCursor() bool {
 	prefix := m.groups[gi].Prefix
 	m.collapsed[prefix] = !m.collapsed[prefix]
 	m.recomputeDisplay()
-	// The header retains its position relative to items above it, so the
-	// cursor stays put — but we still re-clamp in case of edge cases.
 	m.clampCursor()
 	return true
 }
 
-// namedGroupCount returns the number of non-Ungrouped groups currently
-// computed. Used for flash messages.
 func (m *VarListModel) namedGroupCount() int {
 	n := 0
 	for _, g := range m.groups {

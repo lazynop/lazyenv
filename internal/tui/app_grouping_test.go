@@ -51,7 +51,6 @@ func TestApp_ToggleGroupingDisableFlash(t *testing.T) {
 
 func TestApp_EnterOnHeaderTogglesCollapse(t *testing.T) {
 	app, _ := newGroupingApp(t)
-	app.Update(tea.KeyPressMsg{Text: "g"}) // ignore: just to keep state local
 	app.varList.Grouping = true
 	app.varList.Refresh()
 	app.varList.SetCursor(0) // DB header
