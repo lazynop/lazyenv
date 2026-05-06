@@ -490,6 +490,28 @@ func TestVarListGrouping_UngroupedAlwaysLastWithSortAlpha(t *testing.T) {
 	assert.Equal(t, "AAA", f.Vars[vl.displayItems[4].VarIdx].Key)
 }
 
+func TestVarListGrouping_CaseSensitiveAlphaOrder(t *testing.T) {
+	// Prefix matching in ComputeGroups is case-sensitive, so AWS and aws
+	// are distinct groups. Alpha sort must be case-sensitive too:
+	// uppercase letters sort before lowercase in Go string comparison.
+	f := makeTestFile(".env",
+		"db_host", "db_port",
+		"AWS_KEY", "AWS_SECRET",
+		"aws_region", "aws_profile",
+	)
+	vl := NewVarListModel(config.DefaultConfig().Layout)
+	vl.SetFile(f)
+	vl.Height = 30
+	vl.ToggleGrouping()
+	vl.ToggleSort()
+
+	// Expected order: AWS, aws, db (uppercase < lowercase).
+	require.Equal(t, 3, len(vl.groups))
+	assert.Equal(t, "AWS", vl.groups[0].Prefix)
+	assert.Equal(t, "aws", vl.groups[1].Prefix)
+	assert.Equal(t, "db", vl.groups[2].Prefix)
+}
+
 func TestVarListGrouping_UngroupedAloneNoHeader(t *testing.T) {
 	// Only Ungrouped (no prefix shared by ≥2): no header — degenerates to
 	// the linear view to avoid wrapping the entire list under one section.
