@@ -469,6 +469,27 @@ func TestVarListGrouping_GroupsFileOrderWithoutSortAlpha(t *testing.T) {
 		"DB group must come second by file order when sort is off")
 }
 
+func TestVarListGrouping_UngroupedAlwaysLastWithSortAlpha(t *testing.T) {
+	// AAA (Ungrouped — single occurrence, no shared prefix with another)
+	// would alphabetically come before ZZZ, but it must stay pinned last.
+	f := makeTestFile(".env",
+		"ZZZ_A", "ZZZ_B",
+		"AAA",
+	)
+	vl := NewVarListModel(config.DefaultConfig().Layout)
+	vl.SetFile(f)
+	vl.Height = 30
+	vl.ToggleGrouping()
+	vl.ToggleSort()
+
+	// Layout under sort: [ZZZ header, ZZZ_A, ZZZ_B, UNGROUPED header, AAA]
+	require.Equal(t, 5, vl.DisplayCount())
+	assert.Equal(t, "ZZZ", vl.groups[vl.displayItems[0].GroupIdx].Prefix)
+	assert.True(t, vl.groups[vl.displayItems[3].GroupIdx].IsUngrouped(),
+		"Ungrouped must remain last under alpha sort")
+	assert.Equal(t, "AAA", f.Vars[vl.displayItems[4].VarIdx].Key)
+}
+
 func TestVarListGrouping_UngroupedAloneNoHeader(t *testing.T) {
 	// Only Ungrouped (no prefix shared by ≥2): no header — degenerates to
 	// the linear view to avoid wrapping the entire list under one section.
