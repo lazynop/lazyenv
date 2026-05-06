@@ -450,6 +450,25 @@ func TestVarListGrouping_GroupsSortedAlphaUnderSort(t *testing.T) {
 		"REDIS group must come second by alpha order under sort")
 }
 
+func TestVarListGrouping_GroupsFileOrderWithoutSortAlpha(t *testing.T) {
+	// With grouping ON but sort OFF, groups must stay in file order.
+	f := makeTestFile(".env",
+		"REDIS_URL", "REDIS_PORT",
+		"DB_HOST", "DB_PORT",
+	)
+	vl := NewVarListModel(config.DefaultConfig().Layout)
+	vl.SetFile(f)
+	vl.Height = 30
+	vl.ToggleGrouping()
+	// SortAlpha intentionally left off.
+
+	require.Equal(t, 6, vl.DisplayCount())
+	assert.Equal(t, "REDIS", vl.groups[vl.displayItems[0].GroupIdx].Prefix,
+		"REDIS group must come first by file order when sort is off")
+	assert.Equal(t, "DB", vl.groups[vl.displayItems[3].GroupIdx].Prefix,
+		"DB group must come second by file order when sort is off")
+}
+
 func TestVarListGrouping_UngroupedAloneNoHeader(t *testing.T) {
 	// Only Ungrouped (no prefix shared by ≥2): no header — degenerates to
 	// the linear view to avoid wrapping the entire list under one section.
