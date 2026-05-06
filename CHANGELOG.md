@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.7.1] - 2026-05-06
 
 ### Changed
 - Variable grouping: when sort is alphabetical (`o`), groups are now ordered alphabetically by prefix instead of by file position. The Ungrouped bucket remains pinned last. Pressing `o` also keeps the cursor on the same var (or same group header) when groups shift. This also affects startup behavior when both `sort = "alphabetical"` and `group = true` are set in the config — groups now appear in alphabetical order from the first render.
