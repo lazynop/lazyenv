@@ -243,9 +243,70 @@ func (m *VarListModel) isCollapsed(prefix string) bool {
 	return m.collapsed[prefix]
 }
 
+// cursorAnchor remembers the user's logical cursor position before a
+// recomputeDisplay so it can be restored even if the row index changes.
+//
+// At most one of hasHeader/hasVar is true at a time (since a row is either
+// a header or a var). Both false means "no anchor" — restoreCursor is a
+// no-op and the cursor stays wherever clampCursor leaves it.
+type cursorAnchor struct {
+	hasHeader  bool
+	headerPref string
+	hasVar     bool
+	varIdx     int
+}
+
+func (m *VarListModel) captureCursor() cursorAnchor {
+	if m.Cursor < 0 || m.Cursor >= len(m.displayItems) {
+		return cursorAnchor{}
+	}
+	item := m.displayItems[m.Cursor]
+	switch item.Kind {
+	case displayItemHeader:
+		gi := item.GroupIdx
+		if gi >= 0 && gi < len(m.groups) {
+			return cursorAnchor{hasHeader: true, headerPref: m.groups[gi].Prefix}
+		}
+	case displayItemVar:
+		return cursorAnchor{hasVar: true, varIdx: item.VarIdx}
+	}
+	return cursorAnchor{}
+}
+
+// restoreCursor positions the cursor on the row that matches the anchor.
+// If the original row was a header, look for a header with the same prefix.
+// If it was a var, look for the var first; if hidden in a collapsed group,
+// fall back to that group's header.
+func (m *VarListModel) restoreCursor(a cursorAnchor) {
+	if a.hasHeader {
+		for i, item := range m.displayItems {
+			if item.Kind == displayItemHeader && m.groups[item.GroupIdx].Prefix == a.headerPref {
+				m.SetCursor(i)
+				return
+			}
+		}
+	}
+	if a.hasVar {
+		for i, item := range m.displayItems {
+			if item.Kind == displayItemVar && item.VarIdx == a.varIdx {
+				m.SetCursor(i)
+				return
+			}
+		}
+		for i, item := range m.displayItems {
+			if item.Kind == displayItemHeader && slices.Contains(m.groups[item.GroupIdx].Vars, a.varIdx) {
+				m.SetCursor(i)
+				return
+			}
+		}
+	}
+}
+
 func (m *VarListModel) ToggleSort() {
+	a := m.captureCursor()
 	m.SortAlpha = !m.SortAlpha
 	m.recomputeDisplay()
+	m.restoreCursor(a)
 }
 
 func (m *VarListModel) SetSearch(query string) {
@@ -261,28 +322,10 @@ func (m *VarListModel) Refresh() {
 // selected var (or its containing header if the var is now hidden).
 // Returns the count of non-Ungrouped groups now visible.
 func (m *VarListModel) ToggleGrouping() int {
-	prevVarIdx := m.SelectedVarIndex()
+	a := m.captureCursor()
 	m.Grouping = !m.Grouping
 	m.recomputeDisplay()
-
-	if prevVarIdx >= 0 {
-		for i, item := range m.displayItems {
-			if item.Kind == displayItemVar && item.VarIdx == prevVarIdx {
-				m.SetCursor(i)
-				return m.namedGroupCount()
-			}
-		}
-		// Var hidden in a collapsed group: fall back to that group's header.
-		for i, item := range m.displayItems {
-			if item.Kind != displayItemHeader {
-				continue
-			}
-			if slices.Contains(m.groups[item.GroupIdx].Vars, prevVarIdx) {
-				m.SetCursor(i)
-				return m.namedGroupCount()
-			}
-		}
-	}
+	m.restoreCursor(a)
 	return m.namedGroupCount()
 }
 

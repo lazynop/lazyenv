@@ -512,6 +512,55 @@ func TestVarListGrouping_CaseSensitiveAlphaOrder(t *testing.T) {
 	assert.Equal(t, "db", vl.groups[2].Prefix)
 }
 
+func TestVarListGrouping_ToggleSortFollowsVarCursor(t *testing.T) {
+	// Cursor on a var — toggling sort reorders groups, so the var moves to
+	// a different displayItems index. Cursor must follow the var.
+	f := makeTestFile(".env",
+		"REDIS_URL", "REDIS_PORT",
+		"DB_HOST", "DB_PORT",
+	)
+	vl := NewVarListModel(config.DefaultConfig().Layout)
+	vl.SetFile(f)
+	vl.Height = 30
+	vl.ToggleGrouping()
+
+	// Cursor on REDIS_URL: header REDIS at 0, REDIS_URL at 1.
+	vl.SetCursor(1)
+	require.Equal(t, "REDIS_URL", f.Vars[vl.SelectedVarIndex()].Key)
+
+	vl.ToggleSort()
+
+	// After alpha sort: header DB at 0, DB_HOST 1, DB_PORT 2, header REDIS 3,
+	// REDIS_PORT 4, REDIS_URL 5. Cursor must land on REDIS_URL.
+	require.NotEqual(t, -1, vl.SelectedVarIndex(), "cursor must be on a var")
+	assert.Equal(t, "REDIS_URL", f.Vars[vl.SelectedVarIndex()].Key)
+}
+
+func TestVarListGrouping_ToggleSortFollowsHeaderCursor(t *testing.T) {
+	// Cursor on header REDIS — toggling sort reorders groups, so the REDIS
+	// header moves. Cursor must follow the REDIS header by prefix.
+	f := makeTestFile(".env",
+		"REDIS_URL", "REDIS_PORT",
+		"DB_HOST", "DB_PORT",
+	)
+	vl := NewVarListModel(config.DefaultConfig().Layout)
+	vl.SetFile(f)
+	vl.Height = 30
+	vl.ToggleGrouping()
+
+	// Cursor on header REDIS at index 0.
+	vl.SetCursor(0)
+	require.True(t, vl.IsHeaderAtCursor())
+	require.Equal(t, "REDIS", vl.groups[vl.displayItems[vl.Cursor].GroupIdx].Prefix)
+
+	vl.ToggleSort()
+
+	// After alpha sort: header DB at 0, header REDIS at 3.
+	require.True(t, vl.IsHeaderAtCursor(), "cursor must still be on a header")
+	assert.Equal(t, "REDIS", vl.groups[vl.displayItems[vl.Cursor].GroupIdx].Prefix,
+		"cursor must follow REDIS header to its new position")
+}
+
 func TestVarListGrouping_UngroupedAloneNoHeader(t *testing.T) {
 	// Only Ungrouped (no prefix shared by ≥2): no header — degenerates to
 	// the linear view to avoid wrapping the entire list under one section.
