@@ -100,7 +100,7 @@ Toggle prefix-based grouping with `g`. Variables sharing a non-empty prefix (eve
 
 Press `Enter` or `Space` (or click) on any header — including `UNGROUPED` — to collapse it. The trailing `UNGROUPED` section holds variables with a unique prefix or no `_`; it only appears when at least one named group exists, so files where nothing groups stay in the linear view.
 
-Groups follow file order; alphabetical sort (`o`) applies *inside* groups so the layout stays predictable. Search disables grouping in rendering and restores it when you clear the query. The toggle and per-group collapsed state live for the session — there's no on-disk reorder.
+Groups follow file order by default. Toggling alphabetical sort (`o`) reorders groups alphabetically *and* sorts variables inside each group; the `UNGROUPED` section stays pinned at the bottom. Search disables grouping in rendering and restores it when you clear the query. The toggle and per-group collapsed state live for the session — there's no on-disk reorder.
 
 To start with grouping already enabled, set `group = true` in your config or pass `-g` / `--group` on the command line.
 
