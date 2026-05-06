@@ -638,3 +638,69 @@ func TestVarListGrouping_RefreshAfterAddRecomputesGroups(t *testing.T) {
 	assert.Equal(t, 2, countHeaders(vl.displayItems))
 	assert.Equal(t, "DB", vl.groups[vl.displayItems[0].GroupIdx].Prefix)
 }
+
+func TestVarListGrouping_ToggleSortFollowsUngroupedHeaderCursor(t *testing.T) {
+	// Cursor on the UNGROUPED header (Prefix == "") must follow correctly
+	// when ToggleSort reorders the named groups around it. The empty
+	// prefix is the legitimate UNGROUPED identifier — restoreCursor must
+	// not treat it as a "no anchor" sentinel.
+	f := makeTestFile(".env",
+		"REDIS_URL", "REDIS_PORT",
+		"DB_HOST", "DB_PORT",
+		"PORT", "DEBUG",
+	)
+	vl := NewVarListModel(config.DefaultConfig().Layout)
+	vl.SetFile(f)
+	vl.Height = 30
+	vl.ToggleGrouping()
+
+	// Layout (file order): [hREDIS, REDIS_URL, REDIS_PORT, hDB, DB_HOST,
+	// DB_PORT, hUNGROUPED, PORT, DEBUG] — UNGROUPED header at index 6.
+	require.Equal(t, 9, vl.DisplayCount())
+	vl.SetCursor(6)
+	require.True(t, vl.IsHeaderAtCursor())
+	require.True(t, vl.groups[vl.displayItems[vl.Cursor].GroupIdx].IsUngrouped())
+
+	vl.ToggleSort()
+
+	// After alpha sort named groups swap (DB before REDIS); UNGROUPED
+	// stays last. The new layout still has UNGROUPED at index 6 (1+2 +
+	// 1+2 = 6 lines for the named groups), so the cursor index also
+	// happens to match — but the assertion below verifies it via the
+	// IsUngrouped check, not via numeric index.
+	require.True(t, vl.IsHeaderAtCursor(), "cursor must still be on a header")
+	assert.True(t, vl.groups[vl.displayItems[vl.Cursor].GroupIdx].IsUngrouped(),
+		"cursor must still be on the UNGROUPED header after sort toggle")
+}
+
+func TestVarListGrouping_RefreshPreservesAlphaOrder(t *testing.T) {
+	// With grouping ON + SortAlpha ON, a Refresh after mutating File.Vars
+	// must re-run the alpha sort — including reordering when an added var
+	// promotes a previously-singleton prefix into a new alphabetical-first
+	// group.
+	f := makeTestFile(".env",
+		"REDIS_URL", "REDIS_PORT",
+		"DB_HOST", "DB_PORT",
+		"AWS_KEY",
+	)
+	vl := NewVarListModel(config.DefaultConfig().Layout)
+	vl.SetFile(f)
+	vl.Height = 30
+	vl.ToggleGrouping()
+	vl.ToggleSort()
+
+	// Initially AWS appears once → Ungrouped. Named groups: DB, REDIS.
+	require.Equal(t, "DB", vl.groups[0].Prefix)
+	require.Equal(t, "REDIS", vl.groups[1].Prefix)
+
+	// Add AWS_SECRET — promotes AWS to a real group. After Refresh, alpha
+	// order must be AWS, DB, REDIS.
+	f.AddVar("AWS_SECRET", "shh", true)
+	vl.Refresh()
+
+	require.GreaterOrEqual(t, len(vl.groups), 3)
+	assert.Equal(t, "AWS", vl.groups[0].Prefix,
+		"AWS must come first alphabetically after Refresh")
+	assert.Equal(t, "DB", vl.groups[1].Prefix)
+	assert.Equal(t, "REDIS", vl.groups[2].Prefix)
+}
