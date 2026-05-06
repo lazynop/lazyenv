@@ -250,10 +250,10 @@ func (m *VarListModel) isCollapsed(prefix string) bool {
 // a header or a var). Both false means "no anchor" — restoreCursor is a
 // no-op and the cursor stays wherever clampCursor leaves it.
 type cursorAnchor struct {
-	hasHeader  bool
-	headerPref string
-	hasVar     bool
-	varIdx     int
+	hasHeader    bool
+	headerPrefix string
+	hasVar       bool
+	varIdx       int
 }
 
 func (m *VarListModel) captureCursor() cursorAnchor {
@@ -265,7 +265,7 @@ func (m *VarListModel) captureCursor() cursorAnchor {
 	case displayItemHeader:
 		gi := item.GroupIdx
 		if gi >= 0 && gi < len(m.groups) {
-			return cursorAnchor{hasHeader: true, headerPref: m.groups[gi].Prefix}
+			return cursorAnchor{hasHeader: true, headerPrefix: m.groups[gi].Prefix}
 		}
 	case displayItemVar:
 		return cursorAnchor{hasVar: true, varIdx: item.VarIdx}
@@ -280,7 +280,7 @@ func (m *VarListModel) captureCursor() cursorAnchor {
 func (m *VarListModel) restoreCursor(a cursorAnchor) {
 	if a.hasHeader {
 		for i, item := range m.displayItems {
-			if item.Kind == displayItemHeader && m.groups[item.GroupIdx].Prefix == a.headerPref {
+			if item.Kind == displayItemHeader && m.groups[item.GroupIdx].Prefix == a.headerPrefix {
 				m.SetCursor(i)
 				return
 			}
