@@ -90,6 +90,15 @@ func (m *VarListModel) recomputeDisplay() {
 	}
 
 	m.groups = model.ComputeGroups(m.File.Vars)
+	if m.SortAlpha {
+		sort.SliceStable(m.groups, func(i, j int) bool {
+			// Ungrouped pinned last, even when sorting alphabetically.
+			if m.groups[i].IsUngrouped() != m.groups[j].IsUngrouped() {
+				return !m.groups[i].IsUngrouped()
+			}
+			return m.groups[i].Prefix < m.groups[j].Prefix
+		})
+	}
 	// Show the Ungrouped header only when a named group also exists, so the
 	// single-Ungrouped case (no real groupings) keeps the linear-view feel.
 	showUngroupedHeader := m.namedGroupCount() > 0

@@ -429,9 +429,10 @@ func TestVarListGrouping_SortAlphaWithinGroups(t *testing.T) {
 	assert.Equal(t, "PORT", f.Vars[vl.displayItems[6].VarIdx].Key)
 }
 
-func TestVarListGrouping_PreservesGroupOrderUnderSort(t *testing.T) {
-	// REDIS appears first in the file, so it must come before DB even
-	// with alpha sort enabled (sort applies inside groups, not to groups).
+func TestVarListGrouping_GroupsSortedAlphaUnderSort(t *testing.T) {
+	// REDIS appears first in the file but DB must come first under alpha
+	// sort, since `o` now reorders groups alphabetically too. Ungrouped
+	// (none here) would still pin last.
 	f := makeTestFile(".env",
 		"REDIS_URL", "REDIS_PORT",
 		"DB_HOST", "DB_PORT",
@@ -443,8 +444,10 @@ func TestVarListGrouping_PreservesGroupOrderUnderSort(t *testing.T) {
 	vl.ToggleSort()
 
 	require.Equal(t, 6, vl.DisplayCount())
-	assert.Equal(t, "REDIS", vl.groups[vl.displayItems[0].GroupIdx].Prefix,
-		"REDIS group must come first by file order, not alpha")
+	assert.Equal(t, "DB", vl.groups[vl.displayItems[0].GroupIdx].Prefix,
+		"DB group must come first by alpha order under sort")
+	assert.Equal(t, "REDIS", vl.groups[vl.displayItems[3].GroupIdx].Prefix,
+		"REDIS group must come second by alpha order under sort")
 }
 
 func TestVarListGrouping_UngroupedAloneNoHeader(t *testing.T) {
