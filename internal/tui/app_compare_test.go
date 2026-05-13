@@ -1,11 +1,18 @@
 package tui
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
-	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/lazynop/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 func TestCompareExitRestoresCursorToSelected(t *testing.T) {
@@ -257,4 +264,47 @@ func TestCompareNeedsAtLeast2Files(t *testing.T) {
 	updated, _ := app.Update(tea.KeyPressMsg{Text: "c"})
 	app = updated.(App)
 	assert.Equal(t, ModeNormal, app.mode)
+}
+
+func TestCompareResetUsesKeyMap(t *testing.T) {
+	// Compare-mode reset must route through keys.Reset, not a hardcoded 'r'.
+	// Rebinding Reset to a different key must take effect.
+	// Reset re-parses from disk, so the files have to live on disk.
+	dir := t.TempDir()
+	pathA := filepath.Join(dir, ".env")
+	pathB := filepath.Join(dir, ".env.prod")
+	require.NoError(t, os.WriteFile(pathA, []byte("FOO=val_FOO\n"), 0644))
+	require.NoError(t, os.WriteFile(pathB, []byte("FOO=val_FOO\n"), 0644))
+
+	fA, err := parser.ParseFile(pathA, config.SecretsConfig{})
+	require.NoError(t, err)
+	fB, err := parser.ParseFile(pathB, config.SecretsConfig{})
+	require.NoError(t, err)
+
+	app := enterCompareMode(t, fA, fB)
+	app.keys.Reset = key.NewBinding(key.WithKeys("x"))
+
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "x"})
+	app = updated.(App)
+
+	assert.Contains(t, app.statusBar.Message, "Reset to saved state",
+		"rebound Reset key must trigger handleCompareReset in compare mode")
+}
+
+func TestCompareEditRightUsesKeyMap(t *testing.T) {
+	// Compare-mode edit-right must route through keys.EditRight, not a
+	// hardcoded 'E'. Rebinding EditRight to a different key must take effect.
+	f1 := makeTestFile(".env", "FOO")
+	f2 := makeTestFile(".env.prod", "FOO")
+	app := enterCompareMode(t, f1, f2)
+	app.keys.EditRight = key.NewBinding(key.WithKeys("Y"))
+
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "Y"})
+	app = updated.(App)
+
+	assert.Equal(t, ModeEditingCompare, app.mode,
+		"rebound EditRight key must open the editor on the right file")
+	require.NotNil(t, app.compareEditFile)
+	assert.Equal(t, ".env.prod", app.compareEditFile.Name,
+		"editor target should be the right-hand file (FileB)")
 }

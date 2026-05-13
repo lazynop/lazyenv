@@ -13,7 +13,7 @@ import (
 
 func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	// Mutating actions (copy, edit, save) — blocked in read-only mode
-	if key.Matches(msg, a.keys.Right, a.keys.Left, a.keys.Save, a.keys.Edit) || msg.String() == "E" {
+	if key.Matches(msg, a.keys.Right, a.keys.Left, a.keys.Save, a.keys.Edit, a.keys.EditRight) {
 		return a.handleComparingEdit(msg)
 	}
 
@@ -34,7 +34,7 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.diffView.PrevDiff()
 	case key.Matches(msg, a.keys.Filter):
 		return a.handleCompareFilter()
-	case msg.String() == "r":
+	case key.Matches(msg, a.keys.Reset):
 		return a.handleCompareReset()
 	case key.Matches(msg, a.keys.ToggleSecret):
 		a.diffView.ShowSecrets = !a.diffView.ShowSecrets
@@ -61,7 +61,7 @@ func (a App) handleComparingEdit(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a.handleCompareSave()
 	case key.Matches(msg, a.keys.Edit):
 		return a.startCompareEdit(a.diffView.FileA)
-	case msg.String() == "E":
+	case key.Matches(msg, a.keys.EditRight):
 		return a.startCompareEdit(a.diffView.FileB)
 	default:
 		return a, nil

@@ -11,6 +11,7 @@ type KeyMap struct {
 	Enter          key.Binding
 	Edit           key.Binding
 	EditKey        key.Binding
+	EditRight      key.Binding
 	Add            key.Binding
 	Delete         key.Binding
 	Compare        key.Binding
@@ -70,6 +71,10 @@ func DefaultKeyMap() KeyMap {
 		EditKey: key.NewBinding(
 			key.WithKeys("E"),
 			key.WithHelp("E", "rename key"),
+		),
+		EditRight: key.NewBinding(
+			key.WithKeys("E"),
+			key.WithHelp("E", "edit right file"),
 		),
 		Add: key.NewBinding(
 			key.WithKeys("a"),
