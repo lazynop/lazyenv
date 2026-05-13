@@ -31,6 +31,8 @@ func ParseBytes(name string, data []byte, secrets config.SecretsConfig) *model.E
 	}
 
 	content := string(data)
+	// Strip UTF-8 BOM if present (common with files saved by Windows editors).
+	content = strings.TrimPrefix(content, "\uFEFF")
 	// Normalize line endings
 	content = strings.ReplaceAll(content, "\r\n", "\n")
 	content = strings.ReplaceAll(content, "\r", "\n")

@@ -20,6 +20,18 @@ func TestBasicKeyValue(t *testing.T) {
 	assert.Equal(t, model.QuoteNone, ef.Vars[0].QuoteStyle)
 }
 
+func TestUTF8BOMStripped(t *testing.T) {
+	// Files saved by Windows editors may start with a UTF-8 BOM (EF BB BF).
+	// Without stripping, the first key parses with BOM bytes prepended and the
+	// line is misclassified as a comment.
+	data := append([]byte{0xEF, 0xBB, 0xBF}, []byte("FOO=bar\n")...)
+	ef := ParseBytes(".env", data, config.SecretsConfig{})
+
+	require.Len(t, ef.Vars, 1)
+	assert.Equal(t, "FOO", ef.Vars[0].Key)
+	assert.Equal(t, "bar", ef.Vars[0].Value)
+}
+
 func TestDoubleQuotedValue(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO=\"hello world\"\n"), config.SecretsConfig{})
 
