@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+- `--check-config` no longer exits with status 1 when no configuration file is found. Lazyenv works fine on defaults, so the absence of a file is now reported on stdout and the process exits 0. Exit 1 is reserved for configs that are present but invalid, so CI pipelines using `lazyenv --check-config &&` work as expected even on repos without a `.lazyenvrc`.
+
 ## [0.7.1] - 2026-05-06
 
 ### Changed

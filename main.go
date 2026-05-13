@@ -117,8 +117,8 @@ func checkConfig() {
 	fmt.Println()
 
 	if r.Path == "" {
-		fmt.Fprintln(os.Stderr, "No configuration file found.")
-		os.Exit(1)
+		fmt.Println("No configuration file found (defaults will be used).")
+		return
 	}
 
 	if len(r.Warnings) == 0 {
