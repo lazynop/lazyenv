@@ -211,7 +211,7 @@ func (m *MatrixModel) CancelEdit() {
 
 func (m *MatrixModel) renderHeaderRow(endCol int, theme Theme) string {
 	var hdr strings.Builder
-	hdr.WriteString(fmt.Sprintf("%-*s", m.layout.MatrixKeyWidth, "KEY"))
+	fmt.Fprintf(&hdr, "%-*s", m.layout.MatrixKeyWidth, "KEY")
 	for ci := m.offsetCol; ci < endCol; ci++ {
 		name := truncate(m.fileNames[ci], m.layout.MatrixColWidth-2)
 		if ci == m.cursorCol {
