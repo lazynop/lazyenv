@@ -156,6 +156,14 @@ func WriteFile(ef *model.EnvFile) error {
 		os.Remove(tmpName)
 		return fmt.Errorf("writing temp file: %w", err)
 	}
+	// Force data to disk before the rename. Without this, a crash between
+	// the rename and the filesystem journal flush can leave a zero-byte
+	// file at ef.Path on ext4 and similar filesystems.
+	if err := tmp.Sync(); err != nil {
+		tmp.Close()
+		os.Remove(tmpName)
+		return fmt.Errorf("syncing temp file: %w", err)
+	}
 	if err := tmp.Close(); err != nil {
 		os.Remove(tmpName)
 		return fmt.Errorf("closing temp file: %w", err)

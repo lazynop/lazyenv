@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- `parser.WriteFile` now fsyncs the temp file before renaming it over the target. Without the sync, a crash between rename and the filesystem journal flush could leave a zero-byte file on ext4 and similar filesystems.
+
 ### Changed
 - `--check-config` no longer exits with status 1 when no configuration file is found. Lazyenv works fine on defaults, so the absence of a file is now reported on stdout and the process exits 0. Exit 1 is reserved for configs that are present but invalid, so CI pipelines using `lazyenv --check-config &&` work as expected even on repos without a `.lazyenvrc`.
 
