@@ -20,6 +20,24 @@ func TestBasicKeyValue(t *testing.T) {
 	assert.Equal(t, model.QuoteNone, ef.Vars[0].QuoteStyle)
 }
 
+func TestBasename(t *testing.T) {
+	// EnvFile.Name must be the filename, not the full path, on every OS.
+	// The helper must therefore split on both '/' and '\'.
+	cases := []struct {
+		name, path, want string
+	}{
+		{"windows backslash", `C:\Users\foo\.env`, ".env"},
+		{"unix forward slash", "/home/foo/.env", ".env"},
+		{"no separator", ".env.local", ".env.local"},
+		{"mixed separators", `/home/foo\bar/.env`, ".env"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.want, basename(c.path))
+		})
+	}
+}
+
 func TestUTF8BOMStripped(t *testing.T) {
 	// Files saved by Windows editors may start with a UTF-8 BOM (EF BB BF).
 	// Without stripping, the first key parses with BOM bytes prepended and the

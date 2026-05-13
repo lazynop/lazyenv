@@ -9,17 +9,22 @@ import (
 	"github.com/lazynop/lazyenv/internal/util"
 )
 
+// basename returns the last path component of a file path, supporting both
+// '/' and '\' as separators so the behavior is identical on Linux and Windows.
+func basename(path string) string {
+	if idx := strings.LastIndexAny(path, `/\`); idx >= 0 {
+		return path[idx+1:]
+	}
+	return path
+}
+
 // ParseFile reads and parses an .env file from disk.
 func ParseFile(path string, secrets config.SecretsConfig) (*model.EnvFile, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	name := path
-	if idx := strings.LastIndex(path, "/"); idx >= 0 {
-		name = path[idx+1:]
-	}
-	ef := ParseBytes(name, data, secrets)
+	ef := ParseBytes(basename(path), data, secrets)
 	ef.Path = path
 	return ef, nil
 }
