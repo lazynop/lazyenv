@@ -213,10 +213,7 @@ func (m *MatrixModel) renderHeaderRow(endCol int, theme Theme) string {
 	var hdr strings.Builder
 	hdr.WriteString(fmt.Sprintf("%-*s", m.layout.MatrixKeyWidth, "KEY"))
 	for ci := m.offsetCol; ci < endCol; ci++ {
-		name := m.fileNames[ci]
-		if len(name) > m.layout.MatrixColWidth-2 {
-			name = name[:m.layout.MatrixColWidth-3] + "…"
-		}
+		name := truncate(m.fileNames[ci], m.layout.MatrixColWidth-2)
 		if ci == m.cursorCol {
 			hdr.WriteString(theme.SelectedItem.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, name)))
 		} else {
@@ -230,10 +227,7 @@ func (m *MatrixModel) renderBodyRow(ri, endCol int, checkMark, crossMark string,
 	entry := m.entries[ri]
 
 	// Key name
-	keyStr := entry.Key
-	if len(keyStr) > m.layout.MatrixKeyWidth-2 {
-		keyStr = keyStr[:m.layout.MatrixKeyWidth-3] + "…"
-	}
+	keyStr := truncate(entry.Key, m.layout.MatrixKeyWidth-2)
 	keyFormatted := fmt.Sprintf("%-*s", m.layout.MatrixKeyWidth, keyStr)
 	if ri == m.cursorRow {
 		keyFormatted = theme.SelectedItem.Render(keyFormatted)
