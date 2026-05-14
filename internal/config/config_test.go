@@ -461,6 +461,49 @@ func TestLoadSecretsNormalizesCase(t *testing.T) {
 	assert.Equal(t, []string{"_CREDENTIAL"}, cfg.Secrets.ExtraPatterns)
 }
 
+func TestLoadInvalidColorWarns(t *testing.T) {
+	// A bogus color value in [colors] must surface as a warning, not silently
+	// pass through to lipgloss and render as blank.
+	dir := t.TempDir()
+	content := []byte("[colors]\nprimary = \"not-a-color\"\n")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
+
+	cfg, warnings := Load(dir, "")
+	require.NotEmpty(t, warnings, "invalid color must produce a warning")
+	assert.Contains(t, warnings[0], "primary")
+	assert.Equal(t, DefaultConfig(), cfg)
+}
+
+func TestIsValidColor(t *testing.T) {
+	cases := []struct {
+		name string
+		in   string
+		want bool
+	}{
+		{"empty", "", true},
+		{"hex 6", "#FF0000", true},
+		{"hex 6 lowercase", "#abcdef", true},
+		{"hex 3", "#F00", true},
+		{"hex 4 rgba", "#F00A", true},
+		{"hex 8 rrggbbaa", "#FF0000FF", true},
+		{"ansi 0", "0", true},
+		{"ansi 127", "127", true},
+		{"ansi 255", "255", true},
+		{"named", "blue", false},
+		{"hex 5", "#12345", false},
+		{"hex 7", "#1234567", false},
+		{"hex non-digit", "#XYZ", false},
+		{"hex missing prefix", "FF0000", false},
+		{"ansi out of range", "256", false},
+		{"ansi negative", "-1", false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.want, isValidColor(c.in), "in=%q", c.in)
+		})
+	}
+}
+
 func TestDefaultColorsEmpty(t *testing.T) {
 	c := DefaultConfig().Colors
 

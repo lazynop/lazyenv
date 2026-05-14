@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Config validation now rejects malformed `[colors]` values. Each color must be a hex literal (`#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`) or an ANSI 256 number (`0`-`255`). Previously, typos like `primary = "blue"` silently shipped to lipgloss and rendered as blank.
+
 ### Fixed
 - `parser.WriteFile` now fsyncs the temp file before renaming it over the target. Without the sync, a crash between rename and the filesystem journal flush could leave a zero-byte file on ext4 and similar filesystems.
 

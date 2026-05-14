@@ -5,11 +5,34 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 
 	toml "github.com/pelletier/go-toml/v2"
 )
+
+// hexColorRE matches a hex color literal with an explicit '#' prefix.
+// Length is checked separately so we can pin valid digit counts (3/4/6/8).
+var hexColorRE = regexp.MustCompile(`^#[0-9a-fA-F]+$`)
+
+// isValidColor reports whether s is a valid color string for lipgloss:
+// either a hex literal (#RGB, #RGBA, #RRGGBB, #RRGGBBAA) or an ANSI 256
+// numeric (0-255). Empty is valid and means "fall back to theme/default".
+func isValidColor(s string) bool {
+	if s == "" {
+		return true
+	}
+	if hexColorRE.MatchString(s) {
+		n := len(s) - 1
+		return n == 3 || n == 4 || n == 6 || n == 8
+	}
+	if n, err := strconv.Atoi(s); err == nil && n >= 0 && n <= 255 {
+		return true
+	}
+	return false
+}
 
 // LoadResult holds the result of loading a config file.
 type LoadResult struct {
@@ -161,6 +184,28 @@ func validate(cfg Config) []string {
 	}
 	if slices.Contains(cfg.Secrets.ExtraPatterns, "") {
 		warns = append(warns, "empty string in secrets.extra_patterns")
+	}
+
+	c := cfg.Colors
+	for _, v := range []struct {
+		name, val string
+	}{
+		{"primary", c.Primary},
+		{"warning", c.Warning},
+		{"error", c.Error},
+		{"success", c.Success},
+		{"muted", c.Muted},
+		{"fg", c.Fg},
+		{"bg", c.Bg},
+		{"border", c.Border},
+		{"cursor-bg", c.CursorBg},
+		{"modified", c.Modified},
+		{"added", c.Added},
+		{"deleted", c.Deleted},
+	} {
+		if !isValidColor(v.val) {
+			warns = append(warns, fmt.Sprintf("invalid colors.%s: %q (expected hex like #RRGGBB or ANSI 0-255)", v.name, v.val))
+		}
 	}
 
 	return warns
