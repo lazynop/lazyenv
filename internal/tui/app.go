@@ -834,6 +834,38 @@ func (a App) handleSearchKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	}
 }
 
+// activeFileInput returns a pointer to the textinput.Model the user is
+// editing in the current file-operation mode, or nil for any other mode.
+func (a *App) activeFileInput() *textinput.Model {
+	switch a.mode {
+	case ModeCreateFile:
+		return &a.createFileInput
+	case ModeDuplicateFile:
+		return &a.duplicateFileInput
+	case ModeRenameFile:
+		return &a.renameFileInput
+	case ModeTemplateFile:
+		return &a.templateFileInput
+	}
+	return nil
+}
+
+// confirmActiveFileInput dispatches to the confirm-fn matching the current
+// file-operation mode. Returns the app unchanged for any other mode.
+func (a App) confirmActiveFileInput() (tea.Model, tea.Cmd) {
+	switch a.mode {
+	case ModeCreateFile:
+		return a.confirmCreateFile()
+	case ModeDuplicateFile:
+		return a.confirmDuplicateFile()
+	case ModeRenameFile:
+		return a.confirmRenameFile()
+	case ModeTemplateFile:
+		return a.confirmTemplateFile()
+	}
+	return a, nil
+}
+
 // handleFileInputKey handles text input for all file-operation modes
 // (create, duplicate, rename, template). They share the same interaction:
 // Escape cancels, Enter confirms, other keys go to the text input.
@@ -846,30 +878,14 @@ func (a App) handleFileInputKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.templateSource = nil
 		return a, nil
 	case key.Matches(msg, a.keys.Enter):
-		switch a.mode {
-		case ModeCreateFile:
-			return a.confirmCreateFile()
-		case ModeDuplicateFile:
-			return a.confirmDuplicateFile()
-		case ModeRenameFile:
-			return a.confirmRenameFile()
-		case ModeTemplateFile:
-			return a.confirmTemplateFile()
+		return a.confirmActiveFileInput()
+	default:
+		if input := a.activeFileInput(); input != nil {
+			var cmd tea.Cmd
+			*input, cmd = input.Update(msg)
+			return a, cmd
 		}
 		return a, nil
-	default:
-		var cmd tea.Cmd
-		switch a.mode {
-		case ModeCreateFile:
-			a.createFileInput, cmd = a.createFileInput.Update(msg)
-		case ModeDuplicateFile:
-			a.duplicateFileInput, cmd = a.duplicateFileInput.Update(msg)
-		case ModeRenameFile:
-			a.renameFileInput, cmd = a.renameFileInput.Update(msg)
-		case ModeTemplateFile:
-			a.templateFileInput, cmd = a.templateFileInput.Update(msg)
-		}
-		return a, cmd
 	}
 }
 
