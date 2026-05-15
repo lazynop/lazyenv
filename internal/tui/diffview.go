@@ -103,7 +103,7 @@ func (m *DiffViewModel) MoveUp() {
 func (m *DiffViewModel) MoveDown() {
 	if m.Cursor < len(m.Entries)-1 {
 		m.Cursor++
-		visible := m.Height - 6
+		visible := m.Height - diffChromeHeight
 		if visible > 0 && m.Cursor >= m.Offset+visible {
 			m.Offset = m.Cursor - visible + 1
 		}
@@ -116,7 +116,7 @@ func (m *DiffViewModel) SetCursor(index int) {
 		return
 	}
 	m.Cursor = max(0, min(index, len(m.Entries)-1))
-	visible := m.Height - 6
+	visible := m.Height - diffChromeHeight
 	if visible > 0 {
 		if m.Cursor < m.Offset {
 			m.Offset = m.Cursor
@@ -153,7 +153,7 @@ func (m *DiffViewModel) ensureVisible() {
 	if m.Cursor < m.Offset {
 		m.Offset = m.Cursor
 	}
-	visible := m.Height - 6
+	visible := m.Height - diffChromeHeight
 	if visible > 0 && m.Cursor >= m.Offset+visible {
 		m.Offset = m.Cursor - visible + 1
 	}
@@ -290,7 +290,7 @@ func (m *DiffViewModel) View(theme Theme) string {
 	valWidth := max(halfWidth-keyWidth-m.layout.DiffPadding, m.layout.DiffMinValueWidth)
 
 	// Render entries
-	visible := max(m.Height-6, 1)
+	visible := max(m.Height-diffChromeHeight, 1)
 
 	end := min(m.Offset+visible, len(m.Entries))
 
@@ -365,8 +365,8 @@ func (m *DiffViewModel) renderDiffEntry(e model.DiffEntry, isCursor bool, keyWid
 	}
 
 	if isCursor {
-		leftLine = theme.CursorItem.Render(padRight(leftLine, halfWidth-4))
-		rightLine = theme.CursorItem.Render(padRight(rightLine, halfWidth-4))
+		leftLine = theme.CursorItem.Render(padRight(leftLine, halfWidth-panelChromeWidth))
+		rightLine = theme.CursorItem.Render(padRight(rightLine, halfWidth-panelChromeWidth))
 	} else {
 		leftLine = style.Render(leftLine)
 		rightLine = style.Render(rightLine)

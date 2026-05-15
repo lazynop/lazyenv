@@ -53,7 +53,7 @@ func (m *FileListModel) MoveUp() {
 func (m *FileListModel) MoveDown() {
 	if m.Cursor < len(m.Files)-1 {
 		m.Cursor++
-		visible := m.Height - 2 // account for border/title
+		visible := m.Height - panelBorderHeight
 		if visible > 0 && m.Cursor >= m.Offset+visible {
 			m.Offset = m.Cursor - visible + 1
 		}
@@ -67,7 +67,7 @@ func (m *FileListModel) SetCursor(index int) {
 	}
 	m.Cursor = max(0, min(index, len(m.Files)-1))
 	m.Select()
-	visible := m.Height - 2
+	visible := m.Height - panelBorderHeight
 	if visible > 0 {
 		if m.Cursor < m.Offset {
 			m.Offset = m.Cursor
@@ -108,13 +108,11 @@ func (m *FileListModel) View(theme Theme) string {
 		return m.renderPanel(title, content, theme)
 	}
 
-	visible := max(
-		// borders + title + padding
-		m.Height-4, 1)
+	visible := max(m.Height-panelChromeHeight, 1)
 
 	var lines []string
 	end := min(m.Offset+visible, len(m.Files))
-	inner := m.Width - 4 // panel width minus borders
+	inner := m.Width - panelChromeWidth
 
 	for i := m.Offset; i < end; i++ {
 		f := m.Files[i]

@@ -130,7 +130,7 @@ func (m ThemePreviewModel) handleMouseWheel(msg tea.MouseWheelMsg) ThemePreviewM
 }
 
 func (m ThemePreviewModel) scrollOffset() int {
-	contentHeight := max(m.height-4, 1)
+	contentHeight := max(m.height-panelChromeHeight, 1)
 	if m.cursor >= contentHeight {
 		return m.cursor - contentHeight + 1
 	}
@@ -180,7 +180,7 @@ func (m ThemePreviewModel) renderThemeList(width int, rc resolvedColors) string 
 	title := lipgloss.NewStyle().Bold(true).Foreground(rc.primary).
 		Render(fmt.Sprintf(" Themes (%d)", len(m.themes)))
 
-	contentHeight := max(m.height-4, 1) // borders + title + status bar
+	contentHeight := max(m.height-panelChromeHeight, 1)
 	offset := m.scrollOffset()
 
 	var lines []string
@@ -188,10 +188,10 @@ func (m ThemePreviewModel) renderThemeList(width int, rc resolvedColors) string 
 		name := m.themes[i]
 		if i == m.cursor {
 			style := lipgloss.NewStyle().Bold(true).Foreground(rc.fg).Background(rc.cursorBg).
-				Width(width - 2)
+				Width(width - panelBorderWidth)
 			lines = append(lines, style.Render("▸ "+name))
 		} else {
-			style := lipgloss.NewStyle().Foreground(rc.muted).Width(width - 2)
+			style := lipgloss.NewStyle().Foreground(rc.muted).Width(width - panelBorderWidth)
 			lines = append(lines, style.Render("  "+name))
 		}
 	}

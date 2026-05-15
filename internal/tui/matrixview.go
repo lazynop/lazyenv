@@ -107,7 +107,7 @@ func (m *MatrixModel) SetCursor(row, col int) {
 }
 
 func (m *MatrixModel) ensureVisible() {
-	viewRows := max(1, m.Height-4) // header + footer + borders
+	viewRows := max(1, m.Height-panelChromeHeight)
 	if m.cursorRow < m.offsetRow {
 		m.offsetRow = m.cursorRow
 	}
@@ -294,11 +294,11 @@ func (m *MatrixModel) View(theme Theme) string {
 	b.WriteString("\n")
 
 	// Separator
-	b.WriteString(theme.MutedItem.Render(strings.Repeat("─", m.Width-2)))
+	b.WriteString(theme.MutedItem.Render(strings.Repeat("─", m.Width-panelBorderWidth)))
 	b.WriteString("\n")
 
 	// Body rows
-	viewRows := max(1, m.Height-4)
+	viewRows := max(1, m.Height-panelChromeHeight)
 	endRow := min(m.offsetRow+viewRows, len(m.entries))
 
 	checkMark := "✓"
@@ -325,7 +325,9 @@ func (m *MatrixModel) View(theme Theme) string {
 
 	content := b.String()
 
-	// Pad to fill height
+	// Pad to fill height. -3 = panel chrome (4) minus the stats footer line
+	// we'll concatenate below (1). Specific to this view's layout, not
+	// generalizable to panelChromeHeight.
 	lines := strings.Count(content, "\n")
 	for lines < m.Height-3 {
 		content += "\n"

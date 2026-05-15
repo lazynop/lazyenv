@@ -178,7 +178,7 @@ func (m *VarListModel) MoveUp() {
 func (m *VarListModel) MoveDown() {
 	if m.Cursor < len(m.displayItems)-1 {
 		m.Cursor++
-		visible := m.Height - 4
+		visible := m.Height - panelChromeHeight
 		if visible > 0 && m.Cursor >= m.Offset+visible {
 			m.Offset = m.Cursor - visible + 1
 		}
@@ -192,7 +192,7 @@ func (m *VarListModel) SetCursor(index int) {
 		return
 	}
 	m.Cursor = max(0, min(index, len(m.displayItems)-1))
-	visible := m.Height - 4
+	visible := m.Height - panelChromeHeight
 	if visible > 0 {
 		if m.Cursor < m.Offset {
 			m.Offset = m.Cursor
@@ -477,7 +477,7 @@ func (m *VarListModel) renderDeletedVars(visible, keyWidth, maxValWidth int, cur
 
 // visibleLines returns how many display rows can be shown.
 func (m *VarListModel) visibleLines() int {
-	visible := max(m.Height-4, 1)
+	visible := max(m.Height-panelChromeHeight, 1)
 	if m.Peeking && m.Cursor >= 0 && m.Cursor < len(m.displayItems) {
 		item := m.displayItems[m.Cursor]
 		if item.Kind == displayItemVar {
