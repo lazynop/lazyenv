@@ -902,7 +902,10 @@ func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
 		return a, a.flashMessage(errMsg)
 	}
 
-	if err := os.WriteFile(fullPath, nil, 0644); err != nil {
+	// Write a single newline so the new file is POSIX-conventional. With an
+	// empty file ParseBytes would set TrailingNewline=false and the first
+	// save would emit a file without a trailing newline.
+	if err := os.WriteFile(fullPath, []byte("\n"), 0644); err != nil {
 		return a, a.flashMessage("Error creating file: " + err.Error())
 	}
 

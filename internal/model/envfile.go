@@ -37,13 +37,14 @@ type EnvVar struct {
 
 // EnvFile represents a parsed .env file.
 type EnvFile struct {
-	Path        string
-	Name        string // filename (e.g. ".env.local")
-	Vars        []EnvVar
-	DeletedVars []EnvVar  // vars removed since last save (for UI display)
-	Lines       []RawLine // all original lines for faithful write-back
-	Modified    bool
-	GitWarning  bool // true if file is NOT covered by .gitignore
+	Path            string
+	Name            string // filename (e.g. ".env.local")
+	Vars            []EnvVar
+	DeletedVars     []EnvVar  // vars removed since last save (for UI display)
+	Lines           []RawLine // all original lines for faithful write-back
+	Modified        bool
+	GitWarning      bool // true if file is NOT covered by .gitignore
+	TrailingNewline bool // true if the source file ended with a newline
 }
 
 // RawLine preserves original content for round-trip writing.

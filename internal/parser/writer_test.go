@@ -106,6 +106,38 @@ func TestMarshalPreservesUnmodified(t *testing.T) {
 	assert.Equal(t, input, string(Marshal(ef)))
 }
 
+func TestRoundTripPreservesNoTrailingNewline(t *testing.T) {
+	// A file without a trailing newline must round-trip without one being
+	// silently injected.
+	src := []byte("FOO=bar")
+	ef := ParseBytes(".env", src, config.SecretsConfig{})
+	assert.Equal(t, src, Marshal(ef))
+}
+
+func TestRoundTripPreservesTrailingNewline(t *testing.T) {
+	// The common case: a file with a trailing newline keeps it on save.
+	src := []byte("FOO=bar\n")
+	ef := ParseBytes(".env", src, config.SecretsConfig{})
+	assert.Equal(t, src, Marshal(ef))
+}
+
+func TestRoundTripEmptyFile(t *testing.T) {
+	// A 0-byte file must round-trip as 0 bytes, not be turned into "\n".
+	src := []byte{}
+	ef := ParseBytes(".env", src, config.SecretsConfig{})
+	assert.Equal(t, src, Marshal(ef))
+}
+
+func TestRoundTripCRLFNormalizedToLF(t *testing.T) {
+	// CRLF endings are normalized to LF on read. Round-trip keeps a trailing
+	// newline (LF), not the original CRLF — line-ending normalization is by
+	// design, not a fidelity regression.
+	src := []byte("FOO=bar\r\nBAZ=qux\r\n")
+	expected := []byte("FOO=bar\nBAZ=qux\n")
+	ef := ParseBytes(".env", src, config.SecretsConfig{})
+	assert.Equal(t, expected, Marshal(ef))
+}
+
 func TestWriteFileNoPath(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO=bar\n"), config.SecretsConfig{})
 	// Path is empty by default from ParseBytes

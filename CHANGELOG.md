@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 - Config validation now rejects malformed `[colors]` values. Each color must be a hex literal (`#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`) or an ANSI 256 number (`0`-`255`). Previously, typos like `primary = "blue"` silently shipped to lipgloss and rendered as blank.
 
 ### Fixed
+- `parser.Marshal` no longer injects a trailing newline that wasn't there. Files saved by scripts or editors that don't end with `\n` (e.g. `echo "X=1" > .env`) now round-trip faithfully, removing the spurious one-byte git diff lazyenv used to produce on first save. Files that did have a trailing newline still keep one.
 - `parser.WriteFile` now fsyncs the temp file before renaming it over the target. Without the sync, a crash between rename and the filesystem journal flush could leave a zero-byte file on ext4 and similar filesystems.
 - `--no-theme-bg=false` now correctly restores the theme background when the config file already had `no-theme-bg = true`. The theme + background precedence is now resolved in a single late step after CLI overrides, so any combination of config and CLI flags lands on the expected color.
 
