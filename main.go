@@ -41,7 +41,8 @@ var cli struct {
 	Version        kong.VersionFlag `short:"v" help:"Show version."`
 }
 
-func applyCLIOverrides(cfg *config.Config) {
+func applyCLIOverrides(cfg *config.Config) []string {
+	var warns []string
 	if cli.Recursive != nil {
 		cfg.Recursive = *cli.Recursive
 	}
@@ -55,7 +56,7 @@ func applyCLIOverrides(cfg *config.Config) {
 		cfg.Theme = *cli.Theme
 		if cfg.Theme != "" {
 			if _, ok := config.LookupTheme(cfg.Theme); !ok {
-				fmt.Fprintf(os.Stderr, "Warning: unknown theme %q (see --list-themes)\n", cfg.Theme)
+				warns = append(warns, fmt.Sprintf("unknown theme %q (see --list-themes)", cfg.Theme))
 			}
 		}
 	}
@@ -69,7 +70,7 @@ func applyCLIOverrides(cfg *config.Config) {
 		cfg.ReadOnly = *cli.ReadOnly
 	}
 	applySessionSummaryOverride(cfg)
-	applyFileListWidthOverride(cfg)
+	warns = append(warns, applyFileListWidthOverride(cfg)...)
 	if cli.Sort != nil {
 		cfg.Sort = *cli.Sort
 	}
@@ -83,18 +84,21 @@ func applyCLIOverrides(cfg *config.Config) {
 			cfg.NoGitCheck = true
 		}
 	}
+	return warns
 }
 
-func applyFileListWidthOverride(cfg *config.Config) {
+func applyFileListWidthOverride(cfg *config.Config) []string {
 	if cli.FileListWidth == nil {
-		return
+		return nil
 	}
 	v := *cli.FileListWidth
+	var warns []string
 	if v != 0 && v < config.FileListMinWidth {
-		fmt.Fprintf(os.Stderr, "Warning: --file-list-width %d is below minimum %d, using %d\n", v, config.FileListMinWidth, config.FileListMinWidth)
+		warns = append(warns, fmt.Sprintf("--file-list-width %d is below minimum %d, using %d", v, config.FileListMinWidth, config.FileListMinWidth))
 		v = config.FileListMinWidth
 	}
 	cfg.Layout.FileListWidth = v
+	return warns
 }
 
 // applySessionSummaryOverride resolves the final SessionSummary value: CLI flag
@@ -158,7 +162,7 @@ func main() {
 	cfg, warnings := config.Load(".", cli.Config)
 
 	cfg.Dir = cli.Path
-	applyCLIOverrides(&cfg)
+	warnings = append(warnings, applyCLIOverrides(&cfg)...)
 	config.FinalizeColors(&cfg)
 
 	if cli.ListThemes {
