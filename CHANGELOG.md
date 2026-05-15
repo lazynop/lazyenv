@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 - `--no-theme-bg=false` now correctly restores the theme background when the config file already had `no-theme-bg = true`. The theme + background precedence is now resolved in a single late step after CLI overrides, so any combination of config and CLI flags lands on the expected color.
 
 ### Changed
+- Source-default `version` is now `"dev"` instead of a stale release number. Local `go run .` / `just build` binaries print `lazyenv version dev (...)` so they can't be mistaken for an official release. GoReleaser overrides this via ldflags for tagged builds.
 - CLI-flag warnings (unknown `--theme`, out-of-range `--file-list-width`) now surface in the TUI's config-warning alert at startup instead of being written to stderr, which the TUI screen would obscure until exit.
 - `--check-config` no longer exits with status 1 when no configuration file is found. Lazyenv works fine on defaults, so the absence of a file is now reported on stdout and the process exits 0. Exit 1 is reserved for configs that are present but invalid, so CI pipelines using `lazyenv --check-config &&` work as expected even on repos without a `.lazyenvrc`.
 
