@@ -21,6 +21,6 @@ const (
 	panelChromeWidth = 4
 
 	// diffChromeHeight is the vertical overhead of the side-by-side diff
-	// view: panel chrome (4) plus the two-row diff header overhead = 6 rows.
-	diffChromeHeight = 6
+	// view: panel chrome plus the two-row diff header.
+	diffChromeHeight = panelChromeHeight + 2
 )

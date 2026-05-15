@@ -99,6 +99,50 @@ func TestCreateFile_AlreadyExistsRejected(t *testing.T) {
 	assert.Contains(t, app.statusBar.Message, "already exists")
 }
 
+func TestActiveFileInputDispatch(t *testing.T) {
+	// activeFileInput must return a pointer to the correct textinput for
+	// each of the four file-operation modes, and nil otherwise. The four
+	// confirm-flow tests bypass handleFileInputKey by calling
+	// confirmXxxFile() directly, so this test pins the dispatch table.
+	app := newTestApp(nil)
+	cases := []struct {
+		name string
+		mode AppMode
+		want any // expected pointer (compared with assert.Same)
+	}{
+		{"create", ModeCreateFile, &app.createFileInput},
+		{"duplicate", ModeDuplicateFile, &app.duplicateFileInput},
+		{"rename", ModeRenameFile, &app.renameFileInput},
+		{"template", ModeTemplateFile, &app.templateFileInput},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			app.mode = c.mode
+			got := app.activeFileInput()
+			require.NotNil(t, got)
+			assert.Same(t, c.want, got)
+		})
+	}
+
+	app.mode = ModeNormal
+	assert.Nil(t, app.activeFileInput(), "non file-input modes return nil")
+}
+
+func TestHandleFileInputKeyForwardsToActiveInput(t *testing.T) {
+	// Pressing a printable key in a file-input mode must reach the active
+	// textinput. Together with TestActiveFileInputDispatch this covers
+	// handleFileInputKey + activeFileInput end-to-end.
+	app := newTestApp(nil)
+	app.mode = ModeCreateFile
+	app.createFileInput.Focus()
+
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "x"})
+	app = updated.(App)
+
+	assert.Equal(t, "x", app.createFileInput.Value(),
+		"keypress in ModeCreateFile must land in createFileInput")
+}
+
 func TestCreateFile_Success(t *testing.T) {
 	dir := t.TempDir()
 
