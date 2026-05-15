@@ -250,6 +250,7 @@ func TestLoadThemePreset(t *testing.T) {
 	cfg, warnings := Load(dir, "")
 	assert.Empty(t, warnings)
 	assert.Equal(t, "dracula", cfg.Theme)
+	FinalizeColors(&cfg)
 	assert.Equal(t, "#BD93F9", cfg.Colors.Primary)
 	assert.Equal(t, "#FF5555", cfg.Colors.Error)
 	assert.Equal(t, "#282A36", cfg.Colors.Bg)
@@ -262,6 +263,7 @@ func TestLoadThemeNoThemeBg(t *testing.T) {
 
 	cfg, warnings := Load(dir, "")
 	assert.Empty(t, warnings)
+	FinalizeColors(&cfg)
 	assert.Equal(t, "#BD93F9", cfg.Colors.Primary, "other colors still resolved")
 	assert.Empty(t, cfg.Colors.Bg, "bg cleared by no-theme-bg")
 }
@@ -283,6 +285,7 @@ func TestLoadThemeWithOverride(t *testing.T) {
 
 	cfg, warnings := Load(dir, "")
 	assert.Empty(t, warnings)
+	FinalizeColors(&cfg)
 	assert.Equal(t, "#FF0000", cfg.Colors.Primary, "explicit override wins")
 	assert.Equal(t, "#EBCB8B", cfg.Colors.Warning, "rest comes from theme")
 }
@@ -459,6 +462,27 @@ func TestLoadSecretsNormalizesCase(t *testing.T) {
 	assert.Empty(t, warnings)
 	assert.Equal(t, []string{"_HOST", "PUBLIC_"}, cfg.Secrets.SafePatterns)
 	assert.Equal(t, []string{"_CREDENTIAL"}, cfg.Secrets.ExtraPatterns)
+}
+
+func TestFinalizeColorsAfterCLIOverride(t *testing.T) {
+	// Scenario: config sets no-theme-bg=true on top of a theme. The CLI later
+	// disables no-theme-bg. The final Bg must be the theme's Bg, not "".
+	// On the buggy code, merge() zeroes Bg before the CLI has a chance to
+	// flip NoThemeBg back, and Bg is unrecoverable.
+	dir := t.TempDir()
+	content := []byte("theme = \"dracula\"\nno-theme-bg = true\n")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
+
+	cfg, warnings := Load(dir, "")
+	require.Empty(t, warnings)
+
+	// Simulate CLI: user passed --no-theme-bg=false.
+	cfg.NoThemeBg = false
+
+	FinalizeColors(&cfg)
+
+	assert.NotEmpty(t, cfg.Colors.Bg,
+		"Bg must reflect the post-override NoThemeBg, not be pre-zeroed by Load")
 }
 
 func TestLoadInvalidColorWarns(t *testing.T) {

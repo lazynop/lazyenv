@@ -29,6 +29,18 @@ func ThemeNames() []string {
 	return themes.Names()
 }
 
+// FinalizeColors resolves cfg.Colors against cfg.Theme and masks Bg if
+// cfg.NoThemeBg is set. Call this AFTER any CLI overrides — calling it
+// earlier is destructive because resolveColors collapses the
+// theme + explicit-override + NoThemeBg precedence into a single
+// ColorConfig from which the original Bg cannot be recovered.
+func FinalizeColors(cfg *Config) {
+	cfg.Colors = resolveColors(cfg.Theme, cfg.Colors)
+	if cfg.NoThemeBg {
+		cfg.Colors.Bg = ""
+	}
+}
+
 // resolveColors merges theme defaults with explicit color overrides.
 // Explicit (non-empty) fields in colors take priority over the theme.
 func resolveColors(theme string, colors ColorConfig) ColorConfig {

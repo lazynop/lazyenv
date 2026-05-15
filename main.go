@@ -52,9 +52,6 @@ func applyCLIOverrides(cfg *config.Config) {
 	}
 	if cli.NoThemeBg != nil {
 		cfg.NoThemeBg = *cli.NoThemeBg
-		if cfg.NoThemeBg {
-			cfg.Colors.Bg = ""
-		}
 	}
 	if cli.NoMouse != nil {
 		cfg.NoMouse = *cli.NoMouse
@@ -153,6 +150,7 @@ func main() {
 
 	cfg.Dir = cli.Path
 	applyCLIOverrides(&cfg)
+	config.FinalizeColors(&cfg)
 
 	if cli.ListThemes {
 		for _, name := range config.ThemeNames() {

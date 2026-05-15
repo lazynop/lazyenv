@@ -114,10 +114,9 @@ func merge(defaults Config, rawData []byte) (Config, []string) {
 	}
 
 	result.Secrets = normalizeSecrets(result.Secrets)
-	result.Colors = resolveColors(result.Theme, result.Colors)
-	if result.NoThemeBg {
-		result.Colors.Bg = ""
-	}
+	// Colors are returned raw (just the [colors] TOML overrides). The caller
+	// must invoke FinalizeColors after applying any further overrides (CLI
+	// flags etc.) to resolve theme + mask Bg in a single, late step.
 	return result, nil
 }
 
