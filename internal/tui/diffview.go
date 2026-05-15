@@ -262,7 +262,7 @@ func (m *DiffViewModel) View(theme Theme) string {
 		return ""
 	}
 
-	halfWidth := (m.Width - 2) / 2
+	halfWidth := m.Width / 2
 
 	// Headers
 	leftName := m.FileA.Name
