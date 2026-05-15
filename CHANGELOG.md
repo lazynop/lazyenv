@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- `--theme` CLI flag overrides the theme setting from the config file. Pass `lazyenv --theme=dracula` to apply a theme for one run without editing your `.lazyenvrc`. Unknown theme names produce a warning on stderr.
 - Config validation now rejects malformed `[colors]` values. Each color must be a hex literal (`#RGB`, `#RGBA`, `#RRGGBB`, `#RRGGBBAA`) or an ANSI 256 number (`0`-`255`). Previously, typos like `primary = "blue"` silently shipped to lipgloss and rendered as blank.
 
 ### Fixed

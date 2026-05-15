@@ -25,6 +25,7 @@ var cli struct {
 	ShowAll        *bool            `short:"a" name:"show-all" help:"Show secrets in cleartext at startup."`
 	NoGitCheck     *bool            `short:"G" name:"no-git-check" help:"Disable .gitignore check."`
 	NoBackup       *bool            `short:"B" name:"no-backup" help:"Disable .bak backup before first save."`
+	Theme          *string          `name:"theme" help:"Built-in theme preset (see --list-themes). Overrides theme setting in config file."`
 	NoThemeBg      *bool            `name:"no-theme-bg" help:"Disable theme background color."`
 	NoMouse        *bool            `name:"no-mouse" help:"Disable mouse support."`
 	ReadOnly       *bool            `name:"read-only" help:"Disable all write operations."`
@@ -49,6 +50,14 @@ func applyCLIOverrides(cfg *config.Config) {
 	}
 	if cli.NoBackup != nil {
 		cfg.NoBackup = *cli.NoBackup
+	}
+	if cli.Theme != nil {
+		cfg.Theme = *cli.Theme
+		if cfg.Theme != "" {
+			if _, ok := config.LookupTheme(cfg.Theme); !ok {
+				fmt.Fprintf(os.Stderr, "Warning: unknown theme %q (see --list-themes)\n", cfg.Theme)
+			}
+		}
 	}
 	if cli.NoThemeBg != nil {
 		cfg.NoThemeBg = *cli.NoThemeBg

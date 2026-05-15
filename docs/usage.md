@@ -27,6 +27,7 @@ lazyenv ./services -r
 | `-g` | `--group` / `--no-group` | Start with prefix grouping enabled (default off). Toggle at runtime with `g`.                    |
 | `-B` | `--no-backup`    | Disable `.bak` backup before first save.                                                                    |
 | `-G` | `--no-git-check` | Disable `.gitignore` check. Auto-disabled if `git` is not found in `$PATH`.                                 |
+|      | `--theme`        | Built-in theme preset (see `--list-themes`). Overrides theme setting in config file.                        |
 |      | `--no-theme-bg`  | Disable theme background color, keeping the terminal's native background. Useful for transparent terminals. |
 |      | `--no-mouse`     | Disable mouse support. Useful in terminals or multiplexers with mouse conflicts.                            |
 |      | `--read-only`    | Disable all write operations. Useful for safely inspecting production files.                                 |
@@ -60,6 +61,7 @@ The following flags have a corresponding config file key:
 | `-g`            | `group`        |
 | `-B`            | `no-backup`    |
 | `-G`            | `no-git-check` |
+| `--theme`       | `theme`        |
 | `--no-theme-bg` | `no-theme-bg`  |
 | `--no-mouse`    | `no-mouse`     |
 | `--read-only`   | `read-only`    |
