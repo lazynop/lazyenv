@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.8.0] - 2026-05-17
 
 ### Added
 - `--theme` CLI flag overrides the theme setting from the config file. Pass `lazyenv --theme=dracula` to apply a theme for one run without editing your `.lazyenvrc`. Unknown theme names produce a warning on stderr.
