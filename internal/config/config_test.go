@@ -520,6 +520,13 @@ func TestIsValidColor(t *testing.T) {
 		{"hex missing prefix", "FF0000", false},
 		{"ansi out of range", "256", false},
 		{"ansi negative", "-1", false},
+		// Whitespace: TOML usually trims surrounding spaces, but if a value
+		// somehow keeps them (multiline string, escaped, etc.) we must reject
+		// it rather than silently pass an unparseable color to lipgloss.
+		{"hex leading space", " #FF0000", false},
+		{"hex trailing space", "#FF0000 ", false},
+		{"ansi leading space", " 127", false},
+		{"ansi trailing space", "127 ", false},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

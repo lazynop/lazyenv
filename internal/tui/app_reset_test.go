@@ -135,6 +135,54 @@ func TestCompareResetPreservesGitWarning(t *testing.T) {
 	assert.True(t, app.fileList.Files[1].GitWarning, "GitWarning on file B must survive compare reset")
 }
 
+func TestSavePreservesNoTrailingNewline(t *testing.T) {
+	// End-to-end: a file without a trailing newline must round-trip through
+	// the TUI save flow (handleSave → WriteFile → Marshal → re-parse → next
+	// save) without ever gaining one. Pins the parser fix at the TUI layer.
+	app, envPath := newTestAppWithDiskFile(t, "FOO=bar") // no trailing \n
+	require.False(t, app.fileList.Files[0].TrailingNewline,
+		"ParseFile must detect no trailing newline on source")
+
+	app.fileList.Files[0].UpdateVar(0, "first")
+	require.True(t, app.fileList.Files[0].Modified)
+
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "w"})
+	app = updated.(App)
+
+	data, err := os.ReadFile(envPath)
+	require.NoError(t, err)
+	assert.Equal(t, "FOO=first", string(data),
+		"first save must not inject a trailing newline")
+	assert.False(t, app.fileList.Files[0].TrailingNewline,
+		"re-parsed file must still have TrailingNewline=false")
+
+	// Second cycle: modify again and save, confirm round-trip is stable.
+	app.fileList.Files[0].UpdateVar(0, "second")
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "w"})
+	app = updated.(App)
+
+	data, err = os.ReadFile(envPath)
+	require.NoError(t, err)
+	assert.Equal(t, "FOO=second", string(data),
+		"second save must still not inject a trailing newline")
+}
+
+func TestSavePreservesTrailingNewline(t *testing.T) {
+	// Mirror of TestSavePreservesNoTrailingNewline for the common case:
+	// a file WITH a trailing newline keeps one after a TUI save+re-parse.
+	app, envPath := newTestAppWithDiskFile(t, "FOO=bar\n")
+	require.True(t, app.fileList.Files[0].TrailingNewline)
+
+	app.fileList.Files[0].UpdateVar(0, "first")
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "w"})
+	app = updated.(App)
+
+	data, err := os.ReadFile(envPath)
+	require.NoError(t, err)
+	assert.Equal(t, "FOO=first\n", string(data),
+		"save must preserve the trailing newline that was there on read")
+}
+
 func TestSaveFromMatrixPreservesGitWarning(t *testing.T) {
 	// Create two real files, enter matrix, add a var, then save.
 	dir := t.TempDir()

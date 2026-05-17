@@ -291,6 +291,38 @@ func TestCompareResetUsesKeyMap(t *testing.T) {
 		"rebound Reset key must trigger handleCompareReset in compare mode")
 }
 
+func TestCompareSaveUsesKeyMap(t *testing.T) {
+	// Compare-mode save must route through keys.Save. Sibling of
+	// TestCompareResetUsesKeyMap and TestCompareEditRightUsesKeyMap: a
+	// rebound Save key must persist the change end-to-end.
+	dir := t.TempDir()
+	pathA := filepath.Join(dir, ".env")
+	pathB := filepath.Join(dir, ".env.prod")
+	require.NoError(t, os.WriteFile(pathA, []byte("FOO=a\n"), 0644))
+	require.NoError(t, os.WriteFile(pathB, []byte("FOO=b\n"), 0644))
+
+	fA, err := parser.ParseFile(pathA, config.SecretsConfig{})
+	require.NoError(t, err)
+	fB, err := parser.ParseFile(pathB, config.SecretsConfig{})
+	require.NoError(t, err)
+
+	app := enterCompareMode(t, fA, fB)
+
+	// Modify file A so handleCompareSave actually has work to do.
+	app.diffView.FileA.UpdateVar(0, "changed")
+	require.True(t, app.diffView.FileA.Modified)
+
+	app.keys.Save = key.NewBinding(key.WithKeys("Z"))
+
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "Z"})
+	app = updated.(App)
+
+	data, err := os.ReadFile(pathA)
+	require.NoError(t, err)
+	assert.Equal(t, "FOO=changed\n", string(data),
+		"rebound Save key must persist the change to disk in compare mode")
+}
+
 func TestCompareEditRightUsesKeyMap(t *testing.T) {
 	// Compare-mode edit-right must route through keys.EditRight, not a
 	// hardcoded 'E'. Rebinding EditRight to a different key must take effect.
