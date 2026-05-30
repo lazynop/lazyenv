@@ -138,6 +138,64 @@ func TestRoundTripCRLFNormalizedToLF(t *testing.T) {
 	assert.Equal(t, expected, Marshal(ef))
 }
 
+func assertNoTempLeftover(t *testing.T, dir string) {
+	t.Helper()
+	matches, err := filepath.Glob(filepath.Join(dir, ".lazyenv-*.tmp"))
+	require.NoError(t, err)
+	assert.Empty(t, matches, "no orphan temp file must remain")
+}
+
+func TestWriteFileAtomicCreatesFileWithPerm(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, ".env.new")
+	data := []byte("FOO=bar\n")
+
+	require.NoError(t, WriteFileAtomic(path, data, 0640))
+
+	got, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, data, got)
+
+	info, err := os.Stat(path)
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0640), info.Mode().Perm())
+
+	assertNoTempLeftover(t, dir)
+}
+
+func TestWriteFileAtomicOverwrites(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, ".env")
+	require.NoError(t, os.WriteFile(path, []byte("OLD=1\n"), 0644))
+
+	require.NoError(t, WriteFileAtomic(path, []byte("NEW=2\n"), 0644))
+
+	got, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, []byte("NEW=2\n"), got)
+	assertNoTempLeftover(t, dir)
+}
+
+func TestWriteFileAtomicTempCreateFails(t *testing.T) {
+	// A non-existent parent directory makes CreateTemp fail.
+	err := WriteFileAtomic("/nonexistent/dir/.env", []byte("x"), 0644)
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "creating temp file")
+}
+
+func TestWriteFileAtomicRenameFailsCleansUpTemp(t *testing.T) {
+	// Renaming a file onto an existing directory fails (EISDIR); the temp
+	// file created alongside it must not leak.
+	dir := t.TempDir()
+	target := filepath.Join(dir, "iam-a-dir")
+	require.NoError(t, os.Mkdir(target, 0755))
+
+	err := WriteFileAtomic(target, []byte("x"), 0644)
+	require.Error(t, err)
+	assert.ErrorContains(t, err, "renaming temp file")
+	assertNoTempLeftover(t, dir)
+}
+
 func TestWriteFileNoPath(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO=bar\n"), config.SecretsConfig{})
 	// Path is empty by default from ParseBytes
