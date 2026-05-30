@@ -1,6 +1,7 @@
 # lazyenv
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/lazynop/lazyenv)](https://goreportcard.com/report/github.com/lazynop/lazyenv)
+[![codecov](https://codecov.io/gh/lazynop/lazyenv/branch/main/graph/badge.svg)](https://codecov.io/gh/lazynop/lazyenv)
 [![GoDoc](https://pkg.go.dev/badge/github.com/lazynop/lazyenv)](https://pkg.go.dev/github.com/lazynop/lazyenv)
 [![License](https://img.shields.io/github/license/lazynop/lazyenv)](LICENSE)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/lazynop/lazyenv)](go.mod)

@@ -1,0 +1,18 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+    patch:
+      default:
+        target: auto
+        threshold: 1%
+
+ignore:
+  - "main.go"
+  - "**/*_test.go"
+
+comment:
+  layout: "reach, diff, files"
+  require_changes: true
