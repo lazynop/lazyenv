@@ -906,7 +906,7 @@ func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
 	// empty file ParseBytes would set TrailingNewline=false and the first
 	// save would emit a file without a trailing newline.
 	if err := os.WriteFile(fullPath, []byte("\n"), 0644); err != nil {
-		return a, a.flashMessage("Error creating file: " + err.Error())
+		return a, a.flashError("Error creating file: " + err.Error())
 	}
 
 	a.sessionStats.RecordCreateScratch(fullPath, nil)
@@ -932,11 +932,11 @@ func (a App) confirmDuplicateFile() (tea.Model, tea.Cmd) {
 	// Copy raw bytes to preserve comments, formatting, and round-trip fidelity
 	data, err := os.ReadFile(src.Path)
 	if err != nil {
-		return a, a.flashMessage("Error reading source: " + err.Error())
+		return a, a.flashError("Error reading source: " + err.Error())
 	}
 
 	if err := os.WriteFile(destPath, data, 0644); err != nil {
-		return a, a.flashMessage("Error creating file: " + err.Error())
+		return a, a.flashError("Error creating file: " + err.Error())
 	}
 
 	a.sessionStats.RecordCreateDuplicate(destPath, src.Path, src.Vars)
@@ -977,7 +977,7 @@ func (a App) finaliseNewFile(path string, successMsg string) (tea.Model, tea.Cmd
 	ef, err := parser.ParseFile(path, a.config.Secrets)
 	if err != nil {
 		os.Remove(path)
-		return a, a.flashMessage("Error parsing new file: " + err.Error())
+		return a, a.flashError("Error parsing new file: " + err.Error())
 	}
 
 	if !a.config.NoGitCheck {
@@ -1004,7 +1004,7 @@ func (a App) handleConfirmDeleteFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd
 		}
 
 		if err := os.Remove(f.Path); err != nil {
-			return a, a.flashMessage("Error deleting file: " + err.Error())
+			return a, a.flashError("Error deleting file: " + err.Error())
 		}
 
 		a.sessionStats.RecordDelete(f.Path)
@@ -1058,7 +1058,7 @@ func (a App) confirmRenameFile() (tea.Model, tea.Cmd) {
 	}
 
 	if err := os.Rename(src.Path, newPath); err != nil {
-		return a, a.flashMessage("Error renaming file: " + err.Error())
+		return a, a.flashError("Error renaming file: " + err.Error())
 	}
 
 	a.sessionStats.RecordRename(src.Path, newPath)
@@ -1117,7 +1117,7 @@ func (a App) confirmTemplateFile() (tea.Model, tea.Cmd) {
 	b.WriteByte('\n')
 
 	if err := os.WriteFile(destPath, []byte(b.String()), 0644); err != nil {
-		return a, a.flashMessage("Error creating file: " + err.Error())
+		return a, a.flashError("Error creating file: " + err.Error())
 	}
 
 	// Template strips values — build a keys-only var slice for the initial snapshot.
