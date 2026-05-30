@@ -201,5 +201,5 @@ func CreateBackup(path string) error {
 	if info, err := os.Stat(path); err == nil {
 		mode = info.Mode()
 	}
-	return os.WriteFile(path+".bak", src, mode)
+	return WriteFileAtomic(path+".bak", src, mode)
 }
