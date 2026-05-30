@@ -1,0 +1,56 @@
+name: Bug report
+description: Report something that isn't working as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. Please fill in as much as you can — it makes triage much faster.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug, including what you expected to happen instead.
+      placeholder: When I press X in the diff view, the app...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Exact steps so we can reproduce it.
+      placeholder: |
+        1. Open lazyenv in a directory with two .env files
+        2. Enter compare mode
+        3. ...
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: lazyenv version
+      description: Output of `lazyenv --version`.
+      placeholder: "v0.8.0 (commit: abc1234, built: ...)"
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: OS and terminal
+      description: Operating system and terminal emulator.
+      placeholder: "macOS 15.3, kitty 0.39"
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant config (optional)
+      description: Your `.lazyenvrc` / global config, if it's relevant. Redact any secrets.
+      render: toml
+    validations:
+      required: false
