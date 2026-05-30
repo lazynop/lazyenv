@@ -184,6 +184,26 @@ func TestDeleteVarOutOfBounds(t *testing.T) {
 	assert.False(t, ef.Modified)
 }
 
+func TestRenameVar(t *testing.T) {
+	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
+
+	ef.RenameVar(0, "BAZ")
+
+	assert.Equal(t, "BAZ", ef.Vars[0].Key)
+	assert.True(t, ef.Vars[0].Modified, "renamed var must be marked modified")
+	assert.True(t, ef.Modified, "file must be marked modified")
+}
+
+func TestRenameVarOutOfBounds(t *testing.T) {
+	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
+
+	ef.RenameVar(-1, "X")
+	ef.RenameVar(99, "X")
+
+	assert.Equal(t, "FOO", ef.Vars[0].Key, "out-of-range index must be a no-op")
+	assert.False(t, ef.Modified, "no-op rename must not mark the file modified")
+}
+
 func TestGitWarningDefaultFalse(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
 

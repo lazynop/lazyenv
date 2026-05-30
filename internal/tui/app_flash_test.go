@@ -207,3 +207,12 @@ func TestFlash_SaveSingleQuoteSafeNoDowngradeMessage(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "FOO='plain update'\n", string(data))
 }
+
+func TestFlashError_SetsMessageAndClearTimer(t *testing.T) {
+	app := newTestApp(nil)
+
+	cmd := app.flashError("something broke")
+
+	assert.Equal(t, "something broke", app.statusBar.Message)
+	assert.NotNil(t, cmd, "flashError must return the auto-clear timer cmd")
+}

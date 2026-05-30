@@ -161,3 +161,11 @@ func TestViewNotReady(t *testing.T) {
 	view := app.View()
 	assert.Contains(t, view.Content, "Loading")
 }
+
+func TestInitReturnsBatch(t *testing.T) {
+	app := newTestApp(nil)
+
+	// Init builds the initial command batch (scan dir + request bg color);
+	// we only assert it is non-nil without running the closures.
+	assert.NotNil(t, app.Init())
+}
