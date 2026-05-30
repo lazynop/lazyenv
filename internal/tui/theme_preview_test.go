@@ -276,3 +276,41 @@ func TestThemePreviewScrollOffset(t *testing.T) {
 	m.cursor = 25
 	assert.Equal(t, 6, m.scrollOffset(), "scrollOffset should increase with cursor")
 }
+
+func TestThemePreviewInitReturnsNil(t *testing.T) {
+	m := NewThemePreview(false)
+	assert.Nil(t, m.Init(), "theme preview has no startup command")
+}
+
+func TestThemePreviewCurrentColors(t *testing.T) {
+	m := NewThemePreview(false)
+	assert.NotEqual(t, themes.Colors{}, m.currentColors(),
+		"current theme must resolve to a non-zero palette")
+}
+
+// TestThemePreviewViewRendersAllPanels exercises the full View() body and every
+// render* helper (list, showcase, config box, status bar), which the width==0
+// early-return test never reaches.
+func TestThemePreviewViewRendersAllPanels(t *testing.T) {
+	m := NewThemePreview(false)
+	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	m = updated.(ThemePreviewModel)
+
+	content := m.View().Content
+	require.NotEmpty(t, content)
+
+	assert.Contains(t, content, "Themes (", "theme list panel title")
+	assert.Contains(t, content, "primary", "showcase color rows")
+	assert.Contains(t, content, "deleted", "showcase color rows")
+	assert.Contains(t, content, "Config files", "config box")
+	assert.Contains(t, content, "theme =", "config snippet")
+	assert.Contains(t, content, "navigate", "status bar")
+}
+
+func TestThemePreviewViewRendersWithMouseDisabled(t *testing.T) {
+	m := NewThemePreview(true) // noMouse path
+	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	m = updated.(ThemePreviewModel)
+
+	assert.NotEmpty(t, m.View().Content, "view should still render with mouse disabled")
+}
