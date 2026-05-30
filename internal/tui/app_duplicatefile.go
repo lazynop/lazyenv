@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 func (a App) confirmDuplicateFile() (tea.Model, tea.Cmd) {
@@ -30,7 +31,7 @@ func (a App) confirmDuplicateFile() (tea.Model, tea.Cmd) {
 		return a, a.flashError("Error reading source: " + err.Error())
 	}
 
-	if err := os.WriteFile(destPath, data, envFilePerm); err != nil {
+	if err := parser.WriteFileAtomic(destPath, data, envFilePerm); err != nil {
 		return a, a.flashError("Error creating file: " + err.Error())
 	}
 

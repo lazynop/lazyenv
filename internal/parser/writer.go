@@ -140,27 +140,33 @@ func WriteFile(ef *model.EnvFile) error {
 	NormalizeForWrite(ef)
 	data := Marshal(ef)
 
-	dir := filepath.Dir(ef.Path)
+	// Preserve the existing file's permissions when overwriting.
+	mode := os.FileMode(0644)
+	if info, err := os.Stat(ef.Path); err == nil {
+		mode = info.Mode()
+	}
+
+	return WriteFileAtomic(ef.Path, data, mode)
+}
+
+// WriteFileAtomic writes data to path atomically: it writes to a temp file in
+// the same directory, fsyncs, applies perm, then renames over path. The fsync
+// is essential — without it a crash between the rename and the filesystem
+// journal flush can leave a zero-byte file at path on ext4 and similar
+// filesystems.
+func WriteFileAtomic(path string, data []byte, perm os.FileMode) error {
+	dir := filepath.Dir(path)
 	tmp, err := os.CreateTemp(dir, ".lazyenv-*.tmp")
 	if err != nil {
 		return fmt.Errorf("creating temp file: %w", err)
 	}
 	tmpName := tmp.Name()
 
-	// Get original file permissions
-	mode := os.FileMode(0644)
-	if info, err := os.Stat(ef.Path); err == nil {
-		mode = info.Mode()
-	}
-
 	if _, err := tmp.Write(data); err != nil {
 		tmp.Close()
 		os.Remove(tmpName)
 		return fmt.Errorf("writing temp file: %w", err)
 	}
-	// Force data to disk before the rename. Without this, a crash between
-	// the rename and the filesystem journal flush can leave a zero-byte
-	// file at ef.Path on ext4 and similar filesystems.
 	if err := tmp.Sync(); err != nil {
 		tmp.Close()
 		os.Remove(tmpName)
@@ -171,12 +177,12 @@ func WriteFile(ef *model.EnvFile) error {
 		return fmt.Errorf("closing temp file: %w", err)
 	}
 
-	if err := os.Chmod(tmpName, mode); err != nil {
+	if err := os.Chmod(tmpName, perm); err != nil {
 		os.Remove(tmpName)
 		return fmt.Errorf("setting permissions: %w", err)
 	}
 
-	if err := os.Rename(tmpName, ef.Path); err != nil {
+	if err := os.Rename(tmpName, path); err != nil {
 		os.Remove(tmpName)
 		return fmt.Errorf("renaming temp file: %w", err)
 	}

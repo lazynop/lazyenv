@@ -1,13 +1,13 @@
 package tui
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/lazynop/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 func (a App) confirmTemplateFile() (tea.Model, tea.Cmd) {
@@ -43,7 +43,7 @@ func (a App) confirmTemplateFile() (tea.Model, tea.Cmd) {
 	}
 	b.WriteByte('\n')
 
-	if err := os.WriteFile(destPath, []byte(b.String()), envFilePerm); err != nil {
+	if err := parser.WriteFileAtomic(destPath, []byte(b.String()), envFilePerm); err != nil {
 		return a, a.flashError("Error creating file: " + err.Error())
 	}
 

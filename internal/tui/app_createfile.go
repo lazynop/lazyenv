@@ -1,10 +1,10 @@
 package tui
 
 import (
-	"os"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
@@ -23,7 +23,7 @@ func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
 	// Write a single newline so the new file is POSIX-conventional. With an
 	// empty file ParseBytes would set TrailingNewline=false and the first
 	// save would emit a file without a trailing newline.
-	if err := os.WriteFile(fullPath, []byte("\n"), envFilePerm); err != nil {
+	if err := parser.WriteFileAtomic(fullPath, []byte("\n"), envFilePerm); err != nil {
 		return a, a.flashError("Error creating file: " + err.Error())
 	}
 
