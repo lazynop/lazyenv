@@ -73,7 +73,7 @@ func TestApp_SessionStats_CreateScratch(t *testing.T) {
 	out, _ := app.Update(FilesLoadedMsg{Files: nil})
 	app = out.(App)
 
-	app.createFileInput.SetValue(".env.new")
+	app.fileInput.SetValue(".env.new")
 	app.mode = ModeCreateFile
 	m, _ := app.confirmCreateFile()
 	app = m.(App)
@@ -86,8 +86,8 @@ func TestApp_SessionStats_CreateScratch(t *testing.T) {
 func TestApp_SessionStats_Duplicate(t *testing.T) {
 	app, ef, dir, srcPath := setupStatsFixture(t, ".env", "FOO=1\nBAR=2\n")
 
-	app.duplicateSource = ef
-	app.duplicateFileInput.SetValue(".env.copy")
+	app.fileOpSource = ef
+	app.fileInput.SetValue(".env.copy")
 	app.mode = ModeDuplicateFile
 	out, _ := app.confirmDuplicateFile()
 	app = out.(App)
@@ -100,8 +100,8 @@ func TestApp_SessionStats_Duplicate(t *testing.T) {
 func TestApp_SessionStats_Template(t *testing.T) {
 	app, ef, dir, srcPath := setupStatsFixture(t, ".env", "FOO=1\nBAR=2\n")
 
-	app.templateSource = ef
-	app.templateFileInput.SetValue(".env.example")
+	app.fileOpSource = ef
+	app.fileInput.SetValue(".env.example")
 	app.mode = ModeTemplateFile
 	out, _ := app.confirmTemplateFile()
 	app = out.(App)
@@ -114,8 +114,8 @@ func TestApp_SessionStats_Template(t *testing.T) {
 func TestApp_SessionStats_Rename(t *testing.T) {
 	app, ef, dir, oldPath := setupStatsFixture(t, ".env.local", "FOO=1\n")
 
-	app.renameSource = ef
-	app.renameFileInput.SetValue(".env.dev")
+	app.fileOpSource = ef
+	app.fileInput.SetValue(".env.dev")
 	app.mode = ModeRenameFile
 	out, _ := app.confirmRenameFile()
 	app = out.(App)
@@ -161,14 +161,14 @@ func TestApp_SessionStats_EndToEnd(t *testing.T) {
 	app, _ = app.handleSave()
 
 	// 2. Duplicate .env.staging → .env.backup.
-	app.duplicateSource = stagingEf
-	app.duplicateFileInput.SetValue(".env.backup")
+	app.fileOpSource = stagingEf
+	app.fileInput.SetValue(".env.backup")
 	app.mode = ModeDuplicateFile
 	m, _ := app.confirmDuplicateFile()
 	app = m.(App)
 
 	// 3. Create .env.new from scratch, add NEW=val, save.
-	app.createFileInput.SetValue(".env.new")
+	app.fileInput.SetValue(".env.new")
 	app.mode = ModeCreateFile
 	m, _ = app.confirmCreateFile()
 	app = m.(App)
@@ -184,8 +184,8 @@ func TestApp_SessionStats_EndToEnd(t *testing.T) {
 		}
 	}
 	require.NotNil(t, localRef)
-	app.renameSource = localRef
-	app.renameFileInput.SetValue(".env.dev")
+	app.fileOpSource = localRef
+	app.fileInput.SetValue(".env.dev")
 	app.mode = ModeRenameFile
 	m, _ = app.confirmRenameFile()
 	app = m.(App)

@@ -23,7 +23,7 @@ func TestDuplicateFile_EntersModeOnC(t *testing.T) {
 	app = updated.(App)
 
 	assert.Equal(t, ModeDuplicateFile, app.mode)
-	assert.Equal(t, ".env.copy", app.duplicateFileInput.Value())
+	assert.Equal(t, ".env.copy", app.fileInput.Value())
 }
 
 func TestDuplicateFile_EntersModeOnC_DotEnvSuffix(t *testing.T) {
@@ -35,7 +35,7 @@ func TestDuplicateFile_EntersModeOnC_DotEnvSuffix(t *testing.T) {
 	app = updated.(App)
 
 	assert.Equal(t, ModeDuplicateFile, app.mode)
-	assert.Equal(t, "demo.copy.env", app.duplicateFileInput.Value())
+	assert.Equal(t, "demo.copy.env", app.fileInput.Value())
 }
 
 func TestDuplicateFile_NoFileNoOp(t *testing.T) {
@@ -67,7 +67,7 @@ func TestDuplicateFile_EscapeCancels(t *testing.T) {
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
-	assert.Nil(t, app.duplicateSource)
+	assert.Nil(t, app.fileOpSource)
 }
 
 func TestDuplicateFile_Success(t *testing.T) {
@@ -82,8 +82,8 @@ func TestDuplicateFile_Success(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.mode = ModeDuplicateFile
-	app.duplicateSource = src
-	app.duplicateFileInput.SetValue(".env.staging")
+	app.fileOpSource = src
+	app.fileInput.SetValue(".env.staging")
 
 	result, _ := app.confirmDuplicateFile()
 	app = result.(App)
@@ -115,8 +115,8 @@ func TestDuplicateFile_AlreadyExists(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.mode = ModeDuplicateFile
-	app.duplicateSource = src
-	app.duplicateFileInput.SetValue(".env.local")
+	app.fileOpSource = src
+	app.fileInput.SetValue(".env.local")
 
 	result, _ := app.confirmDuplicateFile()
 	app = result.(App)
@@ -137,8 +137,8 @@ func TestDuplicateFile_InvalidPattern(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.mode = ModeDuplicateFile
-	app.duplicateSource = src
-	app.duplicateFileInput.SetValue("config.yaml")
+	app.fileOpSource = src
+	app.fileInput.SetValue("config.yaml")
 
 	result, _ := app.confirmDuplicateFile()
 	app = result.(App)
@@ -159,8 +159,8 @@ func TestDuplicateFile_PathSeparator(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.mode = ModeDuplicateFile
-	app.duplicateSource = src
-	app.duplicateFileInput.SetValue("sub/.env")
+	app.fileOpSource = src
+	app.fileInput.SetValue("sub/.env")
 
 	result, _ := app.confirmDuplicateFile()
 	app = result.(App)
@@ -174,8 +174,8 @@ func TestDuplicateFile_EmptyName(t *testing.T) {
 	app.config.Dir = t.TempDir()
 	app.config.NoGitCheck = true
 	app.mode = ModeDuplicateFile
-	app.duplicateSource = makeTestFile(".env", "FOO")
-	app.duplicateFileInput.SetValue("")
+	app.fileOpSource = makeTestFile(".env", "FOO")
+	app.fileInput.SetValue("")
 
 	result, _ := app.confirmDuplicateFile()
 	app = result.(App)

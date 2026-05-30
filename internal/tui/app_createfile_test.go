@@ -45,7 +45,7 @@ func TestCreateFile_EmptyNameCancels(t *testing.T) {
 	app.config.Dir = t.TempDir()
 	app.config.NoGitCheck = true
 	app.mode = ModeCreateFile
-	app.createFileInput.SetValue("")
+	app.fileInput.SetValue("")
 
 	result, _ := app.confirmCreateFile()
 	app = result.(App)
@@ -59,7 +59,7 @@ func TestCreateFile_PathSeparatorRejected(t *testing.T) {
 	app.config.Dir = t.TempDir()
 	app.config.NoGitCheck = true
 	app.mode = ModeCreateFile
-	app.createFileInput.SetValue("subdir/.env")
+	app.fileInput.SetValue("subdir/.env")
 
 	result, _ := app.confirmCreateFile()
 	app = result.(App)
@@ -73,7 +73,7 @@ func TestCreateFile_InvalidPatternRejected(t *testing.T) {
 	app.config.Dir = t.TempDir()
 	app.config.NoGitCheck = true
 	app.mode = ModeCreateFile
-	app.createFileInput.SetValue("config.yaml")
+	app.fileInput.SetValue("config.yaml")
 
 	result, _ := app.confirmCreateFile()
 	app = result.(App)
@@ -90,7 +90,7 @@ func TestCreateFile_AlreadyExistsRejected(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.mode = ModeCreateFile
-	app.createFileInput.SetValue(".env")
+	app.fileInput.SetValue(".env")
 
 	result, _ := app.confirmCreateFile()
 	app = result.(App)
@@ -100,27 +100,27 @@ func TestCreateFile_AlreadyExistsRejected(t *testing.T) {
 }
 
 func TestActiveFileInputDispatch(t *testing.T) {
-	// activeFileInput must return a pointer to the correct textinput for
-	// each of the four file-operation modes, and nil otherwise. The four
-	// confirm-flow tests bypass handleFileInputKey by calling
-	// confirmXxxFile() directly, so this test pins the dispatch table.
+	// activeFileInput must return the shared file input for each of the four
+	// file-operation modes, and nil otherwise. The AppMode distinguishes the
+	// operation; the textinput itself is shared. The four confirm-flow tests
+	// bypass handleFileInputKey by calling confirmXxxFile() directly, so this
+	// test pins the dispatch table.
 	app := newTestApp(nil)
-	cases := []struct {
+	fileModes := []struct {
 		name string
 		mode AppMode
-		want any // expected pointer (compared with assert.Same)
 	}{
-		{"create", ModeCreateFile, &app.createFileInput},
-		{"duplicate", ModeDuplicateFile, &app.duplicateFileInput},
-		{"rename", ModeRenameFile, &app.renameFileInput},
-		{"template", ModeTemplateFile, &app.templateFileInput},
+		{"create", ModeCreateFile},
+		{"duplicate", ModeDuplicateFile},
+		{"rename", ModeRenameFile},
+		{"template", ModeTemplateFile},
 	}
-	for _, c := range cases {
+	for _, c := range fileModes {
 		t.Run(c.name, func(t *testing.T) {
 			app.mode = c.mode
 			got := app.activeFileInput()
 			require.NotNil(t, got)
-			assert.Same(t, c.want, got)
+			assert.Same(t, &app.fileInput, got)
 		})
 	}
 
@@ -134,13 +134,13 @@ func TestHandleFileInputKeyForwardsToActiveInput(t *testing.T) {
 	// handleFileInputKey + activeFileInput end-to-end.
 	app := newTestApp(nil)
 	app.mode = ModeCreateFile
-	app.createFileInput.Focus()
+	app.fileInput.Focus()
 
 	updated, _ := app.Update(tea.KeyPressMsg{Text: "x"})
 	app = updated.(App)
 
-	assert.Equal(t, "x", app.createFileInput.Value(),
-		"keypress in ModeCreateFile must land in createFileInput")
+	assert.Equal(t, "x", app.fileInput.Value(),
+		"keypress in ModeCreateFile must land in fileInput")
 }
 
 func TestCreateFile_Success(t *testing.T) {
@@ -150,7 +150,7 @@ func TestCreateFile_Success(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.mode = ModeCreateFile
-	app.createFileInput.SetValue(".env.staging")
+	app.fileInput.SetValue(".env.staging")
 
 	result, _ := app.confirmCreateFile()
 	app = result.(App)

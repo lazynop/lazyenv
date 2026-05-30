@@ -23,7 +23,7 @@ func TestTemplateFile_EntersModeOnT(t *testing.T) {
 	app = updated.(App)
 
 	assert.Equal(t, ModeTemplateFile, app.mode)
-	assert.Equal(t, ".env.example", app.templateFileInput.Value())
+	assert.Equal(t, ".env.example", app.fileInput.Value())
 }
 
 func TestTemplateFile_DotEnvSuffix(t *testing.T) {
@@ -34,7 +34,7 @@ func TestTemplateFile_DotEnvSuffix(t *testing.T) {
 	updated, _ := app.Update(tea.KeyPressMsg{Text: "T"})
 	app = updated.(App)
 
-	assert.Equal(t, "demo.example.env", app.templateFileInput.Value())
+	assert.Equal(t, "demo.example.env", app.fileInput.Value())
 }
 
 func TestTemplateFile_NoFileNoOp(t *testing.T) {
@@ -66,7 +66,7 @@ func TestTemplateFile_EscapeCancels(t *testing.T) {
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
-	assert.Nil(t, app.templateSource)
+	assert.Nil(t, app.fileOpSource)
 }
 
 func TestTemplateFile_Success(t *testing.T) {
@@ -81,8 +81,8 @@ func TestTemplateFile_Success(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.mode = ModeTemplateFile
-	app.templateSource = src
-	app.templateFileInput.SetValue(".env.example")
+	app.fileOpSource = src
+	app.fileInput.SetValue(".env.example")
 
 	result, _ := app.confirmTemplateFile()
 	app = result.(App)
@@ -111,8 +111,8 @@ func TestTemplateFile_PreservesExportPrefix(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.mode = ModeTemplateFile
-	app.templateSource = src
-	app.templateFileInput.SetValue(".env.example")
+	app.fileOpSource = src
+	app.fileInput.SetValue(".env.example")
 
 	result, _ := app.confirmTemplateFile()
 	app = result.(App)
@@ -135,8 +135,8 @@ func TestTemplateFile_PreservesCommentsAndBlankLines(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.mode = ModeTemplateFile
-	app.templateSource = src
-	app.templateFileInput.SetValue(".env.example")
+	app.fileOpSource = src
+	app.fileInput.SetValue(".env.example")
 
 	result, _ := app.confirmTemplateFile()
 	app = result.(App)
@@ -158,8 +158,8 @@ func TestTemplateFile_AlreadyExists(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.mode = ModeTemplateFile
-	app.templateSource = src
-	app.templateFileInput.SetValue(".env.example")
+	app.fileOpSource = src
+	app.fileInput.SetValue(".env.example")
 
 	result, _ := app.confirmTemplateFile()
 	app = result.(App)
@@ -173,8 +173,8 @@ func TestTemplateFile_InvalidPattern(t *testing.T) {
 	app.config.Dir = t.TempDir()
 	app.config.NoGitCheck = true
 	app.mode = ModeTemplateFile
-	app.templateSource = f
-	app.templateFileInput.SetValue("config.yaml")
+	app.fileOpSource = f
+	app.fileInput.SetValue("config.yaml")
 
 	result, _ := app.confirmTemplateFile()
 	app = result.(App)
@@ -187,8 +187,8 @@ func TestTemplateFile_EmptyName(t *testing.T) {
 	app.config.Dir = t.TempDir()
 	app.config.NoGitCheck = true
 	app.mode = ModeTemplateFile
-	app.templateSource = makeTestFile(".env", "FOO")
-	app.templateFileInput.SetValue("")
+	app.fileOpSource = makeTestFile(".env", "FOO")
+	app.fileInput.SetValue("")
 
 	result, _ := app.confirmTemplateFile()
 	app = result.(App)

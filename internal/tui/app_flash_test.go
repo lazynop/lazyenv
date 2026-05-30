@@ -24,7 +24,7 @@ func TestFlash_CreateFileInvalidPattern(t *testing.T) {
 	app.config.Dir = t.TempDir()
 	app.config.NoGitCheck = true
 	app.mode = ModeCreateFile
-	app.createFileInput.SetValue("config.yaml")
+	app.fileInput.SetValue("config.yaml")
 
 	result, cmd := app.confirmCreateFile()
 	app = result.(App)
@@ -40,7 +40,7 @@ func TestFlash_CreateFileSuccess(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.mode = ModeCreateFile
-	app.createFileInput.SetValue(".env.test")
+	app.fileInput.SetValue(".env.test")
 
 	result, cmd := app.confirmCreateFile()
 	app = result.(App)
@@ -61,8 +61,8 @@ func TestFlash_DuplicateFileAlreadyExists(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.mode = ModeDuplicateFile
-	app.duplicateSource = src
-	app.duplicateFileInput.SetValue(".env.copy")
+	app.fileOpSource = src
+	app.fileInput.SetValue(".env.copy")
 
 	result, cmd := app.confirmDuplicateFile()
 	app = result.(App)
@@ -83,8 +83,8 @@ func TestFlash_RenameFileSuccess(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.mode = ModeRenameFile
-	app.renameSource = f
-	app.renameFileInput.SetValue(".env.local")
+	app.fileOpSource = f
+	app.fileInput.SetValue(".env.local")
 
 	result, cmd := app.confirmRenameFile()
 	app = result.(App)

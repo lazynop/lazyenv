@@ -94,14 +94,10 @@ type App struct {
 	compareEditFile   *model.EnvFile // which file is being edited in compare mode
 	compareEditVarIdx int            // var index in that file
 
-	// Create/duplicate/rename file state
-	createFileInput    textinput.Model
-	duplicateFileInput textinput.Model
-	duplicateSource    *model.EnvFile // source file for duplication
-	renameFileInput    textinput.Model
-	renameSource       *model.EnvFile // file being renamed
-	templateFileInput  textinput.Model
-	templateSource     *model.EnvFile // source file for template
+	// File-operation state (create/duplicate/rename/template). The active
+	// AppMode distinguishes the operation; the input and source are shared.
+	fileInput    textinput.Model
+	fileOpSource *model.EnvFile // source for duplicate/rename/template; nil for create
 
 	// Session statistics: nil when disabled (e.g. read-only or session-summary=false).
 	sessionStats *SessionStats
@@ -113,18 +109,8 @@ func NewApp(cfg config.Config, warnings []string) App {
 	ti.Placeholder = "Search..."
 	ti.CharLimit = 100
 
-	cfi := textinput.New()
-	cfi.Placeholder = ".env.example"
-	cfi.CharLimit = 256
-
-	dfi := textinput.New()
-	dfi.CharLimit = 256
-
-	rfi := textinput.New()
-	rfi.CharLimit = 256
-
-	tfi := textinput.New()
-	tfi.CharLimit = 256
+	fi := textinput.New()
+	fi.CharLimit = 256
 
 	varList := NewVarListModel(cfg.Layout)
 	if cfg.Sort == "alphabetical" {
@@ -141,25 +127,22 @@ func NewApp(cfg config.Config, warnings []string) App {
 	}
 
 	return App{
-		config:             cfg,
-		configWarnings:     warnings,
-		keys:               DefaultKeyMap(),
-		theme:              BuildTheme(true, cfg.Colors), // default to dark, will update on BackgroundColorMsg
-		hasDarkBg:          true,
-		focus:              FocusFiles,
-		mode:               ModeNormal,
-		fileList:           NewFileListModel(),
-		varList:            varList,
-		statusBar:          sb,
-		diffView:           NewDiffViewModel(cfg.Layout, cfg.Secrets),
-		editor:             NewEditorModel(),
-		searchInput:        ti,
-		createFileInput:    cfi,
-		duplicateFileInput: dfi,
-		renameFileInput:    rfi,
-		templateFileInput:  tfi,
-		backedUpPaths:      make(map[string]bool),
-		sessionStats:       stats,
+		config:         cfg,
+		configWarnings: warnings,
+		keys:           DefaultKeyMap(),
+		theme:          BuildTheme(true, cfg.Colors), // default to dark, will update on BackgroundColorMsg
+		hasDarkBg:      true,
+		focus:          FocusFiles,
+		mode:           ModeNormal,
+		fileList:       NewFileListModel(),
+		varList:        varList,
+		statusBar:      sb,
+		diffView:       NewDiffViewModel(cfg.Layout, cfg.Secrets),
+		editor:         NewEditorModel(),
+		searchInput:    ti,
+		fileInput:      fi,
+		backedUpPaths:  make(map[string]bool),
+		sessionStats:   stats,
 	}
 }
 
@@ -477,9 +460,10 @@ func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bo
 
 	switch {
 	case key.Matches(msg, a.keys.CreateFile):
-		a.createFileInput.SetValue("")
+		a.fileInput.SetValue("")
+		a.fileInput.Placeholder = ".env.example"
 		a.mode = ModeCreateFile
-		return a, a.createFileInput.Focus(), true
+		return a, a.fileInput.Focus(), true
 	}
 
 	f := a.fileList.SelectedFile()
@@ -492,10 +476,10 @@ func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bo
 
 	switch {
 	case key.Matches(msg, a.keys.DuplicateFile):
-		a.duplicateSource = f
-		a.duplicateFileInput.SetValue(duplicateName(f.Name))
+		a.fileOpSource = f
+		a.fileInput.SetValue(duplicateName(f.Name))
 		a.mode = ModeDuplicateFile
-		return a, a.duplicateFileInput.Focus(), true
+		return a, a.fileInput.Focus(), true
 
 	case key.Matches(msg, a.keys.DeleteFile):
 		if f.Modified {
@@ -509,16 +493,16 @@ func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bo
 		if f.Modified {
 			return a, a.flashMessage("Save or reset changes before renaming"), true
 		}
-		a.renameSource = f
-		a.renameFileInput.SetValue(f.Name)
+		a.fileOpSource = f
+		a.fileInput.SetValue(f.Name)
 		a.mode = ModeRenameFile
-		return a, a.renameFileInput.Focus(), true
+		return a, a.fileInput.Focus(), true
 
 	case key.Matches(msg, a.keys.TemplateFile):
-		a.templateSource = f
-		a.templateFileInput.SetValue(templateName(f.Name))
+		a.fileOpSource = f
+		a.fileInput.SetValue(templateName(f.Name))
 		a.mode = ModeTemplateFile
-		return a, a.templateFileInput.Focus(), true
+		return a, a.fileInput.Focus(), true
 	}
 
 	return a, nil, false
@@ -838,14 +822,8 @@ func (a App) handleSearchKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 // editing in the current file-operation mode, or nil for any other mode.
 func (a *App) activeFileInput() *textinput.Model {
 	switch a.mode {
-	case ModeCreateFile:
-		return &a.createFileInput
-	case ModeDuplicateFile:
-		return &a.duplicateFileInput
-	case ModeRenameFile:
-		return &a.renameFileInput
-	case ModeTemplateFile:
-		return &a.templateFileInput
+	case ModeCreateFile, ModeDuplicateFile, ModeRenameFile, ModeTemplateFile:
+		return &a.fileInput
 	}
 	return nil
 }
@@ -873,9 +851,7 @@ func (a App) handleFileInputKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
-		a.duplicateSource = nil
-		a.renameSource = nil
-		a.templateSource = nil
+		a.fileOpSource = nil
 		return a, nil
 	case key.Matches(msg, a.keys.Enter):
 		return a.confirmActiveFileInput()
@@ -892,7 +868,7 @@ func (a App) handleFileInputKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
 	a.mode = ModeNormal
 
-	name := strings.TrimSpace(a.createFileInput.Value())
+	name := strings.TrimSpace(a.fileInput.Value())
 	if name == "" {
 		return a, nil
 	}
@@ -915,10 +891,10 @@ func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
 
 func (a App) confirmDuplicateFile() (tea.Model, tea.Cmd) {
 	a.mode = ModeNormal
-	src := a.duplicateSource
-	a.duplicateSource = nil
+	src := a.fileOpSource
+	a.fileOpSource = nil
 
-	name := strings.TrimSpace(a.duplicateFileInput.Value())
+	name := strings.TrimSpace(a.fileInput.Value())
 	if name == "" || src == nil {
 		return a, nil
 	}
@@ -1044,10 +1020,10 @@ func (a App) handleConfirmDeleteFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd
 
 func (a App) confirmRenameFile() (tea.Model, tea.Cmd) {
 	a.mode = ModeNormal
-	src := a.renameSource
-	a.renameSource = nil
+	src := a.fileOpSource
+	a.fileOpSource = nil
 
-	name := strings.TrimSpace(a.renameFileInput.Value())
+	name := strings.TrimSpace(a.fileInput.Value())
 	if name == "" || src == nil || name == src.Name {
 		return a, nil
 	}
@@ -1085,10 +1061,10 @@ func (a App) confirmRenameFile() (tea.Model, tea.Cmd) {
 
 func (a App) confirmTemplateFile() (tea.Model, tea.Cmd) {
 	a.mode = ModeNormal
-	src := a.templateSource
-	a.templateSource = nil
+	src := a.fileOpSource
+	a.fileOpSource = nil
 
-	name := strings.TrimSpace(a.templateFileInput.Value())
+	name := strings.TrimSpace(a.fileInput.Value())
 	if name == "" || src == nil {
 		return a, nil
 	}
@@ -1295,13 +1271,13 @@ func (a App) inputBarView() string {
 	case ModeEditing:
 		return bar.Render("  " + a.editor.View())
 	case ModeCreateFile:
-		return bar.Render("  New file: " + a.createFileInput.View())
+		return bar.Render("  New file: " + a.fileInput.View())
 	case ModeDuplicateFile:
-		return bar.Render("  Duplicate as: " + a.duplicateFileInput.View())
+		return bar.Render("  Duplicate as: " + a.fileInput.View())
 	case ModeRenameFile:
-		return bar.Render("  Rename: " + a.renameFileInput.View())
+		return bar.Render("  Rename: " + a.fileInput.View())
 	case ModeTemplateFile:
-		return bar.Render("  Template as: " + a.templateFileInput.View())
+		return bar.Render("  Template as: " + a.fileInput.View())
 	}
 	return ""
 }

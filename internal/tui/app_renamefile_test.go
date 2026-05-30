@@ -23,7 +23,7 @@ func TestRenameFile_EntersModeOnR(t *testing.T) {
 	app = updated.(App)
 
 	assert.Equal(t, ModeRenameFile, app.mode)
-	assert.Equal(t, ".env", app.renameFileInput.Value())
+	assert.Equal(t, ".env", app.fileInput.Value())
 }
 
 func TestRenameFile_NoFileNoOp(t *testing.T) {
@@ -68,7 +68,7 @@ func TestRenameFile_EscapeCancels(t *testing.T) {
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
-	assert.Nil(t, app.renameSource)
+	assert.Nil(t, app.fileOpSource)
 }
 
 func TestRenameFile_SameNameNoOp(t *testing.T) {
@@ -83,8 +83,8 @@ func TestRenameFile_SameNameNoOp(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.mode = ModeRenameFile
-	app.renameSource = f
-	app.renameFileInput.SetValue(".env")
+	app.fileOpSource = f
+	app.fileInput.SetValue(".env")
 
 	result, _ := app.confirmRenameFile()
 	app = result.(App)
@@ -105,8 +105,8 @@ func TestRenameFile_Success(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.mode = ModeRenameFile
-	app.renameSource = f
-	app.renameFileInput.SetValue(".env.local")
+	app.fileOpSource = f
+	app.fileInput.SetValue(".env.local")
 
 	result, _ := app.confirmRenameFile()
 	app = result.(App)
@@ -138,8 +138,8 @@ func TestRenameFile_AlreadyExists(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.mode = ModeRenameFile
-	app.renameSource = f
-	app.renameFileInput.SetValue(".env.local")
+	app.fileOpSource = f
+	app.fileInput.SetValue(".env.local")
 
 	result, _ := app.confirmRenameFile()
 	app = result.(App)
@@ -154,8 +154,8 @@ func TestRenameFile_InvalidPattern(t *testing.T) {
 	app.config.Dir = t.TempDir()
 	app.config.NoGitCheck = true
 	app.mode = ModeRenameFile
-	app.renameSource = f
-	app.renameFileInput.SetValue("config.yaml")
+	app.fileOpSource = f
+	app.fileInput.SetValue("config.yaml")
 
 	result, _ := app.confirmRenameFile()
 	app = result.(App)
@@ -169,8 +169,8 @@ func TestRenameFile_PathSeparator(t *testing.T) {
 	app.config.Dir = t.TempDir()
 	app.config.NoGitCheck = true
 	app.mode = ModeRenameFile
-	app.renameSource = f
-	app.renameFileInput.SetValue("sub/.env")
+	app.fileOpSource = f
+	app.fileInput.SetValue("sub/.env")
 
 	result, _ := app.confirmRenameFile()
 	app = result.(App)
@@ -191,8 +191,8 @@ func TestRenameFile_UpdatesBackupTracking(t *testing.T) {
 	app.config.NoGitCheck = true
 	app.backedUpPaths[path] = true
 	app.mode = ModeRenameFile
-	app.renameSource = f
-	app.renameFileInput.SetValue(".env.local")
+	app.fileOpSource = f
+	app.fileInput.SetValue(".env.local")
 
 	result, _ := app.confirmRenameFile()
 	app = result.(App)
