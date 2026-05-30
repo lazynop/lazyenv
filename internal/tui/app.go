@@ -18,6 +18,10 @@ import (
 	"github.com/lazynop/lazyenv/internal/util"
 )
 
+// envFilePerm is the permission mode for newly created .env files
+// (owner-writable, world-readable), matching parser.WriteFile.
+const envFilePerm os.FileMode = 0o644
+
 // AppMode represents the current application mode.
 type AppMode int
 
@@ -881,7 +885,7 @@ func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
 	// Write a single newline so the new file is POSIX-conventional. With an
 	// empty file ParseBytes would set TrailingNewline=false and the first
 	// save would emit a file without a trailing newline.
-	if err := os.WriteFile(fullPath, []byte("\n"), 0644); err != nil {
+	if err := os.WriteFile(fullPath, []byte("\n"), envFilePerm); err != nil {
 		return a, a.flashError("Error creating file: " + err.Error())
 	}
 
@@ -911,7 +915,7 @@ func (a App) confirmDuplicateFile() (tea.Model, tea.Cmd) {
 		return a, a.flashError("Error reading source: " + err.Error())
 	}
 
-	if err := os.WriteFile(destPath, data, 0644); err != nil {
+	if err := os.WriteFile(destPath, data, envFilePerm); err != nil {
 		return a, a.flashError("Error creating file: " + err.Error())
 	}
 
@@ -952,7 +956,7 @@ func (a App) validateNewPath(name, dir string) (string, string) {
 func (a App) finaliseNewFile(path string, successMsg string) (tea.Model, tea.Cmd) {
 	ef, err := parser.ParseFile(path, a.config.Secrets)
 	if err != nil {
-		os.Remove(path)
+		_ = os.Remove(path) // best-effort cleanup of the half-created file
 		return a, a.flashError("Error parsing new file: " + err.Error())
 	}
 
@@ -1092,7 +1096,7 @@ func (a App) confirmTemplateFile() (tea.Model, tea.Cmd) {
 	}
 	b.WriteByte('\n')
 
-	if err := os.WriteFile(destPath, []byte(b.String()), 0644); err != nil {
+	if err := os.WriteFile(destPath, []byte(b.String()), envFilePerm); err != nil {
 		return a, a.flashError("Error creating file: " + err.Error())
 	}
 
