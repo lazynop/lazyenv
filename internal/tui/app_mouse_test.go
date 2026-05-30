@@ -225,3 +225,132 @@ func TestMatrixSetCursorEmpty(t *testing.T) {
 	assert.Equal(t, 0, m.cursorRow)
 	assert.Equal(t, 0, m.cursorCol)
 }
+
+// --- Mouse wheel: Normal mode scrolls the file and var lists ---
+
+func TestMouseWheelNormal_FileList(t *testing.T) {
+	f1 := makeTestFile(".env", "A")
+	f2 := makeTestFile(".env.prod", "B")
+	f3 := makeTestFile(".env.local", "C")
+	app := newTestApp([]*model.EnvFile{f1, f2, f3})
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	app = updated.(App)
+
+	// Wheel down over the file panel (X < fileWidth)
+	updated, _ = app.Update(tea.MouseWheelMsg{X: 1, Y: 5, Button: tea.MouseWheelDown})
+	app = updated.(App)
+	require.Greater(t, app.fileList.Cursor, 0, "wheel down should advance the file cursor")
+	assert.Equal(t, app.fileList.SelectedFile(), app.varList.File,
+		"var panel should follow the scrolled file selection")
+
+	// Wheel up returns to the top
+	updated, _ = app.Update(tea.MouseWheelMsg{X: 1, Y: 5, Button: tea.MouseWheelUp})
+	app = updated.(App)
+	assert.Equal(t, 0, app.fileList.Cursor)
+}
+
+func TestMouseWheelNormal_VarList(t *testing.T) {
+	f := makeTestFile(".env", "A", "B", "C", "D", "E")
+	app := newTestApp([]*model.EnvFile{f})
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	app = updated.(App)
+
+	updated, _ = app.Update(tea.MouseWheelMsg{X: app.fileWidth + 5, Y: 5, Button: tea.MouseWheelDown})
+	app = updated.(App)
+	assert.Greater(t, app.varList.Cursor, 0,
+		"wheel down over the var panel should advance the var cursor")
+}
+
+// --- Compare mode: click and wheel drive the diff view ---
+
+func TestMouseClickCompareMode_MovesDiffCursor(t *testing.T) {
+	app := newTestApp(nil)
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	app = updated.(App)
+	app.mode = ModeComparing
+	app.diffView = DiffViewModel{Entries: make([]model.DiffEntry, 10), Height: 20}
+
+	// index = Y - 3 + Offset = 6 - 3 + 0 = 3
+	updated, _ = app.Update(tea.MouseClickMsg{X: 10, Y: 6, Button: tea.MouseLeft})
+	app = updated.(App)
+	assert.Equal(t, 3, app.diffView.Cursor)
+}
+
+func TestMouseWheelCompareMode_ScrollsDiff(t *testing.T) {
+	app := newTestApp(nil)
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	app = updated.(App)
+	app.mode = ModeComparing
+	app.diffView = DiffViewModel{Entries: make([]model.DiffEntry, 10), Height: 20}
+
+	updated, _ = app.Update(tea.MouseWheelMsg{X: 10, Y: 5, Button: tea.MouseWheelDown})
+	app = updated.(App)
+	assert.Greater(t, app.diffView.Cursor, 0, "wheel down should scroll the diff view")
+}
+
+// --- Compare-select mode: click moves the cursor without changing the active file ---
+
+func TestMouseClickCompareSelectMode_MovesCursorOnly(t *testing.T) {
+	f1 := makeTestFile(".env", "A")
+	f2 := makeTestFile(".env.prod", "B")
+	f3 := makeTestFile(".env.local", "C")
+	app := newTestApp([]*model.EnvFile{f1, f2, f3})
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	app = updated.(App)
+	app.mode = ModeCompareSelect
+
+	// index = Y - 2 + Offset = 4 - 2 + 0 = 2
+	updated, _ = app.Update(tea.MouseClickMsg{X: 5, Y: 4, Button: tea.MouseLeft})
+	app = updated.(App)
+	assert.Equal(t, 2, app.fileList.Cursor, "compare-select click moves the cursor")
+	assert.Equal(t, 0, app.fileList.Selected,
+		"compare-select must not change the active file (Selected)")
+}
+
+// --- Matrix mode: click sets a cell, wheel scrolls rows ---
+
+func newMatrixTestApp(t *testing.T) App {
+	t.Helper()
+	app := newTestApp(nil)
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	app = updated.(App)
+	app.mode = ModeMatrix
+	mv := MatrixModel{
+		entries:   make([]model.MatrixEntry, 5),
+		fileNames: []string{"a", "b", "c"},
+		Height:    20,
+		Width:     120,
+		layout:    config.DefaultConfig().Layout,
+	}
+	for i := range mv.entries {
+		mv.entries[i].Present = make([]bool, 3)
+	}
+	app.matrixView = mv
+	return app
+}
+
+func TestMouseClickMatrixMode_SetsCell(t *testing.T) {
+	app := newMatrixTestApp(t)
+	kw := app.matrixView.layout.MatrixKeyWidth
+	cw := app.matrixView.layout.MatrixColWidth
+
+	// Data cell: row 2 (Y=4), column 1 (X one column band past the key column)
+	updated, _ := app.Update(tea.MouseClickMsg{X: kw + cw, Y: 4, Button: tea.MouseLeft})
+	app = updated.(App)
+	assert.Equal(t, 2, app.matrixView.cursorRow)
+	assert.Equal(t, 1, app.matrixView.cursorCol)
+
+	// Key-column click (X < keyWidth) keeps the column, only moves the row
+	updated, _ = app.Update(tea.MouseClickMsg{X: kw - 1, Y: 3, Button: tea.MouseLeft})
+	app = updated.(App)
+	assert.Equal(t, 1, app.matrixView.cursorRow)
+	assert.Equal(t, 1, app.matrixView.cursorCol, "key-column click keeps the current column")
+}
+
+func TestMouseWheelMatrixMode_Scrolls(t *testing.T) {
+	app := newMatrixTestApp(t)
+
+	updated, _ := app.Update(tea.MouseWheelMsg{X: 5, Y: 5, Button: tea.MouseWheelDown})
+	app = updated.(App)
+	assert.Greater(t, app.matrixView.cursorRow, 0, "wheel down should scroll the matrix rows")
+}
