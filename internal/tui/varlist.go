@@ -162,6 +162,11 @@ func (m *VarListModel) clampCursor() {
 	if m.Cursor < 0 {
 		m.Cursor = 0
 	}
+	// Keep the scroll offset within the (possibly shrunken) list so the
+	// cursor row stays inside the rendered viewport.
+	if m.Offset > m.Cursor {
+		m.Offset = m.Cursor
+	}
 }
 
 // MoveUp moves the cursor up.
