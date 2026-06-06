@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.1] - 2026-06-07
+
+### Fixed
+- Error messages from failed file operations (create, duplicate, rename, delete) now stay in the status bar long enough to be read before auto-clearing; they previously used the same short timeout as informational flashes.
+
+### Changed
+- Backup files (`.bak`) are now written atomically (temp file + rename), so an interrupted write can no longer leave a truncated backup next to your `.env`.
+- Updated runtime dependencies: Bubble Tea v2.0.7, go-runewidth v0.0.24.
+
 ## [0.8.0] - 2026-05-17
 
 ### Added
