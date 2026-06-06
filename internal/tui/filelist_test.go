@@ -99,7 +99,7 @@ func TestFileListScrolling(t *testing.T) {
 
 	var fl FileListModel
 	fl.Files = append(fl.Files, f1, f2, f3, f4)
-	fl.Height = 4 // visible = 4 - 2 = 2
+	fl.Height = panelChromeHeight + 2 // 2 rendered rows
 
 	fl.MoveDown() // cursor=1
 	fl.MoveDown() // cursor=2, should scroll
@@ -258,7 +258,7 @@ func TestFileListCursorStaysVisibleWhenScrolling(t *testing.T) {
 		fl.Files = append(fl.Files, makeTestFile(fmt.Sprintf(".env.f%02d", i), "A"))
 	}
 	fl.Width = 40
-	fl.Height = 10
+	fl.Height = panelChromeHeight + 6 // 6 rendered rows
 	fl.Focused = true
 
 	for range 9 {

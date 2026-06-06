@@ -53,7 +53,7 @@ func (m *FileListModel) MoveUp() {
 func (m *FileListModel) MoveDown() {
 	if m.Cursor < len(m.Files)-1 {
 		m.Cursor++
-		visible := m.Height - panelBorderHeight
+		visible := m.Height - panelChromeHeight
 		if visible > 0 && m.Cursor >= m.Offset+visible {
 			m.Offset = m.Cursor - visible + 1
 		}
@@ -67,7 +67,7 @@ func (m *FileListModel) SetCursor(index int) {
 	}
 	m.Cursor = max(0, min(index, len(m.Files)-1))
 	m.Select()
-	visible := m.Height - panelBorderHeight
+	visible := m.Height - panelChromeHeight
 	if visible > 0 {
 		if m.Cursor < m.Offset {
 			m.Offset = m.Cursor
