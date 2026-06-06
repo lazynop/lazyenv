@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -703,4 +704,35 @@ func TestVarListGrouping_RefreshPreservesAlphaOrder(t *testing.T) {
 		"AWS must come first alphabetically after Refresh")
 	assert.Equal(t, "DB", vl.groups[1].Prefix)
 	assert.Equal(t, "REDIS", vl.groups[2].Prefix)
+}
+
+func TestVarListSearchFromBottomKeepsMatchVisible(t *testing.T) {
+	// Searching while scrolled to the bottom must clamp the scroll offset
+	// along with the cursor, or the only match renders outside the viewport
+	// and the panel body shows up empty.
+	keys := make([]string, 0, 51)
+	for i := range 50 {
+		keys = append(keys, fmt.Sprintf("VAR_%02d", i))
+	}
+	keys = append(keys, "TARGET")
+	f := makeTestFile(".env", keys...)
+
+	vl := NewVarListModel(config.DefaultConfig().Layout)
+	vl.SetFile(f)
+	vl.Height = 10
+	vl.Width = 60
+
+	// Scroll all the way to the bottom.
+	for range 50 {
+		vl.MoveDown()
+	}
+	require.Greater(t, vl.Offset, 0, "list must be scrolled down before searching")
+
+	vl.SetSearch("TARGET")
+	require.Equal(t, 1, vl.DisplayCount())
+
+	theme := BuildTheme(true, config.ColorConfig{})
+	view := stripAnsi(vl.View(theme))
+	assert.Contains(t, view, "TARGET",
+		"the only search match must be rendered inside the viewport")
 }

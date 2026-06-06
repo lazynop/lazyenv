@@ -340,3 +340,37 @@ func TestCompareEditRightUsesKeyMap(t *testing.T) {
 	assert.Equal(t, ".env.prod", app.compareEditFile.Name,
 		"editor target should be the right-hand file (FileB)")
 }
+
+func TestCompareCopyDeleteThenExitDoesNotPanic(t *testing.T) {
+	// Copying a left-only entry to the left deletes it from the active file
+	// (FileA). The var list must be refreshed before returning to normal
+	// mode, or its display rows still reference the removed var index and
+	// the next render indexes out of range.
+	f1 := makeTestFile(".env", "SHARED", "ONLY_LEFT")
+	f2 := makeTestFile(".env.prod", "SHARED")
+
+	app := enterCompareMode(t, f1, f2)
+
+	// Move the cursor to the entry that exists only in the left file.
+	for i, e := range app.diffView.Entries {
+		if e.Status == model.DiffAdded {
+			app.diffView.Cursor = i
+			break
+		}
+	}
+
+	// 'h' copies to the left: for a left-only entry this deletes it from f1.
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "h"})
+	app = updated.(App)
+	require.Len(t, f1.Vars, 1, "ONLY_LEFT should have been deleted from the active file")
+
+	// Exit compare mode back to normal.
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "esc"})
+	app = updated.(App)
+	require.Equal(t, ModeNormal, app.mode)
+
+	assert.Equal(t, 1, app.varList.DisplayCount(),
+		"var list rows must be recomputed after compare mutated the active file")
+	assert.NotPanics(t, func() { app.View() },
+		"rendering after compare exit must not index removed vars")
+}

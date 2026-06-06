@@ -1,9 +1,11 @@
 package tui
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lazynop/lazyenv/internal/config"
 )
@@ -245,4 +247,27 @@ func TestFileListViewVarCountUpdatesAfterDelete(t *testing.T) {
 	f.DeleteVar(0)
 	view = fl.View(theme)
 	assert.Contains(t, view, "2")
+}
+
+func TestFileListCursorStaysVisibleWhenScrolling(t *testing.T) {
+	// The scroll threshold in MoveDown must match the row count actually
+	// rendered by View, or the cursor walks below the viewport and never
+	// becomes visible again.
+	var fl FileListModel
+	for i := range 30 {
+		fl.Files = append(fl.Files, makeTestFile(fmt.Sprintf(".env.f%02d", i), "A"))
+	}
+	fl.Width = 40
+	fl.Height = 10
+	fl.Focused = true
+
+	for range 9 {
+		fl.MoveDown()
+	}
+	require.Equal(t, 9, fl.Cursor)
+
+	theme := BuildTheme(true, config.ColorConfig{})
+	view := stripAnsi(fl.View(theme))
+	assert.Contains(t, view, ".env.f09",
+		"the cursor row must always be inside the rendered viewport")
 }
