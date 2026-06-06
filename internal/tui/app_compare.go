@@ -70,14 +70,23 @@ func (a App) handleComparingEdit(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 func (a App) handleCompareCopy(toRight bool) (tea.Model, tea.Cmd) {
 	var k, target string
+	var mutated *model.EnvFile
 	if toRight {
 		k = a.diffView.CopyToRight()
+		mutated = a.diffView.FileB
 		target = a.diffView.FileB.Name
 	} else {
 		k = a.diffView.CopyToLeft()
+		mutated = a.diffView.FileA
 		target = a.diffView.FileA.Name
 	}
 	if k != "" {
+		// The copy may add or delete vars in the mutated file; if that file
+		// is the one shown in the var panel, its display rows must be
+		// recomputed or they keep indexing the pre-copy Vars slice.
+		if a.varList.File == mutated {
+			a.varList.Refresh()
+		}
 		return a, a.flashMessage(k + " → " + target)
 	}
 	return a, nil
