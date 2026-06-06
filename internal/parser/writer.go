@@ -10,11 +10,13 @@ import (
 )
 
 // NormalizeForWrite upgrades QuoteStyle for any var whose current Value
-// cannot round-trip safely in its current style. Two cases are handled:
-// QuoteSingle with an embedded `'` (shell has no escape inside '...'), and
-// QuoteNone with an embedded `\n`/`\r`/`\t` (line separators break the
-// KEY=VALUE format). Both upgrade to QuoteDouble because escapeDouble can
-// serialize all three escape sequences.
+// cannot round-trip safely in its current style. For QuoteSingle that is an
+// embedded `'` (shell has no escape inside '...'). For QuoteNone: embedded
+// `\n`/`\r`/`\t` (line separators break the KEY=VALUE format), a leading
+// quote char (the re-parse would treat the value as quoted and swallow
+// following lines), and anything parseUnquoted would not read back verbatim
+// (inline-comment truncation, trailing-whitespace trim). All upgrade to
+// QuoteDouble because escapeDouble can serialize every such value.
 //
 // Production callers should use WriteFile, which invokes this automatically.
 // NormalizeForWrite remains exported for direct unit testing. Idempotent.
@@ -40,7 +42,19 @@ func needsQuoteUpgrade(v *model.EnvVar) bool {
 	case model.QuoteSingle:
 		return strings.ContainsRune(v.Value, '\'')
 	case model.QuoteNone:
-		return strings.ContainsAny(v.Value, "\n\r\t")
+		if strings.ContainsAny(v.Value, "\n\r\t") {
+			return true
+		}
+		// A leading quote char would make the re-parse treat the value as
+		// quoted — an unterminated quote then swallows the rest of the file.
+		if len(v.Value) > 0 && (v.Value[0] == '"' || v.Value[0] == '\'') {
+			return true
+		}
+		// The value is emitted verbatim after `KEY=`, so it must read back
+		// exactly: parseUnquoted truncates at whitespace+`#` (inline
+		// comment) and trims trailing whitespace.
+		parsed, comment := parseUnquoted(v.Value)
+		return parsed != v.Value || comment != ""
 	}
 	return false
 }
