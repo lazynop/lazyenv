@@ -307,14 +307,14 @@ func (m *DiffViewModel) View(theme Theme) string {
 
 	leftPanel := lipgloss.NewStyle().
 		Width(halfWidth).
-		Height(m.Height - 2).
+		Height(m.Height - diffHeaderHeight).
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(theme.ColorBorder).
 		Render(fmt.Sprintf("%s\n%s", leftTitle, leftContent))
 
 	rightPanel := lipgloss.NewStyle().
 		Width(halfWidth).
-		Height(m.Height - 2).
+		Height(m.Height - diffHeaderHeight).
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(theme.ColorBorder).
 		Render(fmt.Sprintf("%s\n%s", rightTitle, rightContent))

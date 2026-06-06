@@ -108,7 +108,7 @@ func (m ThemePreviewModel) handleMouseClick(msg tea.MouseClickMsg) ThemePreviewM
 	if msg.Button == tea.MouseLeft {
 		listWidth := max(m.width/3, config.FileListMinWidth)
 		if msg.X < listWidth {
-			index := msg.Y - 2 + m.scrollOffset()
+			index := msg.Y - panelContentOffsetY + m.scrollOffset()
 			if index >= 0 && index < len(m.themes) {
 				m.cursor = index
 			}

@@ -20,7 +20,40 @@ const (
 	// implicit left/right padding lipgloss adds = 4 columns.
 	panelChromeWidth = 4
 
+	// diffHeaderHeight is the two-row header above the side-by-side diff
+	// panels.
+	diffHeaderHeight = 2
+
 	// diffChromeHeight is the vertical overhead of the side-by-side diff
-	// view: panel chrome plus the two-row diff header.
-	diffChromeHeight = panelChromeHeight + 2
+	// view: panel chrome plus the diff header.
+	diffChromeHeight = panelChromeHeight + diffHeaderHeight
+
+	// statusBarHeight is the status bar row at the bottom of the screen.
+	statusBarHeight = 1
+
+	// bottomChromeHeight is the vertical space reserved below the two main
+	// panels: input bar + status bar + one spare row (the status bar wraps
+	// to two rows on narrow terminals).
+	bottomChromeHeight = 3
+
+	// compareBottomChromeHeight is bottomChromeHeight plus the editor bar
+	// row shown in ModeEditingCompare.
+	compareBottomChromeHeight = bottomChromeHeight + 1
+
+	// compareMarginWidth is the horizontal margin around the side-by-side
+	// compare view.
+	compareMarginWidth = 2
+
+	// panelContentOffsetY is the number of rows between a panel's top edge
+	// and its first content row: top border + title row. Mouse hit detection
+	// subtracts it from the click's Y coordinate.
+	panelContentOffsetY = 2
+
+	// diffContentOffsetY is panelContentOffsetY plus the column-header row
+	// of the compare view.
+	diffContentOffsetY = panelContentOffsetY + 1
+
+	// matrixContentOffsetY is the number of rows above the first matrix
+	// row: header row + separator row (the matrix view has no border).
+	matrixContentOffsetY = 2
 )

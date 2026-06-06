@@ -719,7 +719,7 @@ func TestVarListSearchFromBottomKeepsMatchVisible(t *testing.T) {
 
 	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
-	vl.Height = 10
+	vl.Height = panelChromeHeight + 6 // 6 rendered rows
 	vl.Width = 60
 
 	// Scroll all the way to the bottom.

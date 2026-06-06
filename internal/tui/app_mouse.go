@@ -27,7 +27,7 @@ func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 		a.focus = FocusFiles
 		a.fileList.Focused = true
 		a.varList.Focused = false
-		index := msg.Y - 2 + a.fileList.Offset // Y=0 border, Y=1 title, Y=2 first item
+		index := msg.Y - panelContentOffsetY + a.fileList.Offset
 		if index >= 0 {
 			prev := a.fileList.SelectedFile()
 			a.fileList.SetCursor(index)
@@ -40,7 +40,7 @@ func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 		a.focus = FocusVars
 		a.fileList.Focused = false
 		a.varList.Focused = true
-		index := msg.Y - 2 + a.varList.Offset
+		index := msg.Y - panelContentOffsetY + a.varList.Offset
 		if index >= 0 && index < a.varList.DisplayCount() {
 			a.varList.SetCursor(index)
 			if a.varList.IsHeaderAtCursor() {
@@ -52,7 +52,7 @@ func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 }
 
 func (a App) handleCompareMouseClick(msg tea.MouseClickMsg) App {
-	index := msg.Y - 3 + a.diffView.Offset // Y=0 border, Y=1 title, Y=2 header, Y=3 first entry
+	index := msg.Y - diffContentOffsetY + a.diffView.Offset
 	if index >= 0 {
 		a.diffView.SetCursor(index)
 	}
@@ -60,11 +60,11 @@ func (a App) handleCompareMouseClick(msg tea.MouseClickMsg) App {
 }
 
 func (a App) handleCompareSelectMouseClick(msg tea.MouseClickMsg) App {
-	index := msg.Y - 2 + a.fileList.Offset
+	index := msg.Y - panelContentOffsetY + a.fileList.Offset
 	if index >= 0 {
 		// Only move cursor, don't update Selected (compare target, not active file)
 		a.fileList.Cursor = max(0, min(index, len(a.fileList.Files)-1))
-		visible := a.fileList.Height - 2
+		visible := a.fileList.Height - panelChromeHeight
 		if visible > 0 && a.fileList.Cursor < a.fileList.Offset {
 			a.fileList.Offset = a.fileList.Cursor
 		}
@@ -76,7 +76,7 @@ func (a App) handleCompareSelectMouseClick(msg tea.MouseClickMsg) App {
 }
 
 func (a App) handleMatrixMouseClick(msg tea.MouseClickMsg) App {
-	row := msg.Y - 2 + a.matrixView.offsetRow // Y=0 header, Y=1 separator, Y=2 first row
+	row := msg.Y - matrixContentOffsetY + a.matrixView.offsetRow
 	if row < 0 {
 		return a
 	}

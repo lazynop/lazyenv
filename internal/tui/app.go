@@ -180,10 +180,10 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.height = msg.Height
 		a.ready = true
 		a.updateLayout()
-		a.diffView.Width = a.width - 2
-		a.diffView.Height = a.height - 4
+		a.diffView.Width = a.width - compareMarginWidth
+		a.diffView.Height = a.height - compareBottomChromeHeight
 		a.matrixView.Width = a.width
-		a.matrixView.Height = a.height - 1
+		a.matrixView.Height = a.height - statusBarHeight
 		a.statusBar.Width = a.width
 		return a, nil
 
@@ -402,7 +402,7 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 		}
 		a.matrixView = NewMatrixModel(a.fileList.Files, a.config.Layout, a.config.Secrets)
 		a.matrixView.Width = a.width
-		a.matrixView.Height = a.height - 1
+		a.matrixView.Height = a.height - statusBarHeight
 		a.mode = ModeMatrix
 	}
 
@@ -691,7 +691,7 @@ func (a *App) updateLayout() {
 	}
 	varWidth := a.width - a.fileWidth
 
-	panelHeight := a.height - 3 // space for status bar
+	panelHeight := a.height - bottomChromeHeight
 
 	a.fileList.Width = a.fileWidth
 	a.fileList.Height = panelHeight
