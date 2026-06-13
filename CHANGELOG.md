@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.0] - 2026-06-13
+
+### Added
+- Reorder variables on disk with `O`: rewrite the active `.env` in alphabetical or prefix-grouped order — like `gofmt` for env files. Comments travel with their variable, the file's leading/trailing blocks are preserved, and the write goes through the safe save path (`.bak` backup + atomic replace).
+
+### Fixed
+- Status-bar prompts (menus and confirmations) no longer disappear when a previous transient message's auto-clear timer fires.
+- Values that cannot round-trip unquoted are now quoted on save, preventing file corruption.
+- The variable list refreshes after a compare-mode copy mutates the active file.
+- The variable-list scroll offset is clamped when the list shrinks, so the viewport no longer goes blank.
+- The file list now scrolls by the rendered viewport height.
+
 ## [0.8.1] - 2026-06-07
 
 ### Fixed
