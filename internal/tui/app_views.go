@@ -51,6 +51,7 @@ func (a App) viewHelp() string {
     m              Completeness matrix (multi-file)
     /              Search variables
     o              Toggle sort (position / alphabetical)
+    O              Reorder variables on disk (alphabetical / grouped)
     g              Toggle variable grouping by prefix
     Space/Enter    Collapse/expand group (on header)
     Ctrl+S         Toggle secret masking

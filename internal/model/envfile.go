@@ -1,5 +1,10 @@
 package model
 
+import (
+	"slices"
+	"sort"
+)
+
 // LineType categorizes a raw line in an env file.
 type LineType int
 
@@ -145,4 +150,164 @@ func (ef *EnvFile) VarByKey(key string) *EnvVar {
 		}
 	}
 	return nil
+}
+
+// ReorderMode selects the ordering used by Reorder.
+type ReorderMode int
+
+const (
+	// ReorderAlphabetical sorts variables A→Z by key.
+	ReorderAlphabetical ReorderMode = iota
+	// ReorderGrouped sorts by prefix group (groups alphabetical, ungrouped
+	// last) and by key within each group, mirroring the visual grouping.
+	ReorderGrouped
+)
+
+// reorderUnit is a variable together with the comment lines attached directly
+// above it (no blank line in between). Attached comments travel with the
+// variable when the file is reordered.
+type reorderUnit struct {
+	varIdx   int       // index into the pre-reorder ef.Vars
+	varLine  RawLine   // the variable's original RawLine (Content preserved)
+	comments []RawLine // attached comment lines, in original order
+}
+
+// orderedUnit pairs a unit with its group id, used to insert a blank line at
+// group boundaries in grouped mode.
+type orderedUnit struct {
+	unit  reorderUnit
+	group int
+}
+
+// Reorder rewrites the file's variables in the given order, rebuilding Vars and
+// Lines so a subsequent write persists the new layout. Rules:
+//   - comments directly above a variable (no blank line between) travel with it;
+//   - the leading block (before the first variable) and trailing block (after
+//     the last variable) are preserved verbatim;
+//   - stand-alone comments inside the body float to just above the first
+//     variable, so no comment is ever lost;
+//   - blank lines are regenerated: one between groups in grouped mode, none in
+//     alphabetical mode.
+//
+// Sets Modified. No-op (leaves Modified untouched) when the file has no
+// variables.
+func (ef *EnvFile) Reorder(mode ReorderMode) {
+	firstVar, lastVar := -1, -1
+	for i, l := range ef.Lines {
+		if l.Type == LineVariable {
+			if firstVar == -1 {
+				firstVar = i
+			}
+			lastVar = i
+		}
+	}
+	if firstVar == -1 {
+		return // nothing to reorder
+	}
+
+	// The head ends just before the first variable's attached comment block,
+	// so those comments stay with the variable rather than the file header.
+	headEnd := firstVar
+	for headEnd > 0 && ef.Lines[headEnd-1].Type == LineComment {
+		headEnd--
+	}
+	head := ef.Lines[:headEnd]
+	tail := ef.Lines[lastVar+1:]
+
+	// Split the body into units (var + attached comments) and floating comments
+	// (stand-alone blocks separated from any variable by a blank line).
+	var units []reorderUnit
+	var floating []RawLine
+	var pending []RawLine
+	for _, l := range ef.Lines[headEnd : lastVar+1] {
+		switch l.Type {
+		case LineComment:
+			pending = append(pending, l)
+		case LineEmpty:
+			floating = append(floating, pending...)
+			pending = nil
+		case LineVariable:
+			units = append(units, reorderUnit{
+				varIdx:   l.VarIdx,
+				varLine:  l,
+				comments: pending,
+			})
+			pending = nil
+		}
+	}
+
+	ordered := ef.orderUnits(units, mode)
+
+	newVars := make([]EnvVar, 0, len(ef.Vars))
+	newLines := make([]RawLine, 0, len(ef.Lines))
+	newLines = append(newLines, head...)
+	newLines = append(newLines, floating...)
+
+	prevGroup := -1
+	for _, o := range ordered {
+		if mode == ReorderGrouped && prevGroup != -1 && o.group != prevGroup {
+			newLines = append(newLines, RawLine{Type: LineEmpty, VarIdx: -1})
+		}
+		prevGroup = o.group
+		newLines = append(newLines, o.unit.comments...)
+		newIdx := len(newVars)
+		newVars = append(newVars, ef.Vars[o.unit.varIdx])
+		vl := o.unit.varLine
+		vl.VarIdx = newIdx
+		newLines = append(newLines, vl)
+	}
+	newLines = append(newLines, tail...)
+
+	ef.Vars = newVars
+	ef.Lines = newLines
+	ef.Modified = true
+}
+
+func (ef *EnvFile) orderUnits(units []reorderUnit, mode ReorderMode) []orderedUnit {
+	if mode == ReorderGrouped {
+		return ef.orderGrouped(units)
+	}
+	return ef.orderAlphabetical(units)
+}
+
+func (ef *EnvFile) orderAlphabetical(units []reorderUnit) []orderedUnit {
+	sorted := slices.Clone(units)
+	sort.SliceStable(sorted, func(i, j int) bool {
+		return ef.Vars[sorted[i].varIdx].Key < ef.Vars[sorted[j].varIdx].Key
+	})
+	out := make([]orderedUnit, len(sorted))
+	for i, u := range sorted {
+		out[i] = orderedUnit{unit: u}
+	}
+	return out
+}
+
+func (ef *EnvFile) orderGrouped(units []reorderUnit) []orderedUnit {
+	unitByVar := make(map[int]reorderUnit, len(units))
+	for _, u := range units {
+		unitByVar[u.varIdx] = u
+	}
+
+	groups := ComputeGroups(ef.Vars)
+	sort.SliceStable(groups, func(i, j int) bool {
+		// Ungrouped pinned last, named groups alphabetical by prefix.
+		if groups[i].IsUngrouped() != groups[j].IsUngrouped() {
+			return !groups[i].IsUngrouped()
+		}
+		return groups[i].Prefix < groups[j].Prefix
+	})
+
+	var out []orderedUnit
+	for gi, g := range groups {
+		idxs := slices.Clone(g.Vars)
+		sort.SliceStable(idxs, func(a, b int) bool {
+			return ef.Vars[idxs[a]].Key < ef.Vars[idxs[b]].Key
+		})
+		for _, vi := range idxs {
+			if u, ok := unitByVar[vi]; ok {
+				out = append(out, orderedUnit{unit: u, group: gi})
+			}
+		}
+	}
+	return out
 }

@@ -39,6 +39,8 @@ const (
 	ModeRenameFile
 	ModeTemplateFile
 	ModeConfirmMatrixDelete
+	ModeReorderMenu
+	ModeReorderConfirm
 )
 
 // Focus represents which panel has focus.
@@ -98,6 +100,9 @@ type App struct {
 	// AppMode distinguishes the operation; the input and source are shared.
 	fileInput    textinput.Model
 	fileOpSource *model.EnvFile // source for duplicate/rename/template; nil for create
+
+	// Reorder state: the mode chosen in the menu, applied on confirm.
+	reorderMode model.ReorderMode
 
 	// Session statistics: nil when disabled (e.g. read-only or session-summary=false).
 	sessionStats *SessionStats
@@ -259,6 +264,8 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a.handleConfirmDeleteFileKey(msg)
 	case ModeConfirmMatrixDelete:
 		return a.handleConfirmMatrixDeleteKey(msg)
+	case ModeReorderMenu, ModeReorderConfirm:
+		return a.handleReorderKey(msg)
 	case ModeConfigError:
 		return a, tea.Quit
 	}
@@ -284,6 +291,12 @@ func (a App) handleNormalKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	// Var-focused actions (Edit/Add/Delete/Yank/Peek)
 	if m, cmd, handled := a.handleNormalVarAction(msg); handled {
 		return m, cmd
+	}
+
+	// Reorder-on-disk (O): a global mutation handled here so the global-action
+	// dispatcher stays within the project's cyclomatic-complexity limit.
+	if key.Matches(msg, a.keys.Reorder) {
+		return a.startReorder()
 	}
 
 	// File-focused actions (Create/Duplicate/Delete/Rename)

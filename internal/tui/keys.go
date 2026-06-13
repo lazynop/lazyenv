@@ -39,6 +39,7 @@ type KeyMap struct {
 	DeleteFile     key.Binding
 	RenameFile     key.Binding
 	TemplateFile   key.Binding
+	Reorder        key.Binding
 }
 
 // DefaultKeyMap returns the default keybindings.
@@ -183,6 +184,10 @@ func DefaultKeyMap() KeyMap {
 		TemplateFile: key.NewBinding(
 			key.WithKeys("T"),
 			key.WithHelp("T", "template"),
+		),
+		Reorder: key.NewBinding(
+			key.WithKeys("O"),
+			key.WithHelp("O", "reorder on disk"),
 		),
 	}
 }

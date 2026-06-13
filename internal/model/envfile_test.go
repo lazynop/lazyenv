@@ -1,6 +1,7 @@
 package model
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -226,4 +227,116 @@ func TestVarByKey(t *testing.T) {
 	assert.Equal(t, "only", v.Value)
 
 	assert.Nil(t, ef.VarByKey("MISSING"))
+}
+
+// parseTestEnv builds an EnvFile from raw text using a minimal classifier
+// (the model package cannot import the parser). It is good enough for the
+// controlled inputs used by the reorder tests.
+func parseTestEnv(content string) *EnvFile {
+	ef := &EnvFile{Name: "test.env"}
+	if content == "" {
+		return ef
+	}
+	for line := range strings.SplitSeq(content, "\n") {
+		trimmed := strings.TrimSpace(line)
+		switch {
+		case trimmed == "":
+			ef.Lines = append(ef.Lines, RawLine{Type: LineEmpty, Content: line, VarIdx: -1})
+		case strings.HasPrefix(trimmed, "#"):
+			ef.Lines = append(ef.Lines, RawLine{Type: LineComment, Content: line, VarIdx: -1})
+		default:
+			key, value, _ := strings.Cut(line, "=")
+			idx := len(ef.Vars)
+			ef.Vars = append(ef.Vars, EnvVar{Key: key, Value: value, LineNum: len(ef.Lines) + 1})
+			ef.Lines = append(ef.Lines, RawLine{Type: LineVariable, Content: line, VarIdx: idx})
+		}
+	}
+	return ef
+}
+
+// dumpLines reconstructs the file text from RawLine.Content, mirroring what a
+// write would produce for unmodified variables.
+func dumpLines(ef *EnvFile) string {
+	parts := make([]string, len(ef.Lines))
+	for i, l := range ef.Lines {
+		parts[i] = l.Content
+	}
+	return strings.Join(parts, "\n")
+}
+
+func varKeys(ef *EnvFile) []string {
+	out := make([]string, len(ef.Vars))
+	for i, v := range ef.Vars {
+		out[i] = v.Key
+	}
+	return out
+}
+
+func TestReorderAlphabetical(t *testing.T) {
+	ef := parseTestEnv("C=3\nA=1\nB=2")
+	ef.Reorder(ReorderAlphabetical)
+
+	assert.Equal(t, "A=1\nB=2\nC=3", dumpLines(ef))
+	assert.Equal(t, []string{"A", "B", "C"}, varKeys(ef))
+	assert.True(t, ef.Modified)
+}
+
+func TestReorderAttachedCommentsTravel(t *testing.T) {
+	ef := parseTestEnv("# c comment\nC=3\n# a comment\nA=1")
+	ef.Reorder(ReorderAlphabetical)
+
+	assert.Equal(t, "# a comment\nA=1\n# c comment\nC=3", dumpLines(ef))
+}
+
+func TestReorderLeadingBlockPreserved(t *testing.T) {
+	ef := parseTestEnv("# banner\n\nB=2\nA=1")
+	ef.Reorder(ReorderAlphabetical)
+
+	assert.Equal(t, "# banner\n\nA=1\nB=2", dumpLines(ef))
+}
+
+func TestReorderTrailingBlockPreserved(t *testing.T) {
+	ef := parseTestEnv("B=2\nA=1\n# trailing")
+	ef.Reorder(ReorderAlphabetical)
+
+	assert.Equal(t, "A=1\nB=2\n# trailing", dumpLines(ef))
+}
+
+func TestReorderFloatingCommentFloatsToTop(t *testing.T) {
+	ef := parseTestEnv("B=2\n# note\n\nA=1")
+	ef.Reorder(ReorderAlphabetical)
+
+	assert.Equal(t, "# note\nA=1\nB=2", dumpLines(ef))
+}
+
+func TestReorderGrouped(t *testing.T) {
+	ef := parseTestEnv("REDIS_PORT=1\nDB_HOST=localhost\nDB_PORT=5432\nREDIS_HOST=r")
+	ef.Reorder(ReorderGrouped)
+
+	want := "DB_HOST=localhost\nDB_PORT=5432\n\nREDIS_HOST=r\nREDIS_PORT=1"
+	assert.Equal(t, want, dumpLines(ef))
+}
+
+func TestReorderGroupedUngroupedLast(t *testing.T) {
+	ef := parseTestEnv("ZEBRA=1\nDB_HOST=h\nDB_PORT=p")
+	ef.Reorder(ReorderGrouped)
+
+	want := "DB_HOST=h\nDB_PORT=p\n\nZEBRA=1"
+	assert.Equal(t, want, dumpLines(ef))
+}
+
+func TestReorderDuplicatesKeepRelativeOrder(t *testing.T) {
+	ef := parseTestEnv("KEY=first\nKEY=second\nAAA=x")
+	ef.Reorder(ReorderAlphabetical)
+
+	// Stable sort keeps first before second, so last-wins semantics survive.
+	assert.Equal(t, "AAA=x\nKEY=first\nKEY=second", dumpLines(ef))
+}
+
+func TestReorderNoVariablesIsNoOp(t *testing.T) {
+	ef := parseTestEnv("# just a comment\n")
+	ef.Reorder(ReorderAlphabetical)
+
+	assert.False(t, ef.Modified)
+	assert.Equal(t, "# just a comment\n", dumpLines(ef))
 }
