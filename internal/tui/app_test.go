@@ -78,11 +78,24 @@ func TestUpdateClearMessageMsg(t *testing.T) {
 	app.statusBar.SetMessage("temporary")
 	assert.Equal(t, "temporary", app.statusBar.Message)
 
-	updated, cmd := app.Update(ClearMessageMsg{})
+	updated, cmd := app.Update(ClearMessageMsg{gen: app.statusBar.msgGen})
 	app = updated.(App)
 
 	assert.Nil(t, cmd)
 	assert.Equal(t, "", app.statusBar.Message)
+}
+
+func TestUpdateClearMessageMsgIgnoresStaleGen(t *testing.T) {
+	app := newTestApp(nil)
+	app.statusBar.SetMessage("first")
+	staleGen := app.statusBar.msgGen
+	app.statusBar.SetMessage("second") // newer message bumps the generation
+
+	updated, _ := app.Update(ClearMessageMsg{gen: staleGen})
+	app = updated.(App)
+
+	assert.Equal(t, "second", app.statusBar.Message,
+		"a clear scheduled for an earlier message must not wipe a newer one")
 }
 
 func TestViewHelp(t *testing.T) {

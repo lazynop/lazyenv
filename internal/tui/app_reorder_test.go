@@ -112,6 +112,27 @@ func TestReorderCreatesBackup(t *testing.T) {
 	assert.Equal(t, "B=2\nA=1\n", string(data), "backup must hold the pre-reorder content")
 }
 
+func TestReorderMenuSurvivesStaleClear(t *testing.T) {
+	app, _ := newTestAppWithDiskFile(t, "B=2\nA=1\n")
+
+	// A prior flash (e.g. pressing `o`) scheduled an auto-clear timer.
+	app.statusBar.SetMessage("Sorted alphabetically")
+	staleGen := app.statusBar.msgGen
+
+	// Open the reorder menu before that timer fires.
+	app = sendKey(app, tea.KeyPressMsg{Text: "O"})
+	require.Equal(t, ModeReorderMenu, app.mode)
+	require.NotEmpty(t, app.statusBar.Message)
+
+	// The earlier flash's clear timer fires while the menu is open.
+	updated, _ := app.Update(ClearMessageMsg{gen: staleGen})
+	app = updated.(App)
+
+	assert.NotEmpty(t, app.statusBar.Message,
+		"reorder menu prompt must persist despite a stale clear timer")
+	assert.Equal(t, ModeReorderMenu, app.mode)
+}
+
 // sendKey feeds one key press to the app and returns the updated model.
 func sendKey(app App, msg tea.KeyPressMsg) App {
 	updated, _ := app.Update(msg)

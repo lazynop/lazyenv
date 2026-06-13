@@ -6,9 +6,9 @@ import (
 	tea "charm.land/bubbletea/v2"
 )
 
-func clearMessageAfter(d time.Duration) tea.Cmd {
+func clearMessageAfter(d time.Duration, gen int) tea.Cmd {
 	return tea.Tick(d, func(time.Time) tea.Msg {
-		return ClearMessageMsg{}
+		return ClearMessageMsg{gen: gen}
 	})
 }
 
@@ -23,11 +23,11 @@ func (a *App) readOnlyFlash() tea.Cmd {
 // flashMessage sets a transient status bar message and returns the auto-clear cmd.
 func (a *App) flashMessage(msg string) tea.Cmd {
 	a.statusBar.SetMessage(msg)
-	return clearMessageAfter(a.config.Layout.MessageTimeout)
+	return clearMessageAfter(a.config.Layout.MessageTimeout, a.statusBar.msgGen)
 }
 
 // flashError sets a transient error message with a longer timeout.
 func (a *App) flashError(msg string) tea.Cmd {
 	a.statusBar.SetMessage(msg)
-	return clearMessageAfter(a.config.Layout.ErrorMessageTimeout)
+	return clearMessageAfter(a.config.Layout.ErrorMessageTimeout, a.statusBar.msgGen)
 }

@@ -57,8 +57,10 @@ type FilesLoadedMsg struct {
 	Err   error
 }
 
-// ClearMessageMsg clears the status bar message.
-type ClearMessageMsg struct{}
+// ClearMessageMsg clears the status bar message, but only if it is still the
+// message that scheduled the clear (matched by generation). This prevents a
+// stale auto-clear timer from wiping a newer message or a persistent prompt.
+type ClearMessageMsg struct{ gen int }
 
 // ConfigWarningMsg is sent at startup if the config file has issues.
 type ConfigWarningMsg struct{ Warning string }
@@ -218,7 +220,9 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, nil
 
 	case ClearMessageMsg:
-		a.statusBar.ClearMessage()
+		if msg.gen == a.statusBar.msgGen {
+			a.statusBar.ClearMessage()
+		}
 		return a, nil
 
 	case tea.MouseClickMsg:

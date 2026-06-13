@@ -13,6 +13,7 @@ type StatusBarModel struct {
 	ReadOnly bool   // show [READ-ONLY] badge
 	Message  string // transient message (e.g. "Saved!")
 	Mode     string // current mode label
+	msgGen   int    // bumped on every SetMessage; guards against stale clears
 }
 
 // NewStatusBarModel creates a new status bar model.
@@ -20,9 +21,13 @@ func NewStatusBarModel() StatusBarModel {
 	return StatusBarModel{}
 }
 
-// SetMessage sets a transient status message.
+// SetMessage sets a status message. Each call bumps a generation counter so a
+// clear scheduled for an earlier message cannot wipe a newer one. This keeps
+// persistent prompts (menus, confirmations) on screen even if a previous
+// transient flash's auto-clear timer fires while they are showing.
 func (m *StatusBarModel) SetMessage(msg string) {
 	m.Message = msg
+	m.msgGen++
 }
 
 // ClearMessage clears the transient message.
