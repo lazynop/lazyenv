@@ -100,9 +100,18 @@ Toggle prefix-based grouping with `g`. Variables sharing a non-empty prefix (eve
 
 Press `Enter` or `Space` (or click) on any header — including `UNGROUPED` — to collapse it. The trailing `UNGROUPED` section holds variables with a unique prefix or no `_`; it only appears when at least one named group exists, so files where nothing groups stay in the linear view.
 
-Groups follow file order by default. Toggling sort (`o`) reorders groups and variables within each group alphabetically; the `UNGROUPED` section stays pinned at the bottom. Search disables grouping in rendering and restores it when you clear the query. The toggle and per-group collapsed state live for the session — there's no on-disk reorder.
+Groups follow file order by default. Toggling sort (`o`) reorders groups and variables within each group alphabetically; the `UNGROUPED` section stays pinned at the bottom. Search disables grouping in rendering and restores it when you clear the query. The toggle and per-group collapsed state live for the session — for a permanent on-disk reorder, use `O` (see below).
 
 To start with grouping already enabled, set `group = true` in your config or pass `-g` / `--group` on the command line.
+
+## Reorder on disk
+
+While `o` only changes how variables are displayed, `O` rewrites the file on disk in a new order — like `gofmt` for `.env` files. Press `O`, choose a mode, and confirm:
+
+- **`a` alphabetical** — variables sorted A→Z by key.
+- **`g` grouped** — variables grouped by prefix (groups alphabetical, then by key within each group), mirroring the `g` view; the ungrouped bucket goes last, separated by a blank line.
+
+The reorder is **lossless for comments**: a comment block directly above a variable (no blank line between) travels with it, the file's leading and trailing comment blocks stay put, and stand-alone comments float to the top. The write goes through the same safe path as a manual save (a `.bak` backup on first write, atomic replace), so unsaved edits in the file are persisted as part of the reorder. Disabled in `--read-only` mode.
 
 ## Read-only mode
 
