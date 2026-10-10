@@ -34,13 +34,15 @@ fix:
 fmt:
     @gofmt -w .
 
-# Run linters (cyclomatic complexity + dead assignments)
+# Run linters (cyclomatic complexity, dead assignments, dead code)
 lint:
     #!/usr/bin/env bash
     set -o pipefail
     rc=0
     gocyclo -over 15 . || rc=1
     ineffassign ./... || rc=1
+    dead=$(go run golang.org/x/tools/cmd/deadcode@v0.51.0 -test ./...) || rc=1
+    [ -z "$dead" ] || { echo "$dead"; rc=1; }
     exit $rc
 
 # Check formatting (CI-friendly, fails if unformatted)

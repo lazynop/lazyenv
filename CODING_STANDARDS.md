@@ -1,6 +1,6 @@
 # Coding Standards
 
-How code in lazyenv is written: the conventions every change follows, the pitfalls that have bitten us, and checklists for the change types that span many files. `just check` is the mechanical gate (formatting, `go vet`, `gocyclo` + `ineffassign`, race-enabled tests); this file covers what tooling can't check. For build and test commands see `just --list` and [CONTRIBUTING.md](CONTRIBUTING.md).
+How code in lazyenv is written: the conventions every change follows, the pitfalls that have bitten us, and checklists for the change types that span many files. `just check` is the mechanical gate (formatting, `go vet`, `gocyclo`, `ineffassign`, `deadcode`, race-enabled tests); this file covers what tooling can't check. For build and test commands see `just --list` and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Every change
 
