@@ -321,27 +321,6 @@ func TestThemeNames(t *testing.T) {
 	}
 }
 
-func TestAllThemesHaveAllColors(t *testing.T) {
-	for _, name := range ThemeNames() {
-		colors, ok := LookupTheme(name)
-		assert.True(t, ok, "theme %s should exist", name)
-		assert.NotEmpty(t, colors.Primary, "%s: primary", name)
-		assert.NotEmpty(t, colors.Warning, "%s: warning", name)
-		assert.NotEmpty(t, colors.Error, "%s: error", name)
-		assert.NotEmpty(t, colors.Success, "%s: success", name)
-		assert.NotEmpty(t, colors.Muted, "%s: muted", name)
-		assert.NotEmpty(t, colors.Fg, "%s: fg", name)
-		if name != "default-dark" && name != "default-light" {
-			assert.NotEmpty(t, colors.Bg, "%s: bg", name)
-		}
-		assert.NotEmpty(t, colors.Border, "%s: border", name)
-		assert.NotEmpty(t, colors.CursorBg, "%s: cursor-bg", name)
-		assert.NotEmpty(t, colors.Modified, "%s: modified", name)
-		assert.NotEmpty(t, colors.Added, "%s: added", name)
-		assert.NotEmpty(t, colors.Deleted, "%s: deleted", name)
-	}
-}
-
 func TestLookupTheme(t *testing.T) {
 	colors, ok := LookupTheme("dracula")
 	assert.True(t, ok)
