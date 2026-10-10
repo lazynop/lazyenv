@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"charm.land/bubbles/v2/key"
@@ -146,8 +147,8 @@ func (a App) startCompareEdit(file *model.EnvFile) (tea.Model, tea.Cmd) {
 
 	// Find the var index in the target file
 	varIdx := -1
-	for i := len(file.Vars) - 1; i >= 0; i-- {
-		if file.Vars[i].Key == e.Key {
+	for i, v := range slices.Backward(file.Vars) {
+		if v.Key == e.Key {
 			varIdx = i
 			break
 		}

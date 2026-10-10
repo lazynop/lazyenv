@@ -31,8 +31,7 @@ func TestExampleDocumentsEveryKey(t *testing.T) {
 // recursing into nested tables.
 func checkKeysDocumented(t *testing.T, documented map[string]bool, table string, typ reflect.Type) {
 	t.Helper()
-	for i := range typ.NumField() {
-		field := typ.Field(i)
+	for field := range typ.Fields() {
 		if !field.IsExported() {
 			continue
 		}

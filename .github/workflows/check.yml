@@ -15,7 +15,7 @@ jobs:
 
       - uses: actions/setup-go@v7
         with:
-          go-version: "1.26"
+          go-version: "1.27"
           # tools/go.sum pins the lint tools, so they are cached with the modules
           cache-dependency-path: |
             go.sum

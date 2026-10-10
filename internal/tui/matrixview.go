@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"charm.land/bubbles/v2/textinput"
@@ -193,8 +194,8 @@ func (m *MatrixModel) DeleteAtCursor() (string, string) {
 		return "", ""
 	}
 	f := m.files[m.cursorCol]
-	for i := len(f.Vars) - 1; i >= 0; i-- {
-		if f.Vars[i].Key == entry.Key {
+	for i, v := range slices.Backward(f.Vars) {
+		if v.Key == entry.Key {
 			f.DeleteVar(i)
 			break
 		}
