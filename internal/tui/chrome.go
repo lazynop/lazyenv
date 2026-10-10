@@ -4,7 +4,7 @@ package tui
 // around a panel's renderable content: borders, title, status bar, etc.
 // Use these constants when computing the visible area from a panel's total
 // Width/Height so the layout stays in one place — the rule banning magic
-// numbers in panel sizing is documented in CLAUDE.md.
+// numbers in panel sizing is documented in CODING_STANDARDS.md.
 const (
 	// panelBorderHeight is top + bottom borders of a single panel.
 	panelBorderHeight = 2

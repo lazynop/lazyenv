@@ -24,6 +24,8 @@ just check        # fmt + vet + lint + tests (same as CI)
 
 ### Before submitting
 
+Follow [CODING_STANDARDS.md](CODING_STANDARDS.md): conventions, known pitfalls, and checklists for changes that span many files.
+
 Run `just fix` to apply Go modernization fixes, then make sure `just check` passes with no errors:
 
 ```bash
