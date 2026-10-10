@@ -1,6 +1,6 @@
 # Coding Standards
 
-How code in lazyenv is written: the conventions every change follows, the pitfalls that have bitten us, and checklists for the change types that span many files. `just check` is the mechanical gate (formatting, `go vet`, `gocyclo`, `ineffassign`, `deadcode`, race-enabled tests); this file covers what tooling can't check. For build and test commands see `just --list` and [CONTRIBUTING.md](CONTRIBUTING.md).
+How code in lazyenv is written: the conventions every change follows, the pitfalls that have bitten us, and checklists for the change types that span many files. `just check` is the mechanical gate (gofmt, gci import grouping, `go vet`, `gocyclo`, `ineffassign`, `deadcode`, `exhaustive`, race-enabled tests); this file covers what tooling can't check, and names the test that guards a rule where one exists. For build and test commands see `just --list` and [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Every change
 
@@ -9,7 +9,6 @@ How code in lazyenv is written: the conventions every change follows, the pitfal
 - **English everywhere**: UI strings, status and error messages, comments, identifiers, docs.
 - **Packages** live under `internal/`; the module exports nothing.
 - **Errors** are wrapped with context: `fmt.Errorf("reading %s: %w", path, err)`.
-- **Imports** come in three groups: stdlib, third-party, `github.com/lazynop/lazyenv/...`.
 - **Tests** sit next to the code (`foo_test.go`, same package) and use testify (`assert`, `require`).
 - **Charm v2 stack**: imports are `charm.land/bubbletea/v2`, `charm.land/bubbles/v2`, `charm.land/lipgloss/v2`. v1 snippets (`github.com/charmbracelet/...`, `View() string` on a `tea.Model`) don't compile here.
 - **Naming**: TUI sub-models end in `Model`, Bubble Tea messages in `Msg`.
@@ -20,6 +19,7 @@ How code in lazyenv is written: the conventions every change follows, the pitfal
 
 - **Round-trip fidelity**: an `EnvFile` keeps every original line as a `RawLine`; writes re-emit untouched lines as they were, so comments, blank lines and formatting survive edits.
 - **Atomic writes**: every disk write goes through `parser.WriteFile` or `parser.WriteFileAtomic` (temp file in the same directory, fsync, rename).
+- **Re-parse via `reparse`**: an in-memory file is refreshed from disk only through `reparse` (`internal/tui/app_reparse.go`), which carries over runtime-only state such as `GitWarning`. `TestParseFileOnlyThroughReparse` fails on a direct `parser.ParseFile` elsewhere in `internal/tui`.
 - **Shell semantics**: with duplicate keys the last occurrence wins (`EnvFile.VarByKey`, diffs, session snapshots).
 - **One background**: the terminal background is painted once, via `tea.View.BackgroundColor` in `App.View`, not per panel.
 
@@ -30,7 +30,7 @@ How code in lazyenv is written: the conventions every change follows, the pitfal
 
 ## Checklists by change type
 
-Each checklist is complete: a change of that type touches every item.
+Each checklist lists the steps only you can remember. The steps a test or lint catches are named below the list: those checks fail until the step is done.
 
 ### Checklist: config option
 
@@ -39,30 +39,29 @@ Each checklist is complete: a change of that type touches every item.
 3. `main.go` → `cli` struct: Kong flag typed as a pointer (`*bool`, `*string`, `*int`) so `nil` means "not given"; add `negatable:""` to a bool that defaults to true.
 4. `main.go` → `applyCLIOverrides()`: `if cli.X != nil { cfg.X = *cli.X }`.
 5. `internal/config/config_test.go`: tests for the field.
-6. `examples/config/full.toml`: the option, documented.
-7. `docs/configuration.md`: the options table. For a flag, also both tables in `docs/usage.md` (flags; flag → config key).
+6. `docs/configuration.md`: the options table. For a flag, also both tables in `docs/usage.md` (flags; flag → config key).
+
+Caught by `TestExampleDocumentsEveryKey`: the key documented in `examples/config/full.toml`.
 
 ### Checklist: theme color
 
 Runtime precedence: explicit `[colors]` > `theme` preset > built-in dark/light defaults, picked from the terminal background (`tea.BackgroundColorMsg`).
 
 1. `internal/config/config.go` → `ColorConfig`: field with `toml:"kebab-name,omitempty"`.
-2. `internal/config/themes/themes.go` → `Colors`: the same field; the two structs stay aligned.
-3. `internal/config/themes/*.go`: a value in **every** theme file.
-4. `internal/config/theme.go` → `LookupTheme()` (field copy) and `resolveColors()` (`if colors.X != "" { base.X = colors.X }`).
-5. `internal/config/load.go` → `validate()`: an entry in the color list.
-6. `internal/tui/styles.go` → `BuildTheme()`: light/dark defaults via `resolve(colors.X, light, dark)` and the styles that use it.
-7. `internal/tui/theme_preview.go`: the showcase list in `renderShowcase()`, plus `resolvedColors` / `resolveThemeColors()` if the preview renders with the color.
-8. `internal/config/config_test.go` → `TestAllThemesHaveAllColors`: `assert.NotEmpty` for the field.
-9. `examples/config/full.toml` and the colors table in `docs/configuration.md`.
+2. `internal/tui/styles.go` → `BuildTheme()`: light/dark defaults via `resolve(colors.X, light, dark)` and the styles that use it.
+3. `internal/tui/theme_preview.go`: the showcase list in `renderShowcase()`, plus `resolvedColors` / `resolveThemeColors()` if the preview renders with the color.
+4. `docs/configuration.md`: the colors table.
+
+Caught by the build (`LookupTheme` converts one struct into the other): the same field at the same position in `internal/config/themes/themes.go` → `Colors`. Caught by `TestColorFieldsWiredEverywhere`: a valid value in every theme file (`internal/config/themes/*.go`), the override in `resolveColors()` and the entry in the `validate()` color list (`internal/config/load.go`). Caught by `TestExampleDocumentsEveryKey`: the key in `examples/config/full.toml`.
 
 ### Checklist: scrollable view
 
 For a new view, window or `AppMode` with scrollable content:
 
-1. `internal/tui/app_mouse.go` → `handleMouseClick()`: a case for the mode, with hit detection.
-2. `internal/tui/app_mouse.go` → `handleMouseWheel()`: a case for the mode.
-3. The view's model: `SetCursor(index int)` for click positioning.
+1. `internal/tui/app_mouse.go`: move the mode out of the no-op cases into its own case, with hit detection in `handleMouseClick()` and scrolling in `handleMouseWheel()`.
+2. The view's model: `SetCursor(index int)` for click positioning.
+
+Caught by `just lint` (`exhaustive`): both switches name every `AppMode`, so a new mode fails until it is placed in one of their cases.
 
 ### Checklist: read-only guard
 
@@ -72,25 +71,16 @@ For a new view, window or `AppMode` with scrollable content:
 - **Key-group guard**: `if a.config.ReadOnly && key.Matches(msg, ...) { return a, a.readOnlyFlash(), true }` ahead of the switch (see `handleNormalFileAction`).
 - **Mutation-only entry point** (a flow that only writes, e.g. `startReorder`): the `readOnlyFlash()` check as its first statement.
 
-Cover the new key with a `TestReadOnlyBlocks...` case in `internal/tui/app_readonly_test.go`.
+Caught by `TestReadOnlyNoKeyChangesFiles` (`internal/tui/app_readonly_property_test.go`): it presses every `KeyMap` binding in every reachable mode under `--read-only` and fails if a file changes on disk or in memory. A new mode a key can reach fails it until classified there: in `mutatingModes`, or as a start state in `readOnlyStartStates`.
 
 ### Checklist: SessionStats hooks
 
-`SessionStats` (`internal/tui/session_stats.go`) prints a summary of disk-level changes on exit. Baseline is the disk state at startup, final is the disk state at quit; unsaved in-memory edits never appear. Every feature that writes, creates, renames or deletes a `.env` file calls the matching hook:
+`SessionStats` (`internal/tui/session_stats.go`) prints a summary of disk-level changes on exit. Baseline is the disk state at startup, final is the disk state at quit; unsaved in-memory edits never appear. Every write, create, rename or delete of a `.env` file goes through the `App` methods in `internal/tui/app_disk.go` (`saveFile`, `createFile`, `duplicateFile`, `templateFile`, `renameFile`, `deleteFile`), which call the matching `Record*` hook right after the disk call succeeds. The initial load is recorded by the `FilesLoadedMsg` handler (`RecordInitialLoad`).
 
-| Operation | Hook | Call it |
-| --- | --- | --- |
-| Save existing file | `RecordSave(f.Path, f.Vars)` | after `parser.WriteFile` succeeds, **before** the re-parse, with the vars just written |
-| Create from scratch | `RecordCreateScratch(path, vars)` | after `parser.WriteFileAtomic` succeeds, before `finaliseNewFile` |
-| Duplicate a file | `RecordCreateDuplicate(newPath, srcPath, srcVars)` | same |
-| Template from a file | `RecordCreateTemplate(newPath, srcPath, keysOnlyVars)` | same, with every `Value` empty |
-| Rename | `RecordRename(oldPath, newPath)` | after `os.Rename` succeeds |
-| Delete | `RecordDelete(path)` | after `os.Remove` succeeds |
-| Initial load | `RecordInitialLoad(f.Path, f.Vars)` | already wired in the `FilesLoadedMsg` handler |
+Caught by `TestDiskWritesGoThroughChokepoint`: a direct `parser.WriteFile`, `parser.WriteFileAtomic`, `os.Rename`, `os.Remove` or `os.WriteFile` anywhere else in `internal/tui`.
 
-- **Success path, right after the disk call**: place the hook after the disk operation's error return and before any post-processing that can fail (re-parse, `CheckGitIgnore`). The summary tracks the disk, not memory.
 - **Nil-safe**: `a.sessionStats` is `nil` in read-only mode or with `session-summary = false`, and every `Record*` method handles a nil receiver, so call it unconditionally.
-- **New kind of disk operation** (e.g. moving a file between directories): add a `Record*` method, handle it in `Summary()` / `formatLiveRow` / `formatDeletedRow`, and test it in `session_stats_test.go`.
+- **New kind of disk operation** (e.g. moving a file between directories): add an `App` method in `app_disk.go` and a `Record*` method, handle it in `Summary()` / `formatLiveRow` / `formatDeletedRow`, and test it in `session_stats_test.go`.
 - **New create path** outside `confirmCreateFile` / `confirmDuplicateFile` / `confirmTemplateFile`: pick the matching `createKind`, or add one.
 
 ### Checklist: renames the compiler can't see
@@ -117,8 +107,8 @@ Cover the new key with a `TestReadOnlyBlocks...` case in `internal/tui/app_reado
 
 - `docs/` is published as the docs site: every Markdown file in it goes public.
 - `docs/changelog.md` is generated in CI from `CHANGELOG.md`; edit `CHANGELOG.md` only.
-- When the TUI's look changes significantly, regenerate the README demo GIF from `docs/assets/demo.tape`; the run and compress commands are in its header (needs `vhs`, `ttyd`, `ffmpeg`, `gifsicle`).
+- When the TUI's look changes significantly, regenerate the README demo GIF with `just demo`.
 
 ## Versioning
 
-The git tag (`vX.Y.Z`) is the only source of the version. GoReleaser injects it at link time (`-X main.version=...` in `.goreleaser.yml`); `main.go` keeps `version = "dev"` permanently, so any build that reports `dev` is visibly unreleased. Releases happen by tagging, never by editing that literal.
+The git tag (`vX.Y.Z`) is the only source of the version. GoReleaser injects it at link time (`-X main.version=...` in `.goreleaser.yml`); `main.go` keeps `version = "dev"` permanently (`TestVersionIsDevSentinel` enforces it), so any build that reports `dev` is visibly unreleased. Releases happen by tagging, never by editing that literal.
