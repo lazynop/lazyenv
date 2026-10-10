@@ -41,11 +41,10 @@ func (a App) handleSave() (App, tea.Cmd) {
 	a.sessionStats.RecordSave(f.Path, f.Vars)
 
 	// Re-parse to refresh RawLines
-	refreshed, err := parser.ParseFile(f.Path, a.config.Secrets)
+	refreshed, err := reparse(f, a.config.Secrets)
 	if err != nil {
 		return a, a.flashError(warn + "Saved but refresh failed: " + err.Error())
 	}
-	refreshed.GitWarning = f.GitWarning
 
 	for i, existing := range a.fileList.Files {
 		if existing.Path == f.Path {
@@ -69,11 +68,10 @@ func (a App) handleReset() (App, tea.Cmd) {
 		return a, a.flashMessage("No changes to reset")
 	}
 
-	refreshed, err := parser.ParseFile(f.Path, a.config.Secrets)
+	refreshed, err := reparse(f, a.config.Secrets)
 	if err != nil {
 		return a, a.flashError("Error reloading: " + err.Error())
 	}
-	refreshed.GitWarning = f.GitWarning
 
 	for i, existing := range a.fileList.Files {
 		if existing.Path == f.Path {

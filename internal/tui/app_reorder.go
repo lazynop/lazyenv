@@ -96,11 +96,10 @@ func (a App) executeReorder() (tea.Model, tea.Cmd) {
 	// must be reflected even if the refresh fails.
 	a.sessionStats.RecordSave(f.Path, f.Vars)
 
-	refreshed, err := parser.ParseFile(f.Path, a.config.Secrets)
+	refreshed, err := reparse(f, a.config.Secrets)
 	if err != nil {
 		return a, a.flashError(warn + "Reordered but refresh failed: " + err.Error())
 	}
-	refreshed.GitWarning = f.GitWarning
 
 	for i, existing := range a.fileList.Files {
 		if existing.Path == f.Path {

@@ -134,9 +134,8 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 			// happened and must be reflected even if the refresh fails.
 			a.sessionStats.RecordSave(f.Path, f.Vars)
 			// Re-parse to refresh RawLines
-			refreshed, err := parser.ParseFile(f.Path, a.config.Secrets)
+			refreshed, err := reparse(f, a.config.Secrets)
 			if err == nil {
-				refreshed.GitWarning = f.GitWarning
 				for i, existing := range a.fileList.Files {
 					if existing.Path == f.Path {
 						a.fileList.Files[i] = refreshed

@@ -9,7 +9,6 @@ import (
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
-	"github.com/lazynop/lazyenv/internal/parser"
 	"github.com/lazynop/lazyenv/internal/util"
 )
 
@@ -239,16 +238,14 @@ func (m *DiffViewModel) CopyToLeft() string {
 // Reset re-parses both files from disk, discarding in-memory edits.
 // Returns error message on failure, empty string on success.
 func (m *DiffViewModel) Reset() string {
-	newA, errA := parser.ParseFile(m.FileA.Path, m.secrets)
-	newB, errB := parser.ParseFile(m.FileB.Path, m.secrets)
+	newA, errA := reparse(m.FileA, m.secrets)
+	newB, errB := reparse(m.FileB, m.secrets)
 	if errA != nil {
 		return "Failed to reload " + m.FileA.Name
 	}
 	if errB != nil {
 		return "Failed to reload " + m.FileB.Name
 	}
-	newA.GitWarning = m.FileA.GitWarning
-	newB.GitWarning = m.FileB.GitWarning
 	m.FileA = newA
 	m.FileB = newB
 	m.allEntries = model.ComputeDiff(m.FileA, m.FileB)
