@@ -1,7 +1,9 @@
 # LazyEnv — TUI for managing .env files
 
+# Lint and format tools, pinned in tools/go.mod
+tool := "go tool -modfile=tools/go.mod"
+
 # Import grouping: stdlib, third-party, then this module
-gci := "go run github.com/daixiang0/gci@v0.14.0"
 gci_flags := "-s standard -s default -s 'prefix(github.com/lazynop/lazyenv)' --skip-generated --skip-vendor"
 
 # Go sources to format: explicit paths, so hidden dirs (e.g. .claude/worktrees) are never walked
@@ -40,24 +42,24 @@ fix:
 # Format code and group imports
 fmt:
     @gofmt -w {{go_src}}
-    @{{gci}} write {{gci_flags}} {{go_src}}
+    @{{tool}} gci write {{gci_flags}} {{go_src}}
 
 # Run linters (cyclomatic complexity, dead assignments, dead code, enforced exhaustive switches)
 lint:
     #!/usr/bin/env bash
     set -o pipefail
     rc=0
-    gocyclo -over 15 . || rc=1
-    ineffassign ./... || rc=1
-    dead=$(go run golang.org/x/tools/cmd/deadcode@v0.51.0 -test ./...) || rc=1
+    {{tool}} gocyclo -over 15 . || rc=1
+    {{tool}} ineffassign ./... || rc=1
+    dead=$({{tool}} deadcode -test ./...) || rc=1
     [ -z "$dead" ] || { echo "$dead"; rc=1; }
-    go run github.com/nishanths/exhaustive/cmd/exhaustive@v0.15.0 -e ./... || rc=1
+    {{tool}} exhaustive -e ./... || rc=1
     exit $rc
 
 # Check formatting and import grouping (CI-friendly, fails if unformatted)
 fmt-check:
     @test -z "$(gofmt -l {{go_src}})" || (echo "Files need formatting:" && gofmt -l {{go_src}} && exit 1)
-    @ungrouped=$({{gci}} list {{gci_flags}} {{go_src}}) || exit 1; test -z "$ungrouped" || { echo "Imports not grouped as stdlib, third-party, github.com/lazynop/lazyenv (run just fmt):"; echo "$ungrouped"; exit 1; }
+    @ungrouped=$({{tool}} gci list {{gci_flags}} {{go_src}}) || exit 1; test -z "$ungrouped" || { echo "Imports not grouped as stdlib, third-party, github.com/lazynop/lazyenv (run just fmt):"; echo "$ungrouped"; exit 1; }
 
 # Run all checks (format + vet + lint + tests)
 check: fmt-check vet lint test

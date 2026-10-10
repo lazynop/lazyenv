@@ -12,7 +12,6 @@ Found a bug or have a feature request? Open an issue on [GitHub](https://github.
 
 - Go 1.26+
 - [just](https://github.com/casey/just) (task runner)
-- [gocyclo](https://github.com/fzipp/gocyclo) and [ineffassign](https://github.com/gordonklaus/ineffassign) (used by `just lint`)
 
 ### Build and test
 

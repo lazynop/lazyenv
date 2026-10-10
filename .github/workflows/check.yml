@@ -16,23 +16,22 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version: "1.26"
+          # tools/go.sum pins the lint tools, so they are cached with the modules
+          cache-dependency-path: |
+            go.sum
+            tools/go.sum
 
+      - uses: extractions/setup-just@v4
+
+      # Same recipes as a local `just check`: the justfile is the single source of truth.
       - name: Check formatting
-        run: |
-          test -z "$(gofmt -l *.go internal/)" || (echo "Files need formatting:" && gofmt -l *.go internal/ && exit 1)
-          ungrouped=$(go run github.com/daixiang0/gci@v0.14.0 list -s standard -s default -s 'prefix(github.com/lazynop/lazyenv)' --skip-generated --skip-vendor *.go internal/)
-          test -z "$ungrouped" || { echo "Imports not grouped as stdlib, third-party, github.com/lazynop/lazyenv (run just fmt):"; echo "$ungrouped"; exit 1; }
+        run: just fmt-check
 
       - name: Vet
-        run: go vet ./...
+        run: just vet
 
       - name: Lint
-        run: |
-          go run github.com/fzipp/gocyclo/cmd/gocyclo@v0.6.0 -over 15 .
-          go run github.com/gordonklaus/ineffassign@v0.2.0 ./...
-          dead=$(go run golang.org/x/tools/cmd/deadcode@v0.51.0 -test ./...)
-          test -z "$dead" || { echo "$dead"; exit 1; }
-          go run github.com/nishanths/exhaustive/cmd/exhaustive@v0.15.0 -e ./...
+        run: just lint
 
       - name: Test
         run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
