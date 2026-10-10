@@ -100,13 +100,7 @@ func TestReparseKeepsRuntimeStateAndDropsEdits(t *testing.T) {
 // this package's non-test files outside parseFileAllowed: a direct re-parse
 // returns a fresh EnvFile that silently loses runtime state like GitWarning.
 func TestParseFileOnlyThroughReparse(t *testing.T) {
-	var violations []string
-	for _, ref := range sourceRefs(t, internalParserPath, "ParseFile") {
-		if _, ok := parseFileAllowed[ref.file+":"+ref.owner]; !ok {
-			violations = append(violations, ref.String())
-		}
-	}
-
-	assert.Empty(t, violations, "re-parse an in-memory file with reparse (app_reparse.go) so its "+
-		"runtime state survives; a load with no in-memory predecessor goes in parseFileAllowed")
+	assertRefsAllowed(t, sourceRefs(t, internalParserPath, "ParseFile"), parseFileAllowed,
+		"re-parse an in-memory file with reparse (app_reparse.go) so its runtime state survives; "+
+			"a load with no in-memory predecessor goes in parseFileAllowed")
 }

@@ -12,27 +12,29 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const internalParserPath = "github.com/lazynop/lazyenv/internal/parser"
 
 // sourceRef is a reference, in this package's non-test source, to a function
-// of an imported package.
+// of an imported package or of this one.
 type sourceRef struct {
 	file  string // file name, relative to the package directory
 	line  int
 	owner string // enclosing top-level function, "" at package level
-	name  string // "pkg.Func", pkg being the last element of the import path
+	name  string // "pkg.Func" (pkg being the last element of the import path), or "Func"
 }
 
 func (r sourceRef) String() string {
 	return fmt.Sprintf("%s:%d: %s in %s", r.file, r.line, r.name, r.owner)
 }
 
-// sourceRefs returns every reference to one of funcs of the package at
-// importPath in this package's non-test .go files, whatever name each file
-// imports it under. It walks the AST, so comments and strings never match.
+// sourceRefs returns every reference, in this package's non-test .go files, to
+// one of funcs of the package at importPath, whatever name each file imports it
+// under; with importPath "", every call to one of this package's own funcs. It
+// walks the AST, so comments and strings never match.
 func sourceRefs(t *testing.T, importPath string, funcs ...string) []sourceRef {
 	t.Helper()
 	names, err := filepath.Glob("*.go")
@@ -46,9 +48,11 @@ func sourceRefs(t *testing.T, importPath string, funcs ...string) []sourceRef {
 		}
 		file, err := goparser.ParseFile(fset, name, nil, goparser.SkipObjectResolution)
 		require.NoError(t, err)
-		local := importName(file, importPath)
-		if local == "" {
-			continue
+		local := ""
+		if importPath != "" {
+			if local = importName(file, importPath); local == "" {
+				continue
+			}
 		}
 		for _, decl := range file.Decls {
 			owner := ""
@@ -56,23 +60,42 @@ func sourceRefs(t *testing.T, importPath string, funcs ...string) []sourceRef {
 				owner = fn.Name.Name
 			}
 			ast.Inspect(decl, func(n ast.Node) bool {
-				sel, ok := n.(*ast.SelectorExpr)
-				if !ok || !slices.Contains(funcs, sel.Sel.Name) {
+				fn := refIdent(n, local)
+				if fn == nil || !slices.Contains(funcs, fn.Name) {
 					return true
 				}
-				if pkg, ok := sel.X.(*ast.Ident); ok && pkg.Name == local {
-					refs = append(refs, sourceRef{
-						file:  name,
-						line:  fset.Position(sel.Pos()).Line,
-						owner: owner,
-						name:  path.Base(importPath) + "." + sel.Sel.Name,
-					})
+				qualified := fn.Name
+				if importPath != "" {
+					qualified = path.Base(importPath) + "." + fn.Name
 				}
+				refs = append(refs, sourceRef{
+					file:  name,
+					line:  fset.Position(fn.Pos()).Line,
+					owner: owner,
+					name:  qualified,
+				})
 				return true
 			})
 		}
 	}
 	return refs
+}
+
+// refIdent returns the function name n refers to: the Func of a pkg.Func
+// selector when local is the file's name for the imported package, or the
+// callee of a Func(...) call to this package when local is "".
+func refIdent(n ast.Node, local string) *ast.Ident {
+	switch n := n.(type) {
+	case *ast.SelectorExpr:
+		if pkg, ok := n.X.(*ast.Ident); ok && local != "" && pkg.Name == local {
+			return n.Sel
+		}
+	case *ast.CallExpr:
+		if id, ok := n.Fun.(*ast.Ident); ok && local == "" {
+			return id
+		}
+	}
+	return nil
 }
 
 // importName returns the name file uses for the package at importPath, or ""
@@ -88,4 +111,29 @@ func importName(file *ast.File, importPath string) string {
 		return path.Base(importPath)
 	}
 	return ""
+}
+
+// assertRefsAllowed fails for every ref that no allowed entry covers, and for
+// every entry that covers no ref, so a stale entry cannot linger. Keys are a
+// file name ("app_disk.go") or "file:function" ("scanner.go:ScanDir"); values
+// say why the entry is allowed. fix tells the reader what to do instead.
+func assertRefsAllowed(t *testing.T, refs []sourceRef, allowed map[string]string, fix string) {
+	t.Helper()
+	used := make(map[string]bool, len(allowed))
+	var violations []string
+	for _, ref := range refs {
+		key := ref.file
+		if _, ok := allowed[key]; !ok {
+			key = ref.file + ":" + ref.owner
+		}
+		if _, ok := allowed[key]; ok {
+			used[key] = true
+			continue
+		}
+		violations = append(violations, ref.String())
+	}
+	assert.Empty(t, violations, fix)
+	for key := range allowed {
+		assert.True(t, used[key], "allowed entry %q matches no reference: remove it", key)
+	}
 }

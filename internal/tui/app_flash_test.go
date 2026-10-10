@@ -1,13 +1,8 @@
 package tui
 
 import (
-	"fmt"
-	"go/ast"
-	goparser "go/parser"
-	"go/token"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -224,39 +219,9 @@ func TestFlashError_SetsMessageAndClearTimer(t *testing.T) {
 
 // TestClearMessageAfterOnlyInFlashHelpers keeps transient status messages
 // behind flashMessage/flashError: only app_flash.go may schedule the
-// auto-clear, so every message gets the timeout matching its kind. The check
-// walks the AST, so comments and strings mentioning the name never trip it.
+// auto-clear, so every message gets the timeout matching its kind.
 func TestClearMessageAfterOnlyInFlashHelpers(t *testing.T) {
-	files, err := filepath.Glob("*.go")
-	require.NoError(t, err)
-
-	fset := token.NewFileSet()
-	var inHelpers, elsewhere []string
-	for _, name := range files {
-		if strings.HasSuffix(name, "_test.go") {
-			continue
-		}
-		file, err := goparser.ParseFile(fset, name, nil, goparser.SkipObjectResolution)
-		require.NoError(t, err)
-		ast.Inspect(file, func(n ast.Node) bool {
-			call, ok := n.(*ast.CallExpr)
-			if !ok {
-				return true
-			}
-			if fn, ok := call.Fun.(*ast.Ident); !ok || fn.Name != "clearMessageAfter" {
-				return true
-			}
-			pos := fset.Position(call.Pos())
-			site := fmt.Sprintf("%s:%d", pos.Filename, pos.Line)
-			if name == "app_flash.go" {
-				inHelpers = append(inHelpers, site)
-			} else {
-				elsewhere = append(elsewhere, site)
-			}
-			return true
-		})
-	}
-
-	require.NotEmpty(t, inHelpers, "no clearMessageAfter call in app_flash.go: if it was renamed, update this test")
-	assert.Empty(t, elsewhere, "call a.flashMessage or a.flashError instead of clearMessageAfter")
+	assertRefsAllowed(t, sourceRefs(t, "", "clearMessageAfter"),
+		map[string]string{"app_flash.go": "the flash helpers"},
+		"call a.flashMessage or a.flashError instead of clearMessageAfter")
 }
