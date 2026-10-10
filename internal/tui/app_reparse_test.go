@@ -1,15 +1,9 @@
 package tui
 
 import (
-	"fmt"
-	"go/ast"
-	goparser "go/parser"
-	"go/token"
 	"os"
 	"path/filepath"
 	"reflect"
-	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -106,66 +100,13 @@ func TestReparseKeepsRuntimeStateAndDropsEdits(t *testing.T) {
 // this package's non-test files outside parseFileAllowed: a direct re-parse
 // returns a fresh EnvFile that silently loses runtime state like GitWarning.
 func TestParseFileOnlyThroughReparse(t *testing.T) {
-	paths, err := filepath.Glob("*.go")
-	require.NoError(t, err)
-
-	fset := token.NewFileSet()
 	var violations []string
-	for _, path := range paths {
-		if strings.HasSuffix(path, "_test.go") {
-			continue
+	for _, ref := range sourceRefs(t, internalParserPath, "ParseFile") {
+		if _, ok := parseFileAllowed[ref.file+":"+ref.owner]; !ok {
+			violations = append(violations, ref.String())
 		}
-		file, err := goparser.ParseFile(fset, path, nil, 0)
-		require.NoError(t, err)
-		violations = append(violations, parseFileViolations(fset, path, file)...)
 	}
 
 	assert.Empty(t, violations, "re-parse an in-memory file with reparse (app_reparse.go) so its "+
 		"runtime state survives; a load with no in-memory predecessor goes in parseFileAllowed")
-}
-
-// parseFileViolations returns "file:line" entries for every parser.ParseFile
-// reference in file that sits outside an allowlisted function.
-func parseFileViolations(fset *token.FileSet, path string, file *ast.File) []string {
-	local := internalParserImportName(file)
-	if local == "" {
-		return nil
-	}
-	var out []string
-	for _, decl := range file.Decls {
-		owner := ""
-		if fn, ok := decl.(*ast.FuncDecl); ok {
-			owner = fn.Name.Name
-		}
-		if _, ok := parseFileAllowed[path+":"+owner]; ok {
-			continue
-		}
-		ast.Inspect(decl, func(n ast.Node) bool {
-			sel, ok := n.(*ast.SelectorExpr)
-			if !ok || sel.Sel.Name != "ParseFile" {
-				return true
-			}
-			if pkg, ok := sel.X.(*ast.Ident); ok && pkg.Name == local {
-				pos := fset.Position(sel.Pos())
-				out = append(out, fmt.Sprintf("%s:%d: parser.ParseFile in %s", pos.Filename, pos.Line, owner))
-			}
-			return true
-		})
-	}
-	return out
-}
-
-// internalParserImportName returns the name file uses for the internal parser
-// package, or "" when file does not import it.
-func internalParserImportName(file *ast.File) string {
-	for _, imp := range file.Imports {
-		if p, _ := strconv.Unquote(imp.Path.Value); p != "github.com/lazynop/lazyenv/internal/parser" {
-			continue
-		}
-		if imp.Name != nil {
-			return imp.Name.Name
-		}
-		return "parser"
-	}
-	return ""
 }
