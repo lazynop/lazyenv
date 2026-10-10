@@ -7,6 +7,7 @@ recursive = false
 show-secrets = false
 no-backup = false
 no-git-check = false
+no-theme-bg = false               # keep the terminal's native background (transparent terminals)
 no-mouse = false
 read-only = false
 session-summary = true            # print a recap of disk changes on exit. --read-only forces off.
