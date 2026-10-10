@@ -26,10 +26,13 @@ func (a App) saveFile(f *model.EnvFile) error {
 	return nil
 }
 
-// createFile writes data to the new file at path and records it as created
-// from scratch, with no variables.
-func (a App) createFile(path string, data []byte) error {
-	if err := parser.WriteFileAtomic(path, data, envFilePerm); err != nil {
+// createFile writes an empty .env file at path and records it as created from
+// scratch, with no variables. The file holds a single newline so it is
+// POSIX-conventional: with an empty file ParseBytes would set
+// TrailingNewline=false and the first save would emit a file without a
+// trailing newline.
+func (a App) createFile(path string) error {
+	if err := parser.WriteFileAtomic(path, []byte("\n"), envFilePerm); err != nil {
 		return err
 	}
 	a.sessionStats.RecordCreateScratch(path, nil)
