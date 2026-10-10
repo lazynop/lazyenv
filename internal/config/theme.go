@@ -8,20 +8,8 @@ func LookupTheme(name string) (ColorConfig, bool) {
 	if !ok {
 		return ColorConfig{}, false
 	}
-	return ColorConfig{
-		Primary:  t.Primary,
-		Warning:  t.Warning,
-		Error:    t.Error,
-		Success:  t.Success,
-		Muted:    t.Muted,
-		Fg:       t.Fg,
-		Bg:       t.Bg,
-		Border:   t.Border,
-		CursorBg: t.CursorBg,
-		Modified: t.Modified,
-		Added:    t.Added,
-		Deleted:  t.Deleted,
-	}, true
+	// Struct conversion: compiles only while ColorConfig and themes.Colors have the same fields in the same order.
+	return ColorConfig(t), true
 }
 
 // ThemeNames returns all available theme names sorted.
