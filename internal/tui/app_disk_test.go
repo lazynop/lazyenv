@@ -14,10 +14,7 @@ func TestDiskWritesGoThroughChokepoint(t *testing.T) {
 	// Disk writes allowed outside app_disk.go, keyed "file:function pkg.Func",
 	// with how many times each may occur there. Every allowance must be used
 	// in full, so a stale entry fails too.
-	allowed := map[string]int{
-		// Best-effort cleanup of a just-created file that failed to parse.
-		"app_fileinput.go:finaliseNewFile os.Remove": 1,
-	}
+	allowed := map[string]int{}
 
 	refs := append(sourceRefs(t, "os", "Remove", "Rename", "WriteFile"),
 		sourceRefs(t, internalParserPath, "WriteFile", "WriteFileAtomic")...)

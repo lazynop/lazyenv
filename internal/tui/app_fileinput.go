@@ -93,7 +93,7 @@ func (a App) validateNewPath(name, dir string) (string, string) {
 func (a App) finaliseNewFile(path string, successMsg string) (tea.Model, tea.Cmd) {
 	ef, err := parser.ParseFile(path, a.config.Secrets)
 	if err != nil {
-		_ = os.Remove(path) // best-effort cleanup of the half-created file
+		_ = a.deleteFile(path) // best-effort cleanup; also cancels the create in SessionStats
 		return a, a.flashError("Error parsing new file: " + err.Error())
 	}
 
