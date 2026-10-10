@@ -23,3 +23,28 @@ func reparse(f *model.EnvFile, secrets config.SecretsConfig) (*model.EnvFile, er
 	refreshed.GitWarning = f.GitWarning
 	return refreshed, nil
 }
+
+// refreshFile re-parses f from disk and swaps the result in for f wherever the
+// App holds it (see replaceFile).
+func (a *App) refreshFile(f *model.EnvFile) (*model.EnvFile, error) {
+	refreshed, err := reparse(f, a.config.Secrets)
+	if err != nil {
+		return nil, err
+	}
+	a.replaceFile(refreshed)
+	return refreshed, nil
+}
+
+// replaceFile puts f in place of the in-memory file with the same path, in the
+// file list and, when that file is selected, in the vars panel.
+func (a *App) replaceFile(f *model.EnvFile) {
+	for i, existing := range a.fileList.Files {
+		if existing.Path == f.Path {
+			a.fileList.Files[i] = f
+			if a.fileList.Selected == i {
+				a.varList.SetFile(f)
+			}
+			return
+		}
+	}
+}

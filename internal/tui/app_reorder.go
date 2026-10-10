@@ -91,19 +91,8 @@ func (a App) executeReorder() (tea.Model, tea.Cmd) {
 		return a, a.flashError("Error saving: " + err.Error())
 	}
 
-	refreshed, err := reparse(f, a.config.Secrets)
-	if err != nil {
+	if _, err := a.refreshFile(f); err != nil {
 		return a, a.flashError(warn + "Reordered but refresh failed: " + err.Error())
-	}
-
-	for i, existing := range a.fileList.Files {
-		if existing.Path == f.Path {
-			a.fileList.Files[i] = refreshed
-			if a.fileList.Selected == i {
-				a.varList.SetFile(refreshed)
-			}
-			break
-		}
 	}
 
 	return a, a.flashMessage(fmt.Sprintf("%sReordered %s (%s)", warn, f.Name, a.reorderModeLabel()))

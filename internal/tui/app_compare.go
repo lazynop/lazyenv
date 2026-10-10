@@ -103,20 +103,8 @@ func (a App) handleCompareReset() (App, tea.Cmd) {
 	if errMsg := a.diffView.Reset(); errMsg != "" {
 		return a, a.flashMessage(errMsg)
 	}
-	for i, f := range a.fileList.Files {
-		if f.Path == a.diffView.FileA.Path {
-			a.fileList.Files[i] = a.diffView.FileA
-			if a.fileList.Selected == i {
-				a.varList.SetFile(a.diffView.FileA)
-			}
-		}
-		if f.Path == a.diffView.FileB.Path {
-			a.fileList.Files[i] = a.diffView.FileB
-			if a.fileList.Selected == i {
-				a.varList.SetFile(a.diffView.FileB)
-			}
-		}
-	}
+	a.replaceFile(a.diffView.FileA)
+	a.replaceFile(a.diffView.FileB)
 	return a, a.flashMessage("Reset to saved state")
 }
 
@@ -130,17 +118,8 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 				return a, a.flashError("Error saving " + f.Name + ": " + err.Error())
 			}
 			// Re-parse to refresh RawLines
-			refreshed, err := reparse(f, a.config.Secrets)
+			refreshed, err := a.refreshFile(f)
 			if err == nil {
-				for i, existing := range a.fileList.Files {
-					if existing.Path == f.Path {
-						a.fileList.Files[i] = refreshed
-						if a.fileList.Selected == i {
-							a.varList.SetFile(refreshed)
-						}
-						break
-					}
-				}
 				if f == a.diffView.FileA {
 					a.diffView.FileA = refreshed
 				} else {

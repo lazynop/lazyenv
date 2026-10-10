@@ -37,19 +37,8 @@ func (a App) handleSave() (App, tea.Cmd) {
 	}
 
 	// Re-parse to refresh RawLines
-	refreshed, err := reparse(f, a.config.Secrets)
-	if err != nil {
+	if _, err := a.refreshFile(f); err != nil {
 		return a, a.flashError(warn + "Saved but refresh failed: " + err.Error())
-	}
-
-	for i, existing := range a.fileList.Files {
-		if existing.Path == f.Path {
-			a.fileList.Files[i] = refreshed
-			if a.fileList.Selected == i {
-				a.varList.SetFile(refreshed)
-			}
-			break
-		}
 	}
 
 	return a, a.flashMessage(warn + "Saved " + f.Name)
@@ -64,19 +53,8 @@ func (a App) handleReset() (App, tea.Cmd) {
 		return a, a.flashMessage("No changes to reset")
 	}
 
-	refreshed, err := reparse(f, a.config.Secrets)
-	if err != nil {
+	if _, err := a.refreshFile(f); err != nil {
 		return a, a.flashError("Error reloading: " + err.Error())
-	}
-
-	for i, existing := range a.fileList.Files {
-		if existing.Path == f.Path {
-			a.fileList.Files[i] = refreshed
-			if a.fileList.Selected == i {
-				a.varList.SetFile(refreshed)
-			}
-			break
-		}
 	}
 
 	return a, a.flashMessage("Reset to saved state")
