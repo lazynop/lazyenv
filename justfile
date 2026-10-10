@@ -4,6 +4,9 @@
 gci := "go run github.com/daixiang0/gci@v0.14.0"
 gci_flags := "-s standard -s default -s 'prefix(github.com/lazynop/lazyenv)' --skip-generated --skip-vendor"
 
+# Go sources to format: explicit paths, so hidden dirs (e.g. .claude/worktrees) are never walked
+go_src := "*.go internal/"
+
 # Default recipe: show available commands
 default:
     @just --list
@@ -36,8 +39,8 @@ fix:
 
 # Format code and group imports
 fmt:
-    @gofmt -w .
-    @{{gci}} write {{gci_flags}} .
+    @gofmt -w {{go_src}}
+    @{{gci}} write {{gci_flags}} {{go_src}}
 
 # Run linters (cyclomatic complexity, dead assignments, dead code, enforced exhaustive switches)
 lint:
@@ -53,8 +56,8 @@ lint:
 
 # Check formatting and import grouping (CI-friendly, fails if unformatted)
 fmt-check:
-    @test -z "$(gofmt -l .)" || (echo "Files need formatting:" && gofmt -l . && exit 1)
-    @ungrouped=$({{gci}} list {{gci_flags}} .) || exit 1; test -z "$ungrouped" || { echo "Imports not grouped as stdlib, third-party, github.com/lazynop/lazyenv (run just fmt):"; echo "$ungrouped"; exit 1; }
+    @test -z "$(gofmt -l {{go_src}})" || (echo "Files need formatting:" && gofmt -l {{go_src}} && exit 1)
+    @ungrouped=$({{gci}} list {{gci_flags}} {{go_src}}) || exit 1; test -z "$ungrouped" || { echo "Imports not grouped as stdlib, third-party, github.com/lazynop/lazyenv (run just fmt):"; echo "$ungrouped"; exit 1; }
 
 # Run all checks (format + vet + lint + tests)
 check: fmt-check vet lint test
