@@ -244,10 +244,6 @@ func (m *VarListModel) IsHeaderAtCursor() bool {
 	return m.displayItems[m.Cursor].Kind == displayItemHeader
 }
 
-func (m *VarListModel) isCollapsed(prefix string) bool {
-	return m.collapsed[prefix]
-}
-
 // cursorAnchor remembers the user's logical cursor position before a
 // recomputeDisplay so it can be restored even if the row index changes.
 //

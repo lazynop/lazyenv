@@ -312,7 +312,7 @@ func TestVarListGrouping_CollapseHidesVars(t *testing.T) {
 	require.True(t, vl.IsHeaderAtCursor())
 	ok := vl.ToggleCollapseAtCursor()
 	assert.True(t, ok)
-	assert.True(t, vl.isCollapsed("DB"))
+	assert.True(t, vl.collapsed["DB"])
 	// 10 items - 3 DB vars = 7 items now (DB header still present).
 	assert.Equal(t, 7, vl.DisplayCount())
 	// No DB_* var rows must remain.
@@ -332,9 +332,9 @@ func TestVarListGrouping_ToggleCollapseExpandsAgain(t *testing.T) {
 	vl.SetCursor(0) // DB header
 
 	vl.ToggleCollapseAtCursor() // collapse DB
-	assert.True(t, vl.isCollapsed("DB"))
+	assert.True(t, vl.collapsed["DB"])
 	vl.ToggleCollapseAtCursor() // expand DB
-	assert.False(t, vl.isCollapsed("DB"))
+	assert.False(t, vl.collapsed["DB"])
 	assert.Equal(t, 10, vl.DisplayCount())
 }
 
@@ -350,7 +350,7 @@ func TestVarListGrouping_ToggleCollapseNoOpOnVar(t *testing.T) {
 	assert.False(t, vl.IsHeaderAtCursor())
 	ok := vl.ToggleCollapseAtCursor()
 	assert.False(t, ok, "no toggle when cursor is on a var")
-	assert.False(t, vl.isCollapsed("DB"))
+	assert.False(t, vl.collapsed["DB"])
 }
 
 func TestVarListGrouping_CursorFollowsVarOnToggle(t *testing.T) {
@@ -596,7 +596,7 @@ func TestVarListGrouping_UngroupedHeaderShownWithNamedGroups(t *testing.T) {
 	vl.SetCursor(3)
 	require.True(t, vl.IsHeaderAtCursor())
 	vl.ToggleCollapseAtCursor()
-	assert.True(t, vl.isCollapsed("")) // empty prefix = Ungrouped
+	assert.True(t, vl.collapsed[""]) // empty prefix = Ungrouped
 	assert.Equal(t, 4, vl.DisplayCount(), "collapsed Ungrouped: DB hdr + 2 vars + UNGROUPED hdr")
 }
 
@@ -609,16 +609,16 @@ func TestVarListGrouping_PreservesCollapsedAcrossDisable(t *testing.T) {
 	vl.ToggleGrouping()
 	vl.SetCursor(0)             // DB header
 	vl.ToggleCollapseAtCursor() // collapse DB
-	assert.True(t, vl.isCollapsed("DB"))
+	assert.True(t, vl.collapsed["DB"])
 
 	vl.ToggleGrouping() // disable
 	assert.False(t, vl.Grouping)
 	// collapsed state must survive
-	assert.True(t, vl.isCollapsed("DB"))
+	assert.True(t, vl.collapsed["DB"])
 
 	vl.ToggleGrouping() // re-enable
 	assert.True(t, vl.Grouping)
-	assert.True(t, vl.isCollapsed("DB"), "DB stays collapsed after round-trip")
+	assert.True(t, vl.collapsed["DB"], "DB stays collapsed after round-trip")
 	// 10 items - 3 DB vars = 7
 	assert.Equal(t, 7, vl.DisplayCount())
 }
