@@ -23,6 +23,11 @@ jobs:
       - name: Vet
         run: go vet ./...
 
+      - name: Lint
+        run: |
+          go run github.com/fzipp/gocyclo/cmd/gocyclo@v0.6.0 -over 15 .
+          go run github.com/gordonklaus/ineffassign@v0.2.0 ./...
+
       - name: Test
         run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
 

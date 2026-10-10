@@ -12,13 +12,14 @@ Found a bug or have a feature request? Open an issue on [GitHub](https://github.
 
 - Go 1.26+
 - [just](https://github.com/casey/just) (task runner)
+- [gocyclo](https://github.com/fzipp/gocyclo) and [ineffassign](https://github.com/gordonklaus/ineffassign) (used by `just lint`)
 
 ### Build and test
 
 ```bash
 just build        # build to bin/lazyenv
 just test         # run tests only
-just check        # fmt + vet + tests (same as CI)
+just check        # fmt + vet + lint + tests (same as CI)
 ```
 
 ### Before submitting
