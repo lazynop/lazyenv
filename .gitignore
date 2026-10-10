@@ -3,6 +3,8 @@
 .serena/
 .cache/
 .superpowers/
+docs/superpowers/
+docs/plans/
 site/
 public/
 bin/
