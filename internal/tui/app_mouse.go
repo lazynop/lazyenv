@@ -5,6 +5,8 @@ import (
 )
 
 func (a App) handleMouseClick(msg tea.MouseClickMsg) (tea.Model, tea.Cmd) {
+	// `just lint` (exhaustive) requires a case for every AppMode.
+	//exhaustive:enforce
 	switch a.mode {
 	case ModeNormal, ModeSearching:
 		return a.handleNormalMouseClick(msg), nil
@@ -17,6 +19,10 @@ func (a App) handleMouseClick(msg tea.MouseClickMsg) (tea.Model, tea.Cmd) {
 	case ModeHelp:
 		a.mode = ModeNormal
 		return a, nil
+	case ModeEditing, ModeMatrixEditing, ModeConfirmDelete, ModeConfirmDeleteFile,
+		ModeConfirmMatrixDelete, ModeCreateFile, ModeDuplicateFile, ModeRenameFile,
+		ModeTemplateFile, ModeReorderMenu, ModeReorderConfirm, ModeConfigError:
+		// Keyboard-only modes (text input, prompts, menus): clicks are ignored.
 	}
 	return a, nil
 }
@@ -93,6 +99,8 @@ func (a App) handleMatrixMouseClick(msg tea.MouseClickMsg) App {
 
 func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 	up := msg.Button == tea.MouseWheelUp
+	// `just lint` (exhaustive) requires a case for every AppMode.
+	//exhaustive:enforce
 	switch a.mode {
 	case ModeNormal, ModeSearching:
 		if msg.X < a.fileWidth {
@@ -106,6 +114,10 @@ func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 		a = a.scrollFileList(up)
 	case ModeMatrix, ModeMatrixEditing, ModeConfirmMatrixDelete:
 		a = a.scrollMatrix(up)
+	case ModeEditing, ModeConfirmDelete, ModeConfirmDeleteFile, ModeCreateFile,
+		ModeDuplicateFile, ModeRenameFile, ModeTemplateFile, ModeReorderMenu,
+		ModeReorderConfirm, ModeHelp, ModeConfigError:
+		// Keyboard-only modes and static screens: the wheel is ignored.
 	}
 	return a
 }
