@@ -7,7 +7,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/lazynop/lazyenv/internal/model"
-	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 func (a App) confirmTemplateFile() (tea.Model, tea.Cmd) {
@@ -43,15 +42,9 @@ func (a App) confirmTemplateFile() (tea.Model, tea.Cmd) {
 	}
 	b.WriteByte('\n')
 
-	if err := parser.WriteFileAtomic(destPath, []byte(b.String()), envFilePerm); err != nil {
+	if err := a.templateFile(destPath, []byte(b.String()), src); err != nil {
 		return a, a.flashError("Error creating file: " + err.Error())
 	}
 
-	// Template strips values — build a keys-only var slice for the initial snapshot.
-	tmplVars := make([]model.EnvVar, 0, len(src.Vars))
-	for _, v := range src.Vars {
-		tmplVars = append(tmplVars, model.EnvVar{Key: v.Key})
-	}
-	a.sessionStats.RecordCreateTemplate(destPath, src.Path, tmplVars)
 	return a.finaliseNewFile(destPath, "Template from "+src.Name+" → "+name)
 }

@@ -8,7 +8,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/lazynop/lazyenv/internal/model"
-	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
@@ -127,12 +126,9 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 	for _, f := range []*model.EnvFile{a.diffView.FileA, a.diffView.FileB} {
 		if f != nil && f.Modified {
 			warn.WriteString(a.backupIfNeeded(f.Path))
-			if err := parser.WriteFile(f); err != nil {
+			if err := a.saveFile(f); err != nil {
 				return a, a.flashError("Error saving " + f.Name + ": " + err.Error())
 			}
-			// Record the stat before re-parse: the disk mutation already
-			// happened and must be reflected even if the refresh fails.
-			a.sessionStats.RecordSave(f.Path, f.Vars)
 			// Re-parse to refresh RawLines
 			refreshed, err := reparse(f, a.config.Secrets)
 			if err == nil {

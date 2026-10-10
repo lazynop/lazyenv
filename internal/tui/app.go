@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"charm.land/bubbles/v2/key"
@@ -13,10 +12,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
 )
-
-// envFilePerm is the permission mode for newly created .env files
-// (owner-writable, world-readable), matching parser.WriteFile.
-const envFilePerm os.FileMode = 0o644
 
 // AppMode represents the current application mode.
 type AppMode int

@@ -1,8 +1,6 @@
 package tui
 
 import (
-	"os"
-
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 )
@@ -19,11 +17,9 @@ func (a App) handleConfirmDeleteFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd
 			return a, nil
 		}
 
-		if err := os.Remove(f.Path); err != nil {
+		if err := a.deleteFile(f.Path); err != nil {
 			return a, a.flashError("Error deleting file: " + err.Error())
 		}
-
-		a.sessionStats.RecordDelete(f.Path)
 
 		// Remove from file list
 		idx := -1

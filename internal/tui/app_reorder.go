@@ -7,7 +7,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/lazynop/lazyenv/internal/model"
-	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 // startReorder opens the reorder mode-selection menu for the active file.
@@ -88,13 +87,9 @@ func (a App) executeReorder() (tea.Model, tea.Cmd) {
 	f.Reorder(a.reorderMode)
 
 	warn := a.backupIfNeeded(f.Path)
-	if err := parser.WriteFile(f); err != nil {
+	if err := a.saveFile(f); err != nil {
 		return a, a.flashError("Error saving: " + err.Error())
 	}
-
-	// Record the stat before re-parse: the disk mutation already happened and
-	// must be reflected even if the refresh fails.
-	a.sessionStats.RecordSave(f.Path, f.Vars)
 
 	refreshed, err := reparse(f, a.config.Secrets)
 	if err != nil {

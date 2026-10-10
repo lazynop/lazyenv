@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -25,11 +24,9 @@ func (a App) confirmRenameFile() (tea.Model, tea.Cmd) {
 		return a, a.flashMessage(errMsg)
 	}
 
-	if err := os.Rename(src.Path, newPath); err != nil {
+	if err := a.renameFile(src.Path, newPath); err != nil {
 		return a, a.flashError("Error renaming file: " + err.Error())
 	}
-
-	a.sessionStats.RecordRename(src.Path, newPath)
 
 	if a.backedUpPaths[src.Path] {
 		delete(a.backedUpPaths, src.Path)

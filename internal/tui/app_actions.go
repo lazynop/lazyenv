@@ -32,13 +32,9 @@ func (a App) handleSave() (App, tea.Cmd) {
 
 	warn := a.backupIfNeeded(f.Path)
 
-	if err := parser.WriteFile(f); err != nil {
+	if err := a.saveFile(f); err != nil {
 		return a, a.flashError("Error saving: " + err.Error())
 	}
-
-	// Record the stat before re-parse: the disk mutation already happened and
-	// must be reflected even if the refresh fails.
-	a.sessionStats.RecordSave(f.Path, f.Vars)
 
 	// Re-parse to refresh RawLines
 	refreshed, err := reparse(f, a.config.Secrets)
