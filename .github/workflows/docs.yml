@@ -21,6 +21,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Every Markdown file under docs/ is published, nav or not (zensical
+      # does not support mkdocs' validation.nav.omitted_files). Refuse to
+      # deploy pages missing from nav, e.g. a stray agent spec or plan.
+      - name: Check every page is in nav
+        run: |
+          nav=$(sed -n '/^nav:/,/^[a-z_]/p' mkdocs.yml | grep -oE "[^ :\"']+\.md" | sort -u)
+          pages=$(cd docs && find . -name '*.md' | sed 's|^\./||' | sort)
+          orphans=$(comm -23 <(echo "$pages") <(echo "$nav"))
+          test -z "$orphans" || { echo "Pages missing from mkdocs.yml nav:"; echo "$orphans"; exit 1; }
+
       - uses: actions/setup-python@v7
         with:
           python-version: "3.x"
