@@ -87,10 +87,11 @@ just
 | `just run`        | Build and run with `go run`. Accepts arguments: `just run ./myproject -r`. |
 | `just test`       | Run all tests with verbose output.                                         |
 | `just test-cover` | Run tests with race detection and coverage report.                         |
-| `just check`      | Run all checks: formatting, vet, and tests — same as CI. Read-only, does not modify files. |
-| `just fmt`        | Format all Go source files.                                                                |
+| `just check`      | Run all checks: formatting and import grouping, vet, lint, and tests — same as CI. Read-only, does not modify files. |
+| `just fmt`        | Format all Go source files and group their imports (gofmt + gci).                          |
 | `just fix`        | Apply Go modernization fixes (`go fix`). Run this before `just check`.                     |
 | `just vet`        | Run static analysis.                                                                       |
+| `just lint`       | Run the linters: `gocyclo`, `ineffassign`, `deadcode`, `exhaustive`.                       |
 | `just clean`      | Remove build artifacts (`bin/`, `coverage.out`, `dist/`).                  |
 | `just demo`       | Regenerate the README demo GIF from `docs/assets/demo.tape`. Needs `vhs`, `ttyd`, `ffmpeg`, `gifsicle`. |
 
