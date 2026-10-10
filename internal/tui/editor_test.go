@@ -3,8 +3,9 @@ package tui
 import (
 	"testing"
 
-	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/lazynop/lazyenv/internal/model"
 )
 
 func TestEditorStartEdit(t *testing.T) {

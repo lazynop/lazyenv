@@ -1,5 +1,9 @@
 # LazyEnv — TUI for managing .env files
 
+# Import grouping: stdlib, third-party, then this module
+gci := "go run github.com/daixiang0/gci@v0.14.0"
+gci_flags := "-s standard -s default -s 'prefix(github.com/lazynop/lazyenv)' --skip-generated --skip-vendor"
+
 # Default recipe: show available commands
 default:
     @just --list
@@ -30,9 +34,10 @@ vet:
 fix:
     @go fix ./...
 
-# Format code
+# Format code and group imports
 fmt:
     @gofmt -w .
+    @{{gci}} write {{gci_flags}} .
 
 # Run linters (cyclomatic complexity, dead assignments, dead code, enforced exhaustive switches)
 lint:
@@ -46,9 +51,10 @@ lint:
     go run github.com/nishanths/exhaustive/cmd/exhaustive@v0.15.0 -e ./... || rc=1
     exit $rc
 
-# Check formatting (CI-friendly, fails if unformatted)
+# Check formatting and import grouping (CI-friendly, fails if unformatted)
 fmt-check:
     @test -z "$(gofmt -l .)" || (echo "Files need formatting:" && gofmt -l . && exit 1)
+    @ungrouped=$({{gci}} list {{gci_flags}} .) || exit 1; test -z "$ungrouped" || { echo "Imports not grouped as stdlib, third-party, github.com/lazynop/lazyenv (run just fmt):"; echo "$ungrouped"; exit 1; }
 
 # Run all checks (format + vet + lint + tests)
 check: fmt-check vet lint test

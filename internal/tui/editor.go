@@ -2,9 +2,10 @@ package tui
 
 import (
 	"fmt"
-	"github.com/lazynop/lazyenv/internal/model"
 
 	"charm.land/bubbles/v2/textinput"
+
+	"github.com/lazynop/lazyenv/internal/model"
 )
 
 // Add step tracks the two-step add flow.
