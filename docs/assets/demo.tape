@@ -1,6 +1,5 @@
 # lazyenv — full demo
-# Run: vhs docs/assets/demo.tape
-# Optimize: gifsicle -O3 --lossy=80 docs/assets/demo.gif -o docs/assets/demo.gif
+# Regenerate and compress docs/assets/demo.gif with: just demo
 
 Output docs/assets/demo.gif
 Set Shell "bash"

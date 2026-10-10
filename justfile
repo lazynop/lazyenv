@@ -60,6 +60,11 @@ clean:
 release-snapshot:
     goreleaser release --snapshot --clean
 
+# Regenerate and compress the README demo GIF (needs vhs, ttyd, ffmpeg, gifsicle)
+demo:
+    vhs docs/assets/demo.tape
+    gifsicle -O3 --lossy=80 docs/assets/demo.gif -o docs/assets/demo.gif
+
 # Run with a built-in theme by name (e.g. just try-theme tokyo-night)
 try-theme name:
     @echo 'theme = "{{name}}"' > .lazyenvrc

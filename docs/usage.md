@@ -92,6 +92,7 @@ just
 | `just fix`        | Apply Go modernization fixes (`go fix`). Run this before `just check`.                     |
 | `just vet`        | Run static analysis.                                                                       |
 | `just clean`      | Remove build artifacts (`bin/`, `coverage.out`, `dist/`).                  |
+| `just demo`       | Regenerate the README demo GIF from `docs/assets/demo.tape`. Needs `vhs`, `ttyd`, `ffmpeg`, `gifsicle`. |
 
 ### Trying themes and configs for devs
 
