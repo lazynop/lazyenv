@@ -77,7 +77,7 @@ Caught by `TestReadOnlyNoKeyChangesFiles` (`internal/tui/app_readonly_property_t
 
 `SessionStats` (`internal/tui/session_stats.go`) prints a summary of disk-level changes on exit. Baseline is the disk state at startup, final is the disk state at quit; unsaved in-memory edits never appear. Every write, create, rename or delete of a `.env` file goes through the `App` methods in `internal/tui/app_disk.go` (`saveFile`, `createFile`, `duplicateFile`, `templateFile`, `renameFile`, `deleteFile`), which call the matching `Record*` hook right after the disk call succeeds. The initial load is recorded by the `FilesLoadedMsg` handler (`RecordInitialLoad`).
 
-Caught by `TestDiskWritesGoThroughChokepoint`: a direct `parser.WriteFile`, `parser.WriteFileAtomic`, `os.Rename`, `os.Remove` or `os.WriteFile` anywhere else in `internal/tui`.
+Caught by `TestDiskWritesGoThroughChokepoint`: a direct `parser.WriteFile`, `parser.WriteFileAtomic` or `parser.CreateBackup` (allowed only in `backupIfNeeded`, since backups are not tracked), or an `os` function that creates, writes, truncates, renames, links or deletes files (`os.WriteFile`, `os.Create`, `os.OpenFile`, `os.Rename`, `os.Remove`, `os.RemoveAll`, …; the full list is in the test), anywhere else in `internal/tui`. `os.OpenFile` counts even for reads: read with `os.Open` or `os.ReadFile`.
 
 - **Nil-safe**: `a.sessionStats` is `nil` in read-only mode or with `session-summary = false`, and every `Record*` method handles a nil receiver, so call it unconditionally.
 - **New kind of disk operation** (e.g. moving a file between directories): add an `App` method in `app_disk.go` and a `Record*` method, handle it in `Summary()` / `formatLiveRow` / `formatDeletedRow`, and test it in `session_stats_test.go`.
