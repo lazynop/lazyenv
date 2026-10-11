@@ -8,11 +8,14 @@ import (
 	"reflect"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
 	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
 	"github.com/alecthomas/kong"
+	toml "github.com/pelletier/go-toml/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -30,6 +33,12 @@ var (
 	identRefRe   = regexp.MustCompile(`^\*?([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)(\*?)(?:\(.*\))?$`)
 	justRefRe    = regexp.MustCompile(`^just ([a-z][\w-]*)$`)
 	justRecipeRe = regexp.MustCompile(`(?m)^([A-Za-z][\w-]*)(?:\s[^:\n]*)?:(?:\s|$)`)
+	minimumRe    = regexp.MustCompile("Minimum `(\\d+)`")
+	themeCountRe = regexp.MustCompile(`(\d+) built-in (?:color )?themes`)
+	goVersionRe  = regexp.MustCompile(`Go (\d+\.\d+)\+`)
+	goModRe      = regexp.MustCompile(`(?m)^go (\d+\.\d+)`)
+	ansiRe       = regexp.MustCompile(`\x1b\[[0-9;]*m`)
+	helpRowRe    = regexp.MustCompile(`^ {2}(\S.*?) {2,}\S`)
 )
 
 // TestUsageDocumentsEveryFlag checks docs/usage.md against the Kong flags.
@@ -83,6 +92,216 @@ func TestUsageDocumentsEveryFlag(t *testing.T) {
 		assert.True(t, accounted[f.Name],
 			"docs/usage.md neither maps --%s to a config key nor lists it among the flags without a config equivalent", f.Name)
 	}
+}
+
+// layoutMinimums are the layout options the TUI raises to a minimum, which
+// docs/configuration.md states as "Minimum `N`".
+var layoutMinimums = map[string]int{
+	"file-list-width":  config.FileListMinWidth,
+	"var-list-padding": config.VarListMinPadding,
+	"diff-padding":     config.DiffMinPadding,
+}
+
+// TestConfigurationDocumentsDefaults checks the options tables of
+// docs/configuration.md: every option has a row, each Default matches
+// DefaultConfig, and each "Minimum `N`" matches the minimum the TUI applies.
+func TestConfigurationDocumentsDefaults(t *testing.T) {
+	cfg := config.DefaultConfig()
+	defaults := map[string]reflect.Value{} // option name → default
+	configDefaults(t, reflect.ValueOf(cfg), defaults)
+	// A nil *bool stands for a default; compare the doc against the value it means.
+	defaults["value_heuristic"] = reflect.ValueOf(cfg.Secrets.ValueHeuristicEnabled())
+
+	documented := map[string]bool{}
+	for _, table := range markdownTables(readFile(t, "docs/configuration.md")) {
+		if !slices.Equal(table.header, []string{"Key", "Default", "Description"}) {
+			continue
+		}
+		for _, row := range table.rows {
+			name := codeSpans(row[0])[0]
+			documented[name] = true
+			want, ok := defaults[name]
+			if !assert.True(t, ok, "docs/configuration.md documents option %s, which Config does not have", name) {
+				continue
+			}
+			for _, span := range codeSpans(row[1]) { // none for "See description"
+				assertDocDefault(t, name, span, want)
+			}
+			if m := minimumRe.FindStringSubmatch(row[2]); m != nil {
+				minimum, isRaised := layoutMinimums[name]
+				assert.True(t, isRaised, "docs/configuration.md gives %s a minimum, but the TUI raises no minimum for it", name)
+				assert.Equal(t, strconv.Itoa(minimum), m[1], "docs/configuration.md states the wrong minimum for %s", name)
+			} else if _, isRaised := layoutMinimums[name]; isRaised {
+				t.Errorf("docs/configuration.md does not state the minimum (\"Minimum `%d`\") of %s", layoutMinimums[name], name)
+			}
+		}
+	}
+	for _, name := range slices.Sorted(maps.Keys(defaults)) {
+		assert.True(t, documented[name], "docs/configuration.md has no options-table row for %s", name)
+	}
+}
+
+// configDefaults collects the value of every option in v (a Config or one of
+// its tables) by option name, skipping [colors]: its defaults come from the
+// built-in themes, see TestConfigurationDocumentsThemeColors.
+func configDefaults(t *testing.T, v reflect.Value, out map[string]reflect.Value) {
+	t.Helper()
+	for field := range v.Type().Fields() {
+		name, _, _ := strings.Cut(field.Tag.Get("toml"), ",")
+		if name == "" || name == "-" || name == "colors" {
+			continue
+		}
+		if field.Type.Kind() == reflect.Struct {
+			configDefaults(t, v.FieldByIndex(field.Index), out)
+			continue
+		}
+		_, dup := out[name]
+		require.False(t, dup, "option name %s appears in two tables: key defaults by table", name)
+		out[name] = v.FieldByIndex(field.Index)
+	}
+}
+
+// assertDocDefault decodes span, a TOML value from the Default column, as the
+// option's type and compares it to want.
+func assertDocDefault(t *testing.T, name, span string, want reflect.Value) {
+	t.Helper()
+	holder := reflect.New(reflect.StructOf([]reflect.StructField{{Name: "V", Type: want.Type(), Tag: `toml:"v"`}}))
+	if !assert.NoError(t, toml.Unmarshal([]byte("v = "+span), holder.Interface()), "docs/configuration.md: the default of %s is not a TOML value", name) {
+		return
+	}
+	got := holder.Elem().Field(0)
+	if want.Kind() == reflect.Slice && want.Len() == 0 && got.Len() == 0 {
+		return // nil and [] are both "empty"
+	}
+	assert.Equal(t, want.Interface(), got.Interface(), "docs/configuration.md states the wrong default for %s", name)
+}
+
+// TestConfigurationDocumentsThemeColors checks the Dark default and Light
+// default columns of the colors table against the default-dark and
+// default-light themes; "(none)" stands for an empty color.
+func TestConfigurationDocumentsThemeColors(t *testing.T) {
+	themes := map[string]map[string]string{}
+	for _, name := range []string{"default-dark", "default-light"} {
+		colors, ok := config.LookupTheme(name)
+		require.True(t, ok, "no %s theme", name)
+		themes[name] = colorsByKey(colors)
+	}
+	rows := markdownTable(t, readFile(t, "docs/configuration.md"), "Dark default")
+	documented := map[string]bool{}
+	for _, row := range rows {
+		name := codeSpans(row[0])[0]
+		documented[name] = true
+		for i, theme := range []string{"default-dark", "default-light"} {
+			want, ok := themes[theme][name]
+			if !assert.True(t, ok, "docs/configuration.md lists color %s, which ColorConfig does not have", name) {
+				break
+			}
+			got := strings.Join(codeSpans(row[1+i]), "")
+			assert.Equal(t, want, got, "docs/configuration.md states the wrong %s color for %s", theme, name)
+		}
+	}
+	for _, name := range slices.Sorted(maps.Keys(themes["default-dark"])) {
+		assert.True(t, documented[name], "docs/configuration.md has no colors-table row for %s", name)
+	}
+}
+
+// colorsByKey returns each color of c by its config key.
+func colorsByKey(c config.ColorConfig) map[string]string {
+	colors := map[string]string{}
+	v := reflect.ValueOf(c)
+	for field := range v.Type().Fields() {
+		name, _, _ := strings.Cut(field.Tag.Get("toml"), ",")
+		colors[name] = v.FieldByIndex(field.Index).String()
+	}
+	return colors
+}
+
+// TestDocsStateCurrentCounts checks the numbers the docs quote against their
+// source: the built-in theme count and the minimum Go version.
+func TestDocsStateCurrentCounts(t *testing.T) {
+	m := goModRe.FindStringSubmatch(readFile(t, "go.mod"))
+	require.NotNil(t, m, "go.mod has no go directive")
+	goVersion := m[1]
+	themeCount := strconv.Itoa(len(config.ThemeNames()))
+
+	docs, err := filepath.Glob("docs/*.md")
+	require.NoError(t, err)
+	for _, path := range append(docs, "README.md") {
+		if path == "docs/changelog.md" {
+			continue // generated from CHANGELOG.md, which records history
+		}
+		doc := readFile(t, path)
+		for _, m := range themeCountRe.FindAllStringSubmatch(doc, -1) {
+			assert.Equal(t, themeCount, m[1], "%s states the wrong number of built-in themes", path)
+		}
+		for _, m := range goVersionRe.FindAllStringSubmatch(doc, -1) {
+			assert.Equal(t, goVersion, m[1], "%s states a Go version other than go.mod's", path)
+		}
+	}
+}
+
+// TestHelpScreenNamesBoundKeys checks the in-app help screen (?): every key
+// it names in the Navigation, Actions and General sections is bound in the
+// KeyMap. The indicator sections list glyphs, not keys.
+func TestHelpScreenNamesBoundKeys(t *testing.T) {
+	bound := map[string]bool{}
+	keyMap := reflect.ValueOf(tui.DefaultKeyMap())
+	for field := range keyMap.Type().Fields() {
+		for _, k := range keyMap.FieldByIndex(field.Index).Interface().(key.Binding).Keys() {
+			bound[docKeyNotation(k)] = true
+		}
+	}
+
+	var app tea.Model = tui.NewApp(config.DefaultConfig(), tui.StartupMessages{})
+	app, _ = app.Update(tea.WindowSizeMsg{Width: 120, Height: 80})
+	app, _ = app.Update(tea.KeyPressMsg{Text: "?"})
+	screen := ansiRe.ReplaceAllString(app.View().Content, "")
+
+	// Section titles sit at the screen's left margin, key rows two columns in.
+	var lines []string
+	margin := len(screen)
+	for line := range strings.Lines(screen) {
+		line = strings.TrimRight(line, " \n")
+		if line != "" {
+			lines = append(lines, line)
+			margin = min(margin, len(line)-len(strings.TrimLeft(line, " ")))
+		}
+	}
+	named := 0
+	section := ""
+	for _, line := range lines {
+		line = line[margin:]
+		if !strings.HasPrefix(line, " ") {
+			section = line
+			continue
+		}
+		m := helpRowRe.FindStringSubmatch(line)
+		if m == nil || strings.Contains(section, "Indicators") {
+			continue
+		}
+		for _, k := range helpKeys(m[1]) {
+			named++
+			assert.True(t, bound[k], "the help screen names %s (section %s), but no KeyMap binding uses it", k, section)
+		}
+	}
+	assert.NotZero(t, named, "found no key rows on the help screen; has its layout changed?")
+}
+
+// helpKeys splits a help-screen key column ("q / Ctrl+C", "↑/↓  j/k", "/")
+// into keys.
+func helpKeys(column string) []string {
+	if column == "/" {
+		return []string{"/"}
+	}
+	var keys []string
+	for _, part := range strings.Fields(column) {
+		for k := range strings.SplitSeq(part, "/") {
+			if k != "" {
+				keys = append(keys, k)
+			}
+		}
+	}
+	return keys
 }
 
 // keyNotation is how docs/keybindings.md writes the key names that are not a

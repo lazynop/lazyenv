@@ -26,7 +26,7 @@ How code in lazyenv is written: the conventions every change follows, the pitfal
 ### Pitfalls
 
 - **Nested ANSI with Lip Gloss**: render each styled segment on its own and concatenate the results; wrap a whole line in one `style.Render` only when it holds plain text. Wrapping already-rendered text lets the inner reset (`\e[0m`) cancel the outer style's foreground, which goes unnoticed on themes without a custom background. Reference: the non-cursor rows in `internal/tui/filelist.go` ("Style each segment individually").
-- **Panel widths**: minimum panel widths come from named constants in `internal/config/config.go` (e.g. `config.FileListMinWidth`), in every TUI file, `theme_preview.go` included. A new minimum gets a new constant there.
+- **Panel widths**: minimum panel widths come from named constants in `internal/config/config.go` (e.g. `config.FileListMinWidth`), in every TUI file, `theme_preview.go` included. A new minimum gets a new constant there, and an entry in `layoutMinimums` (`docs_test.go`) so the minimum `docs/configuration.md` states is checked.
 - **Panel chrome**: visible rows and columns, and the row offsets mouse clicks are mapped with, come from the chrome constants in `internal/tui/chrome.go` (`panelChromeHeight`, `panelContentOffsetY`, …), never from raw numbers. A constant counts only rows that are actually drawn: the compare view once reserved a header row it never rendered, which wasted panel height and shifted clicks by one row.
 
 ## Checklists by change type
@@ -40,9 +40,8 @@ Each checklist lists the steps only you can remember. The steps a test or lint c
 3. `main.go` → `cli` struct: Kong flag typed as a pointer (`*bool`, `*string`, `*int`) so `nil` means "not given"; add `negatable:""` to a bool that defaults to true.
 4. `main.go` → `applyCLIOverrides()`: `if cli.X != nil { cfg.X = *cli.X }`.
 5. `internal/config/config_test.go`: tests for the field.
-6. `docs/configuration.md`: the options table.
 
-Caught by `TestExampleDocumentsEveryKey`: the key documented in `examples/config/full.toml`. Caught by `TestUsageDocumentsEveryFlag`: a flag's rows in both `docs/usage.md` tables (flags; flag → config key).
+Caught by `TestExampleDocumentsEveryKey`: the key documented in `examples/config/full.toml`. Caught by `TestConfigurationDocumentsDefaults`: the option's row, with its default, in a `docs/configuration.md` options table. Caught by `TestUsageDocumentsEveryFlag`: a flag's rows in both `docs/usage.md` tables (flags; flag → config key).
 
 ### Checklist: theme color
 
@@ -51,9 +50,8 @@ Runtime precedence: explicit `[colors]` > `theme` preset > built-in dark/light d
 1. `internal/config/config.go` → `ColorConfig`: field with `toml:"kebab-name,omitempty"`.
 2. `internal/tui/styles.go` → `BuildTheme()`: light/dark defaults via `resolve(colors.X, light, dark)` and the styles that use it.
 3. `internal/tui/theme_preview.go`: the showcase list in `renderShowcase()`, plus `resolvedColors` / `resolveThemeColors()` if the preview renders with the color.
-4. `docs/configuration.md`: the colors table.
 
-Caught by the build (`LookupTheme` converts one struct into the other): the same field at the same position in `internal/config/themes/themes.go` → `Colors`. Caught by `TestColorFieldsWiredEverywhere`: a valid value in every theme file (`internal/config/themes/*.go`), the override in `resolveColors()` and the entry in the `validate()` color list (`internal/config/load.go`). Caught by `TestExampleDocumentsEveryKey`: the key in `examples/config/full.toml`.
+Caught by the build (`LookupTheme` converts one struct into the other): the same field at the same position in `internal/config/themes/themes.go` → `Colors`. Caught by `TestColorFieldsWiredEverywhere`: a valid value in every theme file (`internal/config/themes/*.go`), the override in `resolveColors()` and the entry in the `validate()` color list (`internal/config/load.go`). Caught by `TestExampleDocumentsEveryKey`: the key in `examples/config/full.toml`. Caught by `TestConfigurationDocumentsThemeColors`: the row in the `docs/configuration.md` colors table, with the default-dark and default-light values.
 
 ### Checklist: scrollable view
 
@@ -114,7 +112,7 @@ Caught by `TestUsageDocumentsEveryFlag` and `TestKeybindingsDocumentsEveryKey`: 
 
 - **A behaviour change updates every surface above that describes the old behaviour, in the same change.** Find them by searching the surfaces for the terms the change touches (the key, flag, option, message, default), not only through the "Update when" column: a description of the old behaviour can sit anywhere.
 - `docs/` is published as the docs site: every Markdown file in it goes public.
-- `docs_test.go` checks the names docs use against the code: `TestUsageDocumentsEveryFlag` (`docs/usage.md`), `TestKeybindingsDocumentsEveryKey` (`docs/keybindings.md`) and `TestCodingStandardsNamesExistingCode` (the code spans in this file). A span here that names something outside the repo on purpose goes in that test's `notInRepo` list.
+- `docs_test.go` checks the docs' facts against the code: flags (`TestUsageDocumentsEveryFlag`), keys (`TestKeybindingsDocumentsEveryKey`, `TestHelpScreenNamesBoundKeys`), options, defaults and minimums (`TestConfigurationDocumentsDefaults`), default colors (`TestConfigurationDocumentsThemeColors`), the theme count and Go version (`TestDocsStateCurrentCounts`), and the code spans in this file (`TestCodingStandardsNamesExistingCode`). A span here that names something outside the repo on purpose goes in that test's `notInRepo` list. Descriptions of behaviour are beyond any test: the rule above covers them.
 - `docs/changelog.md` is generated in CI from `CHANGELOG.md`; edit `CHANGELOG.md` only.
 - When the TUI's look changes significantly, regenerate the README demo GIF with `just demo` and the project page media with `just page-media`, then copy `dist/page-media/` into lazynop.dev's `site/lazyenv/media/`.
 
