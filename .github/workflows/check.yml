@@ -23,7 +23,8 @@ jobs:
 
       - uses: extractions/setup-just@v4
 
-      # Same recipes as a local `just check`: the justfile is the single source of truth.
+      # Same recipes as a local `just check`, so the justfile stays the source of
+      # truth; only Test calls go test itself, to write the coverage profile.
       - name: Check formatting
         run: just fmt-check
 
