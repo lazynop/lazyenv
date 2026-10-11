@@ -93,9 +93,7 @@ func (m *DiffViewModel) ToggleFilter() {
 func (m *DiffViewModel) MoveUp() {
 	if m.Cursor > 0 {
 		m.Cursor--
-		if m.Cursor < m.Offset {
-			m.Offset = m.Cursor
-		}
+		m.ensureVisible()
 	}
 }
 
@@ -103,10 +101,7 @@ func (m *DiffViewModel) MoveUp() {
 func (m *DiffViewModel) MoveDown() {
 	if m.Cursor < len(m.Entries)-1 {
 		m.Cursor++
-		visible := m.Height - diffChromeHeight
-		if visible > 0 && m.Cursor >= m.Offset+visible {
-			m.Offset = m.Cursor - visible + 1
-		}
+		m.ensureVisible()
 	}
 }
 
@@ -116,15 +111,7 @@ func (m *DiffViewModel) SetCursor(index int) {
 		return
 	}
 	m.Cursor = max(0, min(index, len(m.Entries)-1))
-	visible := m.Height - diffChromeHeight
-	if visible > 0 {
-		if m.Cursor < m.Offset {
-			m.Offset = m.Cursor
-		}
-		if m.Cursor >= m.Offset+visible {
-			m.Offset = m.Cursor - visible + 1
-		}
-	}
+	m.ensureVisible()
 }
 
 // NextDiff jumps to the next non-equal entry.
@@ -149,12 +136,17 @@ func (m *DiffViewModel) PrevDiff() {
 	}
 }
 
+// visibleRows returns how many entries fit in a panel.
+func (m *DiffViewModel) visibleRows() int {
+	return max(m.Height-panelChromeHeight, 1)
+}
+
+// ensureVisible scrolls just enough to keep the cursor on screen.
 func (m *DiffViewModel) ensureVisible() {
 	if m.Cursor < m.Offset {
 		m.Offset = m.Cursor
 	}
-	visible := m.Height - diffChromeHeight
-	if visible > 0 && m.Cursor >= m.Offset+visible {
+	if visible := m.visibleRows(); m.Cursor >= m.Offset+visible {
 		m.Offset = m.Cursor - visible + 1
 	}
 }
@@ -283,9 +275,7 @@ func (m *DiffViewModel) View(theme Theme) string {
 		halfWidth-m.layout.DiffPadding, m.layout.DiffMinValueWidth)
 
 	// Render entries
-	visible := max(m.Height-diffChromeHeight, 1)
-
-	end := min(m.Offset+visible, len(m.Entries))
+	end := min(m.Offset+m.visibleRows(), len(m.Entries))
 
 	var leftLines, rightLines []string
 
@@ -298,21 +288,15 @@ func (m *DiffViewModel) View(theme Theme) string {
 	leftContent := strings.Join(leftLines, "\n")
 	rightContent := strings.Join(rightLines, "\n")
 
-	leftPanel := lipgloss.NewStyle().
+	panel := lipgloss.NewStyle().
 		Width(halfWidth).
-		Height(m.Height - diffHeaderHeight).
+		Height(m.Height).
 		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(theme.ColorBorder).
-		Render(fmt.Sprintf("%s\n%s", leftTitle, leftContent))
+		BorderForeground(theme.ColorBorder)
 
-	rightPanel := lipgloss.NewStyle().
-		Width(halfWidth).
-		Height(m.Height - diffHeaderHeight).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(theme.ColorBorder).
-		Render(fmt.Sprintf("%s\n%s", rightTitle, rightContent))
-
-	return lipgloss.JoinHorizontal(lipgloss.Top, leftPanel, rightPanel)
+	return lipgloss.JoinHorizontal(lipgloss.Top,
+		panel.Render(fmt.Sprintf("%s\n%s", leftTitle, leftContent)),
+		panel.Render(fmt.Sprintf("%s\n%s", rightTitle, rightContent)))
 }
 
 // renderDiffEntry renders a single diff entry, returning the left and right

@@ -204,8 +204,6 @@ func (a App) handleCompareSelectKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		if second != nil && a.compareFirstFile != nil && second != a.compareFirstFile {
 			a.diffView.SetFiles(a.compareFirstFile, second)
 			a.diffView.ShowSecrets = a.varList.ShowSecrets
-			a.diffView.Width = a.width - compareMarginWidth
-			a.diffView.Height = a.height - compareBottomChromeHeight
 			a.mode = ModeComparing
 			a.statusBar.ClearMessage()
 		}

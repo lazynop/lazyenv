@@ -58,7 +58,7 @@ func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 }
 
 func (a App) handleCompareMouseClick(msg tea.MouseClickMsg) App {
-	index := msg.Y - diffContentOffsetY + a.diffView.Offset
+	index := msg.Y - panelContentOffsetY + a.diffView.Offset
 	if index >= 0 {
 		a.diffView.SetCursor(index)
 	}

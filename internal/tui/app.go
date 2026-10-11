@@ -182,11 +182,8 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.height = msg.Height
 		a.ready = true
 		a.updateLayout()
-		a.diffView.Width = a.width - compareMarginWidth
-		a.diffView.Height = a.height - compareBottomChromeHeight
 		a.matrixView.Width = a.width
 		a.matrixView.Height = a.height - statusBarHeight
-		a.statusBar.Width = a.width
 		return a, nil
 
 	case tea.BackgroundColorMsg:
@@ -712,6 +709,9 @@ func (a *App) updateLayout() {
 	a.varList.Width = varWidth
 	a.varList.Height = panelHeight
 	a.varList.Focused = a.focus == FocusVars
+
+	a.diffView.Width = a.width - compareMarginWidth
+	a.diffView.Height = panelHeight
 
 	a.statusBar.Width = a.width
 }

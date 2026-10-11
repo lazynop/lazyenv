@@ -2,6 +2,8 @@ package tui
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -263,17 +265,18 @@ func TestMouseWheelNormal_VarList(t *testing.T) {
 
 // --- Compare mode: click and wheel drive the diff view ---
 
-func TestMouseClickCompareMode_MovesDiffCursor(t *testing.T) {
-	app := newTestApp(nil)
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-	app = updated.(App)
-	app.mode = ModeComparing
-	app.diffView = DiffViewModel{Entries: make([]model.DiffEntry, 10), Height: 20}
+func TestMouseClickCompareMode_SelectsTheClickedEntry(t *testing.T) {
+	keys := []string{"ALPHA", "BRAVO", "CHARLIE", "DELTA"}
+	app := enterCompareMode(t, makeTestFile(".env", keys...), makeTestFile(".env.prod", keys...))
 
-	// index = Y - 3 + Offset = 6 - 3 + 0 = 3
-	updated, _ = app.Update(tea.MouseClickMsg{X: 10, Y: 6, Button: tea.MouseLeft})
+	row := slices.IndexFunc(strings.Split(stripAnsi(app.View().Content), "\n"), func(line string) bool {
+		return strings.Contains(line, "CHARLIE")
+	})
+	require.GreaterOrEqual(t, row, 0, "CHARLIE should be drawn in the diff view")
+
+	updated, _ := app.Update(tea.MouseClickMsg{X: 10, Y: row, Button: tea.MouseLeft})
 	app = updated.(App)
-	assert.Equal(t, 3, app.diffView.Cursor)
+	assert.Equal(t, "CHARLIE", app.diffView.Entries[app.diffView.Cursor].Key)
 }
 
 func TestMouseWheelCompareMode_ScrollsDiff(t *testing.T) {

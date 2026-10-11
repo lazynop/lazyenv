@@ -3,10 +3,12 @@ package tui
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -83,8 +85,12 @@ func enterCompareMode(t *testing.T, f1, f2 *model.EnvFile) App {
 	app.varList.SetFile(f1)
 	app.focus = FocusVars
 
+	// Size the views the way a real terminal does
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: app.width, Height: app.height})
+	app = updated.(App)
+
 	// Press 'c' to start compare select
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "c"})
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "c"})
 	app = updated.(App)
 
 	// Move to second file and confirm
@@ -373,4 +379,31 @@ func TestCompareCopyDeleteThenExitDoesNotPanic(t *testing.T) {
 		"var list rows must be recomputed after compare mutated the active file")
 	assert.NotPanics(t, func() { app.View() },
 		"rendering after compare exit must not index removed vars")
+}
+
+// panelBottomRow returns the row of the last panel bottom border in a
+// rendered view, or -1 when there is none.
+func panelBottomRow(view string) int {
+	row := -1
+	for i, line := range strings.Split(stripAnsi(view), "\n") {
+		if strings.Contains(line, "╰") {
+			row = i
+		}
+	}
+	return row
+}
+
+func TestCompareViewFillsTheNormalPanelHeight(t *testing.T) {
+	app := enterCompareMode(t, makeTestFile(".env", "FOO", "BAR"), makeTestFile(".env.prod", "FOO", "BAZ"))
+	normal, _ := newTestApp(nil).Update(tea.WindowSizeMsg{Width: app.width, Height: app.height})
+	normalBottom := panelBottomRow(normal.(App).View().Content)
+	require.Positive(t, normalBottom)
+
+	assert.Equal(t, normalBottom, panelBottomRow(app.View().Content),
+		"the diff panels should end on the same row as the normal panels")
+
+	app = sendKey(app, tea.KeyPressMsg{Text: "e"})
+	require.Equal(t, ModeEditingCompare, app.mode)
+	assert.LessOrEqual(t, lipgloss.Height(app.View().Content), app.height,
+		"the editor bar must still fit in the terminal")
 }

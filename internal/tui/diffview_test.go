@@ -446,7 +446,7 @@ func TestDiffViewScrolling(t *testing.T) {
 	b := makeTestFile(".env.prod") // empty — all will be "added"
 
 	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
-	dv.Height = 12 // visible = 12 - 6 = 6
+	dv.Height = 12 // visible = 12 - 4 = 8
 	dv.SetFiles(a, b)
 
 	// Move down past visible area
