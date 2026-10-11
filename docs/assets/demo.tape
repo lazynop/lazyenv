@@ -11,6 +11,13 @@ Set Theme "Dracula"
 Set TypingSpeed 50ms
 Set Padding 8
 
+# Off camera: HOME points at a directory that doesn't exist, so no user config
+# reaches the shot and the theme preview lists tidy config paths
+Hide
+Type "export HOME=/home/demo && clear"
+Enter
+Show
+
 # --- Launch ---
 Type "lazyenv env/"
 Enter

@@ -9,6 +9,10 @@ gci_flags := "-s standard -s default -s 'prefix(github.com/lazynop/lazyenv)' --s
 # Go sources to format: explicit paths, so hidden dirs (e.g. .claude/worktrees) are never walked
 go_src := "*.go internal/"
 
+# VHS on the fresh bin/lazyenv, without XDG config; the tapes also point HOME
+# at a missing /home/demo, so recordings show the defaults whoever runs them
+vhs := 'env -u XDG_CONFIG_HOME PATH="$PWD/bin:$PATH" vhs'
+
 # Default recipe: show available commands
 default:
     @just --list
@@ -73,8 +77,9 @@ release-snapshot:
     goreleaser release --snapshot --clean
 
 # Regenerate and compress the README demo GIF (needs vhs, ttyd, ffmpeg, gifsicle)
-demo:
-    vhs docs/assets/demo.tape
+demo: build
+    @test ! -e .lazyenvrc || { echo "Move .lazyenvrc out of the repo root first: the demo must show the defaults" >&2; exit 1; }
+    {{vhs}} docs/assets/demo.tape
     gifsicle -O3 --lossy=80 docs/assets/demo.gif -o docs/assets/demo.gif
 
 # Render the lazynop.dev project page media into dist/page-media (needs vhs, ttyd, ffmpeg with libx264 and libwebp)
