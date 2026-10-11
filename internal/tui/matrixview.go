@@ -319,9 +319,10 @@ func (m *MatrixModel) View(theme Theme) string {
 			}
 		}
 	}
-	stats := theme.MutedItem.Render(
+	stats := theme.MutedItem.Render(truncate(
 		fmt.Sprintf("  %d keys  %d/%d cells missing  sort:%s",
-			len(m.entries), missing, total, m.sortLabel()))
+			len(m.entries), missing, total, m.sortLabel()),
+		m.Width-panelBorderWidth))
 
 	content := b.String()
 

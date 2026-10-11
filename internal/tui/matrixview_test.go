@@ -292,3 +292,21 @@ func TestMatrixViewFooterStaysOnTheSameRow(t *testing.T) {
 	assert.Contains(t, few[len(few)-1], "3 keys")
 	assert.Contains(t, many[len(many)-1], "30 keys")
 }
+
+func TestMatrixViewNarrowWidthKeepsEachRowOnOneRow(t *testing.T) {
+	keys := make([]string, 30)
+	for i := range keys {
+		keys[i] = fmt.Sprintf("K%02d", i)
+	}
+	files := []*model.EnvFile{makeTestFile(".env", keys...), makeTestFile(".env.local", keys[1:]...)}
+	theme := BuildTheme(true, config.ColorConfig{})
+	const height = 18
+
+	// Narrower than 40 columns, the key column, one file column and the
+	// counter no longer fit on a row.
+	assertNoRowWraps(t, 40, 100, height, func(width int) string {
+		m := NewMatrixModel(files, config.DefaultConfig().Layout, config.SecretsConfig{})
+		m.Width, m.Height = width, height
+		return m.View(theme)
+	})
+}
