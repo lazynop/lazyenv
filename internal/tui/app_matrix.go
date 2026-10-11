@@ -48,7 +48,7 @@ func (a App) handleMatrixEdit(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		if a.matrixView.message != "" {
 			flashMsg := a.matrixView.message
 			a.matrixView.message = ""
-			return a, a.flashMessage(flashMsg)
+			return a, a.flashWarning(flashMsg)
 		}
 	case key.Matches(msg, a.keys.Delete):
 		if len(a.matrixView.entries) == 0 {
@@ -56,10 +56,10 @@ func (a App) handleMatrixEdit(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 		entry := a.matrixView.entries[a.matrixView.cursorRow]
 		if !entry.Present[a.matrixView.cursorCol] {
-			return a, a.flashMessage("Variable not present in this file")
+			return a, a.flashWarning("Variable not present in this file")
 		}
 		a.mode = ModeConfirmMatrixDelete
-		a.statusBar.SetMessage(fmt.Sprintf("Delete %s from %s? (y/n)", entry.Key, a.matrixView.fileNames[a.matrixView.cursorCol]))
+		a.statusBar.SetAlert(fmt.Sprintf("Delete %s from %s? (y/n)", entry.Key, a.matrixView.fileNames[a.matrixView.cursorCol]))
 	}
 	return a, nil
 }

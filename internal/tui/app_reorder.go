@@ -16,7 +16,7 @@ func (a App) startReorder() (tea.Model, tea.Cmd) {
 	}
 	f := a.varList.File
 	if f == nil || len(f.Vars) < 2 {
-		return a, a.flashMessage("Need at least 2 variables to reorder")
+		return a, a.flashWarning("Need at least 2 variables to reorder")
 	}
 	a.mode = ModeReorderMenu
 	a.statusBar.SetMessage("Reorder on disk: [a]lphabetical  [g]rouped  [esc]cancel")
@@ -53,7 +53,7 @@ func (a App) promptReorderConfirm() (tea.Model, tea.Cmd) {
 	f := a.varList.File
 	if f == nil {
 		a.mode = ModeNormal
-		return a, a.flashMessage("No file selected")
+		return a, a.flashWarning("No file selected")
 	}
 	a.mode = ModeReorderConfirm
 	a.statusBar.SetMessage(fmt.Sprintf(
@@ -81,7 +81,7 @@ func (a App) executeReorder() (tea.Model, tea.Cmd) {
 	a.mode = ModeNormal
 	f := a.varList.File
 	if f == nil {
-		return a, a.flashMessage("No file selected")
+		return a, a.flashWarning("No file selected")
 	}
 
 	f.Reorder(a.reorderMode)

@@ -21,7 +21,7 @@ func (a App) confirmDuplicateFile() (tea.Model, tea.Cmd) {
 	// Place beside the source so it appears in the same watched directory
 	destPath, errMsg := a.validateNewPath(name, filepath.Dir(src.Path))
 	if errMsg != "" {
-		return a, a.flashMessage(errMsg)
+		return a, a.flashWarning(errMsg)
 	}
 
 	// Copy raw bytes to preserve comments, formatting, and round-trip fidelity

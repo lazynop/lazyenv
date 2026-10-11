@@ -217,15 +217,23 @@ func TestFlashError_SetsMessageAndClearTimer(t *testing.T) {
 	assert.NotNil(t, cmd, "flashError must return the auto-clear timer cmd")
 }
 
+func TestFlashWarning_SetsMessageAndClearTimer(t *testing.T) {
+	app := newTestApp(nil)
+
+	cmd := app.flashWarning("not allowed")
+
+	assert.Equal(t, "not allowed", app.statusBar.Message)
+	assert.NotNil(t, cmd, "flashWarning must return the auto-clear timer cmd")
+	assertStatusColor(t, statusView(app), statusWarningSGR)
+}
+
 func TestFlashError_RendersInErrorColor(t *testing.T) {
 	app := newTestApp(nil)
-	app.theme = statusColorTheme()
 
 	app.flashError("something broke")
 
-	view := app.statusBar.View(app.theme, app.mode, app.focus, "", 0)
-	assert.Contains(t, view, statusErrorSGR)
-	assert.NotContains(t, view, statusPrimarySGR)
+	view := statusView(app)
+	assertStatusColor(t, view, statusErrorSGR)
 }
 
 func TestFlash_CompareResetReloadFailureRendersInErrorColor(t *testing.T) {
@@ -241,35 +249,187 @@ func TestFlash_CompareResetReloadFailureRendersInErrorColor(t *testing.T) {
 	require.NoError(t, err)
 
 	app := enterCompareMode(t, fA, fB)
-	app.theme = statusColorTheme()
 	require.NoError(t, os.Remove(pathB))
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "r"})
-	app = updated.(App)
+	app = pressKeys(app, "r")
 
-	view := app.statusBar.View(app.theme, app.mode, app.focus, "", 0)
+	view := statusView(app)
 	assert.Contains(t, view, "Failed to reload .env.prod")
-	assert.Contains(t, view, statusErrorSGR)
-	assert.NotContains(t, view, statusPrimarySGR)
+	assertStatusColor(t, view, statusErrorSGR)
 }
 
 func TestFlashMessage_AfterErrorRendersInPrimaryColor(t *testing.T) {
 	app := newTestApp(nil)
-	app.theme = statusColorTheme()
 
 	app.flashError("something broke")
 	app.flashMessage("Saved .env")
 
-	view := app.statusBar.View(app.theme, app.mode, app.focus, "", 0)
-	assert.Contains(t, view, statusPrimarySGR)
-	assert.NotContains(t, view, statusErrorSGR)
+	view := statusView(app)
+	assertStatusColor(t, view, statusPrimarySGR)
 }
 
 // TestClearMessageAfterOnlyInFlashHelpers keeps transient status messages
-// behind flashMessage/flashError: only app_flash.go may schedule the
-// auto-clear, so every message gets the timeout matching its kind.
+// behind flashMessage/flashWarning/flashError: only app_flash.go may schedule
+// the auto-clear, so every message gets the timeout matching its kind.
 func TestClearMessageAfterOnlyInFlashHelpers(t *testing.T) {
 	assertRefsAllowed(t, sourceRefs(t, "", "clearMessageAfter"),
 		map[string]string{"app_flash.go": "the flash helpers"},
-		"call a.flashMessage or a.flashError instead of clearMessageAfter")
+		"call a.flashMessage, a.flashWarning or a.flashError instead of clearMessageAfter")
+}
+
+// pressKeys sends each key to app in turn and returns the updated app.
+func pressKeys(app App, keys ...string) App {
+	for _, k := range keys {
+		app = sendKey(app, tea.KeyPressMsg{Text: k})
+	}
+	return app
+}
+
+// TestRefusedActionsFlashWarning walks every action refused because of the
+// input or the current state: each must report the reason in the warning
+// color, not in the primary color of a completed action.
+func TestRefusedActionsFlashWarning(t *testing.T) {
+	confirm := func(app App, run func(App) (tea.Model, tea.Cmd)) App {
+		result, _ := run(app)
+		return result.(App)
+	}
+	withFileOp := func(name string) App {
+		src := makeTestFile(".env", "FOO")
+		app := newTestApp([]*model.EnvFile{src})
+		app.fileOpSource = src
+		app.fileInput.SetValue(name)
+		return app
+	}
+	modifiedFileFocused := func() App {
+		f := makeTestFile(".env", "FOO")
+		f.Modified = true
+		app := newTestApp([]*model.EnvFile{f})
+		app.focus = FocusFiles
+		return app
+	}
+
+	tests := []struct {
+		name string
+		act  func(t *testing.T) App
+		want string
+	}{
+		{"edit in read-only mode", func(t *testing.T) App {
+			app := newTestApp([]*model.EnvFile{makeTestFile(".env", "FOO")})
+			app.config.ReadOnly = true
+			app.focus = FocusVars
+			return pressKeys(app, "e")
+		}, "Read-only mode"},
+		{"create a file outside the patterns", func(t *testing.T) App {
+			app := newTestApp(nil)
+			app.config.Dir = t.TempDir()
+			app.fileInput.SetValue("config.yaml")
+			return confirm(app, App.confirmCreateFile)
+		}, "Invalid name"},
+		{"duplicate onto an existing file", func(t *testing.T) App {
+			dir := t.TempDir()
+			require.NoError(t, os.WriteFile(filepath.Join(dir, ".env.copy"), nil, 0644))
+			app := withFileOp(".env.copy")
+			app.fileOpSource.Path = filepath.Join(dir, ".env")
+			return confirm(app, App.confirmDuplicateFile)
+		}, "File already exists"},
+		{"rename a file to a path", func(t *testing.T) App {
+			return confirm(withFileOp("sub/.env.local"), App.confirmRenameFile)
+		}, "Invalid name"},
+		{"template a file to a path", func(t *testing.T) App {
+			return confirm(withFileOp("sub/.env.example"), App.confirmTemplateFile)
+		}, "Invalid name"},
+		{"rename a key to an invalid name", func(t *testing.T) App {
+			app := newTestApp([]*model.EnvFile{makeTestFile(".env", "FOO")})
+			app.focus = FocusVars
+			result, _ := app.confirmRenameKey(EditorResult{Value: "has space", VarIndex: 0, IsRenameKey: true})
+			return result.(App)
+		}, "Invalid key name"},
+		{"rename a key onto an existing key", func(t *testing.T) App {
+			app := newTestApp([]*model.EnvFile{makeTestFile(".env", "FOO", "BAR")})
+			app.focus = FocusVars
+			result, _ := app.confirmRenameKey(EditorResult{Value: "BAR", VarIndex: 0, IsRenameKey: true})
+			return result.(App)
+		}, "Key already exists"},
+		{"delete a modified file", func(t *testing.T) App {
+			return pressKeys(modifiedFileFocused(), "D")
+		}, "before deleting"},
+		{"rename a modified file", func(t *testing.T) App {
+			return pressKeys(modifiedFileFocused(), "R")
+		}, "before renaming"},
+		{"open the matrix with one file", func(t *testing.T) App {
+			return pressKeys(newTestApp([]*model.EnvFile{makeTestFile(".env", "FOO")}), "m")
+		}, "at least 2 files"},
+		{"edit a group header", func(t *testing.T) App {
+			app, _ := newGroupingApp(t)
+			app.varList.Grouping = true
+			app.varList.Refresh()
+			app.varList.SetCursor(0)
+			return pressKeys(app, "e")
+		}, "No variable selected"},
+		{"edit a key missing on the compare side", func(t *testing.T) App {
+			app := enterCompareMode(t, makeTestFile(".env", "FOO"), makeTestFile(".env.prod"))
+			return pressKeys(app, "E")
+		}, "FOO not in .env.prod"},
+		{"reorder a single variable", func(t *testing.T) App {
+			app := newTestApp([]*model.EnvFile{makeTestFile(".env", "FOO")})
+			app.focus = FocusVars
+			return pressKeys(app, "O")
+		}, "at least 2 variables"},
+		{"save with no file", func(t *testing.T) App {
+			return pressKeys(newTestApp(nil), "w")
+		}, "No file selected"},
+		{"reset with no file", func(t *testing.T) App {
+			return pressKeys(newTestApp(nil), "r")
+		}, "No file selected"},
+		{"pick a reorder with no file", func(t *testing.T) App {
+			app := newTestApp(nil)
+			app.mode = ModeReorderMenu
+			return pressKeys(app, "a")
+		}, "No file selected"},
+		{"confirm a reorder with no file", func(t *testing.T) App {
+			app := newTestApp(nil)
+			app.mode = ModeReorderConfirm
+			return pressKeys(app, "y")
+		}, "No file selected"},
+		{"add a variable present in the matrix cell", func(t *testing.T) App {
+			app := newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.local", "A")})
+			return pressKeys(app, "m", "a")
+		}, "Variable already exists"},
+		{"delete a variable missing from the matrix cell", func(t *testing.T) App {
+			app := newTestApp([]*model.EnvFile{makeTestFile(".env", "A", "B"), makeTestFile(".env.local", "A")})
+			return pressKeys(app, "m", "j", "l", "d")
+		}, "not present in this file"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app := tt.act(t)
+
+			assert.Contains(t, app.statusBar.Message, tt.want)
+			assertStatusColor(t, statusView(app), statusWarningSGR)
+		})
+	}
+}
+
+func TestDeletePromptsRenderInErrorColor(t *testing.T) {
+	t.Run("file", func(t *testing.T) {
+		app := newTestApp([]*model.EnvFile{makeTestFile(".env", "FOO")})
+		app.focus = FocusFiles
+
+		app = pressKeys(app, "D")
+
+		require.Equal(t, ModeConfirmDeleteFile, app.mode)
+		assert.Equal(t, "Delete .env? (y/n)", app.statusBar.Message)
+		assertStatusColor(t, statusView(app), statusErrorSGR)
+	})
+
+	t.Run("matrix variable", func(t *testing.T) {
+		app := newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.local", "A")})
+
+		app = pressKeys(app, "m", "d")
+
+		require.Equal(t, ModeConfirmMatrixDelete, app.mode)
+		assert.Equal(t, "Delete A from .env? (y/n)", app.statusBar.Message)
+		assertStatusColor(t, statusView(app), statusErrorSGR)
+	})
 }

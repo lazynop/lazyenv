@@ -147,7 +147,7 @@ func (a App) startCompareEdit(file *model.EnvFile) (tea.Model, tea.Cmd) {
 
 	if varIdx < 0 {
 		// Key doesn't exist in this file
-		return a, a.flashMessage(e.Key + " not in " + file.Name)
+		return a, a.flashWarning(e.Key + " not in " + file.Name)
 	}
 
 	a.compareEditFile = file

@@ -7,14 +7,23 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
+// messageKind picks the theme color a status-bar message renders in.
+type messageKind int
+
+const (
+	messageInfo    messageKind = iota // primary color
+	messageWarning                    // warning color: an action refused because of the input or the current state
+	messageAlert                      // error color: a failure, or a prompt confirming a delete
+)
+
 // StatusBarModel manages the bottom status bar.
 type StatusBarModel struct {
 	Width    int
-	ReadOnly bool   // show [READ-ONLY] badge
-	Message  string // transient message (e.g. "Saved!")
-	isError  bool   // Message reports an error; rendered in the error color
-	Mode     string // current mode label
-	msgGen   int    // bumped on every SetMessage; guards against stale clears
+	ReadOnly bool        // show [READ-ONLY] badge
+	Message  string      // transient message (e.g. "Saved!")
+	kind     messageKind // color Message renders in
+	Mode     string      // current mode label
+	msgGen   int         // bumped on every message set; guards against stale clears
 }
 
 // NewStatusBarModel creates a new status bar model.
@@ -22,27 +31,37 @@ func NewStatusBarModel() StatusBarModel {
 	return StatusBarModel{}
 }
 
-// SetMessage sets a status message. Each call bumps a generation counter so a
-// clear scheduled for an earlier message cannot wipe a newer one. This keeps
-// persistent prompts (menus, confirmations) on screen even if a previous
-// transient flash's auto-clear timer fires while they are showing.
+// SetMessage sets a status message, rendered in the primary color.
 func (m *StatusBarModel) SetMessage(msg string) {
-	m.Message = msg
-	m.isError = false
-	m.msgGen++
+	m.setMessage(msg, messageInfo)
 }
 
-// SetError sets a status message that reports an error, rendered in the error
-// color instead of the primary one.
-func (m *StatusBarModel) SetError(msg string) {
-	m.SetMessage(msg)
-	m.isError = true
+// SetWarning sets a status message reporting an action refused because of the
+// input or the current state, rendered in the warning color.
+func (m *StatusBarModel) SetWarning(msg string) {
+	m.setMessage(msg, messageWarning)
+}
+
+// SetAlert sets a status message that reports a failure or asks to confirm a
+// delete, rendered in the error color.
+func (m *StatusBarModel) SetAlert(msg string) {
+	m.setMessage(msg, messageAlert)
+}
+
+// setMessage sets the message and its kind. Each call bumps a generation
+// counter so a clear scheduled for an earlier message cannot wipe a newer one.
+// This keeps persistent prompts (menus, confirmations) on screen even if a
+// previous transient flash's auto-clear timer fires while they are showing.
+func (m *StatusBarModel) setMessage(msg string, kind messageKind) {
+	m.Message = msg
+	m.kind = kind
+	m.msgGen++
 }
 
 // ClearMessage clears the transient message.
 func (m *StatusBarModel) ClearMessage() {
 	m.Message = ""
-	m.isError = false
+	m.kind = messageInfo
 }
 
 // View renders the status bar.
@@ -73,11 +92,7 @@ func (m *StatusBarModel) View(theme Theme, mode AppMode, focus Focus, fileName s
 	// Transient message overrides hints
 	left := hints
 	if m.Message != "" {
-		style := theme.SelectedItem
-		if m.isError {
-			style = theme.StatusBarError
-		}
-		left = style.Render(m.Message)
+		left = m.messageStyle(theme).Render(m.Message)
 	}
 
 	// Layout
@@ -90,6 +105,18 @@ func (m *StatusBarModel) View(theme Theme, mode AppMode, focus Focus, fileName s
 	return theme.StatusBar.
 		Width(m.Width).
 		Render(bar)
+}
+
+// messageStyle returns the style Message renders in, picked by its kind.
+func (m *StatusBarModel) messageStyle(theme Theme) lipgloss.Style {
+	switch m.kind {
+	case messageWarning:
+		return theme.StatusBarWarning
+	case messageAlert:
+		return theme.StatusBarAlert
+	default:
+		return theme.SelectedItem
+	}
 }
 
 func formatDiffStats(s DiffStats, theme Theme) string {

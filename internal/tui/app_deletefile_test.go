@@ -158,7 +158,7 @@ func TestDeleteFile_DenyCancels(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusFiles
 	app.mode = ModeConfirmDeleteFile
-	app.statusBar.SetMessage("Delete .env? (y/n)")
+	app.statusBar.SetAlert("Delete .env? (y/n)")
 
 	updated, _ := app.Update(tea.KeyPressMsg{Text: "n"})
 	app = updated.(App)

@@ -150,36 +150,63 @@ func TestStatusBarMessageOverridesHints(t *testing.T) {
 	assert.Contains(t, view, "File saved successfully")
 }
 
-// SGR fragments of the primary and error colors in statusColorTheme, used to
-// tell which of the two a status-bar message was rendered in.
+// SGR fragments of the primary, warning and error colors in statusColorTheme,
+// used to tell which of them a status-bar message was rendered in.
 const (
 	statusPrimarySGR = "38;2;0;255;0"
+	statusWarningSGR = "38;2;0;0;255"
 	statusErrorSGR   = "38;2;255;0;0"
 )
 
 func statusColorTheme() Theme {
-	return BuildTheme(true, config.ColorConfig{Primary: "#00FF00", Error: "#FF0000"})
+	return BuildTheme(true, config.ColorConfig{Primary: "#00FF00", Warning: "#0000FF", Error: "#FF0000"})
 }
 
-func TestStatusBarErrorRendersInErrorColor(t *testing.T) {
+// assertStatusColor checks that view renders its message in want, one of the
+// status*SGR fragments, and in neither of the other two colors.
+func assertStatusColor(t *testing.T, view, want string) {
+	t.Helper()
+	for _, sgr := range []string{statusPrimarySGR, statusWarningSGR, statusErrorSGR} {
+		if sgr == want {
+			assert.Contains(t, view, sgr)
+		} else {
+			assert.NotContains(t, view, sgr)
+		}
+	}
+}
+
+// statusView renders app's status bar with statusColorTheme.
+func statusView(app App) string {
+	return app.statusBar.View(statusColorTheme(), app.mode, app.focus, "", 0)
+}
+
+func TestStatusBarWarningRendersInWarningColor(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120
-	sb.SetError("Error saving: disk full")
+	sb.SetWarning("File already exists: .env")
+
+	view := sb.View(statusColorTheme(), ModeNormal, FocusVars, "", 0)
+	assert.Contains(t, view, "File already exists: .env")
+	assertStatusColor(t, view, statusWarningSGR)
+}
+
+func TestStatusBarAlertRendersInErrorColor(t *testing.T) {
+	sb := NewStatusBarModel()
+	sb.Width = 120
+	sb.SetAlert("Error saving: disk full")
 
 	view := sb.View(statusColorTheme(), ModeNormal, FocusVars, "", 0)
 	assert.Contains(t, view, "Error saving: disk full")
-	assert.Contains(t, view, statusErrorSGR)
-	assert.NotContains(t, view, statusPrimarySGR)
+	assertStatusColor(t, view, statusErrorSGR)
 }
 
-func TestStatusBarMessageAfterErrorRendersInPrimaryColor(t *testing.T) {
+func TestStatusBarMessageAfterAlertRendersInPrimaryColor(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120
-	sb.SetError("Error saving: disk full")
+	sb.SetAlert("Error saving: disk full")
 	sb.SetMessage("Saved .env")
 
 	view := sb.View(statusColorTheme(), ModeNormal, FocusVars, "", 0)
 	assert.Contains(t, view, "Saved .env")
-	assert.Contains(t, view, statusPrimarySGR)
-	assert.NotContains(t, view, statusErrorSGR)
+	assertStatusColor(t, view, statusPrimarySGR)
 }

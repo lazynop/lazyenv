@@ -64,16 +64,14 @@ func TestUpdateFilesLoadedMsgError(t *testing.T) {
 
 func TestUpdateFilesLoadedMsgErrorRendersInErrorColor(t *testing.T) {
 	app := newTestApp(nil)
-	app.theme = statusColorTheme()
 
 	updated, _ := app.Update(FilesLoadedMsg{
 		Err: assert.AnError,
 	})
 	app = updated.(App)
 
-	view := app.statusBar.View(app.theme, app.mode, app.focus, "", 0)
-	assert.Contains(t, view, statusErrorSGR)
-	assert.NotContains(t, view, statusPrimarySGR)
+	view := statusView(app)
+	assertStatusColor(t, view, statusErrorSGR)
 }
 
 func TestUpdateFilesLoadedMsgEmpty(t *testing.T) {
@@ -231,11 +229,9 @@ func TestStartupNoticeRendersInErrorColor(t *testing.T) {
 	cfg.Dir = t.TempDir()
 
 	app := startApp(t, NewApp(cfg, StartupMessages{Notices: []string{`unknown theme "does-not-exist"`}}))
-	app.theme = statusColorTheme()
 
-	view := app.statusBar.View(app.theme, app.mode, app.focus, "", 0)
-	assert.Contains(t, view, statusErrorSGR)
-	assert.NotContains(t, view, statusPrimarySGR)
+	view := statusView(app)
+	assertStatusColor(t, view, statusErrorSGR)
 }
 
 func TestConfigErrorBlocksAndQuitsOnNextKey(t *testing.T) {

@@ -216,7 +216,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case FilesLoadedMsg:
 		if msg.Err != nil {
-			a.statusBar.SetError("Error: " + msg.Err.Error())
+			a.statusBar.SetAlert("Error: " + msg.Err.Error())
 			return a, nil
 		}
 		a.fileList.SetFiles(msg.Files)
@@ -355,15 +355,15 @@ func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bo
 
 	case key.Matches(msg, a.keys.DeleteFile):
 		if f.Modified {
-			return a, a.flashMessage("Save or reset changes before deleting"), true
+			return a, a.flashWarning("Save or reset changes before deleting"), true
 		}
 		a.mode = ModeConfirmDeleteFile
-		a.statusBar.SetMessage("Delete " + f.Name + "? (y/n)")
+		a.statusBar.SetAlert("Delete " + f.Name + "? (y/n)")
 		return a, nil, true
 
 	case key.Matches(msg, a.keys.RenameFile):
 		if f.Modified {
-			return a, a.flashMessage("Save or reset changes before renaming"), true
+			return a, a.flashWarning("Save or reset changes before renaming"), true
 		}
 		a.fileOpSource = f
 		a.fileInput.SetValue(f.Name)
@@ -425,7 +425,7 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 
 	case key.Matches(msg, a.keys.Matrix):
 		if len(a.fileList.Files) < 2 {
-			return a, a.flashMessage("Need at least 2 files for matrix")
+			return a, a.flashWarning("Need at least 2 files for matrix")
 		}
 		a.matrixView = NewMatrixModel(a.fileList.Files, a.config.Layout, a.config.Secrets)
 		a.updateLayout()
@@ -543,7 +543,7 @@ func (a App) handleNormalVarEdit(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bool)
 		return a, cmd, true
 	}
 	if a.varList.IsHeaderAtCursor() {
-		return a, a.flashMessage("No variable selected"), true
+		return a, a.flashWarning("No variable selected"), true
 	}
 
 	switch {

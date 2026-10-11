@@ -16,7 +16,7 @@ func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
 
 	fullPath, errMsg := a.validateNewPath(name, a.config.Dir)
 	if errMsg != "" {
-		return a, a.flashMessage(errMsg)
+		return a, a.flashWarning(errMsg)
 	}
 
 	if err := a.createFile(fullPath); err != nil {

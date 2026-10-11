@@ -24,12 +24,12 @@ func (a App) confirmRenameKey(result EditorResult) (tea.Model, tea.Cmd) {
 	}
 
 	if !parser.IsValidKey(newKey) {
-		return a, a.flashMessage("Invalid key name")
+		return a, a.flashWarning("Invalid key name")
 	}
 
 	for i, v := range f.Vars {
 		if i != idx && v.Key == newKey {
-			return a, a.flashMessage("Key already exists: " + newKey)
+			return a, a.flashWarning("Key already exists: " + newKey)
 		}
 	}
 

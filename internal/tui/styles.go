@@ -11,12 +11,13 @@ import (
 // Theme holds all Lip Gloss styles.
 type Theme struct {
 	// Panel styles
-	FilePanel      lipgloss.Style
-	VarPanel       lipgloss.Style
-	PanelTitle     lipgloss.Style
-	StatusBar      lipgloss.Style
-	StatusBarKey   lipgloss.Style
-	StatusBarError lipgloss.Style
+	FilePanel        lipgloss.Style
+	VarPanel         lipgloss.Style
+	PanelTitle       lipgloss.Style
+	StatusBar        lipgloss.Style
+	StatusBarKey     lipgloss.Style
+	StatusBarWarning lipgloss.Style
+	StatusBarAlert   lipgloss.Style
 
 	// Item styles
 	SelectedItem   lipgloss.Style
@@ -102,7 +103,10 @@ func BuildTheme(isDark bool, colors config.ColorConfig) Theme {
 		StatusBarKey: lipgloss.NewStyle().
 			Bold(true).
 			Foreground(colorPrimary),
-		StatusBarError: lipgloss.NewStyle().
+		StatusBarWarning: lipgloss.NewStyle().
+			Bold(true).
+			Foreground(colorWarning),
+		StatusBarAlert: lipgloss.NewStyle().
 			Bold(true).
 			Foreground(colorError),
 

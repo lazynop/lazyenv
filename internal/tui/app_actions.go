@@ -24,7 +24,7 @@ func (a App) backupIfNeeded(path string) string {
 func (a App) handleSave() (App, tea.Cmd) {
 	f := a.varList.File
 	if f == nil {
-		return a, a.flashMessage("No file selected")
+		return a, a.flashWarning("No file selected")
 	}
 	if !f.Modified {
 		return a, a.flashMessage("No changes to save")
@@ -47,7 +47,7 @@ func (a App) handleSave() (App, tea.Cmd) {
 func (a App) handleReset() (App, tea.Cmd) {
 	f := a.varList.File
 	if f == nil {
-		return a, a.flashMessage("No file selected")
+		return a, a.flashWarning("No file selected")
 	}
 	if !f.Modified {
 		return a, a.flashMessage("No changes to reset")
