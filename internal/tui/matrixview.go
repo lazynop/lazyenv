@@ -320,10 +320,10 @@ func (m *MatrixModel) View(theme Theme) string {
 
 	content := b.String()
 
-	// Pad to fill height: the matrix chrome minus the stats footer line we'll
-	// concatenate below (1).
+	// Pad the body to its full height, so the stats footer concatenated below
+	// keeps its row however many keys there are.
 	lines := strings.Count(content, "\n")
-	for lines < m.Height-(matrixChromeHeight-1) {
+	for lines < matrixContentOffsetY+viewRows {
 		content += "\n"
 		lines++
 	}

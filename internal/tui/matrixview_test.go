@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -271,4 +272,23 @@ func TestMatrixViewContainsCheckAndCross(t *testing.T) {
 
 	assert.True(t, strings.Contains(view, "\u2713"), "view should contain check mark")
 	assert.True(t, strings.Contains(view, "\u2717"), "view should contain cross mark")
+}
+
+func TestMatrixViewFooterStaysOnTheSameRow(t *testing.T) {
+	theme := BuildTheme(true, config.ColorConfig{})
+	render := func(n int) []string {
+		keys := make([]string, n)
+		for i := range keys {
+			keys[i] = fmt.Sprintf("K%02d", i)
+		}
+		files := []*model.EnvFile{makeTestFile(".env", keys...), makeTestFile(".env.local", keys...)}
+		m := NewMatrixModel(files, config.DefaultConfig().Layout, config.SecretsConfig{})
+		m.Width, m.Height = 70, 15
+		return strings.Split(stripAnsi(m.View(theme)), "\n")
+	}
+
+	few, many := render(3), render(30) // fewer and more keys than body rows
+	assert.Equal(t, len(many), len(few), "the stats footer should sit on the same row whatever the key count")
+	assert.Contains(t, few[len(few)-1], "3 keys")
+	assert.Contains(t, many[len(many)-1], "30 keys")
 }
