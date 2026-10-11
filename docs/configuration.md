@@ -4,7 +4,7 @@ Create a `.lazyenvrc` file (TOML) in the directory you run lazyenv from, or `laz
 
 | Key            | Default         | Description                                                                                                                       |
 | -------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `recursive`    | `false`         | Scan `.env` files in subdirectories recursively.                                                                                  |
+| `recursive`    | `false`         | Scan `.env` files in subdirectories recursively, skipping hidden directories, `node_modules` and `vendor`.                        |
 | `show-secrets` | `false`         | Display secret values in cleartext. When false, each secret value is replaced by a fixed `••••••••` mask. Toggleable at runtime with `Ctrl+S`. |
 | `no-backup`    | `false`         | Skip creating `.bak` backup files before the first save of each file in a session.                                                |
 | `no-git-check` | `false`         | Skip checking if files are covered by `.gitignore`. Auto-disabled if `git` is not available.                                      |

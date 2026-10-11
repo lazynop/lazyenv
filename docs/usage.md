@@ -21,7 +21,7 @@ lazyenv ./services -r
 
 | Flag | Long form        | Description                                                                                                 |
 | ---- | ---------------- | ----------------------------------------------------------------------------------------------------------- |
-| `-r` | `--recursive`    | Scan subdirectories recursively.                                                                            |
+| `-r` | `--recursive`    | Scan subdirectories recursively, skipping hidden directories, `node_modules` and `vendor`.                  |
 | `-a` | `--show-all`     | Show secrets in cleartext at startup instead of masking them.                                               |
 | `-s` | `--sort`         | Sort order for variables: `position` (default, preserves file order) or `alphabetical`.                     |
 | `-g` | `--group` / `--no-group` | Start with prefix grouping enabled (default off). Toggle at runtime with `g`.                    |
