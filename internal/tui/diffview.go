@@ -136,8 +136,8 @@ func (m *DiffViewModel) PrevDiff() {
 	}
 }
 
-// visibleRows returns how many entries fit in a panel.
-func (m *DiffViewModel) visibleRows() int {
+// visibleLines returns how many entries fit in a panel.
+func (m *DiffViewModel) visibleLines() int {
 	return max(m.Height-panelChromeHeight, 1)
 }
 
@@ -146,7 +146,7 @@ func (m *DiffViewModel) ensureVisible() {
 	if m.Cursor < m.Offset {
 		m.Offset = m.Cursor
 	}
-	if visible := m.visibleRows(); m.Cursor >= m.Offset+visible {
+	if visible := m.visibleLines(); m.Cursor >= m.Offset+visible {
 		m.Offset = m.Cursor - visible + 1
 	}
 }
@@ -271,11 +271,14 @@ func (m *DiffViewModel) View(theme Theme) string {
 	for _, e := range m.Entries {
 		longestKey = max(longestKey, len(e.Key))
 	}
-	keyWidth, valWidth := splitColumns(longestKey, m.layout.DiffMaxKeyWidth,
-		halfWidth-m.layout.DiffPadding, m.layout.DiffMinValueWidth)
+	keyWidth, valWidth := columnLimits{
+		maxKey:   m.layout.DiffMaxKeyWidth,
+		padding:  m.layout.DiffPadding,
+		minValue: m.layout.DiffMinValueWidth,
+	}.split(longestKey, halfWidth)
 
 	// Render entries
-	end := min(m.Offset+m.visibleRows(), len(m.Entries))
+	end := min(m.Offset+m.visibleLines(), len(m.Entries))
 
 	var leftLines, rightLines []string
 
@@ -352,14 +355,22 @@ func (m *DiffViewModel) renderDiffEntry(e model.DiffEntry, isCursor bool, keyWid
 	return leftLine, rightLine
 }
 
-// splitColumns divides avail columns between a key column, no wider than the
-// longest key or maxKey, and a value column. When both don't fit, the key
-// column shrinks first so the value keeps minValue columns; the row never
-// grows past avail, so it never wraps inside its panel.
-func splitColumns(longestKey, maxKey, avail, minValue int) (keyWidth, valWidth int) {
-	avail = max(avail, 0)
-	keyWidth = min(longestKey, maxKey, max(avail-minValue, 0))
-	return keyWidth, avail - keyWidth
+// columnLimits holds a key/value table's width settings from the layout config.
+type columnLimits struct {
+	maxKey   int // widest the key column may grow
+	padding  int // a row's fixed overhead: borders, gaps and markers
+	minValue int // value width kept before the key column gives up any more
+}
+
+// split divides a panel width between the key column, no wider than
+// longestKey or maxKey, and the value column. When both don't fit, the key
+// column shrinks first, down to nothing, so the value keeps minValue columns
+// or all the room when there is less than that. As long as padding covers the
+// row's fixed overhead, the row never grows past width, so it never wraps.
+func (l columnLimits) split(longestKey, width int) (keyWidth, valWidth int) {
+	room := max(width-l.padding, 0)
+	keyWidth = min(longestKey, l.maxKey, max(room-l.minValue, 0))
+	return keyWidth, room - keyWidth
 }
 
 // truncate fits s into maxCols display columns, appending ".." when the

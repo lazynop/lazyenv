@@ -501,8 +501,11 @@ func (m *VarListModel) calcColumnWidths() (int, int) {
 		}
 		longestKey = max(longestKey, len(m.File.Vars[item.VarIdx].Key))
 	}
-	return splitColumns(longestKey, m.layout.VarListMaxKeyWidth,
-		m.Width-m.layout.VarListPadding, m.layout.VarListMinValueWidth)
+	return columnLimits{
+		maxKey:   m.layout.VarListMaxKeyWidth,
+		padding:  m.layout.VarListPadding,
+		minValue: m.layout.VarListMinValueWidth,
+	}.split(longestKey, m.Width)
 }
 
 // renderRows renders all visible rows (vars + headers) plus peek lines.

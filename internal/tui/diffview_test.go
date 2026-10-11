@@ -395,17 +395,23 @@ func TestDiffViewNarrowWidthKeepsEachEntryOnOneRow(t *testing.T) {
 	b.Vars[0].Value = "different"
 	theme := BuildTheme(true, config.ColorConfig{})
 
-	render := func(width int) string {
+	assertNoRowWraps(t, 40, 100, func(width int) string {
 		dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
 		dv.Width = width
 		dv.Height = panelChromeHeight + 4 // fewer rows than entries: a wrapped entry has no spare row to hide in
 		dv.SetFiles(a, b)
 		return dv.View(theme)
-	}
+	})
+}
 
+// assertNoRowWraps renders a view at a roomy width and at every width from
+// minWidth to maxWidth, and fails wherever the view comes out taller: a row
+// that wraps onto a second line makes its panel grow.
+func assertNoRowWraps(t *testing.T, minWidth, maxWidth int, render func(width int) string) {
+	t.Helper()
 	want := lipgloss.Height(render(200))
-	for width := 40; width <= 100; width++ {
-		assert.Equal(t, want, lipgloss.Height(render(width)), "width %d: an entry wrapped onto a second row", width)
+	for width := minWidth; width <= maxWidth; width++ {
+		assert.Equal(t, want, lipgloss.Height(render(width)), "width %d: a row wrapped onto a second line", width)
 	}
 }
 
