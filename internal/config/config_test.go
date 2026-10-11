@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -153,17 +152,27 @@ func TestLoadFileListWidth(t *testing.T) {
 	assert.Equal(t, 40, cfg.Layout.FileListWidth)
 }
 
-func TestLoadFileListWidthTooSmallWarns(t *testing.T) {
-	for _, val := range []int{-1, 5, 19} {
-		dir := t.TempDir()
-		content := fmt.Appendf(nil, "[layout]\nfile-list-width = %d\n", val)
-		require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
+func TestLoadNegativeFileListWidthWarns(t *testing.T) {
+	dir := t.TempDir()
+	content := []byte("[layout]\nfile-list-width = -1\n")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
 
-		cfg, warnings := Load(dir, "")
-		assert.Len(t, warnings, 1, "val=%d", val)
-		assert.Contains(t, warnings[0], "file-list-width")
-		assert.Equal(t, DefaultConfig(), cfg)
-	}
+	cfg, warnings := Load(dir, "")
+	assert.Len(t, warnings, 1)
+	assert.Contains(t, warnings[0], "file-list-width")
+	assert.Equal(t, DefaultConfig(), cfg)
+}
+
+func TestLoadKeepsWidthsBelowTheirMinimum(t *testing.T) {
+	dir := t.TempDir()
+	content := []byte("[layout]\nfile-list-width = 5\nvar-list-padding = 3\ndiff-padding = 8\n")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
+
+	cfg, warnings := Load(dir, "")
+	require.Empty(t, warnings, "a width below its minimum must not invalidate the config: the TUI raises it")
+	assert.Equal(t, 5, cfg.Layout.FileListWidth)
+	assert.Equal(t, 3, cfg.Layout.VarListPadding)
+	assert.Equal(t, 8, cfg.Layout.DiffPadding)
 }
 
 func TestLoadUnknownKey(t *testing.T) {

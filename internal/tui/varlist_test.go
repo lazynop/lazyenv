@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 func TestVarListMoveUp(t *testing.T) {
@@ -738,14 +740,19 @@ func TestVarListSearchFromBottomKeepsMatchVisible(t *testing.T) {
 }
 
 func TestVarListNarrowWidthKeepsEachVarOnOneRow(t *testing.T) {
-	f := makeTestFile(".env", "UPSTREAM_SERVICE_CIRCUIT_BREAKER_THRESHOLD", "DATABASE_URL", "REDIS_URL", "SENTRY_DSN", "LOG_LEVEL", "APP_ENV")
+	// Empty values put the ○ marker at the very end of every row.
+	keys := []string{"UPSTREAM_SERVICE_CIRCUIT_BREAKER_THRESHOLD", "DATABASE_URL", "REDIS_URL", "SENTRY_DSN", "LOG_LEVEL", "APP_ENV"}
+	f := parser.ParseBytes(".env", []byte(strings.Join(keys, "=\n")+"=\n"), config.SecretsConfig{})
 	theme := BuildTheme(true, config.ColorConfig{})
+	layout := config.DefaultConfig().Layout
+	layout.VarListPadding = 1       // raised to config.VarListMinPadding, the tightest rows get
+	height := panelChromeHeight + 4 // fewer rows than vars: a wrapped var has no spare row to hide in
 
-	assertNoRowWraps(t, 30, 100, func(width int) string {
-		vl := NewVarListModel(config.DefaultConfig().Layout)
+	assertNoRowWraps(t, 30, 100, height, func(width int) string {
+		vl := NewVarListModel(layout)
 		vl.SetFile(f)
 		vl.Width = width
-		vl.Height = panelChromeHeight + 4 // fewer rows than vars: a wrapped var has no spare row to hide in
+		vl.Height = height
 		return vl.View(theme)
 	})
 }

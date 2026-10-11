@@ -70,7 +70,7 @@ func applyCLIOverrides(cfg *config.Config) []string {
 		cfg.ReadOnly = *cli.ReadOnly
 	}
 	applySessionSummaryOverride(cfg)
-	warns = append(warns, applyFileListWidthOverride(cfg)...)
+	applyFileListWidthOverride(cfg)
 	if cli.Sort != nil {
 		cfg.Sort = *cli.Sort
 	}
@@ -87,18 +87,12 @@ func applyCLIOverrides(cfg *config.Config) []string {
 	return warns
 }
 
-func applyFileListWidthOverride(cfg *config.Config) []string {
-	if cli.FileListWidth == nil {
-		return nil
+// applyFileListWidthOverride sets the file list width from the flag; the TUI
+// raises a value below config.FileListMinWidth to it.
+func applyFileListWidthOverride(cfg *config.Config) {
+	if cli.FileListWidth != nil {
+		cfg.Layout.FileListWidth = *cli.FileListWidth
 	}
-	v := *cli.FileListWidth
-	var warns []string
-	if v != 0 && v < config.FileListMinWidth {
-		warns = append(warns, fmt.Sprintf("--file-list-width %d is below minimum %d, using %d", v, config.FileListMinWidth, config.FileListMinWidth))
-		v = config.FileListMinWidth
-	}
-	cfg.Layout.FileListWidth = v
-	return warns
 }
 
 // applySessionSummaryOverride resolves the final SessionSummary value: CLI flag

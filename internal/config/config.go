@@ -44,8 +44,21 @@ func (s SecretsConfig) ValueHeuristicEnabled() bool {
 	return *s.ValueHeuristic
 }
 
-// FileListMinWidth is the minimum allowed width for the file list panel.
+// FileListMinWidth is the narrowest the file list panel gets: the TUI raises a
+// smaller fixed width to it.
 const FileListMinWidth = 20
+
+// VarListMinPadding is the smallest var-list-padding that fits a variable
+// row's fixed overhead: the panel border, the gaps around key and value, and
+// the change and issue markers. The TUI raises a smaller value to it, since
+// below it rows wrap onto a second line.
+const VarListMinPadding = 8
+
+// DiffMinPadding is the smallest diff-padding that fits a diff row's fixed
+// overhead: the panel border, the gaps around key and value, and the status
+// marker. The TUI raises a smaller value to it, since below it rows wrap onto
+// a second line.
+const DiffMinPadding = 9
 
 // DefaultMouseScrollLines is the default number of lines scrolled per mouse wheel event.
 const DefaultMouseScrollLines = 1

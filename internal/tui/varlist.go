@@ -503,7 +503,7 @@ func (m *VarListModel) calcColumnWidths() (int, int) {
 	}
 	return columnLimits{
 		maxKey:   m.layout.VarListMaxKeyWidth,
-		padding:  m.layout.VarListPadding,
+		padding:  max(m.layout.VarListPadding, config.VarListMinPadding),
 		minValue: m.layout.VarListMinValueWidth,
 	}.split(longestKey, m.Width)
 }

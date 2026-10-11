@@ -692,8 +692,8 @@ func (a App) inputBarView() string {
 
 func (a *App) updateLayout() {
 	a.fileWidth = max(a.width/4, config.FileListMinWidth)
-	if a.config.Layout.FileListWidth > 0 {
-		a.fileWidth = a.config.Layout.FileListWidth
+	if w := a.config.Layout.FileListWidth; w > 0 {
+		a.fileWidth = max(w, config.FileListMinWidth)
 	}
 	varWidth := a.width - a.fileWidth
 

@@ -35,7 +35,7 @@ exclude = ["*.bak", "*.example"]
 
 ## [layout]
 
-Fine-tune column widths and padding. All values are in characters and must be greater than zero.
+Fine-tune column widths and padding. All values are in characters and must be greater than zero (`file-list-width` also takes `0`, for auto). Where the table gives a minimum, a lower value is raised to it: below it, rows or panels no longer fit.
 
 ```toml
 [layout]
@@ -55,13 +55,13 @@ mouse-scroll-lines = 1
 | -------------------------- | ------- | ------------------------------------------------------------------------------------------- |
 | `var-list-max-key-width`   | `30`    | Maximum width for variable keys in the main panel. Longer keys are truncated with ellipsis. |
 | `var-list-min-value-width` | `10`    | Minimum width for variable values, preventing them from becoming unreadably narrow.         |
-| `var-list-padding`         | `12`    | Horizontal space reserved for borders, markers, and spacing in variable list rows.          |
+| `var-list-padding`         | `12`    | Horizontal space reserved for borders, markers, and spacing in variable list rows. Minimum `8`. |
 | `diff-max-key-width`       | `25`    | Maximum width for keys in the compare/diff view.                                            |
 | `diff-min-value-width`     | `8`     | Minimum width for values in the diff view.                                                  |
-| `diff-padding`             | `10`    | Horizontal space reserved for borders, markers, and spacing in diff rows.                   |
+| `diff-padding`             | `10`    | Horizontal space reserved for borders, markers, and spacing in diff rows. Minimum `9`.      |
 | `matrix-key-width`         | `20`    | Width of the key column in the completeness matrix.                                         |
 | `matrix-col-width`         | `14`    | Width of each file column in the matrix. Controls how many files fit on screen.             |
-| `file-list-width`          | `0`     | Width of the file list panel. `0` = auto (1/4 of screen). Min 20. File names truncate to fit. |
+| `file-list-width`          | `0`     | Width of the file list panel. `0` = auto (1/4 of screen). Minimum `20`. File names truncate to fit. |
 | `mouse-scroll-lines`       | `1`     | Number of lines scrolled per mouse wheel event.                                                |
 
 ## [secrets]

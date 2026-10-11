@@ -182,3 +182,11 @@ func TestInitReturnsBatch(t *testing.T) {
 	// we only assert it is non-nil without running the closures.
 	assert.NotNil(t, app.Init())
 }
+
+func TestFileListWidthBelowMinimumIsRaised(t *testing.T) {
+	app := newTestApp(nil)
+	app.config.Layout.FileListWidth = 5
+
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	assert.Equal(t, 20, updated.(App).fileList.Width)
+}

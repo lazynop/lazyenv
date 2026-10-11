@@ -260,7 +260,7 @@ func (m *DiffViewModel) View(theme Theme) string {
 	}
 	keyWidth, valWidth := columnLimits{
 		maxKey:   m.layout.DiffMaxKeyWidth,
-		padding:  m.layout.DiffPadding,
+		padding:  max(m.layout.DiffPadding, config.DiffMinPadding),
 		minValue: m.layout.DiffMinValueWidth,
 	}.split(longestKey, halfWidth)
 
@@ -353,7 +353,8 @@ type columnLimits struct {
 // longestKey or maxKey, and the value column. When both don't fit, the key
 // column shrinks first, down to nothing, so the value keeps minValue columns
 // or all the room when there is less than that. As long as padding covers the
-// row's fixed overhead, the row never grows past width, so it never wraps.
+// row's fixed overhead (callers floor it at the config minimums, which do),
+// the row never grows past width, so it never wraps.
 func (l columnLimits) split(longestKey, width int) (keyWidth, valWidth int) {
 	room := max(width-l.padding, 0)
 	keyWidth = min(longestKey, l.maxKey, max(room-l.minValue, 0))
