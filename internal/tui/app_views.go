@@ -71,7 +71,7 @@ func (a App) viewHelp() string {
 
   General
     ?              Show/hide this help
-    q / Ctrl+C     Quit
+    q / Ctrl+C     Quit (in compare and matrix: back to main view)
     Esc            Back / cancel
 `
 

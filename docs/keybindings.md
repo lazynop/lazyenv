@@ -23,6 +23,7 @@ Keybindings are context-sensitive: each screen only responds to the keys listed 
 | `o`            | Toggle sort order (position / alphabetical)       |
 | `O`            | Reorder variables on disk (alphabetical / grouped) |
 | `g`            | Toggle prefix grouping in the variable list       |
+| `/`            | Search variables by name or value                 |
 | `?`            | Show help screen                                  |
 | `q` / `Ctrl+C` | Quit                                              |
 
@@ -55,7 +56,7 @@ Keybindings are context-sensitive: each screen only responds to the keys listed 
 
 ## Compare — Diff view
 
-Side-by-side diff between two `.env` files.
+Side-by-side diff between two `.env` files. After `c`, pick the second file with `↑` / `↓` and press `Enter`, or `Esc` to cancel.
 
 | Key       | Action                                   |
 | --------- | ---------------------------------------- |
@@ -63,15 +64,15 @@ Side-by-side diff between two `.env` files.
 | `↓` / `j` | Move cursor down                         |
 | `n`       | Jump to next difference                  |
 | `N`       | Jump to previous difference              |
-| `→` / `l` | Copy selected value to the right file    |
-| `←` / `h` | Copy selected value to the left file     |
+| `→` / `l` | Copy selected value to the right file; if the left file lacks the key, delete it from the right file |
+| `←` / `h` | Copy selected value to the left file; if the right file lacks the key, delete it from the left file  |
 | `e`       | Edit selected variable in the left file  |
 | `E`       | Edit selected variable in the right file |
 | `f`       | Toggle filter: show differences only     |
 | `w`       | Save both files (if modified)            |
 | `r`       | Reset both files to saved state          |
 | `Ctrl+S`  | Toggle secret masking                    |
-| `q`       | Return to main view                      |
+| `q` / `Ctrl+C` | Return to main view                 |
 | `Esc`     | Return to main view                      |
 
 ## Completeness matrix
@@ -87,10 +88,19 @@ Multi-file grid showing which variables exist in which files.
 | `a`       | Add missing variable to the file under cursor |
 | `d`       | Delete variable from the file under cursor    |
 | `o`       | Toggle sort (alphabetical / completeness)     |
-| `q`       | Return to main view                           |
+| `q` / `Ctrl+C` | Return to main view                      |
 | `Esc`     | Return to main view                           |
 
-All modal prompts (editing, delete confirmation, search) follow standard conventions: `Enter` to confirm, `Esc` to cancel.
+## Prompts
+
+| Prompt                                                       | Confirm                       | Cancel            |
+| ------------------------------------------------------------ | ----------------------------- | ----------------- |
+| Text input: edit, rename or add a variable, name a file      | `Enter`                       | `Esc`             |
+| Search                                                       | `Enter` (keeps the filter)    | `Esc` (clears it) |
+| Reorder mode (`O`)                                           | `a` alphabetical, `g` grouped | `Esc`             |
+| Delete a variable, a file or a matrix cell; confirm reorder  | `y`                           | `n` / `Esc`       |
+
+Yes/no prompts confirm only with `y`: `Enter` and other keys are ignored. `Ctrl+C` does nothing while a prompt is open. The help screen (`?`) closes with `Esc`, `?`, `q` or `Ctrl+C`.
 
 ## Theme preview (`--themes`)
 

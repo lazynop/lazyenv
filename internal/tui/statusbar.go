@@ -150,7 +150,7 @@ func modeHints(theme Theme, mode AppMode, focus Focus, diffStats string) string 
 	case ModeHelp:
 		return theme.MutedItem.Render("Press Esc or ? to close help")
 	case ModeSearching:
-		return theme.MutedItem.Render("Type to search, Esc to close")
+		return theme.MutedItem.Render("Type to search, Enter to keep the filter, Esc to clear it")
 	case ModeCreateFile:
 		return theme.MutedItem.Render("Enter to create, Esc to cancel")
 	case ModeDuplicateFile:
