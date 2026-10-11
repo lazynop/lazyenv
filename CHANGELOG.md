@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.1] - 2026-10-11
+
+### Fixed
+- The compare view now fills the terminal height like the main view; it used to leave empty rows at the bottom for a header it never drew.
+- Clicking an entry in the compare view selects that entry; clicks used to land on the row above.
+- On narrow terminals, rows in the variable list and the compare view no longer wrap onto a second line: the key column shrinks first, so values keep their minimum width.
+- When a newly created file can't be loaded and is removed again, the session summary no longer lists it as created.
+
+### Changed
+- Updated runtime dependencies: Bubble Tea v2.0.10, Bubbles v2.2.1, Lip Gloss v2.0.6, Kong v1.16.1, go-toml v2.4.3, go-runewidth v0.0.30.
+
 ## [0.9.0] - 2026-06-13
 
 ### Added
