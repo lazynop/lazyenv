@@ -149,16 +149,22 @@ func (m *VarListModel) emitVarRows(indices []int) {
 }
 
 // matchesQuery reports whether v's key or value contains the (already
-// lowercased) query. A masked secret's value is skipped, so the search
-// never confirms text the panel hides.
+// lowercased) query. A masked value is skipped, so the search never
+// confirms text the panel hides.
 func (m *VarListModel) matchesQuery(v *model.EnvVar, qLower string) bool {
 	if strings.Contains(strings.ToLower(v.Key), qLower) {
 		return true
 	}
-	if v.IsSecret && !m.ShowSecrets {
+	if m.isMasked(v) {
 		return false
 	}
 	return strings.Contains(strings.ToLower(v.Value), qLower)
+}
+
+// isMasked reports whether the panel hides v's value: v is a secret and
+// secrets are not revealed.
+func (m *VarListModel) isMasked(v *model.EnvVar) bool {
+	return v.IsSecret && !m.ShowSecrets
 }
 
 func (m *VarListModel) clampCursor() {
@@ -400,7 +406,7 @@ func (m *VarListModel) renderWarningIndicators(v *model.EnvVar, theme Theme) str
 // value for a variable, ready to be emitted into a single-row table cell.
 func (m *VarListModel) formatValue(v *model.EnvVar, maxValWidth int) string {
 	value := v.Value
-	if v.IsSecret && !m.ShowSecrets {
+	if m.isMasked(v) {
 		value = util.MaskValue(value)
 	}
 	return padRight(truncate(flattenValue(value), maxValWidth), maxValWidth)
@@ -430,7 +436,7 @@ func (m *VarListModel) renderVarLine(rowIdx int, v *model.EnvVar, keyWidth, maxV
 
 	// Normal line: style key and value segments individually
 	valueStyle := theme.ValueStyle
-	if v.IsSecret && !m.ShowSecrets {
+	if m.isMasked(v) {
 		valueStyle = theme.SecretValue
 	}
 	return fmt.Sprintf("  %s  %s%s",
