@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -385,6 +386,27 @@ func TestDiffViewTruncatesLongKeys(t *testing.T) {
 	assert.NotContains(t, view, longKey, "long key should be truncated")
 	// The truncated version with ".." should appear
 	assert.Contains(t, view, "THIS_IS_A_VERY_LONG_ENV..", "truncated key with .. should appear")
+}
+
+func TestDiffViewNarrowWidthKeepsEachEntryOnOneRow(t *testing.T) {
+	keys := []string{"PAYMENTS_API_KEY", "DATABASE_URL", "REDIS_URL", "SENTRY_DSN", "LOG_LEVEL", "APP_ENV"}
+	a := makeTestFile(".env", keys[:5]...)
+	b := makeTestFile(".env.staging", keys[1:]...)
+	b.Vars[0].Value = "different"
+	theme := BuildTheme(true, config.ColorConfig{})
+
+	render := func(width int) string {
+		dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+		dv.Width = width
+		dv.Height = panelChromeHeight + 4 // fewer rows than entries: a wrapped entry has no spare row to hide in
+		dv.SetFiles(a, b)
+		return dv.View(theme)
+	}
+
+	want := lipgloss.Height(render(200))
+	for width := 40; width <= 100; width++ {
+		assert.Equal(t, want, lipgloss.Height(render(width)), "width %d: an entry wrapped onto a second row", width)
+	}
 }
 
 func TestDiffViewResetPreservesGitWarning(t *testing.T) {

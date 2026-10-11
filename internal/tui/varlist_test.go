@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -735,4 +736,22 @@ func TestVarListSearchFromBottomKeepsMatchVisible(t *testing.T) {
 	view := stripAnsi(vl.View(theme))
 	assert.Contains(t, view, "TARGET",
 		"the only search match must be rendered inside the viewport")
+}
+
+func TestVarListNarrowWidthKeepsEachVarOnOneRow(t *testing.T) {
+	f := makeTestFile(".env", "UPSTREAM_SERVICE_CIRCUIT_BREAKER_THRESHOLD", "DATABASE_URL", "REDIS_URL", "SENTRY_DSN", "LOG_LEVEL", "APP_ENV")
+	theme := BuildTheme(true, config.ColorConfig{})
+
+	render := func(width int) string {
+		vl := NewVarListModel(config.DefaultConfig().Layout)
+		vl.SetFile(f)
+		vl.Width = width
+		vl.Height = panelChromeHeight + 4 // fewer rows than vars: a wrapped var has no spare row to hide in
+		return vl.View(theme)
+	}
+
+	want := lipgloss.Height(render(200))
+	for width := 30; width <= 100; width++ {
+		assert.Equal(t, want, lipgloss.Height(render(width)), "width %d: a variable wrapped onto a second row", width)
+	}
 }

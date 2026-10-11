@@ -494,22 +494,15 @@ func (m *VarListModel) visibleLines() int {
 // calcColumnWidths returns the key column width and max value width.
 // Headers are excluded from key-width measurement.
 func (m *VarListModel) calcColumnWidths() (int, int) {
-	keyWidth := 0
+	longestKey := 0
 	for _, item := range m.displayItems {
 		if item.Kind != displayItemVar {
 			continue
 		}
-		kw := len(m.File.Vars[item.VarIdx].Key)
-		if kw > keyWidth {
-			keyWidth = kw
-		}
+		longestKey = max(longestKey, len(m.File.Vars[item.VarIdx].Key))
 	}
-	if keyWidth > m.layout.VarListMaxKeyWidth {
-		keyWidth = m.layout.VarListMaxKeyWidth
-	}
-	maxValWidth := max(
-		m.Width-keyWidth-m.layout.VarListPadding, m.layout.VarListMinValueWidth)
-	return keyWidth, maxValWidth
+	return splitColumns(longestKey, m.layout.VarListMaxKeyWidth,
+		m.Width-m.layout.VarListPadding, m.layout.VarListMinValueWidth)
 }
 
 // renderRows renders all visible rows (vars + headers) plus peek lines.

@@ -275,17 +275,12 @@ func (m *DiffViewModel) View(theme Theme) string {
 	rightTitle := theme.PanelTitle.Render(rightName)
 
 	// Calculate column widths
-	keyWidth := 0
+	longestKey := 0
 	for _, e := range m.Entries {
-		if len(e.Key) > keyWidth {
-			keyWidth = len(e.Key)
-		}
+		longestKey = max(longestKey, len(e.Key))
 	}
-	if keyWidth > m.layout.DiffMaxKeyWidth {
-		keyWidth = m.layout.DiffMaxKeyWidth
-	}
-
-	valWidth := max(halfWidth-keyWidth-m.layout.DiffPadding, m.layout.DiffMinValueWidth)
+	keyWidth, valWidth := splitColumns(longestKey, m.layout.DiffMaxKeyWidth,
+		halfWidth-m.layout.DiffPadding, m.layout.DiffMinValueWidth)
 
 	// Render entries
 	visible := max(m.Height-diffChromeHeight, 1)
@@ -371,6 +366,16 @@ func (m *DiffViewModel) renderDiffEntry(e model.DiffEntry, isCursor bool, keyWid
 	}
 
 	return leftLine, rightLine
+}
+
+// splitColumns divides avail columns between a key column, no wider than the
+// longest key or maxKey, and a value column. When both don't fit, the key
+// column shrinks first so the value keeps minValue columns; the row never
+// grows past avail, so it never wraps inside its panel.
+func splitColumns(longestKey, maxKey, avail, minValue int) (keyWidth, valWidth int) {
+	avail = max(avail, 0)
+	keyWidth = min(longestKey, maxKey, max(avail-minValue, 0))
+	return keyWidth, avail - keyWidth
 }
 
 // truncate fits s into maxCols display columns, appending ".." when the
