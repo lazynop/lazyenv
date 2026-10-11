@@ -15,7 +15,7 @@ func TestApp_GroupConfigEnablesGroupingAtStart(t *testing.T) {
 	cfg := config.DefaultConfig()
 	cfg.Group = true
 
-	app := NewApp(cfg, nil)
+	app := NewApp(cfg, StartupMessages{})
 	f := makeTestFile(".env", "DB_HOST", "DB_PORT", "PORT")
 	app.varList.SetFile(f)
 

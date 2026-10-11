@@ -43,7 +43,8 @@ type LoadResult struct {
 
 // Load searches for config files and returns the merged configuration.
 // If configPath is non-empty, it takes highest priority.
-// A malformed or invalid config produces warnings and falls back to defaults.
+// A malformed or invalid config produces warnings and falls back to defaults:
+// any warning means the file was rejected as a whole.
 func Load(projectDir, configPath string) (Config, []string) {
 	r := LoadFull(projectDir, configPath)
 	return r.Config, r.Warnings

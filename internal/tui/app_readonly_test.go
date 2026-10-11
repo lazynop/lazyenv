@@ -13,7 +13,7 @@ import (
 func newReadOnlyApp(files []*model.EnvFile) App {
 	cfg := config.DefaultConfig()
 	cfg.ReadOnly = true
-	app := NewApp(cfg, nil)
+	app := NewApp(cfg, StartupMessages{})
 	app.width = 120
 	app.height = 40
 	app.ready = true

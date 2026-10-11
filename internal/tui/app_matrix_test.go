@@ -13,7 +13,7 @@ import (
 
 // newTestApp creates an App ready for testing with the given files loaded.
 func newTestApp(files []*model.EnvFile) App {
-	app := NewApp(config.DefaultConfig(), nil)
+	app := NewApp(config.DefaultConfig(), StartupMessages{})
 	app.width = 120
 	app.height = 40
 	app.ready = true

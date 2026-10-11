@@ -41,8 +41,10 @@ var cli struct {
 	Version        kong.VersionFlag `short:"v" help:"Show version."`
 }
 
+// applyCLIOverrides applies the CLI flags to cfg and returns notices about
+// flags it ignored or adjusted; none of them stops the run.
 func applyCLIOverrides(cfg *config.Config) []string {
-	var warns []string
+	var notices []string
 	if cli.Recursive != nil {
 		cfg.Recursive = *cli.Recursive
 	}
@@ -56,7 +58,7 @@ func applyCLIOverrides(cfg *config.Config) []string {
 		cfg.Theme = *cli.Theme
 		if cfg.Theme != "" {
 			if _, ok := config.LookupTheme(cfg.Theme); !ok {
-				warns = append(warns, fmt.Sprintf("unknown theme %q (see --list-themes)", cfg.Theme))
+				notices = append(notices, fmt.Sprintf("unknown theme %q (see --list-themes)", cfg.Theme))
 			}
 		}
 	}
@@ -84,7 +86,7 @@ func applyCLIOverrides(cfg *config.Config) []string {
 			cfg.NoGitCheck = true
 		}
 	}
-	return warns
+	return notices
 }
 
 // applyFileListWidthOverride sets the file list width from the flag; the TUI
@@ -153,10 +155,10 @@ func main() {
 		return
 	}
 
-	cfg, warnings := config.Load(".", cli.Config)
+	cfg, configErrors := config.Load(".", cli.Config)
 
 	cfg.Dir = cli.Path
-	warnings = append(warnings, applyCLIOverrides(&cfg)...)
+	notices := applyCLIOverrides(&cfg)
 	config.FinalizeColors(&cfg)
 
 	if cli.ListThemes {
@@ -188,7 +190,7 @@ func main() {
 		return
 	}
 
-	app := tui.NewApp(cfg, warnings)
+	app := tui.NewApp(cfg, tui.StartupMessages{ConfigErrors: configErrors, Notices: notices})
 
 	p := tea.NewProgram(app)
 	finalModel, err := p.Run()

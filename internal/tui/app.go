@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"charm.land/bubbles/v2/key"
@@ -57,22 +58,34 @@ type FilesLoadedMsg struct {
 // stale auto-clear timer from wiping a newer message or a persistent prompt.
 type ClearMessageMsg struct{ gen int }
 
-// ConfigWarningMsg is sent at startup if the config file has issues.
-type ConfigWarningMsg struct{ Warning string }
+// StartupNoticeMsg is sent at startup when an input was ignored or adjusted
+// but the run can go on (e.g. an unknown --theme).
+type StartupNoticeMsg struct{ Notice string }
+
+// StartupMessages are the problems found while building the config, before
+// the TUI starts.
+type StartupMessages struct {
+	// ConfigErrors are the reasons the config file was rejected and the
+	// defaults are in use. The App shows them on a blocking screen and quits
+	// on the next key.
+	ConfigErrors []string
+	// Notices report input that was ignored or adjusted. The App flashes them
+	// in the status bar and the run goes on.
+	Notices []string
+}
 
 // App is the main Bubble Tea model.
 type App struct {
-	config         config.Config
-	configWarnings []string
-	keys           KeyMap
-	theme          Theme
-	hasDarkBg      bool
-	focus          Focus
-	mode           AppMode
-	width          int
-	height         int
-	fileWidth      int
-	ready          bool
+	config    config.Config
+	keys      KeyMap
+	theme     Theme
+	hasDarkBg bool
+	focus     Focus
+	mode      AppMode
+	width     int
+	height    int
+	fileWidth int
+	ready     bool
 
 	fileList    FileListModel
 	varList     VarListModel
@@ -82,8 +95,11 @@ type App struct {
 	searchInput textinput.Model
 	matrixView  MatrixModel
 
-	// Config error shown as blocking alert
+	// Text of the blocking config error screen (ModeConfigError).
 	configError string
+
+	// Startup notice, flashed once Init runs; empty when there is none.
+	startupNotice string
 
 	// Backup state: tracks which files have been backed up this session
 	backedUpPaths map[string]bool
@@ -106,7 +122,7 @@ type App struct {
 }
 
 // NewApp creates a new App model.
-func NewApp(cfg config.Config, warnings []string) App {
+func NewApp(cfg config.Config, startup StartupMessages) App {
 	ti := textinput.New()
 	ti.Placeholder = "Search..."
 	ti.CharLimit = 100
@@ -128,24 +144,31 @@ func NewApp(cfg config.Config, warnings []string) App {
 		stats = NewSessionStats()
 	}
 
-	return App{
-		config:         cfg,
-		configWarnings: warnings,
-		keys:           DefaultKeyMap(),
-		theme:          BuildTheme(true, cfg.Colors), // default to dark, will update on BackgroundColorMsg
-		hasDarkBg:      true,
-		focus:          FocusFiles,
-		mode:           ModeNormal,
-		fileList:       NewFileListModel(),
-		varList:        varList,
-		statusBar:      sb,
-		diffView:       NewDiffViewModel(cfg.Layout, cfg.Secrets),
-		editor:         NewEditorModel(),
-		searchInput:    ti,
-		fileInput:      fi,
-		backedUpPaths:  make(map[string]bool),
-		sessionStats:   stats,
+	app := App{
+		config:        cfg,
+		keys:          DefaultKeyMap(),
+		theme:         BuildTheme(true, cfg.Colors), // default to dark, will update on BackgroundColorMsg
+		hasDarkBg:     true,
+		focus:         FocusFiles,
+		mode:          ModeNormal,
+		fileList:      NewFileListModel(),
+		varList:       varList,
+		statusBar:     sb,
+		diffView:      NewDiffViewModel(cfg.Layout, cfg.Secrets),
+		editor:        NewEditorModel(),
+		searchInput:   ti,
+		fileInput:     fi,
+		backedUpPaths: make(map[string]bool),
+		sessionStats:  stats,
 	}
+	if len(startup.ConfigErrors) > 0 {
+		// The run stops on this screen, so the notices go on it too.
+		app.configError = strings.Join(slices.Concat(startup.ConfigErrors, startup.Notices), "; ")
+		app.mode = ModeConfigError
+	} else {
+		app.startupNotice = strings.Join(startup.Notices, "; ")
+	}
+	return app
 }
 
 // SessionSummary returns the formatted session summary (empty string if disabled
@@ -166,10 +189,9 @@ func (a App) Init() tea.Cmd {
 		},
 		tea.RequestBackgroundColor,
 	}
-	if len(a.configWarnings) > 0 {
-		warning := strings.Join(a.configWarnings, "; ")
+	if notice := a.startupNotice; notice != "" {
 		cmds = append(cmds, func() tea.Msg {
-			return ConfigWarningMsg{Warning: warning}
+			return StartupNoticeMsg{Notice: notice}
 		})
 	}
 	return tea.Batch(cmds...)
@@ -189,10 +211,8 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.theme = BuildTheme(a.hasDarkBg, a.config.Colors)
 		return a, nil
 
-	case ConfigWarningMsg:
-		a.configError = msg.Warning
-		a.mode = ModeConfigError
-		return a, nil
+	case StartupNoticeMsg:
+		return a, a.flashError(msg.Notice)
 
 	case FilesLoadedMsg:
 		if msg.Err != nil {

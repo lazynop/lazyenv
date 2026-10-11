@@ -16,26 +16,26 @@ import (
 func TestApp_SessionStats_InitDisabledByReadOnly(t *testing.T) {
 	cfg := config.DefaultConfig()
 	cfg.ReadOnly = true
-	app := NewApp(cfg, nil)
+	app := NewApp(cfg, StartupMessages{})
 	assert.Nil(t, app.sessionStats)
 }
 
 func TestApp_SessionStats_InitDisabledBySetting(t *testing.T) {
 	cfg := config.DefaultConfig()
 	cfg.SessionSummary = false
-	app := NewApp(cfg, nil)
+	app := NewApp(cfg, StartupMessages{})
 	assert.Nil(t, app.sessionStats)
 }
 
 func TestApp_SessionStats_InitEnabled(t *testing.T) {
 	cfg := config.DefaultConfig()
-	app := NewApp(cfg, nil)
+	app := NewApp(cfg, StartupMessages{})
 	assert.NotNil(t, app.sessionStats)
 }
 
 func TestApp_SessionStats_InitialLoadRecorded(t *testing.T) {
 	cfg := config.DefaultConfig()
-	app := NewApp(cfg, nil)
+	app := NewApp(cfg, StartupMessages{})
 	files := []*model.EnvFile{
 		{Path: "/p/.env", Vars: []model.EnvVar{{Key: "FOO", Value: "1"}}},
 	}
@@ -57,7 +57,7 @@ func setupStatsFixture(t *testing.T, name, body string) (App, *model.EnvFile, st
 	cfg := config.DefaultConfig()
 	cfg.Dir = dir
 	cfg.NoBackup = true
-	app := NewApp(cfg, nil)
+	app := NewApp(cfg, StartupMessages{})
 
 	ef, err := parser.ParseFile(path, cfg.Secrets)
 	require.NoError(t, err)
@@ -69,7 +69,7 @@ func TestApp_SessionStats_CreateScratch(t *testing.T) {
 	dir := t.TempDir()
 	cfg := config.DefaultConfig()
 	cfg.Dir = dir
-	app := NewApp(cfg, nil)
+	app := NewApp(cfg, StartupMessages{})
 	out, _ := app.Update(FilesLoadedMsg{Files: nil})
 	app = out.(App)
 
@@ -147,7 +147,7 @@ func TestApp_SessionStats_EndToEnd(t *testing.T) {
 	cfg.Dir = dir
 	cfg.NoBackup = true
 	cfg.NoGitCheck = true
-	app := NewApp(cfg, nil)
+	app := NewApp(cfg, StartupMessages{})
 
 	localEf, err := parser.ParseFile(localPath, cfg.Secrets)
 	require.NoError(t, err)

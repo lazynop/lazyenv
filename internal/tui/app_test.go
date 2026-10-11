@@ -5,6 +5,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
@@ -169,7 +170,7 @@ func TestQuitReturnsQuitCmd(t *testing.T) {
 }
 
 func TestViewNotReady(t *testing.T) {
-	app := NewApp(config.DefaultConfig(), nil)
+	app := NewApp(config.DefaultConfig(), StartupMessages{})
 	// ready is false by default
 	view := app.View()
 	assert.Contains(t, view.Content, "Loading")
@@ -181,6 +182,61 @@ func TestInitReturnsBatch(t *testing.T) {
 	// Init builds the initial command batch (scan dir + request bg color);
 	// we only assert it is non-nil without running the closures.
 	assert.NotNil(t, app.Init())
+}
+
+// startApp runs the commands Init batches and feeds their messages to Update,
+// as the Bubble Tea runtime does at startup. cfg.Dir is scanned, so callers
+// point it at an empty directory.
+func startApp(t *testing.T, app App) App {
+	t.Helper()
+	batch, ok := app.Init()().(tea.BatchMsg)
+	require.True(t, ok, "Init must batch its startup commands")
+	app.width, app.height, app.ready = 120, 40, true
+	for _, cmd := range batch {
+		updated, _ := app.Update(cmd())
+		app = updated.(App)
+	}
+	return app
+}
+
+func TestStartupNoticeFlashesWithoutBlocking(t *testing.T) {
+	cfg := config.DefaultConfig()
+	cfg.Dir = t.TempDir()
+	notice := `unknown theme "does-not-exist" (see --list-themes)`
+
+	app := startApp(t, NewApp(cfg, StartupMessages{Notices: []string{notice}}))
+
+	assert.Equal(t, ModeNormal, app.mode, "a notice must not open the blocking config error screen")
+	assert.Equal(t, notice, app.statusBar.Message)
+	_, cmd := app.Update(tea.KeyPressMsg{Text: "j"})
+	assert.Nil(t, cmd, "the next key must reach the TUI instead of quitting")
+}
+
+func TestConfigErrorBlocksAndQuitsOnNextKey(t *testing.T) {
+	cfg := config.DefaultConfig()
+	cfg.Dir = t.TempDir()
+
+	app := startApp(t, NewApp(cfg, StartupMessages{ConfigErrors: []string{`invalid sort value: "random"`}}))
+
+	assert.Equal(t, ModeConfigError, app.mode)
+	assert.Contains(t, app.View().Content, `invalid sort value: "random"`)
+	_, cmd := app.Update(tea.KeyPressMsg{Text: "j"})
+	require.NotNil(t, cmd)
+	assert.IsType(t, tea.QuitMsg{}, cmd(), "a rejected config file must quit on the next key")
+}
+
+func TestConfigErrorScreenAlsoShowsNotices(t *testing.T) {
+	cfg := config.DefaultConfig()
+	cfg.Dir = t.TempDir()
+
+	app := startApp(t, NewApp(cfg, StartupMessages{
+		ConfigErrors: []string{`invalid sort value: "random"`},
+		Notices:      []string{`unknown theme "nope"`},
+	}))
+
+	assert.Equal(t, ModeConfigError, app.mode)
+	assert.Contains(t, app.View().Content, `unknown theme "nope"`,
+		"the run stops on this screen, so a notice must not be lost behind it")
 }
 
 func TestFileListWidthBelowMinimumIsRaised(t *testing.T) {

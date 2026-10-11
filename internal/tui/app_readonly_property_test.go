@@ -39,7 +39,7 @@ var mutatingModes = map[AppMode]string{
 
 // readOnlyStartStates are the states every binding is pressed from: Normal
 // mode in each panel, and every other mode a key press reaches in read-only
-// mode. ModeConfigError is absent on purpose: a config warning at startup
+// mode. ModeConfigError is absent on purpose: a config error at startup
 // enters it, never a key.
 var readOnlyStartStates = []struct {
 	name  string
@@ -118,7 +118,7 @@ func newReadOnlyDiskApp(t *testing.T) (App, string) {
 	require.NoError(t, err)
 	require.Len(t, files, len(readOnlyFixture))
 
-	var m tea.Model = NewApp(cfg, nil)
+	var m tea.Model = NewApp(cfg, StartupMessages{})
 	m, _ = m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	m, _ = m.Update(FilesLoadedMsg{Files: files})
 	return m.(App), dir
