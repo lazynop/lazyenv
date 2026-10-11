@@ -25,14 +25,10 @@ const (
 	statusBarHeight = 1
 
 	// bottomChromeHeight is the vertical space reserved below the panels of
-	// the normal and compare views: input bar (the editor bar in compare
-	// mode) + status bar + one spare row (the status bar wraps to two rows
-	// on narrow terminals).
+	// the normal, compare and matrix views: input bar (the editor bar in
+	// compare and matrix mode) + status bar + one spare row (the status bar
+	// or the editor bar wraps to two rows on narrow terminals).
 	bottomChromeHeight = 3
-
-	// matrixBottomChromeHeight is the vertical space reserved below the
-	// matrix view: editor bar (in ModeMatrixEditing) + status bar.
-	matrixBottomChromeHeight = 2
 
 	// compareMarginWidth is the horizontal margin around the side-by-side
 	// compare view.

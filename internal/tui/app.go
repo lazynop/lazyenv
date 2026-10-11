@@ -731,7 +731,7 @@ func (a *App) updateLayout() {
 	a.diffView.Height = panelHeight
 
 	a.matrixView.Width = a.width
-	a.matrixView.Height = a.height - matrixBottomChromeHeight
+	a.matrixView.Height = a.height - bottomChromeHeight
 
 	a.statusBar.Width = a.width
 }

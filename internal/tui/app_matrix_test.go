@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -287,4 +288,22 @@ func TestMatrixDeleteNotPresent(t *testing.T) {
 	app = updated.(App)
 	assert.Equal(t, ModeMatrix, app.mode, "should stay in matrix mode")
 	assert.Contains(t, app.statusBar.Message, "not present")
+}
+
+func TestMatrixEditorBarFitsTheTerminal(t *testing.T) {
+	const longKey = "UPSTREAM_SERVICE_CIRCUIT_BREAKER_THRESHOLD_MS"
+	app := newTestApp([]*model.EnvFile{
+		makeTestFile(".env", "A"),
+		makeTestFile(".env.production.local", "A", longKey),
+	})
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: 60, Height: 20})
+	app = updated.(App)
+
+	app = sendKey(app, tea.KeyPressMsg{Text: "m"})
+	app = sendKey(app, tea.KeyPressMsg{Text: "j"}) // the long key, missing from .env
+	app = sendKey(app, tea.KeyPressMsg{Text: "a"})
+	require.Equal(t, ModeMatrixEditing, app.mode)
+
+	assert.LessOrEqual(t, lipgloss.Height(app.View().Content), app.height,
+		"a wrapped editor bar must still fit in the terminal")
 }
