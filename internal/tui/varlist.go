@@ -180,10 +180,22 @@ func (m *VarListModel) clampCursor() {
 	if m.Cursor < 0 {
 		m.Cursor = 0
 	}
-	// Keep the scroll offset within the (possibly shrunken) list so the
-	// cursor row stays inside the rendered viewport.
-	if m.Offset > m.Cursor {
+	// Keep the scroll offset within the (possibly shrunken) list, and the
+	// cursor row (now perhaps modified, with a peek line) inside the viewport.
+	m.ensureCursorVisible()
+}
+
+// ensureCursorVisible scrolls so the cursor row, and its peek line when one
+// is drawn, sit inside the viewport.
+func (m *VarListModel) ensureCursorVisible() {
+	if m.Cursor < m.Offset {
 		m.Offset = m.Cursor
+	}
+	if m.Height <= panelChromeHeight {
+		return // not laid out yet
+	}
+	if visible := m.visibleLines(); m.Cursor >= m.Offset+visible {
+		m.Offset = m.Cursor - visible + 1
 	}
 }
 
@@ -191,9 +203,7 @@ func (m *VarListModel) clampCursor() {
 func (m *VarListModel) MoveUp() {
 	if m.Cursor > 0 {
 		m.Cursor--
-		if m.Cursor < m.Offset {
-			m.Offset = m.Cursor
-		}
+		m.ensureCursorVisible()
 	}
 }
 
@@ -201,11 +211,14 @@ func (m *VarListModel) MoveUp() {
 func (m *VarListModel) MoveDown() {
 	if m.Cursor < len(m.displayItems)-1 {
 		m.Cursor++
-		visible := m.Height - panelChromeHeight
-		if visible > 0 && m.Cursor >= m.Offset+visible {
-			m.Offset = m.Cursor - visible + 1
-		}
+		m.ensureCursorVisible()
 	}
+}
+
+// TogglePeek turns the peek line under the cursor on or off.
+func (m *VarListModel) TogglePeek() {
+	m.Peeking = !m.Peeking
+	m.ensureCursorVisible()
 }
 
 // SetCursor positions the cursor at the given displayItems index with bounds
@@ -215,15 +228,7 @@ func (m *VarListModel) SetCursor(index int) {
 		return
 	}
 	m.Cursor = max(0, min(index, len(m.displayItems)-1))
-	visible := m.Height - panelChromeHeight
-	if visible > 0 {
-		if m.Cursor < m.Offset {
-			m.Offset = m.Cursor
-		}
-		if m.Cursor >= m.Offset+visible {
-			m.Offset = m.Cursor - visible + 1
-		}
-	}
+	m.ensureCursorVisible()
 }
 
 // DisplayCount returns the number of displayed rows (vars + headers).
@@ -481,16 +486,11 @@ func (m *VarListModel) renderHeaderLine(rowIdx int, group model.VarGroup, theme 
 		theme.MutedItem.Render(countStr))
 }
 
-// renderPeekLine renders the peek line for modified/new variables, or empty string if not applicable.
+// renderPeekLine renders the peek line under a modified or new variable.
 func (m *VarListModel) renderPeekLine(v *model.EnvVar, keyWidth, maxValWidth int, theme Theme) string {
-	var text string
-	switch {
-	case v.IsNew:
-		text = "↳ new variable"
-	case v.Modified:
+	text := "↳ new variable"
+	if !v.IsNew {
 		text = "↳ was: " + displayText(v.OriginalValue, m.isOriginalMasked(v))
-	default:
-		return ""
 	}
 	// The text sits in the value column, so it fits wherever the row does.
 	return theme.MutedItem.Render(fmt.Sprintf("  %s  %s", padRight("", keyWidth), truncate(text, maxValWidth)))
@@ -512,19 +512,28 @@ func (m *VarListModel) renderDeletedVars(visible, keyWidth, maxValWidth int, cur
 	return lines
 }
 
-// visibleLines returns how many display rows can be shown.
+// visibleLines returns how many display items fit in the viewport, leaving a
+// row for the peek line when one is drawn.
 func (m *VarListModel) visibleLines() int {
 	visible := max(m.Height-panelChromeHeight, 1)
-	if m.Peeking && m.Cursor >= 0 && m.Cursor < len(m.displayItems) {
-		item := m.displayItems[m.Cursor]
-		if item.Kind == displayItemVar {
-			v := &m.File.Vars[item.VarIdx]
-			if v.Modified || v.IsNew {
-				visible = max(visible-1, 1)
-			}
-		}
+	if m.drawsPeekLine() {
+		visible = max(visible-1, 1)
 	}
 	return visible
+}
+
+// drawsPeekLine reports whether a peek line is drawn under the cursor row:
+// peek is on, the panel is focused and the cursor is on a modified or new var.
+func (m *VarListModel) drawsPeekLine() bool {
+	if !m.Peeking || !m.Focused || m.Cursor < 0 || m.Cursor >= len(m.displayItems) {
+		return false
+	}
+	item := m.displayItems[m.Cursor]
+	if item.Kind != displayItemVar {
+		return false
+	}
+	v := &m.File.Vars[item.VarIdx]
+	return v.Modified || v.IsNew
 }
 
 // calcColumnWidths returns the key column width and max value width.
@@ -558,10 +567,8 @@ func (m *VarListModel) renderRows(visible, keyWidth, maxValWidth int, theme Them
 			v := &m.File.Vars[item.VarIdx]
 			lines = append(lines, m.renderVarLine(i, v, keyWidth, maxValWidth, theme))
 
-			if m.Peeking && i == m.Cursor && m.Focused {
-				if peekLine := m.renderPeekLine(v, keyWidth, maxValWidth, theme); peekLine != "" {
-					lines = append(lines, peekLine)
-				}
+			if i == m.Cursor && m.drawsPeekLine() {
+				lines = append(lines, m.renderPeekLine(v, keyWidth, maxValWidth, theme))
 			}
 		}
 	}

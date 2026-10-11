@@ -811,7 +811,9 @@ func TestVarListNarrowWidthKeepsPeekLineOnOneRow(t *testing.T) {
 			vl.Width = width
 			vl.Height = height
 			vl.SetCursor(cursor)
-			return vl.View(theme)
+			view := vl.View(theme)
+			require.Contains(t, view, "↳", "width %d, cursor %d: the peek line should be drawn", width, cursor)
+			return view
 		})
 	}
 }

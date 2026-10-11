@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -333,4 +334,67 @@ func TestPeekShowsOnDiskOriginalOfEditedThenReAddedVar(t *testing.T) {
 	view := vlm.View(theme)
 
 	assert.Contains(t, view, "was: val_FOO", "peek should show the value on disk, not the edit made before the delete")
+}
+
+// peekBottomRowList returns a var list three rows tall over five vars, so the
+// last var only fits on the bottom row.
+func peekBottomRowList(f *model.EnvFile) VarListModel {
+	vlm := NewVarListModel(config.DefaultConfig().Layout)
+	vlm.SetFile(f)
+	vlm.Focused = true
+	vlm.Width = 80
+	vlm.Height = panelChromeHeight + 3
+	return vlm
+}
+
+func TestPeekKeepsCursorRowVisibleAtTheBottom(t *testing.T) {
+	theme := BuildTheme(true, config.ColorConfig{})
+
+	t.Run("moving onto a new var", func(t *testing.T) {
+		f := makeTestFile(".env", "A", "B", "C", "D")
+		f.AddVar("NEW_VAR", "value", false)
+		vlm := peekBottomRowList(f)
+		vlm.Peeking = true
+		for range 4 {
+			vlm.MoveDown()
+		}
+		view := vlm.View(theme)
+		assert.Contains(t, view, "NEW_VAR")
+		assert.Contains(t, view, "new variable")
+	})
+
+	t.Run("turning peek on", func(t *testing.T) {
+		f := makeTestFile(".env", "A", "B", "C", "D", "E")
+		f.UpdateVar(2, "edited")
+		vlm := peekBottomRowList(f)
+		vlm.SetCursor(2) // bottom row
+		vlm.TogglePeek()
+		view := vlm.View(theme)
+		assert.Contains(t, view, "edited")
+		assert.Contains(t, view, "was: val_C")
+	})
+
+	t.Run("editing the var under the cursor", func(t *testing.T) {
+		f := makeTestFile(".env", "A", "B", "C", "D", "E")
+		vlm := peekBottomRowList(f)
+		vlm.Peeking = true
+		vlm.SetCursor(2) // bottom row
+		f.UpdateVar(2, "edited")
+		vlm.Refresh()
+		view := vlm.View(theme)
+		assert.Contains(t, view, "edited")
+		assert.Contains(t, view, "was: val_C")
+	})
+}
+
+func TestPeekReservesNoRowWhenUnfocused(t *testing.T) {
+	f := makeTestFile(".env", "A", "B", "C", "D", "E")
+	f.UpdateVar(0, "edited")
+	vlm := peekBottomRowList(f)
+	vlm.Peeking = true
+	vlm.Focused = false
+
+	rows := strings.Split(stripAnsi(vlm.View(BuildTheme(true, config.ColorConfig{}))), "\n")
+
+	assert.Contains(t, rows[len(rows)-2], "val_C", "with no peek line drawn, the last inner row should hold a var")
 }

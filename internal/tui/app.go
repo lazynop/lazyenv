@@ -531,7 +531,7 @@ func (a App) handleNormalVarAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, boo
 		}
 
 	case key.Matches(msg, a.keys.Peek):
-		a.varList.Peeking = !a.varList.Peeking
+		a.varList.TogglePeek()
 		return a, nil, true
 	}
 
