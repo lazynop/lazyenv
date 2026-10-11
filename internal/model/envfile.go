@@ -85,11 +85,18 @@ func (ef *EnvFile) RenameVar(idx int, newKey string) {
 // variable's value before its first change as its OriginalValue.
 func (ef *EnvFile) markModified(idx int) {
 	v := &ef.Vars[idx]
-	if !v.Modified {
-		v.OriginalValue, v.OriginalIsSecret = v.Value, v.IsSecret
-		v.Modified = true
-	}
+	v.OriginalValue, v.OriginalIsSecret = v.original()
+	v.Modified = true
 	ef.Modified = true
+}
+
+// original returns the value v had before its first change this session,
+// and whether that value was a secret.
+func (v EnvVar) original() (string, bool) {
+	if v.Modified {
+		return v.OriginalValue, v.OriginalIsSecret
+	}
+	return v.Value, v.IsSecret
 }
 
 // AddVar appends a new variable to the file.
@@ -116,7 +123,7 @@ func (ef *EnvFile) AddVar(key, value string, isSecret bool) {
 	for i, d := range ef.DeletedVars {
 		if d.Key == key {
 			last := &ef.Vars[varIdx]
-			last.OriginalValue, last.OriginalIsSecret = d.Value, d.IsSecret
+			last.OriginalValue, last.OriginalIsSecret = d.original()
 			last.IsNew = false // was deleted then re-added: treat as modified
 			ef.DeletedVars = append(ef.DeletedVars[:i], ef.DeletedVars[i+1:]...)
 			break

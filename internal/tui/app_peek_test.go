@@ -314,3 +314,23 @@ func TestPeekShowsOriginalOfRenamedThenEditedVar(t *testing.T) {
 
 	assert.Contains(t, view, "was: val_FOO", "peek should show the value from before the rename and the edit")
 }
+
+func TestPeekShowsOnDiskOriginalOfEditedThenReAddedVar(t *testing.T) {
+	f := makeTestFile(".env", "FOO")
+	vlm := NewVarListModel(config.DefaultConfig().Layout)
+	vlm.SetFile(f)
+	vlm.Focused = true
+	vlm.Peeking = true
+	vlm.Width = 80
+	vlm.Height = 20
+
+	f.UpdateVar(0, "edited")
+	f.DeleteVar(0)
+	f.AddVar("FOO", "new_value", false)
+	vlm.Refresh()
+
+	theme := BuildTheme(true, config.ColorConfig{})
+	view := vlm.View(theme)
+
+	assert.Contains(t, view, "was: val_FOO", "peek should show the value on disk, not the edit made before the delete")
+}
