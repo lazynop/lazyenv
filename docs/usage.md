@@ -94,6 +94,7 @@ just
 | `just lint`       | Run the linters: `gocyclo`, `ineffassign`, `deadcode`, `exhaustive`.                       |
 | `just clean`      | Remove build artifacts (`bin/`, `coverage.out`, `dist/`).                  |
 | `just demo`       | Regenerate the README demo GIF from `docs/assets/demo.tape`. Needs `vhs`, `ttyd`, `ffmpeg`, `gifsicle`. |
+| `just page-media` | Render the media for the lazynop.dev project page from `docs/assets/page/` into `dist/page-media/`. Needs `vhs`, `ttyd`, `ffmpeg` (with `libx264` and `libwebp`). |
 
 ### Trying themes and configs for devs
 

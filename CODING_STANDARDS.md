@@ -107,7 +107,7 @@ Caught by `TestDiskWritesGoThroughChokepoint`: a direct `parser.WriteFile`, `par
 
 - `docs/` is published as the docs site: every Markdown file in it goes public.
 - `docs/changelog.md` is generated in CI from `CHANGELOG.md`; edit `CHANGELOG.md` only.
-- When the TUI's look changes significantly, regenerate the README demo GIF with `just demo`.
+- When the TUI's look changes significantly, regenerate the README demo GIF with `just demo` and the project page media with `just page-media`, then copy `dist/page-media/` into lazynop.dev's `site/lazyenv/media/`.
 
 ## Versioning
 
