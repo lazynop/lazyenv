@@ -91,7 +91,7 @@ brews:
       branch: main
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     directory: Formula
-    homepage: https://lazynop.github.io/lazyenv/
+    homepage: https://lazynop.dev/lazyenv/
     description: "TUI for managing .env files"
     license: "MIT"
     skip_upload: auto
@@ -105,7 +105,7 @@ brews:
 
 aurs:
   - name: lazyenv-bin
-    homepage: https://lazynop.github.io/lazyenv/
+    homepage: https://lazynop.dev/lazyenv/
     description: "TUI for managing .env files"
     license: "MIT"
     private_key: "{{ .Env.AUR_KEY }}"
@@ -131,7 +131,7 @@ scoops:
       name: scoop-bucket
       branch: main
       token: "{{ .Env.SCOOP_BUCKET_TOKEN }}"
-    homepage: https://lazynop.github.io/lazyenv/
+    homepage: https://lazynop.dev/lazyenv/
     description: "TUI for managing .env files"
     license: MIT
     skip_upload: auto
