@@ -194,14 +194,16 @@ func (m ThemePreviewModel) renderThemeList(width int, rc resolvedColors) string 
 	offset := m.scrollOffset()
 
 	itemWidth := width - panelBorderWidth
+	itemStyle := lipgloss.NewStyle().Foreground(rc.muted).Width(itemWidth)
+	cursorStyle := lipgloss.NewStyle().Bold(true).Foreground(rc.fg).Background(rc.cursorBg).Width(itemWidth)
 	var lines []string
 	for i := offset; i < len(m.themes) && i < offset+contentHeight; i++ {
-		prefix, style := "  ", lipgloss.NewStyle().Foreground(rc.muted)
+		prefix, style := "  ", itemStyle
 		if i == m.cursor {
-			prefix, style = "▸ ", lipgloss.NewStyle().Bold(true).Foreground(rc.fg).Background(rc.cursorBg)
+			prefix, style = "▸ ", cursorStyle
 		}
 		// Truncate rather than wrap, so each theme keeps to one row.
-		lines = append(lines, style.Width(itemWidth).Render(truncate(prefix+m.themes[i], itemWidth)))
+		lines = append(lines, style.Render(truncate(prefix+m.themes[i], itemWidth)))
 	}
 
 	content := strings.Join(lines, "\n")
@@ -265,9 +267,8 @@ func (m ThemePreviewModel) renderShowcase(width int, tc themes.Colors, rc resolv
 	innerRows := m.panelHeight() - panelBorderHeight
 	content := inner.Render(title + "\n\n" + colorSection + "\n\n" + configBox)
 	if lipgloss.Height(content) > innerRows {
-		content = inner.Render(title + "\n\n" + colorSection)
+		content = inner.MaxHeight(innerRows).Render(title + "\n\n" + colorSection)
 	}
-	content = firstRows(content, innerRows)
 
 	panel := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
@@ -276,12 +277,6 @@ func (m ThemePreviewModel) renderShowcase(width int, tc themes.Colors, rc resolv
 		Height(m.panelHeight())
 
 	return panel.Render(content)
-}
-
-// firstRows returns the first n rows of s.
-func firstRows(s string, n int) string {
-	rows := strings.Split(s, "\n")
-	return strings.Join(rows[:max(0, min(n, len(rows)))], "\n")
 }
 
 func (m ThemePreviewModel) renderConfigBox(width int, themeName string, rc resolvedColors) string {

@@ -13,8 +13,8 @@ const (
 	panelBorderWidth = 2
 
 	// panelChromeHeight is the rows a bordered panel draws around its
-	// content: borders (top + bottom) + title row. The status bar sits below
-	// the panels, in bottomChromeHeight.
+	// content: borders (top + bottom) + title row. The status bar is not part
+	// of any panel.
 	panelChromeHeight = panelBorderHeight + 1
 
 	// panelChromeWidth is the total horizontal overhead: borders + the
@@ -30,6 +30,10 @@ const (
 	// on narrow terminals).
 	bottomChromeHeight = 3
 
+	// matrixBottomChromeHeight is the vertical space reserved below the
+	// matrix view: editor bar (in ModeMatrixEditing) + status bar.
+	matrixBottomChromeHeight = 2
+
 	// compareMarginWidth is the horizontal margin around the side-by-side
 	// compare view.
 	compareMarginWidth = 2
@@ -43,7 +47,7 @@ const (
 	// row: header row + separator row (the matrix view has no border).
 	matrixContentOffsetY = 2
 
-	// matrixChromeHeight is the matrix view's vertical overhead around its
-	// body rows: header + separator row + stats footer, plus one spare row.
-	matrixChromeHeight = matrixContentOffsetY + 2
+	// matrixChromeHeight is the rows the matrix view draws around its body
+	// rows: header + separator row + stats footer.
+	matrixChromeHeight = matrixContentOffsetY + 1
 )

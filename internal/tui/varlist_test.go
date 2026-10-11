@@ -810,9 +810,7 @@ func TestVarListNarrowWidthKeepsPeekLineOnOneRow(t *testing.T) {
 			vl.Peeking = true
 			vl.Width = width
 			vl.Height = height
-			for range cursor {
-				vl.MoveDown()
-			}
+			vl.SetCursor(cursor)
 			return vl.View(theme)
 		})
 	}

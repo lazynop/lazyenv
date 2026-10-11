@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lazynop/lazyenv/internal/config"
@@ -43,9 +42,8 @@ func TestBorderedPanelsFillEveryInnerRow(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		view := tc.render()
-		rows := strings.Split(stripAnsi(view), "\n")
-		assert.Equal(t, height, lipgloss.Height(view), "%s: panel height", tc.name)
+		rows := strings.Split(stripAnsi(tc.render()), "\n")
+		assert.Len(t, rows, height, "%s: panel height", tc.name)
 		assert.Contains(t, rows[len(rows)-2], tc.lastItem,
 			"%s: the row above the bottom border should hold content, not stay blank", tc.name)
 	}

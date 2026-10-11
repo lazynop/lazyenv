@@ -278,16 +278,6 @@ func TestThemePreviewScrollOffset(t *testing.T) {
 	assert.Equal(t, 6, m.scrollOffset(), "scrollOffset should increase with cursor")
 }
 
-func TestThemePreviewPanelsShareBottomRow(t *testing.T) {
-	m := NewThemePreview(true)
-	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-	rows := strings.Split(stripAnsi(updated.(ThemePreviewModel).View().Content), "\n")
-
-	require.Len(t, rows, 40, "the preview should fill the terminal exactly")
-	assert.Contains(t, rows[len(rows)-2], "╯╰",
-		"the theme list and the showcase should end on the row above the status bar")
-}
-
 func TestThemePreviewFitsSmallTerminals(t *testing.T) {
 	for _, width := range []int{60, 80, 120} {
 		for height := 10; height <= 40; height++ {

@@ -105,8 +105,13 @@ func (m *MatrixModel) SetCursor(row, col int) {
 	m.ensureHorizontalVisible()
 }
 
+// viewRows returns how many body rows the matrix shows.
+func (m *MatrixModel) viewRows() int {
+	return max(1, m.Height-matrixChromeHeight)
+}
+
 func (m *MatrixModel) ensureVisible() {
-	viewRows := max(1, m.Height-matrixChromeHeight)
+	viewRows := m.viewRows()
 	if m.cursorRow < m.offsetRow {
 		m.offsetRow = m.cursorRow
 	}
@@ -293,7 +298,7 @@ func (m *MatrixModel) View(theme Theme) string {
 	b.WriteString("\n")
 
 	// Body rows
-	viewRows := max(1, m.Height-matrixChromeHeight)
+	viewRows := m.viewRows()
 	endRow := min(m.offsetRow+viewRows, len(m.entries))
 
 	checkMark := "✓"
@@ -322,11 +327,7 @@ func (m *MatrixModel) View(theme Theme) string {
 
 	// Pad the body to its full height, so the stats footer concatenated below
 	// keeps its row however many keys there are.
-	lines := strings.Count(content, "\n")
-	for lines < matrixContentOffsetY+viewRows {
-		content += "\n"
-		lines++
-	}
+	content += strings.Repeat("\n", max(0, matrixContentOffsetY+viewRows-strings.Count(content, "\n")))
 
 	style := lipgloss.NewStyle().
 		Width(m.Width).
