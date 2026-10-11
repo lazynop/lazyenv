@@ -90,8 +90,7 @@ func TestVarListSearchCaseInsensitive(t *testing.T) {
 
 func TestVarListSearchSkipsMaskedSecretValues(t *testing.T) {
 	f := makeTestFile(".env", "API_TOKEN", "HOST")
-	f.Vars[0].Value = "hunter2"
-	f.Vars[0].IsSecret = true
+	f.Vars[0].Value, f.Vars[0].IsSecret = "hunter2", true
 	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
 

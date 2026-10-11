@@ -106,19 +106,25 @@ func TestCompareToggleSecretsRefiltersKeptSearch(t *testing.T) {
 	f1 := makeTestFile(".env", "API_TOKEN", "HUNTER_NAME")
 	f1.Vars[0].Value, f1.Vars[0].IsSecret = "hunter2", true
 	f2 := makeTestFile(".env.prod", "API_TOKEN")
-	app := enterCompareMode(t, f1, f2)
-	// The search kept in the var list before comparing.
+	app := newTestApp(nil)
+	app.fileList.Files = append(app.fileList.Files, f1, f2)
+	app.fileList.Selected = 0
+	app.varList.SetFile(f1)
+	app.focus = FocusVars
 	app.varList.SetSearch("hunter")
 	require.Equal(t, 1, app.varList.DisplayCount(), "the masked secret's value must not match")
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "ctrl+s"})
-	app = updated.(App)
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "q"})
-	app = updated.(App)
+	// Compare the files, reveal secrets there, exit.
+	for _, k := range []string{"c", "j", "enter", "ctrl+s", "q"} {
+		updated, _ := app.Update(tea.KeyPressMsg{Text: k})
+		app = updated.(App)
+	}
 
 	require.Equal(t, ModeNormal, app.mode)
 	assert.True(t, app.varList.ShowSecrets, "the compare toggle carries over to the var list")
 	assert.Equal(t, 2, app.varList.DisplayCount(), "revealing secrets in compare must re-filter the kept search")
+	require.NotNil(t, app.varList.SelectedVar())
+	assert.Equal(t, "HUNTER_NAME", app.varList.SelectedVar().Key, "cursor stays on the same var")
 }
 
 func TestCompareCopyRight(t *testing.T) {
