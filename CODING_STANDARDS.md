@@ -40,9 +40,9 @@ Each checklist lists the steps only you can remember. The steps a test or lint c
 3. `main.go` → `cli` struct: Kong flag typed as a pointer (`*bool`, `*string`, `*int`) so `nil` means "not given"; add `negatable:""` to a bool that defaults to true.
 4. `main.go` → `applyCLIOverrides()`: `if cli.X != nil { cfg.X = *cli.X }`.
 5. `internal/config/config_test.go`: tests for the field.
-6. `docs/configuration.md`: the options table. For a flag, also both tables in `docs/usage.md` (flags; flag → config key).
+6. `docs/configuration.md`: the options table.
 
-Caught by `TestExampleDocumentsEveryKey`: the key documented in `examples/config/full.toml`.
+Caught by `TestExampleDocumentsEveryKey`: the key documented in `examples/config/full.toml`. Caught by `TestUsageDocumentsEveryFlag`: a flag's rows in both `docs/usage.md` tables (flags; flag → config key).
 
 ### Checklist: theme color
 
@@ -92,6 +92,8 @@ Caught by `TestDiskWritesGoThroughChokepoint`: a direct `parser.WriteFile`, `par
 - tests and their fixtures;
 - `examples/config/`, `justfile`, `docs/`, `README.md`.
 
+Caught by `TestUsageDocumentsEveryFlag` and `TestKeybindingsDocumentsEveryKey`: a flag or key still documented under its old name in `docs/usage.md` or `docs/keybindings.md`.
+
 ## Documentation map
 
 | File | Holds | Update when |
@@ -107,6 +109,7 @@ Caught by `TestDiskWritesGoThroughChokepoint`: a direct `parser.WriteFile`, `par
 | `CODING_STANDARDS.md` | This file | A convention, pitfall or checklist changes |
 
 - `docs/` is published as the docs site: every Markdown file in it goes public.
+- `docs_test.go` checks the names docs use against the code: `TestUsageDocumentsEveryFlag` (`docs/usage.md`), `TestKeybindingsDocumentsEveryKey` (`docs/keybindings.md`) and `TestCodingStandardsNamesExistingCode` (the code spans in this file). A span here that names something outside the repo on purpose goes in that test's `notInRepo` list.
 - `docs/changelog.md` is generated in CI from `CHANGELOG.md`; edit `CHANGELOG.md` only.
 - When the TUI's look changes significantly, regenerate the README demo GIF with `just demo` and the project page media with `just page-media`, then copy `dist/page-media/` into lazynop.dev's `site/lazyenv/media/`.
 
