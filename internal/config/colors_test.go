@@ -59,9 +59,9 @@ func TestColorFieldsWiredEverywhere(t *testing.T) {
 
 			cfg := DefaultConfig()
 			reflect.ValueOf(&cfg.Colors).Elem().Field(i).SetString("not-a-color")
-			warns := validate(cfg)
-			require.Len(t, warns, 1, "validate() must reject an invalid colors.%s, and only that key (color list in load.go)", key)
-			assert.Contains(t, warns[0], "colors."+key+":", "validate() reports the invalid color under the wrong key (color list in load.go)")
+			errs := validate(cfg)
+			require.Len(t, errs, 1, "validate() must reject an invalid colors.%s, and only that key (color list in load.go)", key)
+			assert.Contains(t, errs[0], "colors."+key+":", "validate() reports the invalid color under the wrong key (color list in load.go)")
 		})
 	}
 }

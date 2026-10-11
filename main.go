@@ -127,14 +127,14 @@ func checkConfig() {
 		return
 	}
 
-	if len(r.Warnings) == 0 {
+	if len(r.Errors) == 0 {
 		fmt.Printf("Config OK: %s\n", r.Path)
 		return
 	}
 
 	fmt.Fprintf(os.Stderr, "Config errors in %s:\n", r.Path)
-	for _, w := range r.Warnings {
-		fmt.Fprintf(os.Stderr, "  ✗ %s\n", w)
+	for _, e := range r.Errors {
+		fmt.Fprintf(os.Stderr, "  ✗ %s\n", e)
 	}
 	os.Exit(1)
 }

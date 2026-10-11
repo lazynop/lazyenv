@@ -36,18 +36,18 @@ func isValidColor(s string) bool {
 
 // LoadResult holds the result of loading a config file.
 type LoadResult struct {
-	Config   Config
-	Path     string   // path of the config file used, empty if none found
-	Warnings []string // validation warnings
+	Config Config
+	Path   string   // path of the config file used, empty if none found
+	Errors []string // why the file was rejected; empty when it was applied
 }
 
 // Load searches for config files and returns the merged configuration.
 // If configPath is non-empty, it takes highest priority.
-// A malformed or invalid config produces warnings and falls back to defaults:
-// any warning means the file was rejected as a whole.
+// A malformed or invalid config is rejected as a whole: Load returns the
+// defaults and the errors that rejected it.
 func Load(projectDir, configPath string) (Config, []string) {
 	r := LoadFull(projectDir, configPath)
-	return r.Config, r.Warnings
+	return r.Config, r.Errors
 }
 
 // LoadFull searches for config files and returns detailed results.
@@ -61,11 +61,11 @@ func LoadFull(projectDir, configPath string) LoadResult {
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return LoadResult{Config: cfg, Path: path, Warnings: []string{fmt.Sprintf("cannot read %s: %v", path, err)}}
+		return LoadResult{Config: cfg, Path: path, Errors: []string{fmt.Sprintf("cannot read %s: %v", path, err)}}
 	}
 
-	merged, warns := merge(cfg, data)
-	return LoadResult{Config: merged, Path: path, Warnings: warns}
+	merged, errs := merge(cfg, data)
+	return LoadResult{Config: merged, Path: path, Errors: errs}
 }
 
 // ConfigSearchPaths returns all paths searched for config files, in priority order.
@@ -110,8 +110,8 @@ func merge(defaults Config, rawData []byte) (Config, []string) {
 
 	result.Dir = defaults.Dir
 
-	if warns := validate(result); len(warns) > 0 {
-		return defaults, warns
+	if errs := validate(result); len(errs) > 0 {
+		return defaults, errs
 	}
 
 	result.Secrets = normalizeSecrets(result.Secrets)
@@ -140,16 +140,16 @@ func upperAll(ss []string) []string {
 }
 
 func validate(cfg Config) []string {
-	var warns []string
+	var errs []string
 
 	if cfg.Theme != "" {
 		if _, ok := LookupTheme(cfg.Theme); !ok {
-			warns = append(warns, fmt.Sprintf("unknown theme %q (see --list-themes)", cfg.Theme))
+			errs = append(errs, fmt.Sprintf("unknown theme %q (see --list-themes)", cfg.Theme))
 		}
 	}
 
 	if cfg.Sort != "position" && cfg.Sort != "alphabetical" {
-		warns = append(warns, fmt.Sprintf("invalid sort value: %q", cfg.Sort))
+		errs = append(errs, fmt.Sprintf("invalid sort value: %q", cfg.Sort))
 	}
 
 	l := cfg.Layout
@@ -167,23 +167,23 @@ func validate(cfg Config) []string {
 		{"diff-padding", l.DiffPadding},
 	} {
 		if v.val <= 0 {
-			warns = append(warns, fmt.Sprintf("invalid %s: %d (must be > 0)", v.name, v.val))
+			errs = append(errs, fmt.Sprintf("invalid %s: %d (must be > 0)", v.name, v.val))
 		}
 	}
 
 	if l.FileListWidth < 0 {
-		warns = append(warns, fmt.Sprintf("invalid file-list-width: %d (must be >= 0)", l.FileListWidth))
+		errs = append(errs, fmt.Sprintf("invalid file-list-width: %d (must be >= 0)", l.FileListWidth))
 	}
 
 	if l.MouseScrollLines < 0 {
-		warns = append(warns, fmt.Sprintf("invalid mouse-scroll-lines: %d (must be >= 0)", l.MouseScrollLines))
+		errs = append(errs, fmt.Sprintf("invalid mouse-scroll-lines: %d (must be >= 0)", l.MouseScrollLines))
 	}
 
 	if slices.Contains(cfg.Secrets.SafePatterns, "") {
-		warns = append(warns, "empty string in secrets.safe_patterns")
+		errs = append(errs, "empty string in secrets.safe_patterns")
 	}
 	if slices.Contains(cfg.Secrets.ExtraPatterns, "") {
-		warns = append(warns, "empty string in secrets.extra_patterns")
+		errs = append(errs, "empty string in secrets.extra_patterns")
 	}
 
 	c := cfg.Colors
@@ -204,9 +204,9 @@ func validate(cfg Config) []string {
 		{"deleted", c.Deleted},
 	} {
 		if !isValidColor(v.val) {
-			warns = append(warns, fmt.Sprintf("invalid colors.%s: %q (expected hex like #RRGGBB or ANSI 0-255)", v.name, v.val))
+			errs = append(errs, fmt.Sprintf("invalid colors.%s: %q (expected hex like #RRGGBB or ANSI 0-255)", v.name, v.val))
 		}
 	}
 
-	return warns
+	return errs
 }
