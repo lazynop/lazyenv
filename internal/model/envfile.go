@@ -103,11 +103,13 @@ func (ef *EnvFile) AddVar(key, value string, isSecret bool) {
 		VarIdx:  varIdx,
 	})
 	// Remove from DeletedVars if re-adding a previously deleted key,
-	// and preserve the original value for peek.
+	// and preserve the original value for peek. A secret stays secret, as
+	// after an edit, so the original value stays masked.
 	for i, d := range ef.DeletedVars {
 		if d.Key == key {
 			last := &ef.Vars[varIdx]
 			last.OriginalValue = d.Value
+			last.IsSecret = last.IsSecret || d.IsSecret
 			last.IsNew = false // was deleted then re-added: treat as modified
 			ef.DeletedVars = append(ef.DeletedVars[:i], ef.DeletedVars[i+1:]...)
 			break

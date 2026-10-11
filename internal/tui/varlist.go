@@ -405,11 +405,16 @@ func (m *VarListModel) renderWarningIndicators(v *model.EnvVar, theme Theme) str
 // formatValue returns the masked, flattened, truncated and padded display
 // value for a variable, ready to be emitted into a single-row table cell.
 func (m *VarListModel) formatValue(v *model.EnvVar, maxValWidth int) string {
-	value := v.Value
+	return padRight(truncate(m.displayText(v, v.Value), maxValWidth), maxValWidth)
+}
+
+// displayText returns value, one of v's current or original values, as the
+// panel shows it: masked while v is masked, and flattened to a single row.
+func (m *VarListModel) displayText(v *model.EnvVar, value string) string {
 	if m.isMasked(v) {
 		value = util.MaskValue(value)
 	}
-	return padRight(truncate(flattenValue(value), maxValWidth), maxValWidth)
+	return flattenValue(value)
 }
 
 // controlCharReplacer maps control chars to width-1 glyphs from the Unicode
@@ -476,7 +481,7 @@ func (m *VarListModel) renderPeekLine(v *model.EnvVar, keyWidth, maxValWidth int
 		return theme.MutedItem.Render(fmt.Sprintf("  %s  ↳ new variable", padRight("", keyWidth)))
 	}
 	if v.Modified {
-		orig := truncate(v.OriginalValue, maxValWidth-4)
+		orig := truncate(m.displayText(v, v.OriginalValue), maxValWidth-4)
 		return theme.MutedItem.Render(fmt.Sprintf("  %s  ↳ was: %s", padRight("", keyWidth), orig))
 	}
 	return ""

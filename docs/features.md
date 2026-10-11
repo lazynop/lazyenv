@@ -44,7 +44,7 @@ Indicators are color-coded and [fully configurable](configuration.md#colors).
 
 ## Peek original values
 
-Toggle with `p` to see what changed: while it is on, a modified variable under the cursor shows its original value on a `↳ was:` line below it, and a variable added this session shows `↳ new variable`. Other rows are unchanged.
+Toggle with `p` to see what changed: while it is on, a modified variable under the cursor shows its original value on a `↳ was:` line below it, and a variable added this session shows `↳ new variable`. While secrets are masked, a secret's original value is masked too, until `Ctrl+S` reveals it. Other rows are unchanged.
 
 ## Clipboard support
 

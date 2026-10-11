@@ -172,3 +172,81 @@ func TestPeekAfterDeleteAndReAdd(t *testing.T) {
 
 	assert.Contains(t, view, "was: val_FOO", "peek should show original value after delete+re-add")
 }
+
+func TestPeekMasksOriginalOfMaskedSecret(t *testing.T) {
+	f := makeTestFile(".env", "API_TOKEN")
+	f.Vars[0].Value, f.Vars[0].IsSecret = "hunter2", true
+	vlm := NewVarListModel(config.DefaultConfig().Layout)
+	vlm.SetFile(f)
+	vlm.Focused = true
+	vlm.Peeking = true
+	vlm.Width = 80
+	vlm.Height = 20
+
+	f.UpdateVar(0, "hunter3")
+
+	theme := BuildTheme(true, config.ColorConfig{})
+	view := vlm.View(theme)
+
+	assert.Contains(t, view, "was: ••••••••", "peek should mask a masked secret's original value")
+	assert.NotContains(t, view, "hunter2", "peek must not reveal a masked secret's original value")
+}
+
+func TestPeekShowsOriginalOfRevealedSecret(t *testing.T) {
+	f := makeTestFile(".env", "API_TOKEN")
+	f.Vars[0].Value, f.Vars[0].IsSecret = "hunter2", true
+	vlm := NewVarListModel(config.DefaultConfig().Layout)
+	vlm.SetFile(f)
+	vlm.SetShowSecrets(true)
+	vlm.Focused = true
+	vlm.Peeking = true
+	vlm.Width = 80
+	vlm.Height = 20
+
+	f.UpdateVar(0, "hunter3")
+
+	theme := BuildTheme(true, config.ColorConfig{})
+	view := vlm.View(theme)
+
+	assert.Contains(t, view, "was: hunter2", "peek should show a revealed secret's original value")
+}
+
+func TestPeekFlattensOriginalControlChars(t *testing.T) {
+	f := makeTestFile(".env", "FOO")
+	f.Vars[0].Value = "line1\nline2\tend"
+	vlm := NewVarListModel(config.DefaultConfig().Layout)
+	vlm.SetFile(f)
+	vlm.Focused = true
+	vlm.Peeking = true
+	vlm.Width = 80
+	vlm.Height = 20
+
+	f.UpdateVar(0, "new_value")
+
+	theme := BuildTheme(true, config.ColorConfig{})
+	view := vlm.View(theme)
+
+	assert.Contains(t, view, "was: line1↵line2⇥end", "peek should flatten the original value to one row")
+}
+
+func TestPeekMasksOriginalOfSecretReAddedWithPlainValue(t *testing.T) {
+	f := makeTestFile(".env", "GREETING")
+	f.Vars[0].Value, f.Vars[0].IsSecret = "ghp_abc123", true // secret by value only
+	vlm := NewVarListModel(config.DefaultConfig().Layout)
+	vlm.SetFile(f)
+	vlm.Focused = true
+	vlm.Peeking = true
+	vlm.Width = 80
+	vlm.Height = 20
+
+	f.DeleteVar(0)
+	f.AddVar("GREETING", "hello", false)
+	vlm.Refresh()
+
+	theme := BuildTheme(true, config.ColorConfig{})
+	view := vlm.View(theme)
+
+	assert.Contains(t, view, "was: ••••••••", "peek should mask the original value of a re-added secret")
+	assert.NotContains(t, view, "ghp_abc123", "peek must not reveal the original value of a re-added secret")
+	assert.NotContains(t, view, "hello", "a re-added secret stays masked, as after an edit")
+}
