@@ -13,6 +13,7 @@ How code in lazyenv is written: the conventions every change follows, the pitfal
 - **Charm v2 stack**: imports are `charm.land/bubbletea/v2`, `charm.land/bubbles/v2`, `charm.land/lipgloss/v2`. v1 snippets (`github.com/charmbracelet/...`, `View() string` on a `tea.Model`) don't compile here.
 - **Naming**: TUI sub-models end in `Model`, Bubble Tea messages in `Msg`.
 - **Receivers**: the top-level `tea.Model`s (`App`, `ThemePreviewModel`) use value receivers; each handler takes a copy and returns the updated model. Helpers that mutate that copy in place (`flashMessage`, `updateLayout`) take `*App`. Sub-models (`FileListModel`, `VarListModel`, `DiffViewModel`, …) are not `tea.Model`s: `App` owns them and calls their pointer-receiver methods. Input is routed by `AppMode` first, then by `Focus` (files or vars panel).
+- **Screen snapshots**: `internal/tui/layout_test.go` renders every screen of the TUI, one scenario per `AppMode` plus the theme preview. `TestViewsFitTheTerminalAndHideSecrets` checks each fits the terminal from 60x10 up and shows no masked secret; `TestViewsMatchGolden` compares each, as plain text at 80x24, with `internal/tui/testdata/views.golden`. A change that alters a screen rewrites that file with `go test ./internal/tui -run TestViewsMatchGolden -update`, which keeps failing until rerun without the flag: read `git diff` on the file first, and name each changed screen in the commit message. In review, every hunk of that diff traces to an intended change in the same diff.
 - **Status-bar messages**: transient messages go through `a.flashMessage(msg)`, `a.flashWarning(msg)` (an action refused because of the input or the current state; a no-op such as "No changes to save" is not a refusal) or `a.flashError(msg)`, which set the text, render it in the primary, warning or error color and schedule its auto-clear with the matching timeout. Call `a.statusBar.SetMessage` (`a.statusBar.SetAlert` for an error or a delete confirmation) directly only for a message that must persist until the next state change (e.g. the reorder menu prompt, the scan error).
 
 ### Architecture invariants
@@ -60,8 +61,9 @@ For a new view, window or `AppMode` with scrollable content:
 
 1. `internal/tui/app_mouse.go`: move the mode out of the no-op cases into its own case, with hit detection in `handleMouseClick()` and scrolling in `handleMouseWheel()`.
 2. The view's model: `SetCursor(index int)` for click positioning.
+3. `internal/tui/layout_test.go`: a scenario in `viewScenarios` that reaches the new mode or screen, then the golden file rewritten (§ Screen snapshots). Needed even when nothing scrolls.
 
-Caught by `just lint` (`exhaustive`): both switches name every `AppMode`, so a new mode fails until it is placed in one of their cases.
+Caught by `just lint` (`exhaustive`): both switches name every `AppMode`, so a new mode fails until it is placed in one of their cases. Caught by `TestViewScenariosCoverEveryMode`: a mode with no scenario fails.
 
 ### Checklist: read-only guard
 

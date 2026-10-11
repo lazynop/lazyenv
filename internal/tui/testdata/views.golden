@@ -1,0 +1,602 @@
+=== normal
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (34 vars)                                          │
+│● .env        34  ││  API_TOKEN  ••••••••                                     │
+│  .env.local   4  ││  GREETING   ••••••••                                     │
+│                  ││  HOST       localhost                                    │
+│                  ││  EMPTY                                              ○    │
+│                  ││  VAR_00     value_00                                     │
+│                  ││  VAR_01     value_01                                     │
+│                  ││  VAR_02     value_02                                     │
+│                  ││  VAR_03     value_03                                     │
+│                  ││  VAR_04     value_04                                     │
+│                  ││  VAR_05     value_05                                     │
+│                  ││  VAR_06     value_06                                     │
+│                  ││  VAR_07     value_07                                     │
+│                  ││  VAR_08     value_08                                     │
+│                  ││  VAR_09     value_09                                     │
+│                  ││  VAR_10     value_10                                     │
+│                  ││  VAR_11     value_11                                     │
+│                  ││  VAR_12     value_12                                     │
+│                  ││  VAR_13     value_13                                     │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   [enter]select [c]compare [m]matrix [o]sort [g]group [w]save [r]reset [?]help
+ [q]quit .env  34 vars
+=== vars
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (34 vars)                                          │
+│● .env        34  ││  API_TOKEN  ••••••••                                     │
+│  .env.local   4  ││  GREETING   ••••••••                                     │
+│                  ││  HOST       localhost                                    │
+│                  ││  EMPTY                                              ○    │
+│                  ││  VAR_00     value_00                                     │
+│                  ││  VAR_01     value_01                                     │
+│                  ││  VAR_02     value_02                                     │
+│                  ││  VAR_03     value_03                                     │
+│                  ││  VAR_04     value_04                                     │
+│                  ││  VAR_05     value_05                                     │
+│                  ││  VAR_06     value_06                                     │
+│                  ││  VAR_07     value_07                                     │
+│                  ││  VAR_08     value_08                                     │
+│                  ││  VAR_09     value_09                                     │
+│                  ││  VAR_10     value_10                                     │
+│                  ││  VAR_11     value_11                                     │
+│                  ││  VAR_12     value_12                                     │
+│                  ││  VAR_13     value_13                                     │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   [e]edit [E]rename [a]add [d]del [y]yank [p]peek [/]search [o]sort [g]group
+ [w]save [r]reset [q]quit .env  34 vars
+=== peek edited secret
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (34 vars)                                          │
+│● .env       34*  ││  API_TOKEN  ••••••••                               *     │
+│  .env.local   4  ││             ↳ was: ••••••••                              │
+│                  ││  GREETING   ••••••••                                     │
+│                  ││  HOST       localhost                                    │
+│                  ││  EMPTY                                              ○    │
+│                  ││  VAR_00     value_00                                     │
+│                  ││  VAR_01     value_01                                     │
+│                  ││  VAR_02     value_02                                     │
+│                  ││  VAR_03     value_03                                     │
+│                  ││  VAR_04     value_04                                     │
+│                  ││  VAR_05     value_05                                     │
+│                  ││  VAR_06     value_06                                     │
+│                  ││  VAR_07     value_07                                     │
+│                  ││  VAR_08     value_08                                     │
+│                  ││  VAR_09     value_09                                     │
+│                  ││  VAR_10     value_10                                     │
+│                  ││  VAR_11     value_11                                     │
+│                  ││  VAR_12     value_12                                     │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   [e]edit [E]rename [a]add [d]del [y]yank [p]peek [/]search [o]sort [g]group
+ [w]save [r]reset [q]quit .env  34 vars
+=== peek secret renamed to a plain key
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (34 vars)                                          │
+│● .env       34*  ││  PLAIN     x                                       *     │
+│  .env.local   4  ││            ↳ was: ••••••••                               │
+│                  ││  GREETING  ••••••••                                      │
+│                  ││  HOST      localhost                                     │
+│                  ││  EMPTY                                              ○    │
+│                  ││  VAR_00    value_00                                      │
+│                  ││  VAR_01    value_01                                      │
+│                  ││  VAR_02    value_02                                      │
+│                  ││  VAR_03    value_03                                      │
+│                  ││  VAR_04    value_04                                      │
+│                  ││  VAR_05    value_05                                      │
+│                  ││  VAR_06    value_06                                      │
+│                  ││  VAR_07    value_07                                      │
+│                  ││  VAR_08    value_08                                      │
+│                  ││  VAR_09    value_09                                      │
+│                  ││  VAR_10    value_10                                      │
+│                  ││  VAR_11    value_11                                      │
+│                  ││  VAR_12    value_12                                      │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   Renamed API_TOKEN → PLAIN                                      .env  34 vars
+=== peek secret re-added with a plain value
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (34 vars)                                          │
+│● .env       34*  ││  VAR_14     value_14                                     │
+│  .env.local   4  ││  VAR_15     value_15                                     │
+│                  ││  VAR_16     value_16                                     │
+│                  ││  VAR_17     value_17                                     │
+│                  ││  VAR_18     value_18                                     │
+│                  ││  VAR_19     value_19                                     │
+│                  ││  VAR_20     value_20                                     │
+│                  ││  VAR_21     value_21                                     │
+│                  ││  VAR_22     value_22                                     │
+│                  ││  VAR_23     value_23                                     │
+│                  ││  VAR_24     value_24                                     │
+│                  ││  VAR_25     value_25                                     │
+│                  ││  VAR_26     value_26                                     │
+│                  ││  VAR_27     value_27                                     │
+│                  ││  VAR_28     value_28                                     │
+│                  ││  VAR_29     value_29                                     │
+│                  ││  GREETING   hello                                  *     │
+│                  ││             ↳ was: ••••••••                              │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   [e]edit [E]rename [a]add [d]del [y]yank [p]peek [/]search [o]sort [g]group
+ [w]save [r]reset [q]quit .env  34 vars
+=== search
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (0/34 vars)                                        │
+│● .env        34  ││  No matches for "hun"                                    │
+│  .env.local   4  ││                                                          │
+│                  ││                                                          │
+│                  ││                                                          │
+│                  ││                                                          │
+│                  ││                                                          │
+│                  ││                                                          │
+│                  ││                                                          │
+│                  ││                                                          │
+│                  ││                                                          │
+│                  ││                                                          │
+│                  ││                                                          │
+│                  ││                                                          │
+│                  ││                                                          │
+│                  ││                                                          │
+│                  ││                                                          │
+│                  ││                                                          │
+│                  ││                                                          │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   / > hun
+   Type to search, Enter to keep the filter, Esc to clear it      .env  34 vars
+=== edit value
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (34 vars)                                          │
+│● .env        34  ││  API_TOKEN  ••••••••                                     │
+│  .env.local   4  ││  GREETING   ••••••••                                     │
+│                  ││  HOST       localhost                                    │
+│                  ││  EMPTY                                              ○    │
+│                  ││  VAR_00     value_00                                     │
+│                  ││  VAR_01     value_01                                     │
+│                  ││  VAR_02     value_02                                     │
+│                  ││  VAR_03     value_03                                     │
+│                  ││  VAR_04     value_04                                     │
+│                  ││  VAR_05     value_05                                     │
+│                  ││  VAR_06     value_06                                     │
+│                  ││  VAR_07     value_07                                     │
+│                  ││  VAR_08     value_08                                     │
+│                  ││  VAR_09     value_09                                     │
+│                  ││  VAR_10     value_10                                     │
+│                  ││  VAR_11     value_11                                     │
+│                  ││  VAR_12     value_12                                     │
+│                  ││  VAR_13     value_13                                     │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   Edit HOST: > localhost
+   Enter to confirm, Esc to cancel                                .env  34 vars
+=== confirm delete var
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (34 vars)                                          │
+│● .env        34  ││  API_TOKEN  ••••••••                                     │
+│  .env.local   4  ││  GREETING   ••••••••                                     │
+│                  ││  HOST       localhost                                    │
+│                  ││  EMPTY                                              ○    │
+│                  ││  VAR_00     value_00                                     │
+│                  ││  VAR_01     value_01                                     │
+│                  ││  VAR_02     value_02                                     │
+│                  ││  VAR_03     value_03                                     │
+│                  ││  VAR_04     value_04                                     │
+│                  ││  VAR_05     value_05                                     │
+│                  ││  VAR_06     value_06                                     │
+│                  ││  VAR_07     value_07                                     │
+│                  ││  VAR_08     value_08                                     │
+│                  ││  VAR_09     value_09                                     │
+│                  ││  VAR_10     value_10                                     │
+│                  ││  VAR_11     value_11                                     │
+│                  ││  VAR_12     value_12                                     │
+│                  ││  VAR_13     value_13                                     │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   Delete variable? (y/n)                                         .env  34 vars
+=== reorder menu
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (34 vars)                                          │
+│● .env        34  ││  API_TOKEN  ••••••••                                     │
+│  .env.local   4  ││  GREETING   ••••••••                                     │
+│                  ││  HOST       localhost                                    │
+│                  ││  EMPTY                                              ○    │
+│                  ││  VAR_00     value_00                                     │
+│                  ││  VAR_01     value_01                                     │
+│                  ││  VAR_02     value_02                                     │
+│                  ││  VAR_03     value_03                                     │
+│                  ││  VAR_04     value_04                                     │
+│                  ││  VAR_05     value_05                                     │
+│                  ││  VAR_06     value_06                                     │
+│                  ││  VAR_07     value_07                                     │
+│                  ││  VAR_08     value_08                                     │
+│                  ││  VAR_09     value_09                                     │
+│                  ││  VAR_10     value_10                                     │
+│                  ││  VAR_11     value_11                                     │
+│                  ││  VAR_12     value_12                                     │
+│                  ││  VAR_13     value_13                                     │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   Reorder on disk: [a]lphabetical  [g]rouped  [esc]cancel        .env  34 vars
+=== reorder confirm
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (34 vars)                                          │
+│● .env        34  ││  API_TOKEN  ••••••••                                     │
+│  .env.local   4  ││  GREETING   ••••••••                                     │
+│                  ││  HOST       localhost                                    │
+│                  ││  EMPTY                                              ○    │
+│                  ││  VAR_00     value_00                                     │
+│                  ││  VAR_01     value_01                                     │
+│                  ││  VAR_02     value_02                                     │
+│                  ││  VAR_03     value_03                                     │
+│                  ││  VAR_04     value_04                                     │
+│                  ││  VAR_05     value_05                                     │
+│                  ││  VAR_06     value_06                                     │
+│                  ││  VAR_07     value_07                                     │
+│                  ││  VAR_08     value_08                                     │
+│                  ││  VAR_09     value_09                                     │
+│                  ││  VAR_10     value_10                                     │
+│                  ││  VAR_11     value_11                                     │
+│                  ││  VAR_12     value_12                                     │
+│                  ││  VAR_13     value_13                                     │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   Reorder 34 variables in .env (alphabetical)? This rewrites the file. (y/n)
+ .env  34 vars
+=== help
+
+
+    lazyenv — TUI for managing .env files
+
+    Navigation
+      ↑/↓  j/k      Navigate items
+      ←/→  h/l      Switch panels (files / variables)
+      Enter          Select file
+
+    Actions
+      e              Edit variable value
+      E              Rename variable key
+      a              Add new variable
+      d              Delete variable (with confirmation)
+      y              Copy value to clipboard
+      Y              Copy KEY=value to clipboard
+      p              Peek original value (toggle)
+      N              Create new .env file
+      C              Duplicate file with new name
+      D              Delete file from disk
+      R              Rename file
+      T              Create template (keys only, no values)
+      w              Save changes
+      r              Reset file (discard changes)
+      c              Compare two files (diff view)
+      n/N            Jump to next/prev diff (compare mode)
+      m              Completeness matrix (multi-file)
+      /              Search variables
+      o              Toggle sort (position / alphabetical)
+      O              Reorder variables on disk (alphabetical / grouped)
+      g              Toggle variable grouping by prefix
+      Space/Enter    Collapse/expand group (on header)
+      Ctrl+S         Toggle secret masking
+
+    File Indicators
+      ●              Selected file
+      *              Modified (unsaved changes)
+      !              Not covered by .gitignore
+
+    Variable Indicators
+      +              Newly added variable
+      *              Modified variable
+      -              Deleted variable (until save)
+      D              Duplicate key
+      ○              Empty value
+      …              Placeholder value
+
+    General
+      ?              Show/hide this help
+      q / Ctrl+C     Quit (in compare and matrix: back to main view)
+      Esc            Back / cancel
+
+    Press Esc or ? to close
+
+=== new file
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (34 vars)                                          │
+│● .env        34  ││  API_TOKEN  ••••••••                                     │
+│  .env.local   4  ││  GREETING   ••••••••                                     │
+│                  ││  HOST       localhost                                    │
+│                  ││  EMPTY                                              ○    │
+│                  ││  VAR_00     value_00                                     │
+│                  ││  VAR_01     value_01                                     │
+│                  ││  VAR_02     value_02                                     │
+│                  ││  VAR_03     value_03                                     │
+│                  ││  VAR_04     value_04                                     │
+│                  ││  VAR_05     value_05                                     │
+│                  ││  VAR_06     value_06                                     │
+│                  ││  VAR_07     value_07                                     │
+│                  ││  VAR_08     value_08                                     │
+│                  ││  VAR_09     value_09                                     │
+│                  ││  VAR_10     value_10                                     │
+│                  ││  VAR_11     value_11                                     │
+│                  ││  VAR_12     value_12                                     │
+│                  ││  VAR_13     value_13                                     │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   New file: > .
+   Enter to create, Esc to cancel                                 .env  34 vars
+=== duplicate file
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (34 vars)                                          │
+│● .env        34  ││  API_TOKEN  ••••••••                                     │
+│  .env.local   4  ││  GREETING   ••••••••                                     │
+│                  ││  HOST       localhost                                    │
+│                  ││  EMPTY                                              ○    │
+│                  ││  VAR_00     value_00                                     │
+│                  ││  VAR_01     value_01                                     │
+│                  ││  VAR_02     value_02                                     │
+│                  ││  VAR_03     value_03                                     │
+│                  ││  VAR_04     value_04                                     │
+│                  ││  VAR_05     value_05                                     │
+│                  ││  VAR_06     value_06                                     │
+│                  ││  VAR_07     value_07                                     │
+│                  ││  VAR_08     value_08                                     │
+│                  ││  VAR_09     value_09                                     │
+│                  ││  VAR_10     value_10                                     │
+│                  ││  VAR_11     value_11                                     │
+│                  ││  VAR_12     value_12                                     │
+│                  ││  VAR_13     value_13                                     │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   Duplicate as: > .env.copy
+   Enter to duplicate, Esc to cancel                              .env  34 vars
+=== rename file
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (34 vars)                                          │
+│● .env        34  ││  API_TOKEN  ••••••••                                     │
+│  .env.local   4  ││  GREETING   ••••••••                                     │
+│                  ││  HOST       localhost                                    │
+│                  ││  EMPTY                                              ○    │
+│                  ││  VAR_00     value_00                                     │
+│                  ││  VAR_01     value_01                                     │
+│                  ││  VAR_02     value_02                                     │
+│                  ││  VAR_03     value_03                                     │
+│                  ││  VAR_04     value_04                                     │
+│                  ││  VAR_05     value_05                                     │
+│                  ││  VAR_06     value_06                                     │
+│                  ││  VAR_07     value_07                                     │
+│                  ││  VAR_08     value_08                                     │
+│                  ││  VAR_09     value_09                                     │
+│                  ││  VAR_10     value_10                                     │
+│                  ││  VAR_11     value_11                                     │
+│                  ││  VAR_12     value_12                                     │
+│                  ││  VAR_13     value_13                                     │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   Rename: > .env
+   Enter to rename, Esc to cancel                                 .env  34 vars
+=== template file
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (34 vars)                                          │
+│● .env        34  ││  API_TOKEN  ••••••••                                     │
+│  .env.local   4  ││  GREETING   ••••••••                                     │
+│                  ││  HOST       localhost                                    │
+│                  ││  EMPTY                                              ○    │
+│                  ││  VAR_00     value_00                                     │
+│                  ││  VAR_01     value_01                                     │
+│                  ││  VAR_02     value_02                                     │
+│                  ││  VAR_03     value_03                                     │
+│                  ││  VAR_04     value_04                                     │
+│                  ││  VAR_05     value_05                                     │
+│                  ││  VAR_06     value_06                                     │
+│                  ││  VAR_07     value_07                                     │
+│                  ││  VAR_08     value_08                                     │
+│                  ││  VAR_09     value_09                                     │
+│                  ││  VAR_10     value_10                                     │
+│                  ││  VAR_11     value_11                                     │
+│                  ││  VAR_12     value_12                                     │
+│                  ││  VAR_13     value_13                                     │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   Template as: > .env.example
+   Enter to create template, Esc to cancel                        .env  34 vars
+=== confirm delete file
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (34 vars)                                          │
+│● .env        34  ││  API_TOKEN  ••••••••                                     │
+│  .env.local   4  ││  GREETING   ••••••••                                     │
+│                  ││  HOST       localhost                                    │
+│                  ││  EMPTY                                              ○    │
+│                  ││  VAR_00     value_00                                     │
+│                  ││  VAR_01     value_01                                     │
+│                  ││  VAR_02     value_02                                     │
+│                  ││  VAR_03     value_03                                     │
+│                  ││  VAR_04     value_04                                     │
+│                  ││  VAR_05     value_05                                     │
+│                  ││  VAR_06     value_06                                     │
+│                  ││  VAR_07     value_07                                     │
+│                  ││  VAR_08     value_08                                     │
+│                  ││  VAR_09     value_09                                     │
+│                  ││  VAR_10     value_10                                     │
+│                  ││  VAR_11     value_11                                     │
+│                  ││  VAR_12     value_12                                     │
+│                  ││  VAR_13     value_13                                     │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   Delete .env? (y/n)                                             .env  34 vars
+=== compare select
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (34 vars)                                          │
+│● .env        34  ││  API_TOKEN  ••••••••                                     │
+│  .env.local   4  ││  GREETING   ••••••••                                     │
+│                  ││  HOST       localhost                                    │
+│                  ││  EMPTY                                              ○    │
+│                  ││  VAR_00     value_00                                     │
+│                  ││  VAR_01     value_01                                     │
+│                  ││  VAR_02     value_02                                     │
+│                  ││  VAR_03     value_03                                     │
+│                  ││  VAR_04     value_04                                     │
+│                  ││  VAR_05     value_05                                     │
+│                  ││  VAR_06     value_06                                     │
+│                  ││  VAR_07     value_07                                     │
+│                  ││  VAR_08     value_08                                     │
+│                  ││  VAR_09     value_09                                     │
+│                  ││  VAR_10     value_10                                     │
+│                  ││  VAR_11     value_11                                     │
+│                  ││  VAR_12     value_12                                     │
+│                  ││  VAR_13     value_13                                     │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   Select second file to compare...                               .env  34 vars
+=== compare
+╭─────────────────────────────────────╮╭─────────────────────────────────────╮
+│ .env                                ││ .env.local                          │
+│  API_TOKEN   ••••••••               ││  API_TOKEN   ••••••••             ≠ │
+│  GREETING    ••••••••               ││  GREETING    (missing)            + │
+│  HOST        localhost              ││  HOST        example.com          ≠ │
+│  EMPTY                              ││  EMPTY       (missing)            + │
+│  VAR_00      value_00               ││  VAR_00      value_00             = │
+│  VAR_01      value_01               ││  VAR_01      (missing)            + │
+│  VAR_02      value_02               ││  VAR_02      (missing)            + │
+│  VAR_03      value_03               ││  VAR_03      (missing)            + │
+│  VAR_04      value_04               ││  VAR_04      (missing)            + │
+│  VAR_05      value_05               ││  VAR_05      (missing)            + │
+│  VAR_06      value_06               ││  VAR_06      (missing)            + │
+│  VAR_07      value_07               ││  VAR_07      (missing)            + │
+│  VAR_08      value_08               ││  VAR_08      (missing)            + │
+│  VAR_09      value_09               ││  VAR_09      (missing)            + │
+│  VAR_10      value_10               ││  VAR_10      (missing)            + │
+│  VAR_11      value_11               ││  VAR_11      (missing)            + │
+│  VAR_12      value_12               ││  VAR_12      (missing)            + │
+│  VAR_13      value_13               ││  VAR_13      (missing)            + │
+╰─────────────────────────────────────╯╰─────────────────────────────────────╯
+   [←/→]copy [e/E]edit L/R [n/N]next/prev diff [f]filter [^S]secrets [w]save
+ [r]reset [q]back │ 2≠ 31+ 1-
+=== compare edit
+╭─────────────────────────────────────╮╭─────────────────────────────────────╮
+│ .env                                ││ .env.local                          │
+│  API_TOKEN   ••••••••               ││  API_TOKEN   ••••••••             ≠ │
+│  GREETING    ••••••••               ││  GREETING    (missing)            + │
+│  HOST        localhost              ││  HOST        example.com          ≠ │
+│  EMPTY                              ││  EMPTY       (missing)            + │
+│  VAR_00      value_00               ││  VAR_00      value_00             = │
+│  VAR_01      value_01               ││  VAR_01      (missing)            + │
+│  VAR_02      value_02               ││  VAR_02      (missing)            + │
+│  VAR_03      value_03               ││  VAR_03      (missing)            + │
+│  VAR_04      value_04               ││  VAR_04      (missing)            + │
+│  VAR_05      value_05               ││  VAR_05      (missing)            + │
+│  VAR_06      value_06               ││  VAR_06      (missing)            + │
+│  VAR_07      value_07               ││  VAR_07      (missing)            + │
+│  VAR_08      value_08               ││  VAR_08      (missing)            + │
+│  VAR_09      value_09               ││  VAR_09      (missing)            + │
+│  VAR_10      value_10               ││  VAR_10      (missing)            + │
+│  VAR_11      value_11               ││  VAR_11      (missing)            + │
+│  VAR_12      value_12               ││  VAR_12      (missing)            + │
+│  VAR_13      value_13               ││  VAR_13      (missing)            + │
+╰─────────────────────────────────────╯╰─────────────────────────────────────╯
+   Edit EMPTY in .env: > n
+   Enter to confirm, Esc to cancel
+=== matrix
+ KEY                 .env          .env.local
+ ──────────────────────────────────────────────────────────────────────────────
+ API_TOKEN            ✓             ✓             2/2
+ EMPTY                ✓             ✗             1/2
+ GREETING             ✓             ✗             1/2
+ HOST                 ✓             ✓             2/2
+ ONLY_LOCAL           ✗             ✓             1/2
+ VAR_00               ✓             ✓             2/2
+ VAR_01               ✓             ✗             1/2
+ VAR_02               ✓             ✗             1/2
+ VAR_03               ✓             ✗             1/2
+ VAR_04               ✓             ✗             1/2
+ VAR_05               ✓             ✗             1/2
+ VAR_06               ✓             ✗             1/2
+ VAR_07               ✓             ✗             1/2
+ VAR_08               ✓             ✗             1/2
+ VAR_09               ✓             ✗             1/2
+ VAR_10               ✓             ✗             1/2
+ VAR_11               ✓             ✗             1/2
+ VAR_12               ✓             ✗             1/2
+   35 keys  32/70 cells missing  sort:alpha
+   [↑↓←→]navigate [a]add missing [d]delete [o]sort [q]back
+=== matrix add
+ KEY                 .env          .env.local
+ ──────────────────────────────────────────────────────────────────────────────
+ API_TOKEN            ✓             ✓             2/2
+ EMPTY                ✓             ✗             1/2
+ GREETING             ✓             ✗             1/2
+ HOST                 ✓             ✓             2/2
+ ONLY_LOCAL           ✗             ✓             1/2
+ VAR_00               ✓             ✓             2/2
+ VAR_01               ✓             ✗             1/2
+ VAR_02               ✓             ✗             1/2
+ VAR_03               ✓             ✗             1/2
+ VAR_04               ✓             ✗             1/2
+ VAR_05               ✓             ✗             1/2
+ VAR_06               ✓             ✗             1/2
+ VAR_07               ✓             ✗             1/2
+ VAR_08               ✓             ✗             1/2
+ VAR_09               ✓             ✗             1/2
+ VAR_10               ✓             ✗             1/2
+ VAR_11               ✓             ✗             1/2
+ VAR_12               ✓             ✗             1/2
+   35 keys  32/70 cells missing  sort:alpha
+   Add EMPTY to .env.local: > v
+   Enter to confirm, Esc to cancel
+=== matrix confirm delete
+ KEY                 .env          .env.local
+ ──────────────────────────────────────────────────────────────────────────────
+ API_TOKEN            ✓             ✓             2/2
+ EMPTY                ✓             ✗             1/2
+ GREETING             ✓             ✗             1/2
+ HOST                 ✓             ✓             2/2
+ ONLY_LOCAL           ✗             ✓             1/2
+ VAR_00               ✓             ✓             2/2
+ VAR_01               ✓             ✗             1/2
+ VAR_02               ✓             ✗             1/2
+ VAR_03               ✓             ✗             1/2
+ VAR_04               ✓             ✗             1/2
+ VAR_05               ✓             ✗             1/2
+ VAR_06               ✓             ✗             1/2
+ VAR_07               ✓             ✗             1/2
+ VAR_08               ✓             ✗             1/2
+ VAR_09               ✓             ✗             1/2
+ VAR_10               ✓             ✗             1/2
+ VAR_11               ✓             ✗             1/2
+ VAR_12               ✓             ✗             1/2
+   35 keys  32/70 cells missing  sort:alpha
+   Delete API_TOKEN from .env? (y/n)
+=== config error
+
+
+
+
+
+
+
+                      ╭──────────────────────────────────╮
+                      │                                  │
+                      │        Configuration Error       │
+                      │                                  │
+                      │   invalid sort value: "random"   │
+                      │                                  │
+                      │       Press any key to exit      │
+                      │                                  │
+                      ╰──────────────────────────────────╯
+
+
+
+
+
+
+
+
+=== theme preview
+╭────────────────────────╮╭────────────────────────────────────────────────╮
+│ Themes (56)            ││ andromeda                                      │
+│▸ andromeda             ││                                                │
+│  ayu-dark              ││  ██ primary    #00E8C6                         │
+│  ayu-light             ││  ██ warning    #FFE66D                         │
+│  ayu-mirage            ││  ██ error      #EE5D43                         │
+│  base16-eighties       ││  ██ success    #96E072                         │
+│  catppuccin-frappe     ││  ██ muted      #5C6370                         │
+│  catppuccin-latte      ││  ██ fg         #D5CED9                         │
+│  catppuccin-macchiato  ││  ██ bg         #23262E                         │
+│  catppuccin-mocha      ││  ██ border     #2B2F3A                         │
+│  cobalt2               ││  ██ cursor-bg  #2B2F3A                         │
+│  cyberpunk             ││  ██ modified   #FFE66D                         │
+│  dawnfox               ││  ██ added      #96E072                         │
+│  default-dark          ││  ██ deleted    #EE5D43                         │
+│  default-light         ││                                                │
+│  dracula               ││                                                │
+│  everforest            ││                                                │
+│  github-dark           ││                                                │
+│  github-light          ││                                                │
+│  gruvbox-dark          ││                                                │
+│  gruvbox-light         ││                                                │
+╰────────────────────────╯╰────────────────────────────────────────────────╯
+ ↑↓/jk navigate  enter select  q/esc quit
