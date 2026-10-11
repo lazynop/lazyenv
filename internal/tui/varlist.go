@@ -167,6 +167,12 @@ func (m *VarListModel) isMasked(v *model.EnvVar) bool {
 	return v.IsSecret && !m.ShowSecrets
 }
 
+// isOriginalMasked reports whether the panel hides v's original value: it or
+// v's current value is a secret, and secrets are not revealed.
+func (m *VarListModel) isOriginalMasked(v *model.EnvVar) bool {
+	return (v.IsSecret || v.OriginalIsSecret) && !m.ShowSecrets
+}
+
 func (m *VarListModel) clampCursor() {
 	if m.Cursor >= len(m.displayItems) {
 		m.Cursor = max(0, len(m.displayItems)-1)
@@ -405,13 +411,13 @@ func (m *VarListModel) renderWarningIndicators(v *model.EnvVar, theme Theme) str
 // formatValue returns the masked, flattened, truncated and padded display
 // value for a variable, ready to be emitted into a single-row table cell.
 func (m *VarListModel) formatValue(v *model.EnvVar, maxValWidth int) string {
-	return padRight(truncate(m.displayText(v, v.Value), maxValWidth), maxValWidth)
+	return padRight(truncate(displayText(v.Value, m.isMasked(v)), maxValWidth), maxValWidth)
 }
 
-// displayText returns value, one of v's current or original values, as the
-// panel shows it: masked while v is masked, and flattened to a single row.
-func (m *VarListModel) displayText(v *model.EnvVar, value string) string {
-	if m.isMasked(v) {
+// displayText returns value as the panel shows it: masked when masked is
+// set, and flattened to a single row.
+func displayText(value string, masked bool) string {
+	if masked {
 		value = util.MaskValue(value)
 	}
 	return flattenValue(value)
@@ -482,7 +488,7 @@ func (m *VarListModel) renderPeekLine(v *model.EnvVar, keyWidth, maxValWidth int
 	case v.IsNew:
 		text = "↳ new variable"
 	case v.Modified:
-		text = "↳ was: " + m.displayText(v, v.OriginalValue)
+		text = "↳ was: " + displayText(v.OriginalValue, m.isOriginalMasked(v))
 	default:
 		return ""
 	}

@@ -38,6 +38,9 @@ type EnvVar struct {
 	Modified      bool
 	IsNew         bool
 	OriginalValue string // value before first edit (empty for new vars)
+	// OriginalIsSecret is IsSecret as it was for OriginalValue, so the
+	// original stays masked after the var stops being a secret.
+	OriginalIsSecret bool
 }
 
 // EnvFile represents a parsed .env file.
@@ -83,7 +86,7 @@ func (ef *EnvFile) RenameVar(idx int, newKey string) {
 func (ef *EnvFile) markModified(idx int) {
 	v := &ef.Vars[idx]
 	if !v.Modified {
-		v.OriginalValue = v.Value
+		v.OriginalValue, v.OriginalIsSecret = v.Value, v.IsSecret
 		v.Modified = true
 	}
 	ef.Modified = true
@@ -109,13 +112,11 @@ func (ef *EnvFile) AddVar(key, value string, isSecret bool) {
 		VarIdx:  varIdx,
 	})
 	// Remove from DeletedVars if re-adding a previously deleted key,
-	// and preserve the original value for peek. A secret stays secret, as
-	// after an edit, so the original value stays masked.
+	// and preserve the original value for peek.
 	for i, d := range ef.DeletedVars {
 		if d.Key == key {
 			last := &ef.Vars[varIdx]
-			last.OriginalValue = d.Value
-			last.IsSecret = last.IsSecret || d.IsSecret
+			last.OriginalValue, last.OriginalIsSecret = d.Value, d.IsSecret
 			last.IsNew = false // was deleted then re-added: treat as modified
 			ef.DeletedVars = append(ef.DeletedVars[:i], ef.DeletedVars[i+1:]...)
 			break

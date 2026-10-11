@@ -5,8 +5,10 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lazynop/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/model"
 )
 
 func TestPeekToggle(t *testing.T) {
@@ -248,7 +250,32 @@ func TestPeekMasksOriginalOfSecretReAddedWithPlainValue(t *testing.T) {
 
 	assert.Contains(t, view, "was: ••••••••", "peek should mask the original value of a re-added secret")
 	assert.NotContains(t, view, "ghp_abc123", "peek must not reveal the original value of a re-added secret")
-	assert.NotContains(t, view, "hello", "a re-added secret stays masked, as after an edit")
+	assert.Contains(t, view, "hello", "the re-added plain value should stay in clear")
+}
+
+func TestPeekMasksOriginalOfSecretRenamedToPlainKey(t *testing.T) {
+	f := makeTestFile(".env", "API_TOKEN")
+	f.Vars[0].Value, f.Vars[0].IsSecret = "hunter2", true // secret by key only
+	app := newTestApp([]*model.EnvFile{f})
+	app.focus = FocusVars
+	f.UpdateVar(0, "x")
+
+	app.mode = ModeEditing
+	app.editor.StartEditKey(&f.Vars[0], 0)
+	app.editor.input.SetValue("GREETING")
+	updated, _ := app.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	app = updated.(App)
+	require.False(t, f.Vars[0].IsSecret, "the renamed var is no longer a secret")
+
+	app.varList.Focused = true
+	app.varList.Peeking = true
+	app.varList.Width = 80
+	app.varList.Height = 20
+	theme := BuildTheme(true, config.ColorConfig{})
+	view := app.varList.View(theme)
+
+	assert.Contains(t, view, "was: ••••••••", "peek should mask an original value that was a secret")
+	assert.NotContains(t, view, "hunter2", "peek must not reveal an original value that was a secret")
 }
 
 func TestPeekShowsUnchangedValueOfRenamedVar(t *testing.T) {
