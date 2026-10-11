@@ -193,17 +193,15 @@ func (m ThemePreviewModel) renderThemeList(width int, rc resolvedColors) string 
 	contentHeight := m.listRows()
 	offset := m.scrollOffset()
 
+	itemWidth := width - panelBorderWidth
 	var lines []string
 	for i := offset; i < len(m.themes) && i < offset+contentHeight; i++ {
-		name := m.themes[i]
+		prefix, style := "  ", lipgloss.NewStyle().Foreground(rc.muted)
 		if i == m.cursor {
-			style := lipgloss.NewStyle().Bold(true).Foreground(rc.fg).Background(rc.cursorBg).
-				Width(width - panelBorderWidth)
-			lines = append(lines, style.Render("▸ "+name))
-		} else {
-			style := lipgloss.NewStyle().Foreground(rc.muted).Width(width - panelBorderWidth)
-			lines = append(lines, style.Render("  "+name))
+			prefix, style = "▸ ", lipgloss.NewStyle().Bold(true).Foreground(rc.fg).Background(rc.cursorBg)
 		}
+		// Truncate rather than wrap, so each theme keeps to one row.
+		lines = append(lines, style.Width(itemWidth).Render(truncate(prefix+m.themes[i], itemWidth)))
 	}
 
 	content := strings.Join(lines, "\n")
@@ -261,7 +259,15 @@ func (m ThemePreviewModel) renderShowcase(width int, tc themes.Colors, rc resolv
 	// Config box
 	configBox := m.renderConfigBox(width-4, themeName, rc)
 
-	content := title + "\n\n" + colorSection + "\n\n" + configBox
+	// Fit the content to the rows inside the border: drop the config box when
+	// it doesn't fit, and cut the colors short on the shortest terminals.
+	inner := lipgloss.NewStyle().Width(width - panelBorderWidth)
+	innerRows := m.panelHeight() - panelBorderHeight
+	content := inner.Render(title + "\n\n" + colorSection + "\n\n" + configBox)
+	if lipgloss.Height(content) > innerRows {
+		content = inner.Render(title + "\n\n" + colorSection)
+	}
+	content = firstRows(content, innerRows)
 
 	panel := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
@@ -270,6 +276,12 @@ func (m ThemePreviewModel) renderShowcase(width int, tc themes.Colors, rc resolv
 		Height(m.panelHeight())
 
 	return panel.Render(content)
+}
+
+// firstRows returns the first n rows of s.
+func firstRows(s string, n int) string {
+	rows := strings.Split(s, "\n")
+	return strings.Join(rows[:max(0, min(n, len(rows)))], "\n")
 }
 
 func (m ThemePreviewModel) renderConfigBox(width int, themeName string, rc resolvedColors) string {

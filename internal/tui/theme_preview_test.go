@@ -288,6 +288,21 @@ func TestThemePreviewPanelsShareBottomRow(t *testing.T) {
 		"the theme list and the showcase should end on the row above the status bar")
 }
 
+func TestThemePreviewFitsSmallTerminals(t *testing.T) {
+	for _, width := range []int{60, 80, 120} {
+		for height := 10; height <= 40; height++ {
+			m := NewThemePreview(true)
+			m.searchPaths = []string{".lazyenvrc", "/home/user/.config/lazyenv/config.toml", "/home/user/.lazyenvrc"}
+			updated, _ := m.Update(tea.WindowSizeMsg{Width: width, Height: height})
+			rows := strings.Split(stripAnsi(updated.(ThemePreviewModel).View().Content), "\n")
+
+			if assert.Len(t, rows, height, "%dx%d: the preview should fill the terminal exactly", width, height) {
+				assert.Contains(t, rows[height-2], "╯╰", "%dx%d: both panels should end above the status bar", width, height)
+			}
+		}
+	}
+}
+
 func TestThemePreviewInitReturnsNil(t *testing.T) {
 	m := NewThemePreview(false)
 	assert.Nil(t, m.Init(), "theme preview has no startup command")
