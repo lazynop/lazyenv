@@ -64,13 +64,9 @@ func (ef *EnvFile) UpdateVar(idx int, newValue string) {
 	if idx < 0 || idx >= len(ef.Vars) {
 		return
 	}
-	if !ef.Vars[idx].Modified {
-		ef.Vars[idx].OriginalValue = ef.Vars[idx].Value
-	}
+	ef.markModified(idx)
 	ef.Vars[idx].Value = newValue
-	ef.Vars[idx].Modified = true
 	ef.Vars[idx].IsEmpty = newValue == ""
-	ef.Modified = true
 }
 
 // RenameVar updates the key of a variable by index.
@@ -78,8 +74,18 @@ func (ef *EnvFile) RenameVar(idx int, newKey string) {
 	if idx < 0 || idx >= len(ef.Vars) {
 		return
 	}
+	ef.markModified(idx)
 	ef.Vars[idx].Key = newKey
-	ef.Vars[idx].Modified = true
+}
+
+// markModified flags the variable at idx and the file as changed, saving the
+// variable's value before its first change as its OriginalValue.
+func (ef *EnvFile) markModified(idx int) {
+	v := &ef.Vars[idx]
+	if !v.Modified {
+		v.OriginalValue = v.Value
+		v.Modified = true
+	}
 	ef.Modified = true
 }
 

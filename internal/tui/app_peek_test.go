@@ -250,3 +250,40 @@ func TestPeekMasksOriginalOfSecretReAddedWithPlainValue(t *testing.T) {
 	assert.NotContains(t, view, "ghp_abc123", "peek must not reveal the original value of a re-added secret")
 	assert.NotContains(t, view, "hello", "a re-added secret stays masked, as after an edit")
 }
+
+func TestPeekShowsUnchangedValueOfRenamedVar(t *testing.T) {
+	f := makeTestFile(".env", "FOO")
+	vlm := NewVarListModel(config.DefaultConfig().Layout)
+	vlm.SetFile(f)
+	vlm.Focused = true
+	vlm.Peeking = true
+	vlm.Width = 80
+	vlm.Height = 20
+
+	f.RenameVar(0, "BAR")
+	vlm.Refresh()
+
+	theme := BuildTheme(true, config.ColorConfig{})
+	view := vlm.View(theme)
+
+	assert.Contains(t, view, "was: val_FOO", "peek should show the value a renamed var kept")
+}
+
+func TestPeekShowsOriginalOfRenamedThenEditedVar(t *testing.T) {
+	f := makeTestFile(".env", "FOO")
+	vlm := NewVarListModel(config.DefaultConfig().Layout)
+	vlm.SetFile(f)
+	vlm.Focused = true
+	vlm.Peeking = true
+	vlm.Width = 80
+	vlm.Height = 20
+
+	f.RenameVar(0, "BAR")
+	f.UpdateVar(0, "new_value")
+	vlm.Refresh()
+
+	theme := BuildTheme(true, config.ColorConfig{})
+	view := vlm.View(theme)
+
+	assert.Contains(t, view, "was: val_FOO", "peek should show the value from before the rename and the edit")
+}
