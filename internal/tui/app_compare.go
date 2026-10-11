@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 
 	"charm.land/bubbles/v2/key"
@@ -145,14 +144,7 @@ func (a App) startCompareEdit(file *model.EnvFile) (tea.Model, tea.Cmd) {
 	}
 	e := a.diffView.Entries[a.diffView.Cursor]
 
-	// Find the var index in the target file
-	varIdx := -1
-	for i, v := range slices.Backward(file.Vars) {
-		if v.Key == e.Key {
-			varIdx = i
-			break
-		}
-	}
+	varIdx := file.LastIndexOfKey(e.Key)
 
 	if varIdx < 0 {
 		// Key doesn't exist in this file

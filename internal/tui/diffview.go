@@ -2,7 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 
 	"charm.land/lipgloss/v2"
@@ -165,11 +164,8 @@ func (m *DiffViewModel) CopyToRight() string {
 	switch e.Status {
 	case model.DiffChanged:
 		// Update existing key in B with A's value
-		for i, v := range slices.Backward(m.FileB.Vars) {
-			if v.Key == e.Key {
-				m.FileB.UpdateVar(i, e.ValueA)
-				break
-			}
+		if i := m.FileB.LastIndexOfKey(e.Key); i >= 0 {
+			m.FileB.UpdateVar(i, e.ValueA)
 		}
 	case model.DiffAdded:
 		// Key only in A, add to B
@@ -177,11 +173,8 @@ func (m *DiffViewModel) CopyToRight() string {
 	case model.DiffRemoved:
 		// Key only in B — copying "right" means overwrite with nothing;
 		// more useful: delete from B so they match (both gone)
-		for i, v := range slices.Backward(m.FileB.Vars) {
-			if v.Key == e.Key {
-				m.FileB.DeleteVar(i)
-				break
-			}
+		if i := m.FileB.LastIndexOfKey(e.Key); i >= 0 {
+			m.FileB.DeleteVar(i)
 		}
 	}
 
@@ -204,22 +197,16 @@ func (m *DiffViewModel) CopyToLeft() string {
 	switch e.Status {
 	case model.DiffChanged:
 		// Update existing key in A with B's value
-		for i, v := range slices.Backward(m.FileA.Vars) {
-			if v.Key == e.Key {
-				m.FileA.UpdateVar(i, e.ValueB)
-				break
-			}
+		if i := m.FileA.LastIndexOfKey(e.Key); i >= 0 {
+			m.FileA.UpdateVar(i, e.ValueB)
 		}
 	case model.DiffRemoved:
 		// Key only in B, add to A
 		m.FileA.AddVar(e.Key, e.ValueB, util.IsSecret(e.Key, e.ValueB, m.secrets))
 	case model.DiffAdded:
 		// Key only in A — delete from A
-		for i, v := range slices.Backward(m.FileA.Vars) {
-			if v.Key == e.Key {
-				m.FileA.DeleteVar(i)
-				break
-			}
+		if i := m.FileA.LastIndexOfKey(e.Key); i >= 0 {
+			m.FileA.DeleteVar(i)
 		}
 	}
 

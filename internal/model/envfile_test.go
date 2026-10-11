@@ -229,6 +229,18 @@ func TestVarByKey(t *testing.T) {
 	assert.Nil(t, ef.VarByKey("MISSING"))
 }
 
+func TestLastIndexOfKey(t *testing.T) {
+	ef := newTestFile(
+		EnvVar{Key: "FOO", Value: "first"},
+		EnvVar{Key: "BAR", Value: "only"},
+		EnvVar{Key: "FOO", Value: "second"},
+	)
+
+	assert.Equal(t, 2, ef.LastIndexOfKey("FOO"), "returns the last occurrence (shell semantics)")
+	assert.Equal(t, 1, ef.LastIndexOfKey("BAR"))
+	assert.Equal(t, -1, ef.LastIndexOfKey("MISSING"))
+}
+
 // parseTestEnv builds an EnvFile from raw text using a minimal classifier
 // (the model package cannot import the parser). It is good enough for the
 // controlled inputs used by the reorder tests.

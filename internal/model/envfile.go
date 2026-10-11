@@ -142,12 +142,21 @@ func (ef *EnvFile) DeleteVar(idx int) {
 	ef.Modified = true
 }
 
-// VarByKey returns the last variable with the given key (shell semantics).
-func (ef *EnvFile) VarByKey(key string) *EnvVar {
+// LastIndexOfKey returns the index in Vars of the last variable with the
+// given key (shell semantics), or -1 when there is none.
+func (ef *EnvFile) LastIndexOfKey(key string) int {
 	for i := len(ef.Vars) - 1; i >= 0; i-- {
 		if ef.Vars[i].Key == key {
-			return &ef.Vars[i]
+			return i
 		}
+	}
+	return -1
+}
+
+// VarByKey returns the last variable with the given key (shell semantics).
+func (ef *EnvFile) VarByKey(key string) *EnvVar {
+	if i := ef.LastIndexOfKey(key); i >= 0 {
+		return &ef.Vars[i]
 	}
 	return nil
 }
