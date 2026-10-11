@@ -182,8 +182,6 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.height = msg.Height
 		a.ready = true
 		a.updateLayout()
-		a.matrixView.Width = a.width
-		a.matrixView.Height = a.height - statusBarHeight
 		return a, nil
 
 	case tea.BackgroundColorMsg:
@@ -410,8 +408,7 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 			return a, a.flashMessage("Need at least 2 files for matrix")
 		}
 		a.matrixView = NewMatrixModel(a.fileList.Files, a.config.Layout, a.config.Secrets)
-		a.matrixView.Width = a.width
-		a.matrixView.Height = a.height - statusBarHeight
+		a.updateLayout()
 		a.mode = ModeMatrix
 	}
 
@@ -712,6 +709,9 @@ func (a *App) updateLayout() {
 
 	a.diffView.Width = a.width - compareMarginWidth
 	a.diffView.Height = panelHeight
+
+	a.matrixView.Width = a.width
+	a.matrixView.Height = a.height - statusBarHeight
 
 	a.statusBar.Width = a.width
 }
