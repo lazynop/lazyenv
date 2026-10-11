@@ -111,7 +111,7 @@ Caught by `TestUsageDocumentsEveryFlag` and `TestKeybindingsDocumentsEveryKey`: 
 | `help:` tags of the `cli` struct in `main.go` | `--help` output | A flag changes |
 
 - **A behaviour change updates every surface above that describes the old behaviour, in the same change.** Find them by searching the surfaces for the terms the change touches (the key, flag, option, message, default), not only through the "Update when" column: a description of the old behaviour can sit anywhere.
-- `docs/` is published as the docs site: every Markdown file in it goes public.
+- `docs/` is published as the docs site, and every Markdown file in it goes public. `.github/workflows/docs.yml` builds it from release tags only, so the site describes the latest release: a doc change on `main` goes live with the release that ships its code.
 - `docs_test.go` checks the docs' facts against the code: flags (`TestUsageDocumentsEveryFlag`), keys (`TestKeybindingsDocumentsEveryKey`, `TestHelpScreenNamesBoundKeys`), options, defaults and minimums (`TestConfigurationDocumentsDefaults`), default colors (`TestConfigurationDocumentsThemeColors`), the theme count and Go version (`TestDocsStateCurrentCounts`), and the code spans in this file (`TestCodingStandardsNamesExistingCode`). A span here that names something outside the repo on purpose goes in that test's `notInRepo` list. Descriptions of behaviour are beyond any test: the rule above covers them.
 - `docs/changelog.md` is generated in CI from `CHANGELOG.md`; edit `CHANGELOG.md` only.
 - When the TUI's look changes significantly, regenerate the README demo GIF with `just demo` and the project page media with `just page-media`, then copy `dist/page-media/` into lazynop.dev's `site/lazyenv/media/`.

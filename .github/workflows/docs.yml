@@ -1,12 +1,13 @@
 name: docs
 
+# The site describes the latest release, so it is built from release tags
+# only: a doc change on main goes live with the release that ships its code.
+# A manual run must pick a tag ("Use workflow from"); the github-pages
+# environment also accepts v* tags only.
 on:
   push:
-    branches: [main]
-    paths:
-      - "docs/**"
-      - "mkdocs.yml"
-      - "CHANGELOG.md"
+    tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   pages: write
@@ -14,6 +15,7 @@ permissions:
 
 jobs:
   deploy:
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
