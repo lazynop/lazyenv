@@ -186,8 +186,12 @@ func modeHints(theme Theme, mode AppMode, focus Focus, diffStats string) string 
 		)
 	case ModeEditing:
 		return theme.MutedItem.Render("Enter to confirm, Esc to cancel")
-	case ModeConfirmDelete, ModeConfirmMatrixDelete:
+	case ModeConfirmDelete:
 		return theme.DuplicateWarn.Render("Delete variable? (y/n)")
+	case ModeConfirmDeleteFile, ModeConfirmMatrixDelete:
+		// The prompt set on entering the mode names what gets deleted and
+		// stays until the mode ends, so a hint here would never show.
+		return ""
 	case ModeHelp:
 		return theme.MutedItem.Render("Press Esc or ? to close help")
 	case ModeSearching:
@@ -196,8 +200,6 @@ func modeHints(theme Theme, mode AppMode, focus Focus, diffStats string) string 
 		return theme.MutedItem.Render("Enter to create, Esc to cancel")
 	case ModeDuplicateFile:
 		return theme.MutedItem.Render("Enter to duplicate, Esc to cancel")
-	case ModeConfirmDeleteFile:
-		return theme.DuplicateWarn.Render("Delete file from disk? (y/n)")
 	case ModeRenameFile:
 		return theme.MutedItem.Render("Enter to rename, Esc to cancel")
 	case ModeTemplateFile:
