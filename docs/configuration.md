@@ -5,7 +5,7 @@ Create a `.lazyenvrc` file (TOML) in your project root, or `~/.config/lazyenv/co
 | Key            | Default         | Description                                                                                                                       |
 | -------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `recursive`    | `false`         | Scan `.env` files in subdirectories recursively.                                                                                  |
-| `show-secrets` | `false`         | Display secret values in cleartext. When false, sensitive keys are masked with asterisks. Toggleable at runtime with `Ctrl+S`.    |
+| `show-secrets` | `false`         | Display secret values in cleartext. When false, each secret value is replaced by a fixed `••••••••` mask. Toggleable at runtime with `Ctrl+S`. |
 | `no-backup`    | `false`         | Skip creating `.bak` backup files before the first save of each file in a session.                                                |
 | `no-git-check` | `false`         | Skip checking if files are covered by `.gitignore`. Auto-disabled if `git` is not available.                                      |
 | `no-theme-bg`  | `false`         | Discard the theme's background color, keeping the terminal's native background. Useful for transparent terminals.                 |
@@ -85,7 +85,7 @@ value_heuristic = false
 
 ### Built-in detection rules
 
-Keys are detected as secrets if they match any of the following (case insensitive):
+A variable is detected as a secret if it matches any of the following. Key name rules are case insensitive; value prefixes are case sensitive.
 
 | Rule           | Patterns                                                                             |
 | -------------- | ------------------------------------------------------------------------------------ |
@@ -93,7 +93,7 @@ Keys are detected as secrets if they match any of the following (case insensitiv
 | Suffix match   | `_KEY`, `_SECRET`, `_TOKEN`, `_PASSWORD`, `_PASS`, `_API_KEY`, `_AUTH`, `_CREDENTIAL`, `_PRIVATE` |
 | Prefix match   | `SECRET_`, `TOKEN_`, `AUTH_`, `PRIVATE_`                                             |
 | Value prefix   | `sk-`, `pk-`, `ghp_`, `gho_`, `Bearer ` (always active, even with `value_heuristic = false`) |
-| Value entropy  | Values ≥16 chars with mixed case + digits and Shannon entropy ≥4.0 bits/char (gated by `value_heuristic`) |
+| Value entropy  | Values ≥16 chars with at least one digit and one letter, and Shannon entropy ≥4.0 bits/char (gated by `value_heuristic`) |
 
 `safe_patterns` is checked first and overrides everything, including built-in rules and `extra_patterns`.
 
