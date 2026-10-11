@@ -398,7 +398,7 @@ func TestDiffViewNarrowWidthKeepsEachEntryOnOneRow(t *testing.T) {
 	layout.DiffPadding = 1          // raised to config.DiffMinPadding, the tightest rows get
 	height := panelChromeHeight + 4 // fewer rows than entries: a wrapped entry has no spare row to hide in
 
-	assertNoRowWraps(t, 40, 100, height, func(width int) string {
+	assertNoRowWraps(t, 40, 100, height, []string{"≠"}, func(width int) string {
 		dv := NewDiffViewModel(layout, config.SecretsConfig{})
 		dv.Width = width
 		dv.Height = height
@@ -409,11 +409,17 @@ func TestDiffViewNarrowWidthKeepsEachEntryOnOneRow(t *testing.T) {
 
 // assertNoRowWraps renders a view at every width from minWidth to maxWidth and
 // fails wherever it comes out taller than height: a row that wraps onto a
-// second line makes its panel grow.
-func assertNoRowWraps(t *testing.T, minWidth, maxWidth, height int, render func(width int) string) {
+// second line makes its panel grow. It also fails where the view lacks any of
+// shown, the text of the rows under test, so a render that leaves them out
+// cannot pass.
+func assertNoRowWraps(t *testing.T, minWidth, maxWidth, height int, shown []string, render func(width int) string) {
 	t.Helper()
 	for width := minWidth; width <= maxWidth; width++ {
-		assert.Equal(t, height, lipgloss.Height(render(width)), "width %d: a row wrapped onto a second line", width)
+		view := render(width)
+		assert.Equal(t, height, lipgloss.Height(view), "width %d: a row wrapped onto a second line", width)
+		for _, s := range shown {
+			assert.Contains(t, stripAnsi(view), s, "width %d: the rows under test should be drawn", width)
+		}
 	}
 }
 

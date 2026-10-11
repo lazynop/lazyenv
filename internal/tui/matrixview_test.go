@@ -304,7 +304,7 @@ func TestMatrixViewNarrowWidthKeepsEachRowOnOneRow(t *testing.T) {
 
 	// Narrower than 40 columns, the key column, one file column and the
 	// counter no longer fit on a row.
-	assertNoRowWraps(t, 40, 100, height, func(width int) string {
+	assertNoRowWraps(t, 40, 100, height, []string{"keys"}, func(width int) string {
 		m := NewMatrixModel(files, config.DefaultConfig().Layout, config.SecretsConfig{})
 		m.Width, m.Height = width, height
 		return m.View(theme)

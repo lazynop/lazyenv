@@ -782,7 +782,7 @@ func TestVarListNarrowWidthKeepsEachVarOnOneRow(t *testing.T) {
 	layout.VarListPadding = 1       // raised to config.VarListMinPadding, the tightest rows get
 	height := panelChromeHeight + 4 // fewer rows than vars: a wrapped var has no spare row to hide in
 
-	assertNoRowWraps(t, 30, 100, height, func(width int) string {
+	assertNoRowWraps(t, 30, 100, height, []string{"○"}, func(width int) string {
 		vl := NewVarListModel(layout)
 		vl.SetFile(f)
 		vl.Width = width
@@ -803,7 +803,7 @@ func TestVarListNarrowWidthKeepsPeekLineOnOneRow(t *testing.T) {
 	height := panelChromeHeight + 3 // fewer rows than vars: a wrapped peek line has no spare row to hide in
 
 	for _, cursor := range []int{0, len(keys)} {
-		assertNoRowWraps(t, 30, 100, height, func(width int) string {
+		assertNoRowWraps(t, 30, 100, height, []string{"↳"}, func(width int) string {
 			vl := NewVarListModel(layout)
 			vl.SetFile(f)
 			vl.Focused = true
@@ -811,9 +811,7 @@ func TestVarListNarrowWidthKeepsPeekLineOnOneRow(t *testing.T) {
 			vl.Width = width
 			vl.Height = height
 			vl.SetCursor(cursor)
-			view := vl.View(theme)
-			require.Contains(t, view, "↳", "width %d, cursor %d: the peek line should be drawn", width, cursor)
-			return view
+			return vl.View(theme)
 		})
 	}
 }
