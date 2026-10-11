@@ -37,7 +37,7 @@ var-list-padding = 12                # min 8; lower values are raised
 diff-min-value-width = 8
 diff-padding = 10                    # min 9; lower values are raised
 file-list-width = 0                  # 0 = auto (1/4 screen), > 0 = fixed width; min 20, lower values are raised
-mouse-scroll-lines = 1               # lines per mouse wheel event
+mouse-scroll-lines = 1               # lines per mouse wheel event; 0 disables wheel scrolling
 
 # Secret detection tuning.
 # Pattern convention: "_HOST" → suffix, "PUBLIC_" → prefix, "DATABASE_HOST" → exact.
@@ -49,7 +49,9 @@ mouse-scroll-lines = 1               # lines per mouse wheel event
 # Enable entropy-based value heuristic (flags random-looking values ≥16 chars).
 value_heuristic = true
 
-# Color overrides (hex). When using a theme, these override individual colors.
+# Color overrides: hex (#RGB, #RGBA, #RRGGBB, #RRGGBBAA) or an ANSI 256 color
+# number as a string ("0" to "255"). When using a theme, these override
+# individual colors.
 # Leave empty or omit to use the theme or auto-detected defaults.
 [colors]
 # primary = "#BD93F9"

@@ -35,7 +35,7 @@ exclude = ["*.bak", "*.example"]
 
 ## [layout]
 
-Fine-tune column widths and padding. All values are in characters and must be greater than zero (`file-list-width` also takes `0`, for auto). Where the table gives a minimum, a lower value is raised to it: below it, rows or panels no longer fit.
+Fine-tune column widths and padding. All values are in characters, except `mouse-scroll-lines`. Each must be greater than zero, except `file-list-width` and `mouse-scroll-lines`, which also take `0`. Where the table gives a minimum, a lower value is raised to it: below it, rows or panels no longer fit.
 
 ```toml
 [layout]
@@ -62,7 +62,7 @@ mouse-scroll-lines = 1
 | `matrix-key-width`         | `20`    | Width of the key column in the completeness matrix.                                         |
 | `matrix-col-width`         | `14`    | Width of each file column in the matrix. Controls how many files fit on screen.             |
 | `file-list-width`          | `0`     | Width of the file list panel. `0` = auto (1/4 of screen). Minimum `20`. File names truncate to fit. |
-| `mouse-scroll-lines`       | `1`     | Number of lines scrolled per mouse wheel event.                                                |
+| `mouse-scroll-lines`       | `1`     | Number of lines scrolled per mouse wheel event. `0` disables wheel scrolling.               |
 
 ## [secrets]
 
@@ -99,7 +99,7 @@ A variable is detected as a secret if it matches any of the following. Key name 
 
 ## [colors]
 
-Hex color overrides. These override individual theme colors. Leave empty or omit to use the theme or auto-detected defaults.
+Color overrides, each a hex color (`#RGB`, `#RGBA`, `#RRGGBB` or `#RRGGBBAA`) or an ANSI 256 color number written as a string (`"0"` to `"255"`). These override individual theme colors. Leave empty or omit to use the theme or auto-detected defaults.
 
 ```toml
 theme = "nord"
@@ -112,16 +112,16 @@ primary = "#FF6600"    # override just primary, rest from nord
 
 | Key         | Dark default | Light default | Used for                                                             |
 | ----------- | ------------ | ------------- | -------------------------------------------------------------------- |
-| `primary`   | `#BD93F9`    | `#7B2FBE`     | Panel titles, selected items, status bar keys, help keys.            |
-| `warning`   | `#FFB86C`    | `#D97706`     | Empty value warnings, placeholder warnings, changed lines in diff.   |
-| `error`     | `#FF5555`    | `#DC2626`     | Errors, duplicate key warnings, git warnings, removed lines in diff. |
-| `success`   | `#50FA7B`    | `#059669`     | Success messages, added lines in diff.                               |
-| `muted`     | `#6272A4`    | `#6B7280`     | Status bar, help descriptions, comments, secondary text.             |
-| `fg`        | `#F8F8F2`    | `#1F2937`     | Default text: keys, values, normal list items.                       |
+| `primary`   | `#BD93F9`    | `#7B2FBE`     | Panel titles, focused panel border, selected items, status bar keys and messages, matrix column headers. |
+| `warning`   | `#FFB86C`    | `#D97706`     | Empty value warnings, placeholder warnings, `[READ-ONLY]` badge, changed lines in diff. |
+| `error`     | `#FF5555`    | `#DC2626`     | Config error screen, delete-variable prompt, duplicate key warnings, git warnings, removed lines in diff, missing cells in the matrix. |
+| `success`   | `#50FA7B`    | `#059669`     | Added lines in diff and their count in the status bar.               |
+| `muted`     | `#6272A4`    | `#6B7280`     | Status bar, masked secrets, deleted variables, peek lines, equal lines in diff, present cells in the matrix, secondary text. |
+| `fg`        | `#F8F8F2`    | `#1F2937`     | Default text: keys, values, normal list items, help screen.          |
 | `bg`        | (none)       | (none)        | Terminal background. Empty keeps the terminal's native background.   |
-| `border`    | `#44475A`    | `#D1D5DB`     | Panel borders (file list and variable list).                         |
+| `border`    | `#44475A`    | `#D1D5DB`     | Panel borders (unfocused panels and the diff view).                  |
 | `cursor-bg` | `#44475A`    | `#E5E7EB`     | Background highlight on the cursor line.                             |
-| `modified`  | `#FFB86C`    | `#D97706`     | Marker color for modified variables (`*`).                           |
+| `modified`  | `#FFB86C`    | `#D97706`     | Marker color for modified variables and files (`*`).                 |
 | `added`     | `#50FA7B`    | `#059669`     | Marker color for added variables (`+`).                              |
 | `deleted`   | `#FF5555`    | `#DC2626`     | Marker color for deleted variables (`-`).                            |
 
