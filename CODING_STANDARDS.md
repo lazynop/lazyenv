@@ -20,6 +20,7 @@ How code in lazyenv is written: the conventions every change follows, the pitfal
 - **Round-trip fidelity**: an `EnvFile` keeps every original line as a `RawLine`; writes re-emit untouched lines as they were, so comments, blank lines and formatting survive edits.
 - **Atomic writes**: every disk write goes through `parser.WriteFile` or `parser.WriteFileAtomic` (temp file in the same directory, fsync, rename).
 - **Re-parse via `reparse`**: an in-memory file is refreshed from disk only through `reparse` (`internal/tui/app_reparse.go`), which carries over runtime-only state such as `GitWarning`. `TestParseFileOnlyThroughReparse` fails on a direct `parser.ParseFile` elsewhere in `internal/tui`.
+- **Secret masking**: every variable value the TUI draws, current or original, goes through `displayText(value, masked)`, the one place that masks and flattens it. A value drawn any other way shows a secret in clear whenever that path forgets to mask. `TestSecretsMaskOnlyThroughDisplayText` fails on a `util.MaskValue` call outside `displayText`.
 - **Shell semantics**: with duplicate keys the last occurrence wins (`EnvFile.VarByKey`, diffs, session snapshots).
 - **One background**: the terminal background is painted once, via `tea.View.BackgroundColor` in `App.View`, not per panel.
 

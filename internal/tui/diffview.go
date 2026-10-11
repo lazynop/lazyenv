@@ -311,13 +311,9 @@ func (m *DiffViewModel) renderDiffEntry(e model.DiffEntry, isCursor bool, keyWid
 	}
 
 	key := padRight(truncate(e.Key, keyWidth), keyWidth)
-	valueA, valueB := e.ValueA, e.ValueB
-	if e.IsSecret && !m.ShowSecrets {
-		valueA = util.MaskValue(valueA)
-		valueB = util.MaskValue(valueB)
-	}
-	valA := padRight(truncate(flattenValue(valueA), valWidth), valWidth)
-	valB := padRight(truncate(flattenValue(valueB), valWidth), valWidth)
+	masked := e.IsSecret && !m.ShowSecrets
+	valA := padRight(truncate(displayText(e.ValueA, masked), valWidth), valWidth)
+	valB := padRight(truncate(displayText(e.ValueB, masked), valWidth), valWidth)
 
 	leftLine := fmt.Sprintf("  %s  %s", key, valA)
 	rightLine := fmt.Sprintf("  %s  %s  %s", key, valB, statusChar)

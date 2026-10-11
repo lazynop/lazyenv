@@ -88,6 +88,19 @@ func TestVarListSearchCaseInsensitive(t *testing.T) {
 	assert.Equal(t, 1, vl.DisplayCount(), "search should be case-insensitive")
 }
 
+// maskValueAllowed lists the functions that may call util.MaskValue directly,
+// keyed by "file:function".
+var maskValueAllowed = map[string]string{
+	"varlist.go:displayText": "the helper itself",
+}
+
+// TestSecretsMaskOnlyThroughDisplayText fails on a util.MaskValue call outside
+// displayText: one masking path keeps every view hiding the same values.
+func TestSecretsMaskOnlyThroughDisplayText(t *testing.T) {
+	assertRefsAllowed(t, sourceRefs(t, internalUtilPath, "MaskValue"), maskValueAllowed,
+		"draw a variable value with displayText(value, masked), so every view masks it the same way")
+}
+
 func TestVarListSearchSkipsMaskedSecretValues(t *testing.T) {
 	f := makeTestFile(".env", "API_TOKEN", "HOST")
 	f.Vars[0].Value, f.Vars[0].IsSecret = "hunter2", true

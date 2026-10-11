@@ -16,7 +16,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const internalParserPath = "github.com/lazynop/lazyenv/internal/parser"
+const (
+	internalParserPath = "github.com/lazynop/lazyenv/internal/parser"
+	internalUtilPath   = "github.com/lazynop/lazyenv/internal/util"
+)
 
 // sourceRef is a reference, in this package's non-test source, to a function
 // of an imported package or of this one.
