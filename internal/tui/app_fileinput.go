@@ -74,19 +74,20 @@ func duplicateName(name string) string { return insertBeforeExt(name, "copy") }
 func templateName(name string) string  { return insertBeforeExt(name, "example") }
 
 // validateNewPath checks that name is valid and the target path doesn't already exist.
-// Returns the full path on success, or an error message on failure.
-func (a App) validateNewPath(name, dir string) (string, string) {
+// Returns the full path on success, or "" and the warning flash explaining why
+// the name was rejected.
+func (a *App) validateNewPath(name, dir string) (string, tea.Cmd) {
 	if strings.ContainsAny(name, "/\\") {
-		return "", "Invalid name: must not contain path separators"
+		return "", a.flashWarning("Invalid name: must not contain path separators")
 	}
 	if !isEnvFile(name, a.config.Files) {
-		return "", "Invalid name: must match .env file patterns"
+		return "", a.flashWarning("Invalid name: must match .env file patterns")
 	}
 	path := filepath.Join(dir, name)
 	if _, err := os.Stat(path); err == nil {
-		return "", "File already exists: " + name
+		return "", a.flashWarning("File already exists: " + name)
 	}
-	return path, ""
+	return path, nil
 }
 
 // finaliseNewFile parses, registers, and selects a newly created file.

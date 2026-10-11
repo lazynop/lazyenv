@@ -19,9 +19,9 @@ func (a App) confirmTemplateFile() (tea.Model, tea.Cmd) {
 		return a, nil
 	}
 
-	destPath, errMsg := a.validateNewPath(name, filepath.Dir(src.Path))
-	if errMsg != "" {
-		return a, a.flashWarning(errMsg)
+	destPath, cmd := a.validateNewPath(name, filepath.Dir(src.Path))
+	if cmd != nil {
+		return a, cmd
 	}
 
 	var b strings.Builder

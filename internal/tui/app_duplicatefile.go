@@ -19,9 +19,9 @@ func (a App) confirmDuplicateFile() (tea.Model, tea.Cmd) {
 	}
 
 	// Place beside the source so it appears in the same watched directory
-	destPath, errMsg := a.validateNewPath(name, filepath.Dir(src.Path))
-	if errMsg != "" {
-		return a, a.flashWarning(errMsg)
+	destPath, cmd := a.validateNewPath(name, filepath.Dir(src.Path))
+	if cmd != nil {
+		return a, cmd
 	}
 
 	// Copy raw bytes to preserve comments, formatting, and round-trip fidelity

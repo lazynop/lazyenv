@@ -14,9 +14,9 @@ func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
 		return a, nil
 	}
 
-	fullPath, errMsg := a.validateNewPath(name, a.config.Dir)
-	if errMsg != "" {
-		return a, a.flashWarning(errMsg)
+	fullPath, cmd := a.validateNewPath(name, a.config.Dir)
+	if cmd != nil {
+		return a, cmd
 	}
 
 	if err := a.createFile(fullPath); err != nil {

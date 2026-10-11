@@ -19,9 +19,9 @@ func (a App) confirmRenameFile() (tea.Model, tea.Cmd) {
 		return a, nil
 	}
 
-	newPath, errMsg := a.validateNewPath(name, filepath.Dir(src.Path))
-	if errMsg != "" {
-		return a, a.flashWarning(errMsg)
+	newPath, cmd := a.validateNewPath(name, filepath.Dir(src.Path))
+	if cmd != nil {
+		return a, cmd
 	}
 
 	if err := a.renameFile(src.Path, newPath); err != nil {
