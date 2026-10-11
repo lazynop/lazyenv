@@ -107,7 +107,12 @@ Caught by `TestUsageDocumentsEveryFlag` and `TestKeybindingsDocumentsEveryKey`: 
 | `docs/index.md` | Docs landing page | A major feature lands |
 | `docs/installation.md` | Install instructions | Requirements or distribution channels change |
 | `CODING_STANDARDS.md` | This file | A convention, pitfall or checklist changes |
+| `examples/config/full.toml` | Reference config users copy; its comments state defaults and limits | An option, default or limit changes |
+| `viewHelp` in `internal/tui/app_views.go` | In-app help screen | A key, or the screens it works in, changes |
+| `modeHints` in `internal/tui/statusbar.go` | Status-bar key hints per mode | A key or a mode changes |
+| `help:` tags of the `cli` struct in `main.go` | `--help` output | A flag changes |
 
+- **A behaviour change updates every surface above that describes the old behaviour, in the same change.** Find them by searching the surfaces for the terms the change touches (the key, flag, option, message, default), not only through the "Update when" column: a description of the old behaviour can sit anywhere.
 - `docs/` is published as the docs site: every Markdown file in it goes public.
 - `docs_test.go` checks the names docs use against the code: `TestUsageDocumentsEveryFlag` (`docs/usage.md`), `TestKeybindingsDocumentsEveryKey` (`docs/keybindings.md`) and `TestCodingStandardsNamesExistingCode` (the code spans in this file). A span here that names something outside the repo on purpose goes in that test's `notInRepo` list.
 - `docs/changelog.md` is generated in CI from `CHANGELOG.md`; edit `CHANGELOG.md` only.
