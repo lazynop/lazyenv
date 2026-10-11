@@ -66,8 +66,9 @@ The following flags have a corresponding config file key:
 | `--no-mouse`    | `no-mouse`     |
 | `--read-only`   | `read-only`    |
 | `--session-summary` / `--no-session-summary` | `session-summary` |
+| `--file-list-width` | `layout.file-list-width` |
 
-Flags without a config equivalent (`--check-config`, `--show-config`, `--list-themes`, `--themes`, `--version`, `--help`) are one-shot actions that print output and exit.
+Flags without a config equivalent: `--config` picks the config file itself, and `--check-config`, `--show-config`, `--list-themes`, `--themes`, `--version` and `--help` are one-shot actions that print output and exit.
 
 See [Configuration](configuration.md) for all available config file options.
 
