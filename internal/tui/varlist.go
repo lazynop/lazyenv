@@ -477,14 +477,17 @@ func (m *VarListModel) renderHeaderLine(rowIdx int, group model.VarGroup, theme 
 
 // renderPeekLine renders the peek line for modified/new variables, or empty string if not applicable.
 func (m *VarListModel) renderPeekLine(v *model.EnvVar, keyWidth, maxValWidth int, theme Theme) string {
-	if v.IsNew {
-		return theme.MutedItem.Render(fmt.Sprintf("  %s  ↳ new variable", padRight("", keyWidth)))
+	var text string
+	switch {
+	case v.IsNew:
+		text = "↳ new variable"
+	case v.Modified:
+		text = "↳ was: " + m.displayText(v, v.OriginalValue)
+	default:
+		return ""
 	}
-	if v.Modified {
-		orig := truncate(m.displayText(v, v.OriginalValue), maxValWidth-4)
-		return theme.MutedItem.Render(fmt.Sprintf("  %s  ↳ was: %s", padRight("", keyWidth), orig))
-	}
-	return ""
+	// The text sits in the value column, so it fits wherever the row does.
+	return theme.MutedItem.Render(fmt.Sprintf("  %s  %s", padRight("", keyWidth), truncate(text, maxValWidth)))
 }
 
 // renderDeletedVars renders the deleted variables section.

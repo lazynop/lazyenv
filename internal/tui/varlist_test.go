@@ -790,3 +790,36 @@ func TestVarListNarrowWidthKeepsEachVarOnOneRow(t *testing.T) {
 		return vl.View(theme)
 	})
 }
+
+func TestVarListNarrowWidthKeepsPeekLineOnOneRow(t *testing.T) {
+	keys := []string{"UPSTREAM_SERVICE_CIRCUIT_BREAKER_THRESHOLD", "DATABASE_URL", "REDIS_URL", "SENTRY_DSN"}
+	f := makeTestFile(".env", keys...)
+	f.Vars[0].Value = strings.Repeat("x", 200)
+	f.UpdateVar(0, "new_value")         // "↳ was:" line
+	f.AddVar("NEW_VAR", "value", false) // "↳ new variable" line
+	theme := BuildTheme(true, config.ColorConfig{})
+	layout := config.DefaultConfig().Layout
+	layout.VarListPadding = 1 // raised to config.VarListMinPadding, the tightest rows get
+
+	// The panel keeps a spare row, so one wrapped line leaves its height
+	// unchanged: check instead that every row below the title keeps the
+	// two-column indent a wrapped tail lacks.
+	for _, cursor := range []int{0, len(keys)} {
+		for width := 30; width <= 100; width++ {
+			vl := NewVarListModel(layout)
+			vl.SetFile(f)
+			vl.Focused = true
+			vl.Peeking = true
+			vl.Width = width
+			vl.Height = 20
+			for range cursor {
+				vl.MoveDown()
+			}
+			rows := strings.Split(stripAnsi(vl.View(theme)), "\n")
+			for _, row := range rows[2 : len(rows)-1] { // between the title and the bottom border
+				assert.True(t, strings.HasPrefix(row, "│  "),
+					"width %d, cursor %d: a row wrapped onto a second line: %q", width, cursor, row)
+			}
+		}
+	}
+}
