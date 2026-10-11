@@ -130,11 +130,21 @@ func (m ThemePreviewModel) handleMouseWheel(msg tea.MouseWheelMsg) ThemePreviewM
 }
 
 func (m ThemePreviewModel) scrollOffset() int {
-	contentHeight := max(m.height-panelChromeHeight, 1)
+	contentHeight := m.listRows()
 	if m.cursor >= contentHeight {
 		return m.cursor - contentHeight + 1
 	}
 	return 0
+}
+
+// panelHeight is the height of both panels: the rows above the status bar.
+func (m ThemePreviewModel) panelHeight() int {
+	return m.height - statusBarHeight
+}
+
+// listRows returns how many themes the list panel shows.
+func (m ThemePreviewModel) listRows() int {
+	return max(m.panelHeight()-panelChromeHeight, 1)
 }
 
 // Selected returns the theme name chosen by the user, or "" if they quit.
@@ -180,7 +190,7 @@ func (m ThemePreviewModel) renderThemeList(width int, rc resolvedColors) string 
 	title := lipgloss.NewStyle().Bold(true).Foreground(rc.primary).
 		Render(fmt.Sprintf(" Themes (%d)", len(m.themes)))
 
-	contentHeight := max(m.height-panelChromeHeight, 1)
+	contentHeight := m.listRows()
 	offset := m.scrollOffset()
 
 	var lines []string
@@ -202,7 +212,7 @@ func (m ThemePreviewModel) renderThemeList(width int, rc resolvedColors) string 
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(rc.border).
 		Width(width).
-		Height(m.height - 2) // status bar
+		Height(m.panelHeight())
 
 	return panel.Render(title + "\n" + content)
 }
@@ -257,7 +267,7 @@ func (m ThemePreviewModel) renderShowcase(width int, tc themes.Colors, rc resolv
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(rc.border).
 		Width(width).
-		Height(m.height - 2) // status bar
+		Height(m.panelHeight())
 
 	return panel.Render(content)
 }

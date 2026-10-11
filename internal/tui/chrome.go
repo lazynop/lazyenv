@@ -12,9 +12,10 @@ const (
 	// panelBorderWidth is left + right borders of a single panel.
 	panelBorderWidth = 2
 
-	// panelChromeHeight is the total vertical overhead around a panel:
-	// borders (top + bottom) + title row + status bar = 4 rows.
-	panelChromeHeight = 4
+	// panelChromeHeight is the rows a bordered panel draws around its
+	// content: borders (top + bottom) + title row. The status bar sits below
+	// the panels, in bottomChromeHeight.
+	panelChromeHeight = panelBorderHeight + 1
 
 	// panelChromeWidth is the total horizontal overhead: borders + the
 	// implicit left/right padding lipgloss adds = 4 columns.
@@ -41,4 +42,8 @@ const (
 	// matrixContentOffsetY is the number of rows above the first matrix
 	// row: header row + separator row (the matrix view has no border).
 	matrixContentOffsetY = 2
+
+	// matrixChromeHeight is the matrix view's vertical overhead around its
+	// body rows: header + separator row + stats footer, plus one spare row.
+	matrixChromeHeight = matrixContentOffsetY + 2
 )

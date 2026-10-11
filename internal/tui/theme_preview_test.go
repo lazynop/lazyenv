@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -275,6 +276,16 @@ func TestThemePreviewScrollOffset(t *testing.T) {
 	require.Greater(t, len(m.themes), 25, "need more than 25 themes for this test")
 	m.cursor = 25
 	assert.Equal(t, 6, m.scrollOffset(), "scrollOffset should increase with cursor")
+}
+
+func TestThemePreviewPanelsShareBottomRow(t *testing.T) {
+	m := NewThemePreview(true)
+	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	rows := strings.Split(stripAnsi(updated.(ThemePreviewModel).View().Content), "\n")
+
+	require.Len(t, rows, 40, "the preview should fill the terminal exactly")
+	assert.Contains(t, rows[len(rows)-2], "╯╰",
+		"the theme list and the showcase should end on the row above the status bar")
 }
 
 func TestThemePreviewInitReturnsNil(t *testing.T) {
