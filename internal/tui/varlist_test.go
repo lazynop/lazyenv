@@ -799,27 +799,21 @@ func TestVarListNarrowWidthKeepsPeekLineOnOneRow(t *testing.T) {
 	f.AddVar("NEW_VAR", "value", false) // "↳ new variable" line
 	theme := BuildTheme(true, config.ColorConfig{})
 	layout := config.DefaultConfig().Layout
-	layout.VarListPadding = 1 // raised to config.VarListMinPadding, the tightest rows get
+	layout.VarListPadding = 1       // raised to config.VarListMinPadding, the tightest rows get
+	height := panelChromeHeight + 3 // fewer rows than vars: a wrapped peek line has no spare row to hide in
 
-	// The panel keeps a spare row, so one wrapped line leaves its height
-	// unchanged: check instead that every row below the title keeps the
-	// two-column indent a wrapped tail lacks.
 	for _, cursor := range []int{0, len(keys)} {
-		for width := 30; width <= 100; width++ {
+		assertNoRowWraps(t, 30, 100, height, func(width int) string {
 			vl := NewVarListModel(layout)
 			vl.SetFile(f)
 			vl.Focused = true
 			vl.Peeking = true
 			vl.Width = width
-			vl.Height = 20
+			vl.Height = height
 			for range cursor {
 				vl.MoveDown()
 			}
-			rows := strings.Split(stripAnsi(vl.View(theme)), "\n")
-			for _, row := range rows[2 : len(rows)-1] { // between the title and the bottom border
-				assert.True(t, strings.HasPrefix(row, "│  "),
-					"width %d, cursor %d: a row wrapped onto a second line: %q", width, cursor, row)
-			}
-		}
+			return vl.View(theme)
+		})
 	}
 }
