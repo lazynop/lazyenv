@@ -1,6 +1,6 @@
 # Configuration
 
-Create a `.lazyenvrc` file (TOML) in your project root, or `~/.config/lazyenv/config.toml` for global settings. CLI flags override config file values. Run `lazyenv --show-config` to see the effective configuration.
+Create a `.lazyenvrc` file (TOML) in the directory you run lazyenv from, or `lazyenv/config.toml` in your user config directory for global settings (see [Config file location](#config-file-location)). CLI flags override config file values. Run `lazyenv --show-config` to see the effective configuration.
 
 | Key            | Default         | Description                                                                                                                       |
 | -------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -124,3 +124,20 @@ primary = "#FF6600"    # override just primary, rest from nord
 | `modified`  | `#FFB86C`    | `#D97706`     | Marker color for modified variables (`*`).                           |
 | `added`     | `#50FA7B`    | `#059669`     | Marker color for added variables (`+`).                              |
 | `deleted`   | `#FF5555`    | `#DC2626`     | Marker color for deleted variables (`-`).                            |
+
+## Config file location
+
+lazyenv reads a single config file: the first one it finds, in this order.
+
+1. The file passed with `-c` / `--config`.
+2. `.lazyenvrc` in the current directory. This is the directory you start lazyenv from, not the path it scans: `lazyenv ./services` does not read `./services/.lazyenvrc`.
+3. `lazyenv/config.toml` in the user config directory: `$XDG_CONFIG_HOME` or `~/.config` on Linux and FreeBSD, `~/Library/Application Support` on macOS, `%AppData%` on Windows.
+4. `~/.lazyenvrc`.
+
+Files are not merged: the file found is used whole, and a key it leaves out takes its built-in default, even when a file further down the list sets it. Run `lazyenv --check-config` to list the search paths and see which file is in use.
+
+## Invalid configuration
+
+The file is validated as a whole. A TOML syntax error, an unknown key or an invalid value rejects the entire file: lazyenv opens on an error screen listing the problems and quits on the next key press. `--show-config` prints the built-in defaults instead, without reporting the errors. Run `lazyenv --check-config` to validate the file without starting the TUI: it lists the errors and exits with status 1.
+
+Two inputs are adjusted instead of rejected. An unknown `--theme` on the command line shows a notice in the status bar for 3 seconds, and the TUI runs with the default colors plus any `[colors]` overrides. A layout value below its minimum is raised to it (see [`[layout]`](#layout)).

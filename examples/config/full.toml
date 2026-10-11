@@ -1,6 +1,7 @@
 # Full configuration reference with all available options.
-# Copy this file to .lazyenvrc in your project root,
-# or to ~/.config/lazyenv/config.toml for global settings.
+# Copy this file to .lazyenvrc in the directory you run lazyenv from, or to
+# lazyenv/config.toml in your user config directory (~/.config on Linux) for
+# global settings. `lazyenv --check-config` lists every search path.
 
 # Behavior
 recursive = false

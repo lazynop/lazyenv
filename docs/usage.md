@@ -46,7 +46,7 @@ lazyenv ./services -r
 Configuration is resolved in this order, from lowest to highest priority:
 
 1. **Built-in defaults** — sensible out-of-the-box values.
-2. **Config file** — `.lazyenvrc` in the project root, or `~/.config/lazyenv/config.toml` for global settings. Project file wins over global.
+2. **Config file** — the first one found among the `--config` file, `.lazyenvrc` in the current directory, and the global config files (see [Config file location](configuration.md#config-file-location)). Files are not merged: the one found is used whole, so a project `.lazyenvrc` replaces the global file instead of adding to it.
 3. **CLI flags** — always win. A flag passed on the command line overrides both the config file and the defaults.
 
 For example, if your config file has `recursive = false` but you run `lazyenv -r`, the recursive scan is enabled for that session.
