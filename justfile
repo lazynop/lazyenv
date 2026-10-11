@@ -28,7 +28,7 @@ run *args:
 
 # Run all tests
 test:
-    go test -race ./... -v
+    go test -race ./...
 
 # Run tests with coverage report
 test-cover:

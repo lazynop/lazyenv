@@ -86,7 +86,7 @@ just
 | ----------------- | -------------------------------------------------------------------------- |
 | `just build`      | Build the binary to `bin/lazyenv`.                                         |
 | `just run`        | Build and run with `go run`. Accepts arguments: `just run ./myproject -r`. |
-| `just test`       | Run all tests with verbose output.                                         |
+| `just test`       | Run all tests with race detection.                                         |
 | `just test-cover` | Run tests with race detection and coverage report.                         |
 | `just check`      | Run all checks: formatting and import grouping, vet, lint, and tests — same as CI. Read-only, does not modify files. |
 | `just fmt`        | Format all Go source files and group their imports (gofmt + gci).                          |
