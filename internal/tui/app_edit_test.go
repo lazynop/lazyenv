@@ -274,6 +274,28 @@ func TestToggleSecrets(t *testing.T) {
 	assert.False(t, app.varList.ShowSecrets)
 }
 
+func TestToggleSecretsRefiltersKeptSearch(t *testing.T) {
+	f := makeTestFile(".env", "API_TOKEN", "HUNTER_NAME")
+	f.Vars[0].Value, f.Vars[0].IsSecret = "hunter2", true
+	app := newTestApp([]*model.EnvFile{f})
+	app.focus = FocusVars
+
+	for _, k := range []string{"/", "h", "u", "n", "t", "e", "r", "enter"} {
+		updated, _ := app.Update(tea.KeyPressMsg{Text: k})
+		app = updated.(App)
+	}
+	require.Equal(t, "hunter", app.varList.SearchQuery)
+	assert.Equal(t, 1, app.varList.DisplayCount(), "the masked secret's value must not match")
+
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "ctrl+s"})
+	app = updated.(App)
+	assert.Equal(t, 2, app.varList.DisplayCount(), "revealing secrets must re-filter the kept search")
+
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "ctrl+s"})
+	app = updated.(App)
+	assert.Equal(t, 1, app.varList.DisplayCount(), "hiding secrets must re-filter the kept search")
+}
+
 func TestToggleSort(t *testing.T) {
 	f := makeTestFile(".env", "ZZZ", "AAA", "MMM")
 	app := newTestApp([]*model.EnvFile{f})

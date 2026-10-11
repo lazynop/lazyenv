@@ -78,7 +78,7 @@ Saves preserve comments, blank lines, quoting style, and key ordering — your f
 
 ## Search and sort
 
-Filter variables by name or value with `/`: `Enter` keeps the filter, `Esc` clears it. Toggle between original position and alphabetical sorting with `o`.
+Filter variables by name or value with `/`: `Enter` keeps the filter, `Esc` clears it. While secrets are masked, the filter skips their values, so a secret matches only by name until `Ctrl+S` reveals it. Toggle between original position and alphabetical sorting with `o`.
 
 ## Variable grouping
 

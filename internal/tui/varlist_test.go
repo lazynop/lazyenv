@@ -88,6 +88,41 @@ func TestVarListSearchCaseInsensitive(t *testing.T) {
 	assert.Equal(t, 1, vl.DisplayCount(), "search should be case-insensitive")
 }
 
+func TestVarListSearchSkipsMaskedSecretValues(t *testing.T) {
+	f := makeTestFile(".env", "API_TOKEN", "HOST")
+	f.Vars[0].Value = "hunter2"
+	f.Vars[0].IsSecret = true
+	vl := NewVarListModel(config.DefaultConfig().Layout)
+	vl.SetFile(f)
+
+	vl.SetSearch("hunter")
+	assert.Equal(t, 0, vl.DisplayCount(), "a masked secret's value must not match")
+
+	vl.SetSearch("token")
+	assert.Equal(t, 1, vl.DisplayCount(), "a masked secret's key still matches")
+}
+
+func TestVarListToggleSecretsRefiltersActiveSearch(t *testing.T) {
+	f := makeTestFile(".env", "A_TOKEN", "HUNTER_NAME", "B_TOKEN")
+	f.Vars[0].Value, f.Vars[0].IsSecret = "hunter2", true
+	f.Vars[2].Value, f.Vars[2].IsSecret = "hunter3", true
+	vl := NewVarListModel(config.DefaultConfig().Layout)
+	vl.SetFile(f)
+	vl.Height = 20
+	vl.SetSearch("hunter")
+	require.Equal(t, 1, vl.DisplayCount(), "only the key match while secrets are masked")
+
+	vl.SetShowSecrets(true)
+	assert.Equal(t, 3, vl.DisplayCount(), "revealed secret values match")
+	require.NotNil(t, vl.SelectedVar())
+	assert.Equal(t, "HUNTER_NAME", vl.SelectedVar().Key, "cursor stays on the same var")
+
+	vl.SetShowSecrets(false)
+	assert.Equal(t, 1, vl.DisplayCount(), "masking again drops the value matches")
+	require.NotNil(t, vl.SelectedVar())
+	assert.Equal(t, "HUNTER_NAME", vl.SelectedVar().Key, "cursor stays on the same var")
+}
+
 func TestVarListToggleSort(t *testing.T) {
 	f := makeTestFile(".env", "ZZZ", "AAA", "MMM")
 	vl := NewVarListModel(config.DefaultConfig().Layout)

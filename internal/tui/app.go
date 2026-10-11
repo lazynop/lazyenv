@@ -225,7 +225,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if len(msg.Files) > 0 {
 			a.varList.SetFile(msg.Files[0])
-			a.varList.ShowSecrets = a.config.ShowAll
+			a.varList.SetShowSecrets(a.config.ShowAll)
 		}
 		return a, nil
 
@@ -406,7 +406,7 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 		return a.handleReset()
 
 	case key.Matches(msg, a.keys.ToggleSecret):
-		a.varList.ShowSecrets = !a.varList.ShowSecrets
+		a.varList.SetShowSecrets(!a.varList.ShowSecrets)
 		if a.varList.ShowSecrets {
 			return a, a.flashMessage("Secrets revealed")
 		}

@@ -102,6 +102,25 @@ func enterCompareMode(t *testing.T, f1, f2 *model.EnvFile) App {
 	return app
 }
 
+func TestCompareToggleSecretsRefiltersKeptSearch(t *testing.T) {
+	f1 := makeTestFile(".env", "API_TOKEN", "HUNTER_NAME")
+	f1.Vars[0].Value, f1.Vars[0].IsSecret = "hunter2", true
+	f2 := makeTestFile(".env.prod", "API_TOKEN")
+	app := enterCompareMode(t, f1, f2)
+	// The search kept in the var list before comparing.
+	app.varList.SetSearch("hunter")
+	require.Equal(t, 1, app.varList.DisplayCount(), "the masked secret's value must not match")
+
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "ctrl+s"})
+	app = updated.(App)
+	updated, _ = app.Update(tea.KeyPressMsg{Text: "q"})
+	app = updated.(App)
+
+	require.Equal(t, ModeNormal, app.mode)
+	assert.True(t, app.varList.ShowSecrets, "the compare toggle carries over to the var list")
+	assert.Equal(t, 2, app.varList.DisplayCount(), "revealing secrets in compare must re-filter the kept search")
+}
+
 func TestCompareCopyRight(t *testing.T) {
 	f1 := makeTestFile(".env", "SHARED", "ONLY_LEFT")
 	f2 := makeTestFile(".env.prod", "SHARED")

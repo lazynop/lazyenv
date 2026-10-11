@@ -123,7 +123,7 @@ func (m *VarListModel) buildLinearDisplay() {
 	q := strings.ToLower(m.SearchQuery)
 	indices := make([]int, 0, len(m.File.Vars))
 	for i := range m.File.Vars {
-		if q != "" && !matchesQuery(&m.File.Vars[i], q) {
+		if q != "" && !m.matchesQuery(&m.File.Vars[i], q) {
 			continue
 		}
 		indices = append(indices, i)
@@ -149,10 +149,16 @@ func (m *VarListModel) emitVarRows(indices []int) {
 }
 
 // matchesQuery reports whether v's key or value contains the (already
-// lowercased) query.
-func matchesQuery(v *model.EnvVar, qLower string) bool {
-	return strings.Contains(strings.ToLower(v.Key), qLower) ||
-		strings.Contains(strings.ToLower(v.Value), qLower)
+// lowercased) query. A masked secret's value is skipped, so the search
+// never confirms text the panel hides.
+func (m *VarListModel) matchesQuery(v *model.EnvVar, qLower string) bool {
+	if strings.Contains(strings.ToLower(v.Key), qLower) {
+		return true
+	}
+	if v.IsSecret && !m.ShowSecrets {
+		return false
+	}
+	return strings.Contains(strings.ToLower(v.Value), qLower)
 }
 
 func (m *VarListModel) clampCursor() {
@@ -306,6 +312,16 @@ func (m *VarListModel) restoreCursor(a cursorAnchor) {
 func (m *VarListModel) ToggleSort() {
 	a := m.captureCursor()
 	m.SortAlpha = !m.SortAlpha
+	m.recomputeDisplay()
+	m.restoreCursor(a)
+}
+
+// SetShowSecrets sets secret masking and re-filters an active search, since
+// a masked secret's value doesn't match. The cursor stays on the same var
+// while it is still listed.
+func (m *VarListModel) SetShowSecrets(show bool) {
+	a := m.captureCursor()
+	m.ShowSecrets = show
 	m.recomputeDisplay()
 	m.restoreCursor(a)
 }

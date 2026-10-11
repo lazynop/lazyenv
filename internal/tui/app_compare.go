@@ -20,7 +20,6 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, a.keys.Quit), key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
 		a.compareFirstFile = nil
-		a.varList.ShowSecrets = a.diffView.ShowSecrets // sync back
 		// Restore cursor to the selected file so file list and var panel stay in sync.
 		a.fileList.Cursor = a.fileList.Selected
 	case key.Matches(msg, a.keys.Up):
@@ -37,7 +36,7 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a.handleCompareReset()
 	case key.Matches(msg, a.keys.ToggleSecret):
 		a.diffView.ShowSecrets = !a.diffView.ShowSecrets
-		a.varList.ShowSecrets = a.diffView.ShowSecrets // keep in sync
+		a.varList.SetShowSecrets(a.diffView.ShowSecrets) // keep in sync
 		if a.diffView.ShowSecrets {
 			return a, a.flashMessage("Secrets revealed")
 		}
