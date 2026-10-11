@@ -10,7 +10,7 @@ Set Padding 16
 Set Theme "Dracula"
 
 Hide
-Type `cd "$PAGE_DEMO_DIR" && clear && HOME="$PWD" lazyenv`
+Type `cd "$PAGE_DEMO_DIR" && export HOME=/home/demo && clear && lazyenv`
 Enter
 Sleep 1.5s
 Type "c"

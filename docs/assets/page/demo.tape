@@ -15,10 +15,10 @@ Set Framerate 30
 Set Theme "Dracula"
 Set TypingSpeed 90ms
 
-# Off camera: the recipe prepares PAGE_DEMO_DIR; HOME points there so the
-# recorder's own config stays out of the shot.
+# Off camera: run on the recipe's scratch copy of the project; HOME points at a
+# directory that doesn't exist, so no user config reaches the shot
 Hide
-Type `cd "$PAGE_DEMO_DIR" && clear && HOME="$PWD" lazyenv`
+Type `cd "$PAGE_DEMO_DIR" && export HOME=/home/demo && clear && lazyenv`
 Enter
 Sleep 1.5s
 Show

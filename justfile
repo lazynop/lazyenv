@@ -88,16 +88,16 @@ page-media: build
     set -euo pipefail
     out=dist/page-media
     mkdir -p "$out"
-    # Each tape runs bin/lazyenv on its own scratch copy of the demo project:
-    # edits stay out of the repo, no git repo is found, no user config applies
-    scratch=$(mktemp -d)
-    trap 'rm -rf "$scratch"' EXIT
-    export PATH="$PWD/bin:$PATH"
-    unset XDG_CONFIG_HOME
+    # The tapes run on a scratch copy of the demo project: no git repo is
+    # found and the repo's files stay untouched
+    PAGE_DEMO_DIR=$(mktemp -d)
+    export PAGE_DEMO_DIR
+    trap 'rm -rf "$PAGE_DEMO_DIR"' EXIT
+    cp -r docs/assets/page/project/. "$PAGE_DEMO_DIR"
+    # Each still is the last frame of its clip
     for tape in demo card; do
-        export PAGE_DEMO_DIR="$scratch/$tape"
-        cp -r docs/assets/page/project "$PAGE_DEMO_DIR"
-        vhs "docs/assets/page/$tape.tape"
+        {{vhs}} "docs/assets/page/$tape.tape"
+        ffmpeg -v error -y -sseof -0.5 -i "$out/$tape.gif" -update 1 -f image2 -c:v libwebp -preset text -quality 80 "$out/$tape.webp"
     done
     # H.264 High, BT.709-tagged so the video's colors match the poster's
     ffmpeg -v error -y -i "$out/demo.gif" \
@@ -105,10 +105,7 @@ page-media: build
         -an -c:v libx264 -profile:v high -preset veryslow -tune animation -crf 28 \
         -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv \
         -movflags +faststart "$out/demo.mp4"
-    # Stills: the last frame of each clip
-    ffmpeg -v error -y -sseof -0.5 -i "$out/demo.gif" -update 1 -f image2 -c:v libwebp -preset text -quality 80 "$out/demo.webp"
-    ffmpeg -v error -y -sseof -0.5 -i "$out/card.gif" -update 1 -f image2 -c:v libwebp -preset text -quality 80 "$out/card.webp"
-    rm "$out/demo.gif" "$out/card.gif"
+    rm "$out"/*.gif
     ls -l "$out"
 
 # Run with a built-in theme by name (e.g. just try-theme tokyo-night)
