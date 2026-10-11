@@ -77,7 +77,10 @@ Sleep 1.6s
 Type "o"
 Sleep 2s
 
-# Back to the start screen, plus the edited value: the poster and the loop
-# point both land close to the first frame
+# --- Back to the start screen, discarding the edit ---
+# The last frame matches the first, so the loop is seamless and the poster is
+# the start screen
 Escape
-Sleep 800ms
+Sleep 600ms
+Type "r"
+Sleep 2.6s
