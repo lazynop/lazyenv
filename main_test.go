@@ -24,3 +24,14 @@ func TestFileListWidthFlagBelowMinimumReturnsNoNotice(t *testing.T) {
 	assert.Empty(t, notices, "the TUI raises the width on its own, so there is nothing to report")
 	assert.Equal(t, 5, cfg.Layout.FileListWidth)
 }
+
+func TestUnknownThemeFlagReturnsNotice(t *testing.T) {
+	theme := "does-not-exist"
+	cli.Theme = &theme
+	t.Cleanup(func() { cli.Theme = nil })
+
+	cfg := config.DefaultConfig()
+	notices := applyCLIOverrides(&cfg)
+
+	assert.Equal(t, []string{`unknown theme "does-not-exist" (see --list-themes)`}, notices)
+}
