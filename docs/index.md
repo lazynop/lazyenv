@@ -11,7 +11,7 @@ Working with `.env` files is tedious: scattered across projects, easy to forget 
 - **See everything at a glance** — two-panel layout with files on the left, variables on the right
 - **Compare environments** — side-by-side diff with bidirectional copy
 - **Catch mistakes early** — detects duplicates, empty values, placeholders, and missing `.gitignore` coverage
-- **Looks good** — 17 built-in color themes, or bring your own
+- **Looks good** — 56 built-in color themes, or bring your own
 
 ## Quick start
 
