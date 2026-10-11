@@ -279,8 +279,9 @@ func TestThemePreviewScrollOffset(t *testing.T) {
 }
 
 func TestThemePreviewFitsSmallTerminals(t *testing.T) {
-	for _, width := range []int{60, 80, 120} {
-		for height := 10; height <= 40; height++ {
+	// From 4 rows: the list's borders and title, and the status bar.
+	for _, width := range []int{40, 60, 80, 120} {
+		for height := 4; height <= 40; height++ {
 			m := NewThemePreview(true)
 			m.searchPaths = []string{".lazyenvrc", "/home/user/.config/lazyenv/config.toml", "/home/user/.lazyenvrc"}
 			updated, _ := m.Update(tea.WindowSizeMsg{Width: width, Height: height})

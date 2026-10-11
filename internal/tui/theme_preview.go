@@ -144,7 +144,7 @@ func (m ThemePreviewModel) panelHeight() int {
 
 // listRows returns how many themes the list panel shows.
 func (m ThemePreviewModel) listRows() int {
-	return max(m.panelHeight()-panelChromeHeight, 1)
+	return max(m.panelHeight()-panelChromeHeight, 0)
 }
 
 // Selected returns the theme name chosen by the user, or "" if they quit.
@@ -196,7 +196,7 @@ func (m ThemePreviewModel) renderThemeList(width int, rc resolvedColors) string 
 	itemWidth := width - panelBorderWidth
 	itemStyle := lipgloss.NewStyle().Foreground(rc.muted).Width(itemWidth)
 	cursorStyle := lipgloss.NewStyle().Bold(true).Foreground(rc.fg).Background(rc.cursorBg).Width(itemWidth)
-	var lines []string
+	lines := []string{title}
 	for i := offset; i < len(m.themes) && i < offset+contentHeight; i++ {
 		prefix, style := "  ", itemStyle
 		if i == m.cursor {
@@ -206,15 +206,13 @@ func (m ThemePreviewModel) renderThemeList(width int, rc resolvedColors) string 
 		lines = append(lines, style.Render(truncate(prefix+m.themes[i], itemWidth)))
 	}
 
-	content := strings.Join(lines, "\n")
-
 	panel := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(rc.border).
 		Width(width).
 		Height(m.panelHeight())
 
-	return panel.Render(title + "\n" + content)
+	return panel.Render(strings.Join(lines, "\n"))
 }
 
 func (m ThemePreviewModel) renderShowcase(width int, tc themes.Colors, rc resolvedColors) string {
@@ -261,14 +259,15 @@ func (m ThemePreviewModel) renderShowcase(width int, tc themes.Colors, rc resolv
 	// Config box
 	configBox := m.renderConfigBox(width-4, themeName, rc)
 
-	// Fit the content to the rows inside the border: drop the config box when
-	// it doesn't fit, and cut the colors short on the shortest terminals.
+	// Fit the content to the rows inside the border: show the config box only
+	// when it fits, and cut the colors short on the shortest terminals.
 	inner := lipgloss.NewStyle().Width(width - panelBorderWidth)
-	innerRows := m.panelHeight() - panelBorderHeight
-	content := inner.Render(title + "\n\n" + colorSection + "\n\n" + configBox)
-	if lipgloss.Height(content) > innerRows {
-		content = inner.MaxHeight(innerRows).Render(title + "\n\n" + colorSection)
+	innerRows := max(m.panelHeight()-panelBorderHeight, 1)
+	content := inner.Render(title + "\n\n" + colorSection)
+	if box := inner.Render(configBox); lipgloss.Height(content)+1+lipgloss.Height(box) <= innerRows {
+		content += "\n\n" + box
 	}
+	content = inner.MaxHeight(innerRows).Render(content)
 
 	panel := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
@@ -313,7 +312,8 @@ func (m ThemePreviewModel) renderStatusBar(rc resolvedColors) string {
 		keyStyle.Render("q/esc"), descStyle.Render("quit"),
 	)
 
-	return lipgloss.NewStyle().Width(m.width).Render(bar)
+	// Inline keeps the bar on one row, cut at the terminal width.
+	return lipgloss.NewStyle().Width(m.width).MaxWidth(m.width).Inline(true).Render(bar)
 }
 
 // RunThemePreview runs the interactive theme preview and returns the selected theme name.
