@@ -217,6 +217,54 @@ func TestFlashError_SetsMessageAndClearTimer(t *testing.T) {
 	assert.NotNil(t, cmd, "flashError must return the auto-clear timer cmd")
 }
 
+func TestFlashError_RendersInErrorColor(t *testing.T) {
+	app := newTestApp(nil)
+	app.theme = statusColorTheme()
+
+	app.flashError("something broke")
+
+	view := app.statusBar.View(app.theme, app.mode, app.focus, "", 0)
+	assert.Contains(t, view, statusErrorSGR)
+	assert.NotContains(t, view, statusPrimarySGR)
+}
+
+func TestFlash_CompareResetReloadFailureRendersInErrorColor(t *testing.T) {
+	dir := t.TempDir()
+	pathA := filepath.Join(dir, ".env")
+	pathB := filepath.Join(dir, ".env.prod")
+	require.NoError(t, os.WriteFile(pathA, []byte("FOO=a\n"), 0644))
+	require.NoError(t, os.WriteFile(pathB, []byte("FOO=b\n"), 0644))
+
+	fA, err := parser.ParseFile(pathA, config.SecretsConfig{})
+	require.NoError(t, err)
+	fB, err := parser.ParseFile(pathB, config.SecretsConfig{})
+	require.NoError(t, err)
+
+	app := enterCompareMode(t, fA, fB)
+	app.theme = statusColorTheme()
+	require.NoError(t, os.Remove(pathB))
+
+	updated, _ := app.Update(tea.KeyPressMsg{Text: "r"})
+	app = updated.(App)
+
+	view := app.statusBar.View(app.theme, app.mode, app.focus, "", 0)
+	assert.Contains(t, view, "Failed to reload .env.prod")
+	assert.Contains(t, view, statusErrorSGR)
+	assert.NotContains(t, view, statusPrimarySGR)
+}
+
+func TestFlashMessage_AfterErrorRendersInPrimaryColor(t *testing.T) {
+	app := newTestApp(nil)
+	app.theme = statusColorTheme()
+
+	app.flashError("something broke")
+	app.flashMessage("Saved .env")
+
+	view := app.statusBar.View(app.theme, app.mode, app.focus, "", 0)
+	assert.Contains(t, view, statusPrimarySGR)
+	assert.NotContains(t, view, statusErrorSGR)
+}
+
 // TestClearMessageAfterOnlyInFlashHelpers keeps transient status messages
 // behind flashMessage/flashError: only app_flash.go may schedule the
 // auto-clear, so every message gets the timeout matching its kind.

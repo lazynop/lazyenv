@@ -62,6 +62,20 @@ func TestUpdateFilesLoadedMsgError(t *testing.T) {
 	assert.Contains(t, app.statusBar.Message, "Error")
 }
 
+func TestUpdateFilesLoadedMsgErrorRendersInErrorColor(t *testing.T) {
+	app := newTestApp(nil)
+	app.theme = statusColorTheme()
+
+	updated, _ := app.Update(FilesLoadedMsg{
+		Err: assert.AnError,
+	})
+	app = updated.(App)
+
+	view := app.statusBar.View(app.theme, app.mode, app.focus, "", 0)
+	assert.Contains(t, view, statusErrorSGR)
+	assert.NotContains(t, view, statusPrimarySGR)
+}
+
 func TestUpdateFilesLoadedMsgEmpty(t *testing.T) {
 	app := newTestApp(nil)
 
@@ -210,6 +224,18 @@ func TestStartupNoticeFlashesWithoutBlocking(t *testing.T) {
 	assert.Equal(t, notice, app.statusBar.Message)
 	_, cmd := app.Update(tea.KeyPressMsg{Text: "j"})
 	assert.Nil(t, cmd, "the next key must reach the TUI instead of quitting")
+}
+
+func TestStartupNoticeRendersInErrorColor(t *testing.T) {
+	cfg := config.DefaultConfig()
+	cfg.Dir = t.TempDir()
+
+	app := startApp(t, NewApp(cfg, StartupMessages{Notices: []string{`unknown theme "does-not-exist"`}}))
+	app.theme = statusColorTheme()
+
+	view := app.statusBar.View(app.theme, app.mode, app.focus, "", 0)
+	assert.Contains(t, view, statusErrorSGR)
+	assert.NotContains(t, view, statusPrimarySGR)
 }
 
 func TestConfigErrorBlocksAndQuitsOnNextKey(t *testing.T) {

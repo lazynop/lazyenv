@@ -12,6 +12,7 @@ type StatusBarModel struct {
 	Width    int
 	ReadOnly bool   // show [READ-ONLY] badge
 	Message  string // transient message (e.g. "Saved!")
+	isError  bool   // Message reports an error; rendered in the error color
 	Mode     string // current mode label
 	msgGen   int    // bumped on every SetMessage; guards against stale clears
 }
@@ -27,12 +28,21 @@ func NewStatusBarModel() StatusBarModel {
 // transient flash's auto-clear timer fires while they are showing.
 func (m *StatusBarModel) SetMessage(msg string) {
 	m.Message = msg
+	m.isError = false
 	m.msgGen++
+}
+
+// SetError sets a status message that reports an error, rendered in the error
+// color instead of the primary one.
+func (m *StatusBarModel) SetError(msg string) {
+	m.SetMessage(msg)
+	m.isError = true
 }
 
 // ClearMessage clears the transient message.
 func (m *StatusBarModel) ClearMessage() {
 	m.Message = ""
+	m.isError = false
 }
 
 // View renders the status bar.
@@ -63,7 +73,11 @@ func (m *StatusBarModel) View(theme Theme, mode AppMode, focus Focus, fileName s
 	// Transient message overrides hints
 	left := hints
 	if m.Message != "" {
-		left = theme.SelectedItem.Render(m.Message)
+		style := theme.SelectedItem
+		if m.isError {
+			style = theme.StatusBarError
+		}
+		left = style.Render(m.Message)
 	}
 
 	// Layout

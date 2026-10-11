@@ -149,3 +149,37 @@ func TestStatusBarMessageOverridesHints(t *testing.T) {
 	view := sb.View(theme, ModeNormal, FocusVars, ".env", 5)
 	assert.Contains(t, view, "File saved successfully")
 }
+
+// SGR fragments of the primary and error colors in statusColorTheme, used to
+// tell which of the two a status-bar message was rendered in.
+const (
+	statusPrimarySGR = "38;2;0;255;0"
+	statusErrorSGR   = "38;2;255;0;0"
+)
+
+func statusColorTheme() Theme {
+	return BuildTheme(true, config.ColorConfig{Primary: "#00FF00", Error: "#FF0000"})
+}
+
+func TestStatusBarErrorRendersInErrorColor(t *testing.T) {
+	sb := NewStatusBarModel()
+	sb.Width = 120
+	sb.SetError("Error saving: disk full")
+
+	view := sb.View(statusColorTheme(), ModeNormal, FocusVars, "", 0)
+	assert.Contains(t, view, "Error saving: disk full")
+	assert.Contains(t, view, statusErrorSGR)
+	assert.NotContains(t, view, statusPrimarySGR)
+}
+
+func TestStatusBarMessageAfterErrorRendersInPrimaryColor(t *testing.T) {
+	sb := NewStatusBarModel()
+	sb.Width = 120
+	sb.SetError("Error saving: disk full")
+	sb.SetMessage("Saved .env")
+
+	view := sb.View(statusColorTheme(), ModeNormal, FocusVars, "", 0)
+	assert.Contains(t, view, "Saved .env")
+	assert.Contains(t, view, statusPrimarySGR)
+	assert.NotContains(t, view, statusErrorSGR)
+}

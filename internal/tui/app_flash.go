@@ -26,8 +26,9 @@ func (a *App) flashMessage(msg string) tea.Cmd {
 	return clearMessageAfter(a.config.Layout.MessageTimeout, a.statusBar.msgGen)
 }
 
-// flashError sets a transient error message with a longer timeout.
+// flashError sets a transient error message, rendered in the error color, with
+// a longer timeout.
 func (a *App) flashError(msg string) tea.Cmd {
-	a.statusBar.SetMessage(msg)
+	a.statusBar.SetError(msg)
 	return clearMessageAfter(a.config.Layout.ErrorMessageTimeout, a.statusBar.msgGen)
 }

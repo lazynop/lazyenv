@@ -112,9 +112,9 @@ primary = "#FF6600"    # override just primary, rest from nord
 
 | Key         | Dark default | Light default | Used for                                                             |
 | ----------- | ------------ | ------------- | -------------------------------------------------------------------- |
-| `primary`   | `#BD93F9`    | `#7B2FBE`     | Panel titles, focused panel border, selected items, status bar keys and messages, matrix column headers. |
+| `primary`   | `#BD93F9`    | `#7B2FBE`     | Panel titles, focused panel border, selected items, status bar keys and messages other than errors, matrix column headers. |
 | `warning`   | `#FFB86C`    | `#D97706`     | Empty value warnings, placeholder warnings, `[READ-ONLY]` badge, changed lines in diff. |
-| `error`     | `#FF5555`    | `#DC2626`     | Config error screen, delete-variable prompt, duplicate key warnings, git warnings, removed lines in diff, missing cells in the matrix. |
+| `error`     | `#FF5555`    | `#DC2626`     | Config error screen, status bar error messages, delete-variable prompt, duplicate key warnings, git warnings, removed lines in diff, missing cells in the matrix. |
 | `success`   | `#50FA7B`    | `#059669`     | Added lines in diff and their count in the status bar.               |
 | `muted`     | `#6272A4`    | `#6B7280`     | Status bar, masked secrets, deleted variables, peek lines, equal lines in diff, present cells in the matrix, secondary text. |
 | `fg`        | `#F8F8F2`    | `#1F2937`     | Default text: keys, values, normal list items, help screen.          |

@@ -100,7 +100,7 @@ func (a App) handleCompareFilter() (tea.Model, tea.Cmd) {
 
 func (a App) handleCompareReset() (App, tea.Cmd) {
 	if errMsg := a.diffView.Reset(); errMsg != "" {
-		return a, a.flashMessage(errMsg)
+		return a, a.flashError(errMsg)
 	}
 	a.replaceFile(a.diffView.FileA)
 	a.replaceFile(a.diffView.FileB)

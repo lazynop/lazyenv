@@ -216,7 +216,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case FilesLoadedMsg:
 		if msg.Err != nil {
-			a.statusBar.SetMessage("Error: " + msg.Err.Error())
+			a.statusBar.SetError("Error: " + msg.Err.Error())
 			return a, nil
 		}
 		a.fileList.SetFiles(msg.Files)
