@@ -36,7 +36,6 @@ type MatrixModel struct {
 	editKey  string // key being added
 	editFile int    // file index target
 	editor   textinput.Model
-	message  string // transient message
 }
 
 // NewMatrixModel creates a matrix model from the loaded files.
@@ -160,7 +159,6 @@ func (m *MatrixModel) StartEdit() tea.Cmd {
 	}
 	entry := m.entries[m.cursorRow]
 	if entry.Present[m.cursorCol] {
-		m.message = "Variable already exists"
 		return nil
 	}
 	m.editing = true

@@ -195,7 +195,6 @@ func TestMatrixStartEditPresent(t *testing.T) {
 	_ = m.StartEdit()
 
 	assert.False(t, m.editing, "editing should NOT be set for present cell")
-	assert.Equal(t, "Variable already exists", m.message)
 }
 
 func TestMatrixConfirmEdit(t *testing.T) {

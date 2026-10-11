@@ -38,24 +38,22 @@ func (a App) handleMatrixEdit(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a, cmd
 	}
 
+	if len(a.matrixView.entries) == 0 {
+		return a, nil
+	}
+	entry := a.matrixView.entries[a.matrixView.cursorRow]
+	present := entry.Present[a.matrixView.cursorCol]
+
 	switch {
 	case key.Matches(msg, a.keys.Add):
+		if present {
+			return a, a.flashWarning("Variable already exists")
+		}
 		cmd := a.matrixView.StartEdit()
-		if a.matrixView.editing {
-			a.mode = ModeMatrixEditing
-			return a, cmd
-		}
-		if a.matrixView.message != "" {
-			flashMsg := a.matrixView.message
-			a.matrixView.message = ""
-			return a, a.flashWarning(flashMsg)
-		}
+		a.mode = ModeMatrixEditing
+		return a, cmd
 	case key.Matches(msg, a.keys.Delete):
-		if len(a.matrixView.entries) == 0 {
-			return a, nil
-		}
-		entry := a.matrixView.entries[a.matrixView.cursorRow]
-		if !entry.Present[a.matrixView.cursorCol] {
+		if !present {
 			return a, a.flashWarning("Variable not present in this file")
 		}
 		a.mode = ModeConfirmMatrixDelete
