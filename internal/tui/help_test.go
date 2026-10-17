@@ -299,3 +299,24 @@ func TestHelpNamesTheMouseWheelOnlyWithTheMouseOn(t *testing.T) {
 	cfg.NoMouse = true
 	assert.NotContains(t, helpScreen(openHelpWith(cfg, 120, 200)), "mouse wheel")
 }
+
+// helpTopRow is the first row of help text on screen, below the padding.
+func helpTopRow(app App) string {
+	return strings.TrimSpace(strings.Split(helpScreen(app), "\n")[helpPaddingHeight])
+}
+
+func TestHelpKeepsItsTopRowWhenTheWidthChanges(t *testing.T) {
+	app := openHelp(120, 24)
+	for range scrollPastTheEnd {
+		if helpTopRow(app) == "Compare view" {
+			break
+		}
+		app = press(app, "down")
+	}
+	require.Equal(t, "Compare view", helpTopRow(app))
+
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: MinTerminalWidth, Height: 24})
+
+	assert.Equal(t, "Compare view", helpTopRow(updated.(App)),
+		"rows that wrap above the top row must not shift what the screen shows")
+}

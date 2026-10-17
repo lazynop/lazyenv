@@ -112,6 +112,7 @@ type HelpViewModel struct {
 	width  int
 	height int
 	lines  []string // text wrapped to width, one row per line
+	rows   []int    // for each of lines, the row of text it wraps
 }
 
 // NewHelpViewModel creates the help screen; mouse says whether the mouse is
@@ -127,14 +128,24 @@ func NewHelpViewModel(mouse bool) HelpViewModel {
 // SetSize lays the text out for a screen of the given size, pulling the
 // offset back if the resize leaves blank rows below the text. App.Update
 // calls it after every message, so the text is wrapped again only when the
-// width changes.
+// width changes, keeping on top the row of text that was there.
 func (m *HelpViewModel) SetSize(width, height int) {
 	if width != m.width {
+		top := 0
+		if m.offset < len(m.rows) {
+			top = m.rows[m.offset]
+		}
 		m.width = width
 		textWidth := max(width-2*helpPaddingWidth, 1)
-		m.lines = nil
-		for _, row := range strings.Split(m.text, "\n") {
-			m.lines = append(m.lines, wrapHelpRow(row, textWidth)...)
+		m.lines, m.rows = nil, nil
+		for i, row := range strings.Split(m.text, "\n") {
+			if i == top {
+				m.offset = len(m.lines)
+			}
+			for _, line := range wrapHelpRow(row, textWidth) {
+				m.lines = append(m.lines, line)
+				m.rows = append(m.rows, i)
+			}
 		}
 	}
 	m.height = height
