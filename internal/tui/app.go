@@ -414,7 +414,7 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 		a.compareFirstFile = f
 		a.mode = ModeCompareSelect
 		a.setFocus(FocusFiles)
-		a.statusBar.SetMessage("Select second file to compare...")
+		a.statusBar.ClearMessage() // the mode's hint is the prompt
 
 	case key.Matches(msg, a.keys.Save):
 		if cmd := a.readOnlyFlash(); cmd != nil {

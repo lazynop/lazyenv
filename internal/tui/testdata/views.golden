@@ -473,7 +473,7 @@
 │                  ││  VAR_12     value_12                                     │
 │                  ││  VAR_13     value_13                                     │
 ╰──────────────────╯╰──────────────────────────────────────────────────────────╯
-   Select second file to compare...                               .env  34 vars
+   Select second file to compare (Enter to select, Esc to cancel) .env  34 vars
 === compare
 ╭─────────────────────────────────────╮╭─────────────────────────────────────╮
 │ .env                                ││ .env.local                          │

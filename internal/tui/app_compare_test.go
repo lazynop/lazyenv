@@ -542,3 +542,25 @@ func TestCompareKeyNeedsAtLeast2Files(t *testing.T) {
 	assert.Equal(t, ModeNormal, app.mode)
 	assert.Contains(t, app.statusBar.Message, "at least 2 files")
 }
+
+// TestCompareSelectEnterOnTheFirstFileWarns presses Enter while picking the
+// second file with the cursor still on the first: the pick stays open and
+// says why nothing happened.
+func TestCompareSelectEnterOnTheFirstFileWarns(t *testing.T) {
+	app := press(newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.prod", "B")}), "c", "enter")
+
+	assert.Equal(t, ModeCompareSelect, app.mode)
+	assert.Contains(t, app.statusBar.Message, "different file")
+}
+
+// TestCompareSelectPromptReturnsAfterAWarning lets the warning from Enter on
+// the first file expire: the picker's prompt shows again.
+func TestCompareSelectPromptReturnsAfterAWarning(t *testing.T) {
+	app := press(newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.prod", "B")}), "c")
+	require.Contains(t, stripAnsi(app.View().Content), "Select second file to compare")
+
+	app = press(app, "enter")
+	updated, _ := app.Update(ClearMessageMsg{gen: app.statusBar.msgGen})
+
+	assert.Contains(t, stripAnsi(updated.(App).View().Content), "Select second file to compare")
+}

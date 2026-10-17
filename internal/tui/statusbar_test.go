@@ -102,6 +102,15 @@ func TestStatusBarViewMatrix(t *testing.T) {
 	assert.Contains(t, view, "add missing")
 }
 
+func TestStatusBarViewCompareSelect(t *testing.T) {
+	sb := NewStatusBarModel()
+	sb.Width = 120
+	theme := BuildTheme(true, config.ColorConfig{})
+
+	view := sb.View(theme, ModeCompareSelect, FocusFiles, "", 0)
+	assert.Contains(t, view, "Select second file")
+}
+
 func TestStatusBarReadOnlyBadge(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120
