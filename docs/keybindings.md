@@ -123,6 +123,9 @@ Yes/no prompts confirm only with `y`: `Enter` and other keys are ignored. `Ctrl+
 | `↓` / `j`      | Next theme                                     |
 | `Enter`        | Select theme and print config snippet          |
 | `q` / `Esc`    | Quit without selection                         |
+| `Ctrl+C`       | Quit without selection                         |
+
+With the mouse on, a click on a theme in the list shows it, and the wheel over the list moves through the themes.
 
 ## Mouse
 
