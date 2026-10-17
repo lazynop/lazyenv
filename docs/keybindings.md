@@ -6,8 +6,8 @@ Keybindings are context-sensitive: each screen only responds to the keys listed 
 
 | Key            | Action                                            |
 | -------------- | ------------------------------------------------- |
-| `↑` / `k`      | Move cursor up                                    |
-| `↓` / `j`      | Move cursor down                                  |
+| `↑` / `k`      | Move up and show that file's variables            |
+| `↓` / `j`      | Move down and show that file's variables          |
 | `→` / `l`      | Switch focus to variable panel                    |
 | `Enter`        | Select file and switch focus to variable panel    |
 | `N`            | Create new `.env` file in the scan directory      |
@@ -139,6 +139,6 @@ Mouse is enabled by default. Disable with `--no-mouse` or `no-mouse = true` in c
 | Click on panel        | Switch focus to that panel               |
 | Click on diff entry   | Select the entry                         |
 | Click on matrix cell  | Move cursor to that cell                 |
-| Scroll wheel          | Scroll the panel under the mouse cursor  |
+| Scroll wheel          | Scroll the panel under the mouse cursor; over the file list it also shows the file it lands on |
 
 While an edit bar, a file-name bar, a prompt or a confirmation is open, clicks and the wheel are ignored: it acts on the entry it was opened on. The search bar is the exception: the mouse keeps working while you type a search. While you pick the second file to compare, only clicks on the file list count, and the wheel moves the cursor without changing the active file. On the help screen the wheel scrolls it and clicks are ignored.
