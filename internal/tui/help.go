@@ -49,6 +49,7 @@ const helpText = `  lazyenv — TUI for managing .env files
     ↑/↓  j/k       Choose the file
     Enter          Compare with it
     Esc            Cancel
+    q / Ctrl+C     Cancel
 
   Compare view
     ↑/↓  j/k       Navigate entries

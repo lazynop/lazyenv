@@ -509,3 +509,27 @@ func TestCompareViewFillsTheNormalPanelHeight(t *testing.T) {
 	assert.LessOrEqual(t, lipgloss.Height(app.View().Content), app.height,
 		"the editor bar must still fit in the terminal")
 }
+
+// TestCompareSelectQuitKeysCancel presses q and Ctrl+C while picking the
+// second file to compare: like Esc, they cancel the pick and go back to the
+// main view, as they go back from compare and matrix, instead of quitting.
+func TestCompareSelectQuitKeysCancel(t *testing.T) {
+	for name, msg := range map[string]tea.KeyPressMsg{
+		"q":      {Code: 'q', Text: "q"},
+		"ctrl+c": {Code: 'c', Mod: tea.ModCtrl},
+	} {
+		t.Run(name, func(t *testing.T) {
+			f1, f2 := makeTestFile(".env", "FOO"), makeTestFile(".env.prod", "BAR")
+			app := press(newTestApp([]*model.EnvFile{f1, f2}), "c", "j")
+			require.Equal(t, ModeCompareSelect, app.mode)
+
+			updated, cmd := app.Update(msg)
+			app = updated.(App)
+
+			assert.Nil(t, cmd, "%s must not quit", name)
+			assert.Equal(t, ModeNormal, app.mode)
+			assert.Equal(t, app.fileList.Selected, app.fileList.Cursor, "the cursor goes back to the active file")
+			assert.Nil(t, app.compareFirstFile)
+		})
+	}
+}

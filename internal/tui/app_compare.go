@@ -171,7 +171,8 @@ func (a App) handleEditingCompareKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 func (a App) handleCompareSelectKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
-	case key.Matches(msg, a.keys.Escape):
+	case key.Matches(msg, a.keys.Escape, a.keys.Quit):
+		// q and Ctrl+C go back here, as they do from compare and matrix.
 		a.mode = ModeNormal
 		a.compareFirstFile = nil
 		a.statusBar.ClearMessage()

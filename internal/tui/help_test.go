@@ -215,6 +215,7 @@ func TestHelpGroupsTheKeysByScreen(t *testing.T) {
 	assert.Contains(t, helpRow(sections, "Both panels", "q / Ctrl+C"), "Quit")
 	assert.Contains(t, helpRow(sections, "Compare: pick the second file", "Enter"), "Compare")
 	assert.Contains(t, helpRow(sections, "Compare: pick the second file", "Esc"), "Cancel")
+	assert.Contains(t, helpRow(sections, "Compare: pick the second file", "q / Ctrl+C"), "Cancel")
 	assert.Contains(t, helpRow(sections, "Prompts", "Esc"), "clear the filter")
 	assert.Contains(t, helpRow(sections, "Variable Indicators", "▸"), "Collapsed group")
 	assert.Contains(t, helpRow(sections, "Variable Indicators", "▾"), "Expanded group")

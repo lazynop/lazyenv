@@ -56,7 +56,7 @@ Keybindings are context-sensitive: each screen only responds to the keys listed 
 
 ## Compare — Diff view
 
-Side-by-side diff between two `.env` files. After `c`, pick the second file with `↑` / `↓` and press `Enter`, or `Esc` to cancel.
+Side-by-side diff between two `.env` files. After `c`, pick the second file with `↑` / `↓` and press `Enter`, or `Esc`, `q` or `Ctrl+C` to cancel.
 
 | Key       | Action                                   |
 | --------- | ---------------------------------------- |
