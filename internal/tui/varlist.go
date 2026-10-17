@@ -238,6 +238,20 @@ func (m *VarListModel) SetCursor(index int) {
 	m.ensureCursorVisible()
 }
 
+// IndexAtRow returns the index in displayItems of the item drawn on row, the
+// list's rows counted from the first one shown, or -1 past either end of the
+// list. The peek line maps to the item at the cursor, which it belongs to.
+func (m *VarListModel) IndexAtRow(row int) int {
+	index := m.Offset + row
+	if m.drawsPeekLine() && index > m.Cursor {
+		index-- // from the peek line down, each row shows the item above it
+	}
+	if index < 0 || index >= len(m.displayItems) {
+		return -1
+	}
+	return index
+}
+
 // DisplayCount returns the number of displayed rows (vars + headers).
 func (m *VarListModel) DisplayCount() int {
 	return len(m.displayItems)

@@ -40,10 +40,11 @@ func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 			}
 		}
 	} else {
-		// Click on var list panel
+		// Click on var list panel. The row maps to an item as drawn when
+		// clicked, before focusing the list draws a peek line and scrolls.
+		index := a.varList.IndexAtRow(msg.Y - panelContentOffsetY)
 		a.setFocus(FocusVars)
-		index := msg.Y - panelContentOffsetY + a.varList.Offset
-		if index >= 0 && index < a.varList.DisplayCount() {
+		if index >= 0 {
 			a.varList.SetCursor(index)
 			if a.varList.IsHeaderAtCursor() {
 				a.varList.ToggleCollapseAtCursor()

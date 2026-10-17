@@ -263,6 +263,64 @@ func TestMouseWheelNormal_VarList(t *testing.T) {
 		"wheel down over the var panel should advance the var cursor")
 }
 
+// rowDrawing returns the screen row of view that holds text, failing when none
+// does.
+func rowDrawing(t *testing.T, view, text string) int {
+	t.Helper()
+	row := slices.IndexFunc(strings.Split(stripAnsi(view), "\n"), func(line string) bool {
+		return strings.Contains(line, text)
+	})
+	require.GreaterOrEqual(t, row, 0, "%q should be drawn", text)
+	return row
+}
+
+// TestMouseClickVarList_SelectsTheVarDrawnAtTheRow turns peek on over a
+// modified var and clicks rows around its peek line: a click selects the var
+// drawn on that row, and one on the peek line keeps the var it belongs to.
+func TestMouseClickVarList_SelectsTheVarDrawnAtTheRow(t *testing.T) {
+	for _, tt := range []struct{ click, selects string }{
+		{"BRAVO", "BRAVO"},
+		{"DELTA", "DELTA"},
+		{"↳ was:", "ALPHA"},
+	} {
+		t.Run(tt.click, func(t *testing.T) {
+			f := makeTestFile(".env", "ALPHA", "BRAVO", "CHARLIE", "DELTA")
+			f.UpdateVar(0, "edited", false)
+			updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+			app := press(updated.(App), "right", "p")
+			row := rowDrawing(t, app.View().Content, tt.click)
+
+			updated, _ = app.Update(tea.MouseClickMsg{X: 40, Y: row, Button: tea.MouseLeft})
+
+			app = updated.(App)
+			require.NotNil(t, app.varList.SelectedVar())
+			assert.Equal(t, tt.selects, app.varList.SelectedVar().Key)
+		})
+	}
+}
+
+// TestMouseClickVarList_FromTheFileListSelectsTheVarDrawnAtTheRow clicks a var
+// while the file list has the focus and the var cursor sits on the bottom row,
+// on a modified var: focusing the var list draws a peek line under it and
+// scrolls, but the click selects the var that was drawn where it landed.
+func TestMouseClickVarList_FromTheFileListSelectsTheVarDrawnAtTheRow(t *testing.T) {
+	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F")
+	f.UpdateVar(5, "edited", false)
+	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: bottomChromeHeight + panelChromeHeight + 4})
+	app := press(updated.(App), "right", "p", "left")
+	for range len(f.Vars) - 1 {
+		updated, _ = app.Update(tea.MouseWheelMsg{X: 40, Y: 3, Button: tea.MouseWheelDown})
+		app = updated.(App)
+	}
+	row := rowDrawing(t, app.View().Content, "val_D")
+
+	updated, _ = app.Update(tea.MouseClickMsg{X: 40, Y: row, Button: tea.MouseLeft})
+
+	app = updated.(App)
+	require.NotNil(t, app.varList.SelectedVar())
+	assert.Equal(t, "D", app.varList.SelectedVar().Key)
+}
+
 // --- Compare mode: click and wheel drive the diff view ---
 
 func TestMouseClickCompareMode_SelectsTheClickedEntry(t *testing.T) {
