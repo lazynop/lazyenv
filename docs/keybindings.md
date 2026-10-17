@@ -100,7 +100,7 @@ Multi-file grid showing which variables exist in which files.
 | Reorder mode (`O`)                                           | `a` alphabetical, `g` grouped | `Esc`             |
 | Delete a variable, a file or a matrix cell; confirm reorder  | `y`                           | `n` / `Esc`       |
 
-Yes/no prompts confirm only with `y`: `Enter` and other keys are ignored. `Ctrl+C` does nothing while a prompt is open, unless the terminal is below the [minimum size](installation.md#requirements), where it always quits. The help screen (`?`) closes with `Esc`, `?`, `q` or `Ctrl+C`.
+Yes/no prompts confirm only with `y`: `Enter` and other keys are ignored. `Ctrl+C` does nothing while a prompt is open, unless the terminal is below the [minimum size](installation.md#requirements), where it always quits. The help screen (`?`) closes with `Esc`, `?`, `q` or `Ctrl+C`; when it is taller than the terminal, `↑` / `k` and `↓` / `j` or the mouse wheel scroll it.
 
 ## Theme preview (`--themes`)
 

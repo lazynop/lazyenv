@@ -63,6 +63,19 @@ const (
 	// matrixPaddingWidth is the left + right padding of the matrix view,
 	// which has no border.
 	matrixPaddingWidth = 2
+
+	// helpPaddingHeight and helpPaddingWidth are the help screen's padding:
+	// the blank rows above and below it, and the blank columns on each side.
+	helpPaddingHeight = 1
+	helpPaddingWidth  = 2
+
+	// helpFooterHeight is the rows below the help text: a blank row + the
+	// footer hint.
+	helpFooterHeight = 2
+
+	// helpChromeHeight is the rows the help screen draws around its text:
+	// padding above and below + the footer.
+	helpChromeHeight = 2*helpPaddingHeight + helpFooterHeight
 )
 
 // MinTerminalWidth and MinTerminalHeight are the smallest terminal the TUI

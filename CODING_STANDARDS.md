@@ -110,7 +110,7 @@ Caught by `TestUsageDocumentsEveryFlag` and `TestKeybindingsDocumentsEveryKey`: 
 | `docs/installation.md` | Install instructions | Requirements or distribution channels change |
 | `CODING_STANDARDS.md` | This file | A convention, pitfall or checklist changes |
 | `examples/config/full.toml` | Reference config users copy; its comments state defaults and limits | An option, default or limit changes |
-| `viewHelp` in `internal/tui/app_views.go` | In-app help screen | A key, or the screens it works in, changes |
+| `helpText` in `internal/tui/help.go` | In-app help screen | A key, or the screens it works in, changes |
 | `modeHints` in `internal/tui/statusbar.go` | Status-bar key hints per mode | A key or a mode changes |
 | `help:` tags of the `cli` struct in `main.go` | `--help` output | A flag changes |
 

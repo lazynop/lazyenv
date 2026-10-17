@@ -284,7 +284,6 @@
  .env  34 vars
 === help
 
-
     lazyenv — TUI for managing .env files
 
     Navigation
@@ -305,37 +304,8 @@
       D              Delete file from disk
       R              Rename file
       T              Create template (keys only, no values)
-      w              Save changes
-      r              Reset file (discard changes)
-      c              Compare two files (diff view)
-      n/N            Jump to next/prev diff (compare mode)
-      m              Completeness matrix (multi-file)
-      /              Search variables
-      o              Toggle sort (position / alphabetical)
-      O              Reorder variables on disk (alphabetical / grouped)
-      g              Toggle variable grouping by prefix
-      Space/Enter    Collapse/expand group (on header)
-      Ctrl+S         Toggle secret masking
 
-    File Indicators
-      ●              Selected file
-      *              Modified (unsaved changes)
-      !              Not covered by .gitignore
-
-    Variable Indicators
-      +              Newly added variable
-      *              Modified variable
-      -              Deleted variable (until save)
-      D              Duplicate key
-      ○              Empty value
-      …              Placeholder value
-
-    General
-      ?              Show/hide this help
-      q / Ctrl+C     Quit (in compare and matrix: back to main view)
-      Esc            Back / cancel
-
-    Press Esc or ? to close
+    Press ↑/↓ to scroll, Esc or ? to close
 
 === new file
 ╭──────────────────╮╭──────────────────────────────────────────────────────────╮

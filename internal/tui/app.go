@@ -92,6 +92,7 @@ type App struct {
 	varList     VarListModel
 	statusBar   StatusBarModel
 	diffView    DiffViewModel
+	helpView    HelpViewModel
 	editor      EditorModel
 	searchInput textinput.Model
 	matrixView  MatrixModel
@@ -312,6 +313,7 @@ func (a App) handleNormalKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a, tea.Quit
 	case key.Matches(msg, a.keys.Help):
 		a.mode = ModeHelp
+		a.helpView.ScrollToTop()
 		return a, nil
 	}
 
@@ -619,8 +621,13 @@ func (a App) handleConfirmDeleteKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 }
 
 func (a App) handleHelpKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, a.keys.Escape) || key.Matches(msg, a.keys.Help) || key.Matches(msg, a.keys.Quit) {
+	switch {
+	case key.Matches(msg, a.keys.Escape, a.keys.Help, a.keys.Quit):
 		a.mode = ModeNormal
+	case key.Matches(msg, a.keys.Up):
+		a.helpView.ScrollUp()
+	case key.Matches(msg, a.keys.Down):
+		a.helpView.ScrollDown()
 	}
 	return a, nil
 }
@@ -669,7 +676,7 @@ func (a App) screen() string {
 	case ModeConfigError:
 		return a.viewConfigError()
 	case ModeHelp:
-		return a.viewHelp()
+		return a.helpView.View(a.theme)
 	case ModeComparing:
 		return a.withBottom(a.diffView.View(a.theme), a.statusBar.View(a.theme, a.mode, a.focus, "", 0, a.diffView.Stats))
 	case ModeEditingCompare:
@@ -818,6 +825,10 @@ func (a *App) updateLayout() {
 	a.matrixView.Height = panelHeight
 	a.matrixView.ensureVisible()
 	a.matrixView.ensureHorizontalVisible()
+
+	a.helpView.Width = a.width
+	a.helpView.Height = a.height
+	a.helpView.ensureVisible()
 
 	a.statusBar.Width = a.width
 }

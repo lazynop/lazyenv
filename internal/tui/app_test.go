@@ -111,18 +111,6 @@ func TestUpdateClearMessageMsgIgnoresStaleGen(t *testing.T) {
 		"a clear scheduled for an earlier message must not wipe a newer one")
 }
 
-func TestViewHelp(t *testing.T) {
-	app := newTestApp(nil)
-	app.width = 100
-	app.height = 40
-
-	help := app.viewHelp()
-	assert.Contains(t, help, "lazyenv")
-	assert.Contains(t, help, "Navigation")
-	assert.Contains(t, help, "Actions")
-	assert.Contains(t, help, "Press Esc or ? to close")
-}
-
 func TestNavigationUpDownInFilePanel(t *testing.T) {
 	f1 := makeTestFile(".env", "A")
 	f2 := makeTestFile(".env.prod", "B")

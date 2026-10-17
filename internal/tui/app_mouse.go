@@ -107,9 +107,11 @@ func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 		a = a.scrollFileList(up)
 	case ModeMatrix:
 		a = a.scrollMatrix(up)
+	case ModeHelp:
+		a = a.scrollHelp(up)
 	case ModeEditing, ModeEditingCompare, ModeMatrixEditing, ModeConfirmDelete, ModeConfirmDeleteFile,
 		ModeConfirmMatrixDelete, ModeCreateFile, ModeDuplicateFile, ModeRenameFile, ModeTemplateFile,
-		ModeReorderMenu, ModeReorderConfirm, ModeHelp, ModeConfigError:
+		ModeReorderMenu, ModeReorderConfirm, ModeConfigError:
 		// Keyboard-only modes and static screens: the wheel is ignored. Edit
 		// bars and confirmations act on the entry they were opened on, so
 		// moving the cursor under them would only mislead or retarget them.
@@ -150,6 +152,17 @@ func (a App) scrollDiffView(up bool) App {
 			a.diffView.MoveUp()
 		} else {
 			a.diffView.MoveDown()
+		}
+	}
+	return a
+}
+
+func (a App) scrollHelp(up bool) App {
+	for range a.config.Layout.MouseScrollLines {
+		if up {
+			a.helpView.ScrollUp()
+		} else {
+			a.helpView.ScrollDown()
 		}
 	}
 	return a

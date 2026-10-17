@@ -190,9 +190,7 @@ func TestViewScenariosCoverEveryMode(t *testing.T) {
 // knownTooTall lists the scenarios that still outgrow the terminal, each with
 // the issue tracking it. An entry whose scenario fits everywhere fails the
 // test: remove it.
-var knownTooTall = map[string]string{
-	"help": "#57",
-}
+var knownTooTall = map[string]string{}
 
 // gridWidths and gridHeights are the terminal sizes every scenario renders at.
 // The grid starts at the minimum terminal size, below which every screen gives
