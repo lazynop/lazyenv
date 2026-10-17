@@ -40,6 +40,10 @@ type KeyMap struct {
 	RenameFile     key.Binding
 	TemplateFile   key.Binding
 	Reorder        key.Binding
+	PageUp         key.Binding
+	PageDown       key.Binding
+	Home           key.Binding
+	End            key.Binding
 }
 
 // DefaultKeyMap returns the default keybindings.
@@ -188,6 +192,22 @@ func DefaultKeyMap() KeyMap {
 		Reorder: key.NewBinding(
 			key.WithKeys("O"),
 			key.WithHelp("O", "reorder on disk"),
+		),
+		PageUp: key.NewBinding(
+			key.WithKeys("pgup"),
+			key.WithHelp("pgup", "page up"),
+		),
+		PageDown: key.NewBinding(
+			key.WithKeys("pgdown"),
+			key.WithHelp("pgdown", "page down"),
+		),
+		Home: key.NewBinding(
+			key.WithKeys("home"),
+			key.WithHelp("home", "top"),
+		),
+		End: key.NewBinding(
+			key.WithKeys("end"),
+			key.WithHelp("end", "bottom"),
 		),
 	}
 }

@@ -72,7 +72,8 @@ func appScenario(name string, mode AppMode, setup func(app App) App) viewScenari
 // rest as text.
 func press(app App, keys ...string) App {
 	codes := map[string]rune{"enter": tea.KeyEnter, "esc": tea.KeyEscape, "tab": tea.KeyTab,
-		"up": tea.KeyUp, "down": tea.KeyDown, "left": tea.KeyLeft, "right": tea.KeyRight}
+		"up": tea.KeyUp, "down": tea.KeyDown, "left": tea.KeyLeft, "right": tea.KeyRight,
+		"pgup": tea.KeyPgUp, "pgdown": tea.KeyPgDown, "home": tea.KeyHome, "end": tea.KeyEnd}
 	for _, k := range keys {
 		msg := tea.KeyPressMsg{Text: k}
 		if code, ok := codes[k]; ok {

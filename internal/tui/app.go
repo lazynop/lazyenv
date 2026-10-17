@@ -628,6 +628,14 @@ func (a App) handleHelpKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.helpView.ScrollUp()
 	case key.Matches(msg, a.keys.Down):
 		a.helpView.ScrollDown()
+	case key.Matches(msg, a.keys.PageUp):
+		a.helpView.PageUp()
+	case key.Matches(msg, a.keys.PageDown):
+		a.helpView.PageDown()
+	case key.Matches(msg, a.keys.Home):
+		a.helpView.ScrollToTop()
+	case key.Matches(msg, a.keys.End):
+		a.helpView.ScrollToBottom()
 	}
 	return a, nil
 }

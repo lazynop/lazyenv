@@ -91,6 +91,19 @@ Multi-file grid showing which variables exist in which files.
 | `q` / `Ctrl+C` | Return to main view                      |
 | `Esc`     | Return to main view                           |
 
+## Help screen (`?`)
+
+The help lists the keys of every screen. When it is taller than the terminal, it scrolls.
+
+| Key                  | Action                         |
+| -------------------- | ------------------------------ |
+| `↑` / `k`            | Scroll up a row                |
+| `↓` / `j`            | Scroll down a row              |
+| `PgUp` / `PgDn`      | Scroll up / down a page        |
+| `Home` / `End`       | Jump to the top / bottom       |
+| `Esc` / `?`          | Close the help                 |
+| `q` / `Ctrl+C`       | Close the help                 |
+
 ## Prompts
 
 | Prompt                                                       | Confirm                       | Cancel            |
@@ -100,7 +113,7 @@ Multi-file grid showing which variables exist in which files.
 | Reorder mode (`O`)                                           | `a` alphabetical, `g` grouped | `Esc`             |
 | Delete a variable, a file or a matrix cell; confirm reorder  | `y`                           | `n` / `Esc`       |
 
-Yes/no prompts confirm only with `y`: `Enter` and other keys are ignored. `Ctrl+C` does nothing while a prompt is open, unless the terminal is below the [minimum size](installation.md#requirements), where it always quits. The help screen (`?`) closes with `Esc`, `?`, `q` or `Ctrl+C`; when it is taller than the terminal, `↑` / `k` and `↓` / `j` or the mouse wheel scroll it.
+Yes/no prompts confirm only with `y`: `Enter` and other keys are ignored. `Ctrl+C` does nothing while a prompt is open, unless the terminal is below the [minimum size](installation.md#requirements), where it always quits.
 
 ## Theme preview (`--themes`)
 

@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -22,7 +23,7 @@ func openHelp(width, height int) App {
 const scrollPastTheEnd = 120
 
 // helpLastRow is the description on the last row of the help.
-const helpLastRow = "Scroll (or the mouse wheel)"
+const helpLastRow = "Jump to the top/bottom"
 
 // helpScreen is the help screen as plain text.
 func helpScreen(app App) string {
@@ -241,4 +242,26 @@ func TestHelpAlignsItsDescriptions(t *testing.T) {
 	for _, c := range columns {
 		assert.Equal(t, columns[0], c, "every description starts at the same column")
 	}
+}
+
+func TestHelpPagesWithPgUpAndPgDn(t *testing.T) {
+	app := openHelp(80, 24) // 20 rows of text between the padding and the footer
+	top := helpScreen(app)
+
+	paged := press(app, "pgdown")
+	assert.Equal(t, helpScreen(press(app, slices.Repeat([]string{"down"}, 20)...)), helpScreen(paged),
+		"PgDn scrolls one screen of text")
+	assert.Equal(t, top, helpScreen(press(paged, "pgup")), "PgUp scrolls back one screen")
+	assert.Equal(t, top, helpScreen(press(app, "pgup")), "PgUp at the top does nothing")
+}
+
+func TestHelpJumpsToTheEndsWithHomeAndEnd(t *testing.T) {
+	app := openHelp(80, 24)
+	top := helpScreen(app)
+
+	end := press(app, "end")
+	assert.Equal(t, helpScreen(press(app, slices.Repeat([]string{"down"}, scrollPastTheEnd)...)), helpScreen(end),
+		"End shows the last row")
+	assert.Equal(t, helpScreen(end), helpScreen(press(end, "pgdown")), "PgDn at the end does nothing")
+	assert.Equal(t, top, helpScreen(press(end, "home")), "Home shows the first row")
 }

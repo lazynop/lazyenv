@@ -309,8 +309,6 @@
 
 === help scrolled to the end
 
-      y              Confirm a yes/no prompt
-      Esc            Cancel
 
     File Indicators
       ●              Selected file
@@ -329,6 +327,8 @@
       Esc / ?        Close
       q / Ctrl+C     Close
       ↑/↓  j/k       Scroll (or the mouse wheel)
+      PgUp/PgDn      Scroll a page
+      Home/End       Jump to the top/bottom
 
     Press ↑/↓ or j/k to scroll, Esc, ? or q to close
 

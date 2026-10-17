@@ -81,7 +81,9 @@ const helpText = `  lazyenv — TUI for managing .env files
   This help
     Esc / ?        Close
     q / Ctrl+C     Close
-    ↑/↓  j/k       Scroll (or the mouse wheel)`
+    ↑/↓  j/k       Scroll (or the mouse wheel)
+    PgUp/PgDn      Scroll a page
+    Home/End       Jump to the top/bottom`
 
 // HelpViewModel manages the help screen (?): helpText, scrolled when it is
 // taller than the terminal.
@@ -149,6 +151,21 @@ func (m *HelpViewModel) scrollTo(offset int) {
 // ScrollToTop shows the text from its first row.
 func (m *HelpViewModel) ScrollToTop() {
 	m.scrollTo(0)
+}
+
+// ScrollToBottom shows the last row of the text at the bottom of the screen.
+func (m *HelpViewModel) ScrollToBottom() {
+	m.scrollTo(len(m.lines))
+}
+
+// PageUp scrolls the text up one screen.
+func (m *HelpViewModel) PageUp() {
+	m.scrollTo(m.offset - m.visibleLines())
+}
+
+// PageDown scrolls the text down one screen.
+func (m *HelpViewModel) PageDown() {
+	m.scrollTo(m.offset + m.visibleLines())
 }
 
 // ScrollUp scrolls the text up one row.

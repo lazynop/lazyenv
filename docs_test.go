@@ -314,13 +314,17 @@ func helpKeys(column string) []string {
 // keyNotation is how docs/keybindings.md writes the key names that are not a
 // single character; ctrl+<x> is written Ctrl+<X>.
 var keyNotation = map[string]string{
-	"up":    "↑",
-	"down":  "↓",
-	"left":  "←",
-	"right": "→",
-	"enter": "Enter",
-	"esc":   "Esc",
-	"space": "Space",
+	"up":     "↑",
+	"down":   "↓",
+	"left":   "←",
+	"right":  "→",
+	"enter":  "Enter",
+	"esc":    "Esc",
+	"space":  "Space",
+	"pgup":   "PgUp",
+	"pgdown": "PgDn",
+	"home":   "Home",
+	"end":    "End",
 }
 
 // TestKeybindingsDocumentsEveryKey checks docs/keybindings.md against the
