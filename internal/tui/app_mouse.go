@@ -30,9 +30,7 @@ func (a App) handleMouseClick(msg tea.MouseClickMsg) (tea.Model, tea.Cmd) {
 func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 	if msg.X < a.fileWidth {
 		// Click on file list panel
-		a.focus = FocusFiles
-		a.fileList.Focused = true
-		a.varList.Focused = false
+		a.setFocus(FocusFiles)
 		index := msg.Y - panelContentOffsetY + a.fileList.Offset
 		if index >= 0 {
 			prev := a.fileList.SelectedFile()
@@ -43,9 +41,7 @@ func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 		}
 	} else {
 		// Click on var list panel
-		a.focus = FocusVars
-		a.fileList.Focused = false
-		a.varList.Focused = true
+		a.setFocus(FocusVars)
 		index := msg.Y - panelContentOffsetY + a.varList.Offset
 		if index >= 0 && index < a.varList.DisplayCount() {
 			a.varList.SetCursor(index)

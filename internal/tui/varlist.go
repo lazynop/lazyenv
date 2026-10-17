@@ -215,6 +215,13 @@ func (m *VarListModel) MoveDown() {
 	}
 }
 
+// SetFocused gives or takes the panel's focus, scrolling so the cursor row and
+// the peek line drawn under it while focused stay inside the viewport.
+func (m *VarListModel) SetFocused(focused bool) {
+	m.Focused = focused
+	m.ensureCursorVisible()
+}
+
 // TogglePeek turns the peek line under the cursor on or off.
 func (m *VarListModel) TogglePeek() {
 	m.Peeking = !m.Peeking

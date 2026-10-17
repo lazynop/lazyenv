@@ -390,9 +390,7 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 			}
 			a.compareFirstFile = f
 			a.mode = ModeCompareSelect
-			a.focus = FocusFiles
-			a.fileList.Focused = true
-			a.varList.Focused = false
+			a.setFocus(FocusFiles)
 			a.statusBar.SetMessage("Select second file to compare...")
 		}
 
@@ -462,15 +460,11 @@ func (a App) handleNormalNavigation(msg tea.KeyPressMsg) (App, bool) {
 		return a, true
 
 	case key.Matches(msg, a.keys.Left):
-		a.focus = FocusFiles
-		a.fileList.Focused = true
-		a.varList.Focused = false
+		a.setFocus(FocusFiles)
 		return a, true
 
 	case key.Matches(msg, a.keys.Right):
-		a.focus = FocusVars
-		a.fileList.Focused = false
-		a.varList.Focused = true
+		a.setFocus(FocusVars)
 		return a, true
 
 	case key.Matches(msg, a.keys.Enter):
@@ -491,13 +485,19 @@ func (a App) handleNormalEnter() App {
 		if f := a.fileList.SelectedFile(); f != nil {
 			a.varList.SetFile(f)
 		}
-		a.focus = FocusVars
-		a.fileList.Focused = false
-		a.varList.Focused = true
+		a.setFocus(FocusVars)
 	case a.varList.IsHeaderAtCursor():
 		a.varList.ToggleCollapseAtCursor()
 	}
 	return a
+}
+
+// setFocus moves the focus to the files or vars panel and tells each panel
+// whether it holds it.
+func (a *App) setFocus(f Focus) {
+	a.focus = f
+	a.fileList.Focused = f == FocusFiles
+	a.varList.SetFocused(f == FocusVars)
 }
 
 func (a App) handleNormalVarAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bool) {
