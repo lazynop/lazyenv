@@ -287,6 +287,7 @@
     lazyenv — TUI for managing .env files
 
     Files panel
+      → / l           Switch to the variables panel
       Enter           Select file and switch to the variables panel
       N               Create new .env file
       C               Duplicate file with new name
@@ -295,6 +296,7 @@
       T               Create template (keys only, no values)
 
     Variables panel
+      ← / h           Switch to the files panel
       e               Edit variable value
       E               Rename variable key
       a               Add new variable
@@ -302,8 +304,6 @@
       y               Copy value to clipboard
       Y               Copy KEY=value to clipboard
       p               Peek original value (toggle)
-      Enter / Space   Collapse/expand group (on header)
-
 
     Press ↑/↓ k/j PgUp/PgDn to scroll, Esc ? q to close
 

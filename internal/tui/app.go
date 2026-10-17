@@ -346,10 +346,12 @@ func (a App) handleNormalKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	return a.handleNormalGlobalAction(msg)
 }
 
-// filesPanelHelp is the help section of the keys handleNormalFileAction and
-// handleNormalNavigation match with the files panel focused.
+// filesPanelHelp is the help section of the files panel's keys that
+// bothPanelsHelp leaves out. handleNormalFileAction and handleNormalNavigation
+// match them.
 func filesPanelHelp(keys KeyMap) helpSection {
 	return helpSection{"Files panel", []helpRow{
+		alternatives("Switch to the variables panel", keys.Right),
 		alternatives("Select file and switch to the variables panel", keys.Enter),
 		alternatives("Create new .env file", keys.CreateFile),
 		alternatives("Duplicate file with new name", keys.DuplicateFile),
@@ -359,10 +361,12 @@ func filesPanelHelp(keys KeyMap) helpSection {
 	}}
 }
 
-// varsPanelHelp is the help section of the keys handleNormalVarAction and
-// handleNormalNavigation match with the variables panel focused.
+// varsPanelHelp is the help section of the variables panel's keys that
+// bothPanelsHelp leaves out. handleNormalVarAction and handleNormalNavigation
+// match them.
 func varsPanelHelp(keys KeyMap) helpSection {
 	return helpSection{"Variables panel", []helpRow{
+		alternatives("Switch to the files panel", keys.Left),
 		alternatives("Edit variable value", keys.Edit),
 		alternatives("Rename variable key", keys.EditKey),
 		alternatives("Add new variable", keys.Add),
@@ -374,13 +378,15 @@ func varsPanelHelp(keys KeyMap) helpSection {
 	}}
 }
 
-// bothPanelsHelp is the help section of the keys handleNormalKey,
-// handleNormalNavigation and handleNormalGlobalAction match whichever panel
-// has the focus.
+// bothPanelsHelp is the help section of the keys one row describes whichever
+// panel has the focus, details aside: ↑/↓ navigate items in both, and also
+// load the file in the files panel. A key that acts in one panel only, or does
+// something in each that one row cannot describe for both, has its rows in
+// filesPanelHelp and varsPanelHelp instead. handleNormalKey,
+// handleNormalNavigation and handleNormalGlobalAction match them.
 func bothPanelsHelp(keys KeyMap) helpSection {
 	return helpSection{"Both panels", []helpRow{
 		pair("Navigate items", keys.Up, keys.Down),
-		pair("Switch panels (files / variables)", keys.Left, keys.Right),
 		alternatives("Save changes", keys.Save),
 		alternatives("Reset file (discard changes)", keys.Reset),
 		alternatives("Compare two files (diff view)", keys.Compare),

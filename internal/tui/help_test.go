@@ -262,6 +262,9 @@ func TestHelpGroupsTheKeysByScreen(t *testing.T) {
 	assert.Contains(t, findHelpRow(sections, "Files panel", "D"), "with confirmation")
 	assert.Contains(t, findHelpRow(sections, "Variables panel", "e"), "Edit variable value")
 	assert.Contains(t, findHelpRow(sections, "Variables panel", "Enter / Space"), "group")
+	assert.Contains(t, findHelpRow(sections, "Files panel", "→ / l"), "Switch to the variables panel",
+		"each panel names only the switch key that acts there")
+	assert.Contains(t, findHelpRow(sections, "Variables panel", "← / h"), "Switch to the files panel")
 	assert.Contains(t, findHelpRow(sections, "Both panels", "w"), "Save changes")
 	assert.Contains(t, findHelpRow(sections, "Both panels", "q / Ctrl+C"), "Quit")
 	assert.Contains(t, findHelpRow(sections, "Compare: pick the second file", "Enter"), "Compare")
