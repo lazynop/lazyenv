@@ -91,6 +91,7 @@ func (a App) handleMatrixMouseClick(msg tea.MouseClickMsg) App {
 
 func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 	up := msg.Button == tea.MouseWheelUp
+	lines := a.config.Layout.MouseScrollLines
 	// `just lint` (exhaustive) requires a case for every AppMode.
 	//exhaustive:enforce
 	switch a.mode {
@@ -98,16 +99,16 @@ func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 		if msg.X < a.fileWidth {
 			a = a.scrollFileList(up)
 		} else {
-			a = a.scrollVarList(up)
+			wheelScroll(lines, up, a.varList.MoveUp, a.varList.MoveDown)
 		}
 	case ModeComparing:
-		a = a.scrollDiffView(up)
+		wheelScroll(lines, up, a.diffView.MoveUp, a.diffView.MoveDown)
 	case ModeCompareSelect:
 		a = a.scrollFileList(up)
 	case ModeMatrix:
-		a = a.scrollMatrix(up)
+		wheelScroll(lines, up, a.matrixView.MoveUp, a.matrixView.MoveDown)
 	case ModeHelp:
-		a = a.scrollHelp(up)
+		wheelScroll(lines, up, a.helpView.ScrollUp, a.helpView.ScrollDown)
 	case ModeEditing, ModeEditingCompare, ModeMatrixEditing, ModeConfirmDelete, ModeConfirmDeleteFile,
 		ModeConfirmMatrixDelete, ModeCreateFile, ModeDuplicateFile, ModeRenameFile, ModeTemplateFile,
 		ModeReorderMenu, ModeReorderConfirm, ModeConfigError:
@@ -120,13 +121,7 @@ func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 
 func (a App) scrollFileList(up bool) App {
 	prev := a.fileList.SelectedFile()
-	for range a.config.Layout.MouseScrollLines {
-		if up {
-			a.fileList.MoveUp()
-		} else {
-			a.fileList.MoveDown()
-		}
-	}
+	wheelScroll(a.config.Layout.MouseScrollLines, up, a.fileList.MoveUp, a.fileList.MoveDown)
 	a.fileList.Select()
 	if f := a.fileList.SelectedFile(); f != nil && f != prev {
 		a.varList.SetFile(f)
@@ -134,46 +129,14 @@ func (a App) scrollFileList(up bool) App {
 	return a
 }
 
-func (a App) scrollVarList(up bool) App {
-	for range a.config.Layout.MouseScrollLines {
-		if up {
-			a.varList.MoveUp()
-		} else {
-			a.varList.MoveDown()
-		}
+// wheelScroll moves a view by one wheel tick: lines steps of moveUp or
+// moveDown.
+func wheelScroll(lines int, up bool, moveUp, moveDown func()) {
+	step := moveDown
+	if up {
+		step = moveUp
 	}
-	return a
-}
-
-func (a App) scrollDiffView(up bool) App {
-	for range a.config.Layout.MouseScrollLines {
-		if up {
-			a.diffView.MoveUp()
-		} else {
-			a.diffView.MoveDown()
-		}
+	for range lines {
+		step()
 	}
-	return a
-}
-
-func (a App) scrollHelp(up bool) App {
-	for range a.config.Layout.MouseScrollLines {
-		if up {
-			a.helpView.ScrollUp()
-		} else {
-			a.helpView.ScrollDown()
-		}
-	}
-	return a
-}
-
-func (a App) scrollMatrix(up bool) App {
-	for range a.config.Layout.MouseScrollLines {
-		if up {
-			a.matrixView.MoveUp()
-		} else {
-			a.matrixView.MoveDown()
-		}
-	}
-	return a
 }
