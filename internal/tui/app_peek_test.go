@@ -399,30 +399,38 @@ func TestPeekReservesNoRowWhenUnfocused(t *testing.T) {
 	assert.Contains(t, rows[len(rows)-2], "val_C", "with no peek line drawn, the last inner row should hold a var")
 }
 
+// peekedBottomRowHeight is the terminal height peekedBottomRowApp lays out:
+// four var rows.
+const peekedBottomRowHeight = bottomChromeHeight + panelChromeHeight + 4
+
+// peekedBottomRowApp returns an App whose file list has the focus, with peek
+// on and the var cursor scrolled, by mouse wheel, onto the bottom row: F,
+// edited, below C, D and E.
+func peekedBottomRowApp() App {
+	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F")
+	f.UpdateVar(5, "edited", false)
+	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: peekedBottomRowHeight})
+	app := press(updated.(App), "right", "p", "left")
+	for range len(f.Vars) - 1 {
+		updated, _ = app.Update(tea.MouseWheelMsg{X: 60, Y: 3, Button: tea.MouseWheelDown})
+		app = updated.(App)
+	}
+	return app
+}
+
 // TestFocusingTheVarListKeepsThePeekedCursorRowVisible scrolls the var cursor
 // onto the bottom row while the file list has the focus, so no peek line is
 // counted, then focuses the var list: the peek line now drawn under the
 // cursor row must not push that row out of the panel.
 func TestFocusingTheVarListKeepsThePeekedCursorRowVisible(t *testing.T) {
-	const varRows = 4
-	height := bottomChromeHeight + panelChromeHeight + varRows
 	focusVars := map[string]tea.Msg{
 		"right key": tea.KeyPressMsg{Code: tea.KeyRight},
 		// The bottom border selects no row, so only the focus changes.
-		"click on the bottom border": tea.MouseClickMsg{X: 60, Y: height - bottomChromeHeight - 1, Button: tea.MouseLeft},
+		"click on the bottom border": tea.MouseClickMsg{X: 60, Y: peekedBottomRowHeight - bottomChromeHeight - 1, Button: tea.MouseLeft},
 	}
 	for name, focus := range focusVars {
 		t.Run(name, func(t *testing.T) {
-			f := makeTestFile(".env", "A", "B", "C", "D", "E", "F")
-			f.UpdateVar(5, "edited", false)
-			updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: height})
-			app := press(updated.(App), "right", "p", "left")
-			for range len(f.Vars) - 1 {
-				updated, _ = app.Update(tea.MouseWheelMsg{X: 60, Y: 3, Button: tea.MouseWheelDown})
-				app = updated.(App)
-			}
-
-			updated, _ = app.Update(focus)
+			updated, _ := peekedBottomRowApp().Update(focus)
 
 			view := stripAnsi(updated.(App).View().Content)
 			assert.Contains(t, view, "edited", "the cursor row should stay in the panel")

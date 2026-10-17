@@ -304,17 +304,10 @@ func TestMouseClickVarList_SelectsTheVarDrawnAtTheRow(t *testing.T) {
 // on a modified var: focusing the var list draws a peek line under it and
 // scrolls, but the click selects the var that was drawn where it landed.
 func TestMouseClickVarList_FromTheFileListSelectsTheVarDrawnAtTheRow(t *testing.T) {
-	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F")
-	f.UpdateVar(5, "edited", false)
-	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: bottomChromeHeight + panelChromeHeight + 4})
-	app := press(updated.(App), "right", "p", "left")
-	for range len(f.Vars) - 1 {
-		updated, _ = app.Update(tea.MouseWheelMsg{X: 40, Y: 3, Button: tea.MouseWheelDown})
-		app = updated.(App)
-	}
+	app := peekedBottomRowApp()
 	row := rowDrawing(t, app.View().Content, "val_D")
 
-	updated, _ = app.Update(tea.MouseClickMsg{X: 40, Y: row, Button: tea.MouseLeft})
+	updated, _ := app.Update(tea.MouseClickMsg{X: 40, Y: row, Button: tea.MouseLeft})
 
 	app = updated.(App)
 	require.NotNil(t, app.varList.SelectedVar())

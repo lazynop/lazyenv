@@ -192,12 +192,7 @@ func TestCompareCopyMasksTheCopiedValueWhenItIsASecret(t *testing.T) {
 
 			view := stripAnsi(app.View().Content)
 
-			if tt.masked {
-				assert.NotContains(t, view, tt.copied, "a secret value must be masked")
-				assert.Contains(t, view, "••••••••")
-			} else {
-				assert.Contains(t, view, tt.copied, "a plain value must be shown")
-			}
+			assertMaskedInView(t, view, tt.copied, tt.masked)
 		})
 	}
 }
@@ -345,12 +340,7 @@ func TestCompareEditMasksTheNewValueWhenItIsASecret(t *testing.T) {
 
 			require.Equal(t, ModeComparing, app.mode)
 			view := stripAnsi(app.View().Content)
-			if tt.masked {
-				assert.NotContains(t, view, tt.newValue, "a secret value must be masked")
-				assert.Contains(t, view, "••••••••")
-			} else {
-				assert.Contains(t, view, tt.newValue, "a plain value must be shown")
-			}
+			assertMaskedInView(t, view, tt.newValue, tt.masked)
 		})
 	}
 }

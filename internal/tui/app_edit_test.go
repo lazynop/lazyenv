@@ -10,6 +10,7 @@ import (
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/lazynop/lazyenv/internal/parser"
+	"github.com/lazynop/lazyenv/internal/util"
 )
 
 // --- handleEditingKey tests ---
@@ -57,13 +58,20 @@ func TestEditMasksTheNewValueWhenItIsASecret(t *testing.T) {
 
 			view := stripAnsi(press(app, "enter").View().Content)
 
-			if tt.masked {
-				assert.NotContains(t, view, tt.newValue, "a secret value must be masked")
-				assert.Contains(t, view, "••••••••")
-			} else {
-				assert.Contains(t, view, tt.newValue, "a plain value must be shown")
-			}
+			assertMaskedInView(t, view, tt.newValue, tt.masked)
 		})
+	}
+}
+
+// assertMaskedInView checks view masks value when masked is set, and shows it
+// otherwise.
+func assertMaskedInView(t *testing.T, view, value string, masked bool) {
+	t.Helper()
+	if masked {
+		assert.NotContains(t, view, value, "a secret value must be masked")
+		assert.Contains(t, view, util.MaskValue(value))
+	} else {
+		assert.Contains(t, view, value, "a plain value must be shown")
 	}
 }
 

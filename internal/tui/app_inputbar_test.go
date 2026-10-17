@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"slices"
 	"strings"
 	"testing"
 
@@ -36,6 +35,12 @@ var inputBarCases = []inputBarCase{
 		func(app *App) *textinput.Model { return &app.matrixView.editor }},
 }
 
+// inputTail ends longInput, a value wider than any input bar in the layout
+// grid and within the search input's 100-rune limit.
+const inputTail = "TAIL_12345"
+
+var longInput = strings.Repeat("x", 90) + inputTail
+
 // openInputBar sizes an App over layoutFiles to a terminal width columns wide,
 // opens tc's bar and types value into it.
 func openInputBar(t *testing.T, tc inputBarCase, width int, value string) App {
@@ -54,15 +59,14 @@ func openInputBar(t *testing.T, tc inputBarCase, width int, value string) App {
 // keeps one row, scrolling the value so its end, where the cursor is, stays in
 // view.
 func TestInputBarsScrollALongValueOnOneRow(t *testing.T) {
-	long := strings.Repeat("x", 90) + "TAIL_12345" // within the search input's 100-rune limit
 	for _, tc := range inputBarCases {
 		t.Run(tc.name, func(t *testing.T) {
 			for _, width := range gridWidths {
 				short := openInputBar(t, tc, width, "short").View().Content
-				view := openInputBar(t, tc, width, long).View().Content
+				view := openInputBar(t, tc, width, longInput).View().Content
 
 				assert.Equal(t, lipgloss.Height(short), lipgloss.Height(view), "width %d: a long value must not wrap the bar", width)
-				assert.Contains(t, stripAnsi(view), "TAIL_12345", "width %d: the end of the value, at the cursor, should be in view", width)
+				assert.Contains(t, stripAnsi(view), inputTail, "width %d: the end of the value, at the cursor, should be in view", width)
 			}
 		})
 	}
@@ -71,16 +75,15 @@ func TestInputBarsScrollALongValueOnOneRow(t *testing.T) {
 // TestInputBarsRefitAfterAResize shrinks the terminal while every input bar
 // holds a long value: the bar refits to the new width and keeps one row.
 func TestInputBarsRefitAfterAResize(t *testing.T) {
-	long := strings.Repeat("x", 90) + "TAIL_12345"
 	for _, tc := range inputBarCases {
 		t.Run(tc.name, func(t *testing.T) {
 			short := openInputBar(t, tc, 60, "short").View().Content
-			updated, _ := openInputBar(t, tc, 120, long).Update(tea.WindowSizeMsg{Width: 60, Height: 24})
+			updated, _ := openInputBar(t, tc, 120, longInput).Update(tea.WindowSizeMsg{Width: 60, Height: 24})
 
 			view := updated.(App).View().Content
 
 			assert.Equal(t, lipgloss.Height(short), lipgloss.Height(view), "the bar should keep one row")
-			assert.Contains(t, stripAnsi(view), "TAIL_12345", "the end of the value, at the cursor, should be in view")
+			assert.Contains(t, stripAnsi(view), inputTail, "the end of the value, at the cursor, should be in view")
 		})
 	}
 }
@@ -114,9 +117,8 @@ func TestInputBarCutsALongLabel(t *testing.T) {
 	require.Equal(t, ModeMatrixEditing, app.mode)
 
 	rows := strings.Split(stripAnsi(app.View().Content), "\n")
-	bar := slices.IndexFunc(rows, func(row string) bool { return strings.Contains(row, "Add UPSTREAM") })
+	bar := rowDrawing(t, app.View().Content, "Add UPSTREAM")
 
-	require.GreaterOrEqual(t, bar, 0, "the editor bar should name the key")
 	assert.Contains(t, rows[bar], "..", "a label wider than the bar should be cut")
 	assert.Contains(t, rows[bar+1], "Enter to confirm", "the status bar should follow the one-row editor bar")
 }
