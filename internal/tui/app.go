@@ -826,9 +826,7 @@ func (a *App) updateLayout() {
 	a.matrixView.ensureVisible()
 	a.matrixView.ensureHorizontalVisible()
 
-	a.helpView.Width = a.width
-	a.helpView.Height = a.height
-	a.helpView.ensureVisible()
+	a.helpView.SetSize(a.width, a.height)
 
 	a.statusBar.Width = a.width
 }

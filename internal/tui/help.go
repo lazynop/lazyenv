@@ -60,66 +60,65 @@ const helpText = `  lazyenv — TUI for managing .env files
 // HelpViewModel manages the help screen (?): helpText, scrolled when it is
 // taller than the terminal.
 type HelpViewModel struct {
-	Offset int
-	Width  int
-	Height int
+	offset int
+	width  int
+	height int
+	lines  []string // helpText wrapped to width, one row per line
 }
 
-// lines returns helpText wrapped to the screen's width, one row per line.
-func (m *HelpViewModel) lines() []string {
-	wrapped := lipgloss.NewStyle().Width(max(m.Width-2*helpPaddingWidth, 1)).Render(helpText)
-	return strings.Split(wrapped, "\n")
+// SetSize lays the text out for a screen of the given size, wrapping it to
+// the width and pulling the offset back if the resize leaves blank rows
+// below the text.
+func (m *HelpViewModel) SetSize(width, height int) {
+	m.width = width
+	m.height = height
+	wrapped := lipgloss.NewStyle().Width(max(width-2*helpPaddingWidth, 1)).Render(helpText)
+	m.lines = strings.Split(wrapped, "\n")
+	m.offset = min(m.offset, m.maxOffset())
 }
 
 // visibleLines returns how many rows of helpText fit on the screen.
 func (m *HelpViewModel) visibleLines() int {
-	return max(m.Height-helpChromeHeight, 1)
+	return max(m.height-helpChromeHeight, 1)
 }
 
 // maxOffset returns the offset that shows the last row of helpText at the
 // bottom of the screen.
 func (m *HelpViewModel) maxOffset() int {
-	return max(len(m.lines())-m.visibleLines(), 0)
+	return max(len(m.lines)-m.visibleLines(), 0)
 }
 
 // ScrollToTop shows the text from its first row.
 func (m *HelpViewModel) ScrollToTop() {
-	m.Offset = 0
+	m.offset = 0
 }
 
 // ScrollUp scrolls the text up one row.
 func (m *HelpViewModel) ScrollUp() {
-	m.Offset = max(m.Offset-1, 0)
+	m.offset = max(m.offset-1, 0)
 }
 
 // ScrollDown scrolls the text down one row.
 func (m *HelpViewModel) ScrollDown() {
-	m.Offset = min(m.Offset+1, m.maxOffset())
-}
-
-// ensureVisible pulls the offset back after a resize leaves blank rows
-// below the text.
-func (m *HelpViewModel) ensureVisible() {
-	m.Offset = min(m.Offset, m.maxOffset())
+	m.offset = min(m.offset+1, m.maxOffset())
 }
 
 // View renders the rows of helpText that fit, then the footer, which names
 // the scroll keys only when the text does not fit.
 func (m *HelpViewModel) View(theme Theme) string {
-	lines := m.lines()
 	visible := m.visibleLines()
-	end := min(m.Offset+visible, len(lines))
-	text := lipgloss.NewStyle().Foreground(theme.ColorFg).Render(strings.Join(lines[m.Offset:end], "\n"))
+	end := min(m.offset+visible, len(m.lines))
+	text := lipgloss.NewStyle().Foreground(theme.ColorFg).Render(strings.Join(m.lines[m.offset:end], "\n"))
 
 	hint := "  Press Esc or ? to close"
-	if len(lines) > visible {
+	if len(m.lines) > visible {
 		hint = "  Press ↑/↓ to scroll, Esc or ? to close"
 	}
 	footer := theme.MutedItem.Render(hint)
 
 	return lipgloss.NewStyle().
-		Width(m.Width).
-		Height(m.Height).
+		Width(m.width).
+		Height(m.height).
 		Padding(helpPaddingHeight, helpPaddingWidth).
 		Render(text + "\n\n" + footer)
 }
