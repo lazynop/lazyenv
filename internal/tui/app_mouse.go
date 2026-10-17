@@ -63,6 +63,9 @@ func (a App) handleCompareMouseClick(msg tea.MouseClickMsg) App {
 }
 
 func (a App) handleCompareSelectMouseClick(msg tea.MouseClickMsg) App {
+	if msg.X >= a.fileWidth {
+		return a // only the file list picks the file to compare with
+	}
 	index := msg.Y - panelContentOffsetY + a.fileList.Offset
 	if index >= 0 {
 		a.fileList.MoveCursorTo(index) // the compare target, not the active file

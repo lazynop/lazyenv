@@ -356,6 +356,20 @@ func TestMouseClickCompareSelectMode_MovesCursorOnly(t *testing.T) {
 		"compare-select must not change the active file (Selected)")
 }
 
+// TestMouseClickCompareSelectMode_IgnoresTheVarPanel clicks the var panel
+// while picking the second file to compare: only the file list picks it, so
+// the cursor stays on the first file.
+func TestMouseClickCompareSelectMode_IgnoresTheVarPanel(t *testing.T) {
+	app := newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.prod", "B"), makeTestFile(".env.local", "C")})
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	app = press(updated.(App), "c")
+	require.Equal(t, ModeCompareSelect, app.mode)
+
+	updated, _ = app.Update(tea.MouseClickMsg{X: app.fileWidth + 10, Y: 4, Button: tea.MouseLeft})
+
+	assert.Equal(t, 0, updated.(App).fileList.Cursor, "a click on the var panel should not move the file cursor")
+}
+
 // --- Matrix mode: click sets a cell, wheel scrolls rows ---
 
 func newMatrixTestApp(t *testing.T) App {
