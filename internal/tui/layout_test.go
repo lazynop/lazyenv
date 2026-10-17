@@ -106,6 +106,11 @@ var viewScenarios = []viewScenario{
 		app.editor.input.SetValue("PLAIN")
 		return press(app, "enter", "p")
 	}),
+	appScenario("peek secret value renamed", ModeNormal, func(app App) App {
+		app = press(onVars(app), "j", "E") // GREETING, a secret by its value only
+		app.editor.input.SetValue("WELCOME")
+		return press(app, "enter", "p")
+	}),
 	appScenario("peek secret re-added with a plain value", ModeNormal, func(app App) App {
 		f := app.fileList.Files[0]
 		f.DeleteVar(1)

@@ -93,6 +93,29 @@
 │                  ││  VAR_12    value_12                                      │
 ╰──────────────────╯╰──────────────────────────────────────────────────────────╯
    Renamed API_TOKEN → PLAIN                                      .env  34 vars
+=== peek secret value renamed
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (34 vars)                                          │
+│● .env       34*  ││  API_TOKEN  ••••••••                                     │
+│  .env.local   4  ││  WELCOME    ••••••••                               *     │
+│                  ││             ↳ was: ••••••••                              │
+│                  ││  HOST       localhost                                    │
+│                  ││  EMPTY                                              ○    │
+│                  ││  VAR_00     value_00                                     │
+│                  ││  VAR_01     value_01                                     │
+│                  ││  VAR_02     value_02                                     │
+│                  ││  VAR_03     value_03                                     │
+│                  ││  VAR_04     value_04                                     │
+│                  ││  VAR_05     value_05                                     │
+│                  ││  VAR_06     value_06                                     │
+│                  ││  VAR_07     value_07                                     │
+│                  ││  VAR_08     value_08                                     │
+│                  ││  VAR_09     value_09                                     │
+│                  ││  VAR_10     value_10                                     │
+│                  ││  VAR_11     value_11                                     │
+│                  ││  VAR_12     value_12                                     │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   Renamed GREETING → WELCOME                                     .env  34 vars
 === peek secret re-added with a plain value
 ╭──────────────────╮╭──────────────────────────────────────────────────────────╮
 │ Files  (2)       ││ .env  (34 vars)                                          │
