@@ -7,7 +7,6 @@ import (
 	goparser "go/parser"
 	"go/token"
 	"os"
-	"slices"
 	"strings"
 	"testing"
 
@@ -135,7 +134,7 @@ var viewScenarios = []viewScenario{
 	appScenario("reorder confirm", ModeReorderConfirm, func(app App) App { return press(onVars(app), "O", "a") }),
 	appScenario("help", ModeHelp, func(app App) App { return press(app, "?") }),
 	appScenario("help scrolled to the end", ModeHelp, func(app App) App {
-		return press(app, append([]string{"?"}, slices.Repeat([]string{"j"}, scrollPastTheEnd)...)...)
+		return press(app, "?", "end")
 	}),
 	appScenario("new file", ModeCreateFile, func(app App) App { return press(app, "N") }),
 	appScenario("duplicate file", ModeDuplicateFile, func(app App) App { return press(app, "C") }),
