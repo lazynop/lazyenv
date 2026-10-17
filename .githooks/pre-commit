@@ -1,0 +1,4 @@
+#!/bin/sh
+# Fast checks before each commit: formatting, import grouping and vet. The
+# tests and linters run in `just check` and in CI.
+exec just fmt-check vet

@@ -275,7 +275,7 @@ func TestViewsMatchGolden(t *testing.T) {
 		require.NoError(t, os.MkdirAll("testdata", 0o755))
 		require.NoError(t, os.WriteFile(viewsGoldenPath, []byte(got.String()), 0o644))
 		t.Fatalf("rewrote internal/tui/%s: read git diff on it, check each changed screen is intended, "+
-			"name them in the commit message, then rerun without -update", viewsGoldenPath)
+			"name them on a Screens: line of the commit message, then rerun without -update", viewsGoldenPath)
 	}
 	want, err := os.ReadFile(viewsGoldenPath)
 	require.NoError(t, err, "create %s with -update", viewsGoldenPath)

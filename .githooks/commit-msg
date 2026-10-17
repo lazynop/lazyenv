@@ -1,0 +1,9 @@
+#!/bin/sh
+# A commit that rewrites the screen snapshots names each changed screen on a
+# "Screens:" line (CODING_STANDARDS.md § Screen snapshots).
+if git diff --cached --name-only | grep -qx 'internal/tui/testdata/views.golden'; then
+	grep -q '^Screens: ' "$1" || {
+		echo "commit-msg: views.golden changed: add a 'Screens: <screen>, ...' line naming each changed screen" >&2
+		exit 1
+	}
+fi

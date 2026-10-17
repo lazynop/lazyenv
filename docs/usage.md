@@ -94,6 +94,7 @@ just
 | `just vet`        | Run static analysis.                                                                       |
 | `just lint`       | Run the linters: `gocyclo`, `ineffassign`, `deadcode`, `exhaustive`.                       |
 | `just clean`      | Remove build artifacts (`bin/`, `coverage.out`, `dist/`).                  |
+| `just install-hooks` | Use the repo's git hooks: formatting and vet before each commit, and a `Screens:` line in the message of a commit that changes the screen snapshots. |
 | `just demo`       | Regenerate the README demo GIF from `docs/assets/demo.tape`. Needs `vhs`, `ttyd`, `ffmpeg`, `gifsicle`. |
 | `just page-media` | Render the media for the lazynop.dev project page from `docs/assets/page/` into `dist/page-media/`. Needs `vhs`, `ttyd`, `ffmpeg` (with `libx264` and `libwebp`). |
 

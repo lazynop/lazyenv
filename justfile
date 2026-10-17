@@ -68,6 +68,10 @@ fmt-check:
 # Run all checks (format + vet + lint + tests)
 check: fmt-check vet lint test
 
+# Use the repo's git hooks: format and vet before each commit, and a Screens: line when views.golden changes
+install-hooks:
+    git config core.hooksPath .githooks
+
 # Clean build artifacts
 clean:
     @rm -rf bin coverage.out dist
