@@ -2,6 +2,7 @@ package tui
 
 import (
 	"strings"
+	"unicode/utf8"
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
@@ -20,16 +21,31 @@ func displayText(value string, masked bool) string {
 	return flattenValue(value)
 }
 
-// controlCharReplacer maps control chars to width-1 glyphs from the Unicode
-// Arrows block, so values render on a single row without breaking the panel
-// layout. It is zero-alloc for inputs that contain none of the targets.
-var controlCharReplacer = strings.NewReplacer(
-	"\n", "↵", // U+21B5
-	"\t", "⇥", // U+21E5
-	"\r", "↩", // U+21A9
-)
+// flattenValue returns s drawable on one panel row: line breaks and tabs
+// become width-1 arrows, and every other control character a visible
+// stand-in, so a value can neither break the panel layout nor send the
+// terminal a control sequence (clear the screen, write the clipboard).
+// strings.Map also replaces invalid UTF-8, which could carry raw C1 bytes, and
+// allocates nothing when s needs no change.
+func flattenValue(s string) string { return strings.Map(flattenRune, s) }
 
-func flattenValue(s string) string { return controlCharReplacer.Replace(s) }
+func flattenRune(r rune) rune {
+	switch {
+	case r == '\n':
+		return '↵' // U+21B5
+	case r == '\t':
+		return '⇥' // U+21E5
+	case r == '\r':
+		return '↩' // U+21A9
+	case r < 0x20:
+		return 0x2400 + r // Control Pictures: ␀ … ␟, ␛ for ESC
+	case r == 0x7f:
+		return '␡' // U+2421
+	case r >= 0x80 && r < 0xa0: // C1 controls
+		return utf8.RuneError
+	}
+	return r
+}
 
 // truncate fits s into maxCols display columns, appending ".." when the
 // string is actually shortened. It measures s by grapheme cluster with x/ansi,

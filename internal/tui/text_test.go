@@ -3,6 +3,7 @@ package tui
 import (
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
@@ -101,5 +102,23 @@ func TestTruncateMeasuresLikeLipgloss(t *testing.T) {
 			assert.LessOrEqual(t, lipgloss.Width(truncate(s, cols)), cols, "%q in %d columns", s, cols)
 		}
 		assert.Equal(t, s, truncate(s, width), "%q fits in its own width", s)
+	}
+}
+
+// TestDisplayTextNeutralizesTerminalControls draws values holding terminal
+// control sequences: no control byte reaches the screen, so a value can't
+// write the clipboard, clear the screen or restyle the panel.
+func TestDisplayTextNeutralizesTerminalControls(t *testing.T) {
+	for _, value := range []string{
+		"\x1b]52;c;ZXZpbA==\x07", // OSC 52: write the clipboard
+		"\x1b[2J",                // clear the screen
+		"\x9b31m",                // C1 CSI: red text
+		"bell\x07 del\x7f nul\x00",
+	} {
+		shown := displayText(value, false)
+		assert.True(t, utf8.ValidString(shown), "%q is drawn as %q", value, shown)
+		assert.False(t, strings.ContainsFunc(shown, func(r rune) bool {
+			return r < 0x20 || (r >= 0x7f && r < 0xa0)
+		}), "%q is drawn as %q", value, shown)
 	}
 }
