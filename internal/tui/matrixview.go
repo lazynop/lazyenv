@@ -297,7 +297,7 @@ func (m *MatrixModel) View(theme Theme) string {
 	b.WriteString("\n")
 
 	// Separator
-	b.WriteString(theme.MutedItem.Render(strings.Repeat("─", m.Width-matrixPaddingWidth)))
+	b.WriteString(theme.MutedItem.Render(strings.Repeat("─", max(m.Width-matrixPaddingWidth, 0))))
 	b.WriteString("\n")
 
 	// Body rows

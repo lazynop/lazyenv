@@ -93,3 +93,13 @@ func TestStartupFocusesTheFileList(t *testing.T) {
 	assert.True(t, app.fileList.Focused, "the file list should be drawn focused")
 	assert.False(t, app.varList.Focused)
 }
+
+// TestMatrixRendersInATinyTerminal opens the matrix in a one-column terminal:
+// it renders without panicking.
+func TestMatrixRendersInATinyTerminal(t *testing.T) {
+	updated, _ := newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.prod", "B")}).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	app := press(updated.(App), "m")
+	updated, _ = app.Update(tea.WindowSizeMsg{Width: 1, Height: 24})
+
+	assert.NotPanics(t, func() { _ = updated.(App).View() })
+}
