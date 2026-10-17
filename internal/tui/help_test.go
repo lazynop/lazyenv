@@ -15,9 +15,9 @@ func openHelp(width, height int) App {
 	return press(updated.(App), "?")
 }
 
-// scrollPastTheEnd is more down presses than the help has rows to scroll
-// at 80x24.
-const scrollPastTheEnd = 60
+// scrollPastTheEnd is more down presses than the help has rows to scroll at
+// any size the layout tests render, the 60x10 minimum included.
+const scrollPastTheEnd = 80
 
 // helpScreen is the help screen as plain text.
 func helpScreen(app App) string {
