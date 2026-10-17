@@ -68,8 +68,12 @@ type HelpViewModel struct {
 
 // SetSize lays the text out for a screen of the given size, wrapping it to
 // the width and pulling the offset back if the resize leaves blank rows
-// below the text.
+// below the text. App.Update calls it after every message, so it does
+// nothing while the size stays the same.
 func (m *HelpViewModel) SetSize(width, height int) {
+	if width == m.width && height == m.height {
+		return
+	}
 	m.width = width
 	m.height = height
 	wrapped := lipgloss.NewStyle().Width(max(width-2*helpPaddingWidth, 1)).Render(helpText)
