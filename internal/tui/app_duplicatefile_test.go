@@ -19,7 +19,7 @@ func TestDuplicateFile_EntersModeOnC(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "C"})
+	updated, _ := app.Update(keyMsg("C"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeDuplicateFile, app.mode)
@@ -31,7 +31,7 @@ func TestDuplicateFile_EntersModeOnC_DotEnvSuffix(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "C"})
+	updated, _ := app.Update(keyMsg("C"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeDuplicateFile, app.mode)
@@ -42,7 +42,7 @@ func TestDuplicateFile_NoFileNoOp(t *testing.T) {
 	app := newTestApp(nil)
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "C"})
+	updated, _ := app.Update(keyMsg("C"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -53,7 +53,7 @@ func TestDuplicateFile_OnlyFromFocusFiles(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "C"})
+	updated, _ := app.Update(keyMsg("C"))
 	app = updated.(App)
 
 	assert.NotEqual(t, ModeDuplicateFile, app.mode)

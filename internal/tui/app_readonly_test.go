@@ -3,7 +3,6 @@ package tui
 import (
 	"testing"
 
-	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lazynop/lazyenv/internal/config"
@@ -44,7 +43,7 @@ func TestReadOnlyBlocksEdit(t *testing.T) {
 	app := newReadOnlyApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "e"})
+	updated, _ := app.Update(keyMsg("e"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode, "edit should be blocked in read-only mode")
@@ -56,7 +55,7 @@ func TestReadOnlyBlocksEditKey(t *testing.T) {
 	app := newReadOnlyApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "E"})
+	updated, _ := app.Update(keyMsg("E"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -68,7 +67,7 @@ func TestReadOnlyBlocksAdd(t *testing.T) {
 	app := newReadOnlyApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "a"})
+	updated, _ := app.Update(keyMsg("a"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -80,7 +79,7 @@ func TestReadOnlyBlocksDelete(t *testing.T) {
 	app := newReadOnlyApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "d"})
+	updated, _ := app.Update(keyMsg("d"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode, "should not enter ModeConfirmDelete")
@@ -94,7 +93,7 @@ func TestReadOnlyAllowsPeek(t *testing.T) {
 	app := newReadOnlyApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "p"})
+	updated, _ := app.Update(keyMsg("p"))
 	app = updated.(App)
 
 	assert.True(t, app.varList.Peeking, "peek should work in read-only mode")
@@ -105,7 +104,7 @@ func TestReadOnlyAllowsSearch(t *testing.T) {
 	app := newReadOnlyApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "/"})
+	updated, _ := app.Update(keyMsg("/"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeSearching, app.mode, "search should work in read-only mode")
@@ -116,7 +115,7 @@ func TestReadOnlyAllowsToggleSort(t *testing.T) {
 	app := newReadOnlyApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "o"})
+	updated, _ := app.Update(keyMsg("o"))
 	app = updated.(App)
 
 	assert.True(t, app.varList.SortAlpha, "sort toggle should work in read-only mode")
@@ -127,7 +126,7 @@ func TestReadOnlyAllowsToggleGrouping(t *testing.T) {
 	app := newReadOnlyApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "g"})
+	updated, _ := app.Update(keyMsg("g"))
 	app = updated.(App)
 
 	assert.True(t, app.varList.Grouping, "grouping toggle should work in read-only mode")
@@ -138,7 +137,7 @@ func TestReadOnlyAllowsToggleSecrets(t *testing.T) {
 	app := newReadOnlyApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "ctrl+s"})
+	updated, _ := app.Update(keyMsg("ctrl+s"))
 	app = updated.(App)
 
 	assert.True(t, app.varList.ShowSecrets, "secrets toggle should work in read-only mode")
@@ -151,7 +150,7 @@ func TestReadOnlyBlocksCreateFile(t *testing.T) {
 	app := newReadOnlyApp([]*model.EnvFile{f})
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "N"})
+	updated, _ := app.Update(keyMsg("N"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -163,7 +162,7 @@ func TestReadOnlyBlocksDeleteFile(t *testing.T) {
 	app := newReadOnlyApp([]*model.EnvFile{f})
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "D"})
+	updated, _ := app.Update(keyMsg("D"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -177,7 +176,7 @@ func TestReadOnlyBlocksSave(t *testing.T) {
 	app := newReadOnlyApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "w"})
+	updated, _ := app.Update(keyMsg("w"))
 	app = updated.(App)
 
 	assert.Contains(t, app.statusBar.Message, "Read-only")
@@ -189,7 +188,7 @@ func TestReadOnlyAllowsCompare(t *testing.T) {
 	app := newReadOnlyApp([]*model.EnvFile{f1, f2})
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "c"})
+	updated, _ := app.Update(keyMsg("c"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeCompareSelect, app.mode, "compare should work in read-only mode")
@@ -201,7 +200,7 @@ func TestReadOnlyAllowsMatrix(t *testing.T) {
 	app := newReadOnlyApp([]*model.EnvFile{f1, f2})
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "m"})
+	updated, _ := app.Update(keyMsg("m"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeMatrix, app.mode, "matrix should work in read-only mode")
@@ -210,7 +209,7 @@ func TestReadOnlyAllowsMatrix(t *testing.T) {
 func TestReadOnlyAllowsHelp(t *testing.T) {
 	app := newReadOnlyApp(nil)
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "?"})
+	updated, _ := app.Update(keyMsg("?"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeHelp, app.mode, "help should work in read-only mode")
@@ -228,7 +227,7 @@ func TestReadOnlyBlocksCompareCopy(t *testing.T) {
 	app.mode = ModeComparing
 
 	// Right arrow = copy to right
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "right"})
+	updated, _ := app.Update(keyMsg("right"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeComparing, app.mode, "should stay in compare mode")
@@ -244,7 +243,7 @@ func TestReadOnlyBlocksCompareEdit(t *testing.T) {
 	app.diffView.Height = 30
 	app.mode = ModeComparing
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "e"})
+	updated, _ := app.Update(keyMsg("e"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeComparing, app.mode, "should not enter edit mode")
@@ -260,7 +259,7 @@ func TestReadOnlyBlocksCompareSave(t *testing.T) {
 	app.diffView.Height = 30
 	app.mode = ModeComparing
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "w"})
+	updated, _ := app.Update(keyMsg("w"))
 	app = updated.(App)
 
 	assert.Contains(t, app.statusBar.Message, "Read-only")
@@ -274,12 +273,12 @@ func TestReadOnlyBlocksMatrixDelete(t *testing.T) {
 	app := newReadOnlyApp([]*model.EnvFile{f1, f2})
 
 	// Enter matrix mode
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "m"})
+	updated, _ := app.Update(keyMsg("m"))
 	app = updated.(App)
 	assert.Equal(t, ModeMatrix, app.mode)
 
 	// Try to delete — should be blocked
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "d"})
+	updated, _ = app.Update(keyMsg("d"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeMatrix, app.mode, "should not enter confirm delete")
@@ -292,12 +291,12 @@ func TestReadOnlyBlocksMatrixAdd(t *testing.T) {
 	app := newReadOnlyApp([]*model.EnvFile{f1, f2})
 
 	// Enter matrix mode via 'm' key
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "m"})
+	updated, _ := app.Update(keyMsg("m"))
 	app = updated.(App)
 	assert.Equal(t, ModeMatrix, app.mode)
 
 	// Try to add — should be blocked
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "a"})
+	updated, _ = app.Update(keyMsg("a"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeMatrix, app.mode, "should not enter matrix editing")

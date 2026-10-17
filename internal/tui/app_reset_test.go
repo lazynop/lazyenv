@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -40,7 +39,7 @@ func TestResetPreservesGitWarning(t *testing.T) {
 	app.fileList.Files[0].UpdateVar(0, "changed", false)
 	require.True(t, app.fileList.Files[0].Modified)
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "r"})
+	updated, _ := app.Update(keyMsg("r"))
 	app = updated.(App)
 
 	resetFile := app.fileList.Files[0]
@@ -55,7 +54,7 @@ func TestSavePreservesGitWarning(t *testing.T) {
 	app.fileList.Files[0].UpdateVar(0, "new_value", false)
 	require.True(t, app.fileList.Files[0].Modified)
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "w"})
+	updated, _ := app.Update(keyMsg("w"))
 	app = updated.(App)
 
 	savedFile := app.fileList.Files[0]
@@ -94,7 +93,7 @@ func TestCompareSavePreservesGitWarning(t *testing.T) {
 	require.True(t, fA.Modified)
 
 	// Press 'w' to save in compare mode.
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "w"})
+	updated, _ := app.Update(keyMsg("w"))
 	app = updated.(App)
 
 	assert.True(t, app.fileList.Files[0].GitWarning, "GitWarning on file A must survive compare save")
@@ -128,7 +127,7 @@ func TestCompareResetPreservesGitWarning(t *testing.T) {
 	require.True(t, fA.Modified)
 
 	// Press 'r' to reset in compare mode.
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "r"})
+	updated, _ := app.Update(keyMsg("r"))
 	app = updated.(App)
 
 	assert.True(t, app.fileList.Files[0].GitWarning, "GitWarning on file A must survive compare reset")
@@ -146,7 +145,7 @@ func TestSavePreservesNoTrailingNewline(t *testing.T) {
 	app.fileList.Files[0].UpdateVar(0, "first", false)
 	require.True(t, app.fileList.Files[0].Modified)
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "w"})
+	updated, _ := app.Update(keyMsg("w"))
 	app = updated.(App)
 
 	data, err := os.ReadFile(envPath)
@@ -158,7 +157,7 @@ func TestSavePreservesNoTrailingNewline(t *testing.T) {
 
 	// Second cycle: modify again and save, confirm round-trip is stable.
 	app.fileList.Files[0].UpdateVar(0, "second", false)
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "w"})
+	updated, _ = app.Update(keyMsg("w"))
 	app = updated.(App)
 
 	data, err = os.ReadFile(envPath)
@@ -174,7 +173,7 @@ func TestSavePreservesTrailingNewline(t *testing.T) {
 	require.True(t, app.fileList.Files[0].TrailingNewline)
 
 	app.fileList.Files[0].UpdateVar(0, "first", false)
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "w"})
+	updated, _ := app.Update(keyMsg("w"))
 	app = updated.(App)
 
 	data, err := os.ReadFile(envPath)
@@ -210,7 +209,7 @@ func TestSaveFromMatrixPreservesGitWarning(t *testing.T) {
 
 	// Save file B.
 	app.varList.SetFile(fB)
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "w"})
+	updated, _ := app.Update(keyMsg("w"))
 	app = updated.(App)
 
 	for _, f := range app.fileList.Files {

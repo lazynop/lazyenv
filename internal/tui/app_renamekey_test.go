@@ -14,7 +14,7 @@ func TestRenameKey_EntersModeOnE(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "E"})
+	updated, _ := app.Update(keyMsg("E"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeEditing, app.mode)
@@ -27,7 +27,7 @@ func TestRenameKey_OnlyFromFocusVars(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "E"})
+	updated, _ := app.Update(keyMsg("E"))
 	app = updated.(App)
 
 	assert.NotEqual(t, ModeEditing, app.mode)
@@ -150,7 +150,7 @@ func TestRenameKey_ThenAddDoesNotConfuseFlows(t *testing.T) {
 	app.focus = FocusVars
 
 	// Start rename, then cancel
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "E"})
+	updated, _ := app.Update(keyMsg("E"))
 	app = updated.(App)
 	assert.True(t, app.editor.isRenameKey)
 
@@ -159,7 +159,7 @@ func TestRenameKey_ThenAddDoesNotConfuseFlows(t *testing.T) {
 	assert.Equal(t, ModeNormal, app.mode)
 
 	// Now add a variable — should NOT be treated as rename
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "a"})
+	updated, _ = app.Update(keyMsg("a"))
 	app = updated.(App)
 	assert.Equal(t, ModeEditing, app.mode)
 	assert.False(t, app.editor.isRenameKey)

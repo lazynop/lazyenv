@@ -14,7 +14,7 @@ func TestCreateFile_EntersModeOnN(t *testing.T) {
 	app := newTestApp(nil)
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "N"})
+	updated, _ := app.Update(keyMsg("N"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeCreateFile, app.mode)
@@ -24,7 +24,7 @@ func TestCreateFile_OnlyFromFocusFiles(t *testing.T) {
 	app := newTestApp(nil)
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "N"})
+	updated, _ := app.Update(keyMsg("N"))
 	app = updated.(App)
 
 	assert.NotEqual(t, ModeCreateFile, app.mode)
@@ -136,7 +136,7 @@ func TestHandleFileInputKeyForwardsToActiveInput(t *testing.T) {
 	app.mode = ModeCreateFile
 	app.fileInput.Focus()
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "x"})
+	updated, _ := app.Update(keyMsg("x"))
 	app = updated.(App)
 
 	assert.Equal(t, "x", app.fileInput.Value(),

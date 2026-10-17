@@ -31,7 +31,7 @@ func TestThemePreviewNavigateDown(t *testing.T) {
 	require.Greater(t, len(m.themes), 1, "need at least 2 themes to test navigation")
 
 	// "j" key moves cursor down
-	updated, _ := m.Update(tea.KeyPressMsg{Text: "j"})
+	updated, _ := m.Update(keyMsg("j"))
 	m = updated.(ThemePreviewModel)
 	assert.Equal(t, 1, m.cursor)
 
@@ -46,14 +46,14 @@ func TestThemePreviewNavigateUp(t *testing.T) {
 	require.Greater(t, len(m.themes), 1, "need at least 2 themes to test navigation")
 
 	// Move down first
-	updated, _ := m.Update(tea.KeyPressMsg{Text: "j"})
+	updated, _ := m.Update(keyMsg("j"))
 	m = updated.(ThemePreviewModel)
-	updated, _ = m.Update(tea.KeyPressMsg{Text: "j"})
+	updated, _ = m.Update(keyMsg("j"))
 	m = updated.(ThemePreviewModel)
 	assert.Equal(t, 2, m.cursor)
 
 	// "k" key moves cursor up
-	updated, _ = m.Update(tea.KeyPressMsg{Text: "k"})
+	updated, _ = m.Update(keyMsg("k"))
 	m = updated.(ThemePreviewModel)
 	assert.Equal(t, 1, m.cursor)
 
@@ -68,7 +68,7 @@ func TestThemePreviewCursorDoesNotGoBelowZero(t *testing.T) {
 	assert.Equal(t, 0, m.cursor)
 
 	// Pressing up at top should not go below 0
-	updated, _ := m.Update(tea.KeyPressMsg{Text: "k"})
+	updated, _ := m.Update(keyMsg("k"))
 	m = updated.(ThemePreviewModel)
 	assert.Equal(t, 0, m.cursor, "cursor should not go below 0")
 
@@ -83,7 +83,7 @@ func TestThemePreviewCursorDoesNotExceedMax(t *testing.T) {
 
 	// Move to the end
 	for range len(m.themes) + 5 {
-		updated, _ := m.Update(tea.KeyPressMsg{Text: "j"})
+		updated, _ := m.Update(keyMsg("j"))
 		m = updated.(ThemePreviewModel)
 	}
 	assert.Equal(t, maxIdx, m.cursor, "cursor should not exceed last index")
@@ -108,7 +108,7 @@ func TestThemePreviewSelectWithEnterAfterNavigation(t *testing.T) {
 	require.Greater(t, len(m.themes), 1)
 
 	// Navigate to index 1
-	updated, _ := m.Update(tea.KeyPressMsg{Text: "j"})
+	updated, _ := m.Update(keyMsg("j"))
 	m = updated.(ThemePreviewModel)
 
 	expectedTheme := m.themes[1]
@@ -124,7 +124,7 @@ func TestThemePreviewSelectWithEnterAfterNavigation(t *testing.T) {
 func TestThemePreviewQuitWithQ(t *testing.T) {
 	m := NewThemePreview(false)
 
-	updated, cmd := m.Update(tea.KeyPressMsg{Text: "q"})
+	updated, cmd := m.Update(keyMsg("q"))
 	m = updated.(ThemePreviewModel)
 
 	assert.Equal(t, "", m.selected, "selected should remain empty on quit")
@@ -352,7 +352,7 @@ func TestThemePreviewTooSmallTerminal(t *testing.T) {
 
 	updated, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 	assert.Nil(t, cmd, "Enter should not select a theme")
-	updated, _ = updated.Update(tea.KeyPressMsg{Text: "j"})
+	updated, _ = updated.Update(keyMsg("j"))
 	assert.Equal(t, 0, updated.(ThemePreviewModel).cursor, "j should not move the cursor")
 
 	_, cmd = updated.Update(tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl})

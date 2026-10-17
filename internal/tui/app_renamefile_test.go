@@ -19,7 +19,7 @@ func TestRenameFile_EntersModeOnR(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "R"})
+	updated, _ := app.Update(keyMsg("R"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeRenameFile, app.mode)
@@ -30,7 +30,7 @@ func TestRenameFile_NoFileNoOp(t *testing.T) {
 	app := newTestApp(nil)
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "R"})
+	updated, _ := app.Update(keyMsg("R"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -41,7 +41,7 @@ func TestRenameFile_OnlyFromFocusFiles(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "R"})
+	updated, _ := app.Update(keyMsg("R"))
 	app = updated.(App)
 
 	assert.NotEqual(t, ModeRenameFile, app.mode)
@@ -53,7 +53,7 @@ func TestRenameFile_BlocksIfModified(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "R"})
+	updated, _ := app.Update(keyMsg("R"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)

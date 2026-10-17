@@ -3,7 +3,6 @@ package tui
 import (
 	"testing"
 
-	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +13,7 @@ func TestYankValueCopiesValue(t *testing.T) {
 	app.varList.SetFile(f)
 	app.focus = FocusVars
 
-	updated, cmd := app.Update(tea.KeyPressMsg{Text: "y"})
+	updated, cmd := app.Update(keyMsg("y"))
 	app = updated.(App)
 
 	assert.Contains(t, app.statusBar.Message, "Copied DB_HOST value")
@@ -28,7 +27,7 @@ func TestYankLineCopiesKeyValue(t *testing.T) {
 	app.varList.SetFile(f)
 	app.focus = FocusVars
 
-	updated, cmd := app.Update(tea.KeyPressMsg{Text: "Y"})
+	updated, cmd := app.Update(keyMsg("Y"))
 	app = updated.(App)
 
 	assert.Contains(t, app.statusBar.Message, "Copied API_KEY=")
@@ -42,7 +41,7 @@ func TestYankNoOpOnFilePanel(t *testing.T) {
 	app.varList.SetFile(f)
 	app.focus = FocusFiles
 
-	updated, cmd := app.Update(tea.KeyPressMsg{Text: "y"})
+	updated, cmd := app.Update(keyMsg("y"))
 	app = updated.(App)
 
 	assert.Empty(t, app.statusBar.Message, "yank should not fire on file panel")
@@ -56,7 +55,7 @@ func TestYankNoOpWithNoVar(t *testing.T) {
 	app.varList.SetFile(f)
 	app.focus = FocusVars
 
-	updated, cmd := app.Update(tea.KeyPressMsg{Text: "y"})
+	updated, cmd := app.Update(keyMsg("y"))
 	app = updated.(App)
 
 	assert.Empty(t, app.statusBar.Message)

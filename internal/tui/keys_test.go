@@ -2,6 +2,10 @@ package tui
 
 import (
 	"fmt"
+	"go/ast"
+	goparser "go/parser"
+	"go/token"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -48,6 +52,54 @@ func TestEveryBoundKeyCanBePressed(t *testing.T) {
 			assert.Equal(t, k, msg.String(), "keyMsg(%q) builds a different key, which KeyMap.%s does not match", k, b.field)
 		}
 	}
+}
+
+// TestKeyPressesCarryTheirCode fails on a tea.KeyPressMsg literal, in this
+// package's test files, that sets Text but no Code: no terminal sends one, and
+// a named key pressed that way ({Text: "enter"}) still matches its binding
+// through String() while a handler reading Code sees no key at all.
+func TestKeyPressesCarryTheirCode(t *testing.T) {
+	names, err := filepath.Glob("*_test.go")
+	require.NoError(t, err)
+	fset := token.NewFileSet()
+	var textOnly []string
+	for _, name := range names {
+		file, err := goparser.ParseFile(fset, name, nil, goparser.SkipObjectResolution)
+		require.NoError(t, err)
+		tea := importName(file, "charm.land/bubbletea/v2")
+		if tea == "" {
+			continue
+		}
+		ast.Inspect(file, func(n ast.Node) bool {
+			lit, ok := n.(*ast.CompositeLit)
+			if !ok || !isSelector(lit.Type, tea, "KeyPressMsg") {
+				return true
+			}
+			fields := make(map[string]bool, len(lit.Elts))
+			for _, elt := range lit.Elts {
+				if kv, ok := elt.(*ast.KeyValueExpr); ok {
+					if id, ok := kv.Key.(*ast.Ident); ok {
+						fields[id.Name] = true
+					}
+				}
+			}
+			if fields["Text"] && !fields["Code"] {
+				textOnly = append(textOnly, fset.Position(lit.Pos()).String())
+			}
+			return true
+		})
+	}
+	assert.Empty(t, textOnly, "press keys with keyMsg(k), or press(app, k...), which build the press a terminal sends")
+}
+
+// isSelector reports whether expr is pkg.name.
+func isSelector(expr ast.Expr, pkg, name string) bool {
+	sel, ok := expr.(*ast.SelectorExpr)
+	if !ok || sel.Sel.Name != name {
+		return false
+	}
+	id, ok := sel.X.(*ast.Ident)
+	return ok && id.Name == pkg
 }
 
 // keyMapBinding is one field of the KeyMap: its name and its binding.

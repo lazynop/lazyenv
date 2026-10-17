@@ -15,13 +15,13 @@ func TestReorderAlphabeticalWritesToDisk(t *testing.T) {
 	app, envPath := newTestAppWithDiskFile(t, "C=3\nA=1\nB=2\n")
 
 	// O → menu, a → alphabetical, y → confirm + write.
-	app = sendKey(app, tea.KeyPressMsg{Text: "O"})
+	app = sendKey(app, keyMsg("O"))
 	require.Equal(t, ModeReorderMenu, app.mode)
 
-	app = sendKey(app, tea.KeyPressMsg{Text: "a"})
+	app = sendKey(app, keyMsg("a"))
 	require.Equal(t, ModeReorderConfirm, app.mode)
 
-	app = sendKey(app, tea.KeyPressMsg{Text: "y"})
+	app = sendKey(app, keyMsg("y"))
 	require.Equal(t, ModeNormal, app.mode)
 
 	data, err := os.ReadFile(envPath)
@@ -36,10 +36,10 @@ func TestReorderAlphabeticalWritesToDisk(t *testing.T) {
 func TestReorderGroupedWritesToDisk(t *testing.T) {
 	app, envPath := newTestAppWithDiskFile(t, "REDIS_PORT=1\nDB_HOST=h\nDB_PORT=p\nREDIS_HOST=r\n")
 
-	app = sendKey(app, tea.KeyPressMsg{Text: "O"})
-	app = sendKey(app, tea.KeyPressMsg{Text: "g"})
+	app = sendKey(app, keyMsg("O"))
+	app = sendKey(app, keyMsg("g"))
 	require.Equal(t, ModeReorderConfirm, app.mode)
-	app = sendKey(app, tea.KeyPressMsg{Text: "y"})
+	app = sendKey(app, keyMsg("y"))
 	require.Equal(t, ModeNormal, app.mode)
 
 	data, err := os.ReadFile(envPath)
@@ -50,9 +50,9 @@ func TestReorderGroupedWritesToDisk(t *testing.T) {
 func TestReorderPreservesGitWarning(t *testing.T) {
 	app, _ := newTestAppWithDiskFile(t, "B=2\nA=1\n") // helper sets GitWarning=true
 
-	app = sendKey(app, tea.KeyPressMsg{Text: "O"})
-	app = sendKey(app, tea.KeyPressMsg{Text: "a"})
-	app = sendKey(app, tea.KeyPressMsg{Text: "y"})
+	app = sendKey(app, keyMsg("O"))
+	app = sendKey(app, keyMsg("a"))
+	app = sendKey(app, keyMsg("y"))
 
 	assert.True(t, app.fileList.Files[0].GitWarning, "GitWarning must survive a reorder")
 }
@@ -60,7 +60,7 @@ func TestReorderPreservesGitWarning(t *testing.T) {
 func TestReorderCancelFromMenuLeavesDiskUntouched(t *testing.T) {
 	app, envPath := newTestAppWithDiskFile(t, "B=2\nA=1\n")
 
-	app = sendKey(app, tea.KeyPressMsg{Text: "O"})
+	app = sendKey(app, keyMsg("O"))
 	app = sendKey(app, tea.KeyPressMsg{Code: tea.KeyEscape})
 	require.Equal(t, ModeNormal, app.mode)
 
@@ -72,9 +72,9 @@ func TestReorderCancelFromMenuLeavesDiskUntouched(t *testing.T) {
 func TestReorderCancelFromConfirmLeavesDiskUntouched(t *testing.T) {
 	app, envPath := newTestAppWithDiskFile(t, "B=2\nA=1\n")
 
-	app = sendKey(app, tea.KeyPressMsg{Text: "O"})
-	app = sendKey(app, tea.KeyPressMsg{Text: "a"})
-	app = sendKey(app, tea.KeyPressMsg{Text: "n"})
+	app = sendKey(app, keyMsg("O"))
+	app = sendKey(app, keyMsg("a"))
+	app = sendKey(app, keyMsg("n"))
 	require.Equal(t, ModeNormal, app.mode)
 
 	data, err := os.ReadFile(envPath)
@@ -85,7 +85,7 @@ func TestReorderCancelFromConfirmLeavesDiskUntouched(t *testing.T) {
 func TestReorderNeedsTwoVariables(t *testing.T) {
 	app, _ := newTestAppWithDiskFile(t, "ONLY=1\n")
 
-	app = sendKey(app, tea.KeyPressMsg{Text: "O"})
+	app = sendKey(app, keyMsg("O"))
 	assert.Equal(t, ModeNormal, app.mode, "single-var file must not open the reorder menu")
 }
 
@@ -93,7 +93,7 @@ func TestReorderBlockedInReadOnly(t *testing.T) {
 	app, envPath := newTestAppWithDiskFile(t, "B=2\nA=1\n")
 	app.config.ReadOnly = true
 
-	app = sendKey(app, tea.KeyPressMsg{Text: "O"})
+	app = sendKey(app, keyMsg("O"))
 	assert.Equal(t, ModeNormal, app.mode, "read-only must block the reorder menu")
 
 	data, err := os.ReadFile(envPath)
@@ -104,9 +104,9 @@ func TestReorderBlockedInReadOnly(t *testing.T) {
 func TestReorderCreatesBackup(t *testing.T) {
 	app, envPath := newTestAppWithDiskFile(t, "B=2\nA=1\n")
 
-	app = sendKey(app, tea.KeyPressMsg{Text: "O"})
-	app = sendKey(app, tea.KeyPressMsg{Text: "a"})
-	app = sendKey(app, tea.KeyPressMsg{Text: "y"})
+	app = sendKey(app, keyMsg("O"))
+	app = sendKey(app, keyMsg("a"))
+	app = sendKey(app, keyMsg("y"))
 	require.Equal(t, ModeNormal, app.mode)
 
 	data, err := os.ReadFile(envPath + ".bak")
@@ -122,7 +122,7 @@ func TestReorderMenuSurvivesStaleClear(t *testing.T) {
 	staleGen := app.statusBar.msgGen
 
 	// Open the reorder menu before that timer fires.
-	app = sendKey(app, tea.KeyPressMsg{Text: "O"})
+	app = sendKey(app, keyMsg("O"))
 	require.Equal(t, ModeReorderMenu, app.mode)
 	require.NotEmpty(t, app.statusBar.Message)
 
@@ -139,7 +139,7 @@ func TestReorderMenuNamesTheKeysTheKeyMapBinds(t *testing.T) {
 	app, _ := newTestAppWithDiskFile(t, "B=2\nA=1\n")
 	app.keys.ReorderAlpha = key.NewBinding(key.WithKeys("x"))
 
-	app = sendKey(app, tea.KeyPressMsg{Text: "O"})
+	app = sendKey(app, keyMsg("O"))
 
 	assert.Equal(t, "Reorder on disk: [x]alphabetical  [g]grouped  [Esc]cancel", app.statusBar.Message)
 }
@@ -149,8 +149,8 @@ func TestReorderConfirmNamesTheKeysTheKeyMapBinds(t *testing.T) {
 	app.keys.Confirm = key.NewBinding(key.WithKeys("j"))
 	app.keys.Deny = key.NewBinding(key.WithKeys("x"))
 
-	app = sendKey(app, tea.KeyPressMsg{Text: "O"})
-	app = sendKey(app, tea.KeyPressMsg{Text: "a"})
+	app = sendKey(app, keyMsg("O"))
+	app = sendKey(app, keyMsg("a"))
 
 	assert.True(t, strings.HasSuffix(app.statusBar.Message, "This rewrites the file. (j/x)"), app.statusBar.Message)
 }

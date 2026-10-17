@@ -31,7 +31,7 @@ func cursorInputs(t *testing.T, app App) []cursorInput {
 	var inputs []cursorInput
 	for _, b := range keyMapBindings(t) {
 		k := b.binding.Keys()[0]
-		inputs = append(inputs, cursorInput{k, tea.KeyPressMsg{Text: k}})
+		inputs = append(inputs, cursorInput{k, keyMsg(k)})
 	}
 	return append(inputs,
 		cursorInput{"wheel over files", tea.MouseWheelMsg{X: 1, Y: 3, Button: tea.MouseWheelDown}},
@@ -66,7 +66,7 @@ func TestMainViewCursorStaysOnTheActiveFile(t *testing.T) {
 					app := newApp(t)
 					sent := []cursorInput{first, second}
 					for _, k := range followUps {
-						sent = append(sent, cursorInput{k, tea.KeyPressMsg{Text: k}})
+						sent = append(sent, cursorInput{k, keyMsg(k)})
 					}
 					for i, in := range sent {
 						updated, _ := app.Update(in.msg)

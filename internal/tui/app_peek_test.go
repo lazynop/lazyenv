@@ -21,11 +21,11 @@ func TestPeekToggle(t *testing.T) {
 
 	assert.False(t, app.varList.Peeking)
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "p"})
+	updated, _ := app.Update(keyMsg("p"))
 	app = updated.(App)
 	assert.True(t, app.varList.Peeking, "first press should enable peek")
 
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "p"})
+	updated, _ = app.Update(keyMsg("p"))
 	app = updated.(App)
 	assert.False(t, app.varList.Peeking, "second press should disable peek")
 }
@@ -37,7 +37,7 @@ func TestPeekNoOpOnFilePanel(t *testing.T) {
 	app.varList.SetFile(f)
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "p"})
+	updated, _ := app.Update(keyMsg("p"))
 	app = updated.(App)
 	assert.False(t, app.varList.Peeking, "peek should not activate on file panel")
 }

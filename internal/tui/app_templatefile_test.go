@@ -19,7 +19,7 @@ func TestTemplateFile_EntersModeOnT(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "T"})
+	updated, _ := app.Update(keyMsg("T"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeTemplateFile, app.mode)
@@ -31,7 +31,7 @@ func TestTemplateFile_DotEnvSuffix(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "T"})
+	updated, _ := app.Update(keyMsg("T"))
 	app = updated.(App)
 
 	assert.Equal(t, "demo.example.env", app.fileInput.Value())
@@ -41,7 +41,7 @@ func TestTemplateFile_NoFileNoOp(t *testing.T) {
 	app := newTestApp(nil)
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "T"})
+	updated, _ := app.Update(keyMsg("T"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -52,7 +52,7 @@ func TestTemplateFile_OnlyFromFocusFiles(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "T"})
+	updated, _ := app.Update(keyMsg("T"))
 	app = updated.(App)
 
 	assert.NotEqual(t, ModeTemplateFile, app.mode)

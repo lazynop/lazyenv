@@ -22,7 +22,7 @@ func TestEditExistingVarConfirm(t *testing.T) {
 	app.focus = FocusVars
 
 	// Press 'e' to start editing FOO (cursor at 0)
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "e"})
+	updated, _ := app.Update(keyMsg("e"))
 	app = updated.(App)
 	assert.Equal(t, ModeEditing, app.mode)
 
@@ -30,7 +30,7 @@ func TestEditExistingVarConfirm(t *testing.T) {
 	app.editor.input.SetValue("new_value")
 
 	// Press Enter to confirm
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "enter"})
+	updated, _ = app.Update(keyMsg("enter"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -115,7 +115,7 @@ func TestEditExistingVarCancel(t *testing.T) {
 	app.focus = FocusVars
 
 	// Press 'e' to start editing
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "e"})
+	updated, _ := app.Update(keyMsg("e"))
 	app = updated.(App)
 	assert.Equal(t, ModeEditing, app.mode)
 
@@ -123,7 +123,7 @@ func TestEditExistingVarCancel(t *testing.T) {
 	app.editor.input.SetValue("changed")
 
 	// Press Escape to cancel
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "esc"})
+	updated, _ = app.Update(keyMsg("esc"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -136,13 +136,13 @@ func TestAddVariableTwoStepFlow(t *testing.T) {
 	app.focus = FocusVars
 
 	// Press 'a' to start add flow
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "a"})
+	updated, _ := app.Update(keyMsg("a"))
 	app = updated.(App)
 	assert.Equal(t, ModeEditing, app.mode)
 
 	// Enter key name
 	app.editor.input.SetValue("NEW_KEY")
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "enter"})
+	updated, _ = app.Update(keyMsg("enter"))
 	app = updated.(App)
 
 	// Should still be in editing mode (value step)
@@ -151,7 +151,7 @@ func TestAddVariableTwoStepFlow(t *testing.T) {
 
 	// Enter value
 	app.editor.input.SetValue("new_value")
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "enter"})
+	updated, _ = app.Update(keyMsg("enter"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -167,7 +167,7 @@ func TestEditWithNoVarSelected(t *testing.T) {
 	app.focus = FocusVars
 
 	// Press 'e' — should stay in normal mode since no var is selected
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "e"})
+	updated, _ := app.Update(keyMsg("e"))
 	app = updated.(App)
 	assert.Equal(t, ModeNormal, app.mode)
 }
@@ -180,12 +180,12 @@ func TestDeleteConfirmYes(t *testing.T) {
 	app.focus = FocusVars
 
 	// Press 'd' to trigger delete confirmation
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "d"})
+	updated, _ := app.Update(keyMsg("d"))
 	app = updated.(App)
 	assert.Equal(t, ModeConfirmDelete, app.mode)
 
 	// Press 'y' to confirm
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "y"})
+	updated, _ = app.Update(keyMsg("y"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -199,12 +199,12 @@ func TestDeleteConfirmNo(t *testing.T) {
 	app.focus = FocusVars
 
 	// Press 'd' to trigger delete
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "d"})
+	updated, _ := app.Update(keyMsg("d"))
 	app = updated.(App)
 	assert.Equal(t, ModeConfirmDelete, app.mode)
 
 	// Press 'n' to deny
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "n"})
+	updated, _ = app.Update(keyMsg("n"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -216,10 +216,10 @@ func TestDeleteConfirmEscape(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "d"})
+	updated, _ := app.Update(keyMsg("d"))
 	app = updated.(App)
 
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "esc"})
+	updated, _ = app.Update(keyMsg("esc"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -232,12 +232,12 @@ func TestHelpToggle(t *testing.T) {
 	app := newTestApp(nil)
 
 	// Press '?' to open help
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "?"})
+	updated, _ := app.Update(keyMsg("?"))
 	app = updated.(App)
 	assert.Equal(t, ModeHelp, app.mode)
 
 	// Press Escape to close help
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "esc"})
+	updated, _ = app.Update(keyMsg("esc"))
 	app = updated.(App)
 	assert.Equal(t, ModeNormal, app.mode)
 }
@@ -246,12 +246,12 @@ func TestHelpToggleWithQuestionMark(t *testing.T) {
 	app := newTestApp(nil)
 
 	// Open help
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "?"})
+	updated, _ := app.Update(keyMsg("?"))
 	app = updated.(App)
 	assert.Equal(t, ModeHelp, app.mode)
 
 	// Close with '?' again
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "?"})
+	updated, _ = app.Update(keyMsg("?"))
 	app = updated.(App)
 	assert.Equal(t, ModeNormal, app.mode)
 }
@@ -259,12 +259,12 @@ func TestHelpToggleWithQuestionMark(t *testing.T) {
 func TestHelpExitWithQuit(t *testing.T) {
 	app := newTestApp(nil)
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "?"})
+	updated, _ := app.Update(keyMsg("?"))
 	app = updated.(App)
 	assert.Equal(t, ModeHelp, app.mode)
 
 	// 'q' also exits help
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "q"})
+	updated, _ = app.Update(keyMsg("q"))
 	app = updated.(App)
 	assert.Equal(t, ModeNormal, app.mode)
 }
@@ -277,12 +277,12 @@ func TestSearchFlowEscape(t *testing.T) {
 	app.focus = FocusVars
 
 	// Press '/' to start search
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "/"})
+	updated, _ := app.Update(keyMsg("/"))
 	app = updated.(App)
 	assert.Equal(t, ModeSearching, app.mode)
 
 	// Escape clears search and exits
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "esc"})
+	updated, _ = app.Update(keyMsg("esc"))
 	app = updated.(App)
 	assert.Equal(t, ModeNormal, app.mode)
 	assert.Equal(t, "", app.varList.SearchQuery, "search should be cleared on escape")
@@ -294,7 +294,7 @@ func TestSearchFlowEnter(t *testing.T) {
 	app.focus = FocusVars
 
 	// Press '/' to start search
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "/"})
+	updated, _ := app.Update(keyMsg("/"))
 	app = updated.(App)
 	assert.Equal(t, ModeSearching, app.mode)
 
@@ -303,7 +303,7 @@ func TestSearchFlowEnter(t *testing.T) {
 	app.varList.SetSearch("FOO")
 
 	// Press Enter to keep filter
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "enter"})
+	updated, _ = app.Update(keyMsg("enter"))
 	app = updated.(App)
 	assert.Equal(t, ModeNormal, app.mode)
 	assert.Equal(t, "FOO", app.varList.SearchQuery, "search should be preserved on enter")
@@ -319,14 +319,14 @@ func TestFocusSwitching(t *testing.T) {
 	assert.Equal(t, FocusFiles, app.focus)
 
 	// Press right to focus vars
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "l"})
+	updated, _ := app.Update(keyMsg("l"))
 	app = updated.(App)
 	assert.Equal(t, FocusVars, app.focus)
 	assert.True(t, app.varList.Focused)
 	assert.False(t, app.fileList.Focused)
 
 	// Press left to focus files
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "h"})
+	updated, _ = app.Update(keyMsg("h"))
 	app = updated.(App)
 	assert.Equal(t, FocusFiles, app.focus)
 	assert.True(t, app.fileList.Focused)
@@ -340,11 +340,11 @@ func TestToggleSecrets(t *testing.T) {
 
 	assert.False(t, app.varList.ShowSecrets)
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "ctrl+s"})
+	updated, _ := app.Update(keyMsg("ctrl+s"))
 	app = updated.(App)
 	assert.True(t, app.varList.ShowSecrets)
 
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "ctrl+s"})
+	updated, _ = app.Update(keyMsg("ctrl+s"))
 	app = updated.(App)
 	assert.False(t, app.varList.ShowSecrets)
 }
@@ -356,17 +356,17 @@ func TestToggleSecretsRefiltersKeptSearch(t *testing.T) {
 	app.focus = FocusVars
 
 	for _, k := range []string{"/", "h", "u", "n", "t", "e", "r", "enter"} {
-		updated, _ := app.Update(tea.KeyPressMsg{Text: k})
+		updated, _ := app.Update(keyMsg(k))
 		app = updated.(App)
 	}
 	require.Equal(t, "hunter", app.varList.SearchQuery)
 	assert.Equal(t, 1, len(app.varList.displayItems), "the masked secret's value must not match")
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "ctrl+s"})
+	updated, _ := app.Update(keyMsg("ctrl+s"))
 	app = updated.(App)
 	assert.Equal(t, 2, len(app.varList.displayItems), "revealing secrets must re-filter the kept search")
 
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "ctrl+s"})
+	updated, _ = app.Update(keyMsg("ctrl+s"))
 	app = updated.(App)
 	assert.Equal(t, 1, len(app.varList.displayItems), "hiding secrets must re-filter the kept search")
 }
@@ -378,11 +378,11 @@ func TestToggleSort(t *testing.T) {
 
 	assert.False(t, app.varList.SortAlpha)
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "o"})
+	updated, _ := app.Update(keyMsg("o"))
 	app = updated.(App)
 	assert.True(t, app.varList.SortAlpha)
 
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "o"})
+	updated, _ = app.Update(keyMsg("o"))
 	app = updated.(App)
 	assert.False(t, app.varList.SortAlpha)
 }
@@ -392,7 +392,7 @@ func TestDeleteWithNoFile(t *testing.T) {
 	app := newTestApp(nil)
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "d"})
+	updated, _ := app.Update(keyMsg("d"))
 	app = updated.(App)
 	assert.Equal(t, ModeNormal, app.mode)
 }

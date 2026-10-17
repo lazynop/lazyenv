@@ -119,13 +119,13 @@ func TestNavigationUpDownInFilePanel(t *testing.T) {
 	app.focus = FocusFiles
 
 	// Move down
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "j"})
+	updated, _ := app.Update(keyMsg("j"))
 	app = updated.(App)
 	assert.Equal(t, 1, app.fileList.Cursor)
 	assert.Equal(t, f2, app.varList.File, "var panel should sync with file cursor")
 
 	// Move up
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "k"})
+	updated, _ = app.Update(keyMsg("k"))
 	app = updated.(App)
 	assert.Equal(t, 0, app.fileList.Cursor)
 	assert.Equal(t, f1, app.varList.File)
@@ -136,11 +136,11 @@ func TestNavigationUpDownInVarPanel(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "j"})
+	updated, _ := app.Update(keyMsg("j"))
 	app = updated.(App)
 	assert.Equal(t, 1, app.varList.Cursor)
 
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "k"})
+	updated, _ = app.Update(keyMsg("k"))
 	app = updated.(App)
 	assert.Equal(t, 0, app.varList.Cursor)
 }
@@ -152,9 +152,9 @@ func TestEnterSelectsFileAndSwitchesToVars(t *testing.T) {
 	app.focus = FocusFiles
 
 	// Move to second file and press enter
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "j"})
+	updated, _ := app.Update(keyMsg("j"))
 	app = updated.(App)
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "enter"})
+	updated, _ = app.Update(keyMsg("enter"))
 	app = updated.(App)
 
 	assert.Equal(t, FocusVars, app.focus)
@@ -164,7 +164,7 @@ func TestEnterSelectsFileAndSwitchesToVars(t *testing.T) {
 func TestQuitReturnsQuitCmd(t *testing.T) {
 	app := newTestApp(nil)
 
-	_, cmd := app.Update(tea.KeyPressMsg{Text: "q"})
+	_, cmd := app.Update(keyMsg("q"))
 	// tea.Quit is a function, we can check cmd is not nil
 	assert.NotNil(t, cmd)
 }
@@ -208,7 +208,7 @@ func TestStartupNoticeFlashesWithoutBlocking(t *testing.T) {
 
 	assert.Equal(t, ModeNormal, app.mode, "a notice must not open the blocking config error screen")
 	assert.Equal(t, notice, app.statusBar.Message)
-	_, cmd := app.Update(tea.KeyPressMsg{Text: "j"})
+	_, cmd := app.Update(keyMsg("j"))
 	assert.Nil(t, cmd, "the next key must reach the TUI instead of quitting")
 }
 
@@ -230,7 +230,7 @@ func TestConfigErrorBlocksAndQuitsOnNextKey(t *testing.T) {
 
 	assert.Equal(t, ModeConfigError, app.mode)
 	assert.Contains(t, app.View().Content, `invalid sort value: "random"`)
-	_, cmd := app.Update(tea.KeyPressMsg{Text: "j"})
+	_, cmd := app.Update(keyMsg("j"))
 	require.NotNil(t, cmd)
 	assert.IsType(t, tea.QuitMsg{}, cmd(), "a rejected config file must quit on the next key")
 }

@@ -87,13 +87,13 @@ func TestReadOnlyNoKeyChangesFiles(t *testing.T) {
 				t.Run(b.field, func(t *testing.T) {
 					app, dir := newReadOnlyDiskApp(t)
 					for _, k := range st.keys {
-						app = sendKey(app, tea.KeyPressMsg{Text: k})
+						app = sendKey(app, keyMsg(k))
 					}
 					require.Equal(t, st.mode, app.mode, "start state %s not reached", st.name)
 					require.True(t, st.ready == nil || st.ready(app), "start state %s not reached", st.name)
 
 					for _, k := range append([]string{binding.Keys()[0]}, readOnlyFollowUps...) {
-						app = sendKey(app, tea.KeyPressMsg{Text: k})
+						app = sendKey(app, keyMsg(k))
 						requireReadOnlyHeld(t, app, dir, k)
 					}
 				})

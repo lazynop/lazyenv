@@ -46,7 +46,7 @@ func newGroupingApp(t *testing.T) (App, *model.EnvFile) {
 func TestApp_ToggleGroupingFlash(t *testing.T) {
 	app, _ := newGroupingApp(t)
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "g"})
+	updated, _ := app.Update(keyMsg("g"))
 	app = updated.(App)
 
 	assert.True(t, app.varList.Grouping, "Grouping should be enabled")
@@ -59,7 +59,7 @@ func TestApp_ToggleGroupingDisableFlash(t *testing.T) {
 	app.varList.Grouping = true
 	app.varList.Refresh()
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "g"})
+	updated, _ := app.Update(keyMsg("g"))
 	app = updated.(App)
 
 	assert.False(t, app.varList.Grouping)
@@ -93,7 +93,7 @@ func TestApp_SpaceOnHeaderTogglesCollapse(t *testing.T) {
 	require.True(t, app.varList.IsHeaderAtCursor())
 
 	// Space: Text=" ", Code=' ' (space rune)
-	updated, _ := app.Update(tea.KeyPressMsg{Text: " ", Code: ' '})
+	updated, _ := app.Update(keyMsg("space"))
 	app = updated.(App)
 
 	assert.True(t, app.varList.collapsed["DB"], "DB should be collapsed after Space on header")
@@ -123,7 +123,7 @@ func TestApp_EditOnHeaderFlashes(t *testing.T) {
 	app.varList.SetCursor(0) // DB header
 	require.True(t, app.varList.IsHeaderAtCursor())
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "e"})
+	updated, _ := app.Update(keyMsg("e"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode, "must not enter edit mode on header")
@@ -136,7 +136,7 @@ func TestApp_RenameKeyOnHeaderFlashes(t *testing.T) {
 	app.varList.Refresh()
 	app.varList.SetCursor(0)
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "E"})
+	updated, _ := app.Update(keyMsg("E"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -149,7 +149,7 @@ func TestApp_AddOnHeaderFlashes(t *testing.T) {
 	app.varList.Refresh()
 	app.varList.SetCursor(0)
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "a"})
+	updated, _ := app.Update(keyMsg("a"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode, "Add must not open the editor on header")
@@ -162,7 +162,7 @@ func TestApp_DeleteOnHeaderFlashes(t *testing.T) {
 	app.varList.Refresh()
 	app.varList.SetCursor(0)
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "d"})
+	updated, _ := app.Update(keyMsg("d"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode, "must not enter ModeConfirmDelete on header")
@@ -178,7 +178,7 @@ func TestApp_EditOnVarStillWorksWithGrouping(t *testing.T) {
 	app.varList.SetCursor(1) // first DB var (DB_HOST)
 	require.False(t, app.varList.IsHeaderAtCursor())
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "e"})
+	updated, _ := app.Update(keyMsg("e"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeEditing, app.mode, "edit on a var must still work")

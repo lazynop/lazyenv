@@ -19,7 +19,7 @@ func TestDeleteFile_EntersModeOnD(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "D"})
+	updated, _ := app.Update(keyMsg("D"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeConfirmDeleteFile, app.mode)
@@ -31,7 +31,7 @@ func TestDeleteFile_NoFileNoOp(t *testing.T) {
 	app := newTestApp(nil)
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "D"})
+	updated, _ := app.Update(keyMsg("D"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -42,7 +42,7 @@ func TestDeleteFile_OnlyFromFocusFiles(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "D"})
+	updated, _ := app.Update(keyMsg("D"))
 	app = updated.(App)
 
 	assert.NotEqual(t, ModeConfirmDeleteFile, app.mode)
@@ -54,7 +54,7 @@ func TestDeleteFile_BlocksIfModified(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusFiles
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "D"})
+	updated, _ := app.Update(keyMsg("D"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -75,7 +75,7 @@ func TestDeleteFile_ConfirmDeletes(t *testing.T) {
 	app.focus = FocusFiles
 	app.mode = ModeConfirmDeleteFile
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "y"})
+	updated, _ := app.Update(keyMsg("y"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -109,7 +109,7 @@ func TestDeleteFile_ConfirmWithMultipleFiles(t *testing.T) {
 	app.mode = ModeConfirmDeleteFile
 	// First file is selected (index 0)
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "y"})
+	updated, _ := app.Update(keyMsg("y"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -142,7 +142,7 @@ func TestDeleteFile_ConfirmDeletesLastFile(t *testing.T) {
 	app.fileList.Selected = 1
 	app.varList.SetFile(f2)
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "y"})
+	updated, _ := app.Update(keyMsg("y"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -160,7 +160,7 @@ func TestDeleteFile_DenyCancels(t *testing.T) {
 	app.mode = ModeConfirmDeleteFile
 	app.statusBar.SetAlert("Delete .env? (y/n)")
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "n"})
+	updated, _ := app.Update(keyMsg("n"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)

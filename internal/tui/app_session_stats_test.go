@@ -4,7 +4,6 @@ import (
 	"os"
 	"testing"
 
-	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -199,7 +198,7 @@ func TestApp_SessionStats_EndToEnd(t *testing.T) {
 		}
 	}
 	app.mode = ModeConfirmDeleteFile
-	m, _ = app.handleConfirmDeleteFileKey(tea.KeyPressMsg{Text: "y"})
+	m, _ = app.handleConfirmDeleteFileKey(keyMsg("y"))
 	app = m.(App)
 
 	want := "Session summary:\n" +
@@ -214,7 +213,7 @@ func TestApp_SessionStats_Delete(t *testing.T) {
 	app, _, _, path := setupStatsFixture(t, ".env", "FOO=1\n")
 
 	app.mode = ModeConfirmDeleteFile
-	out, _ := app.handleConfirmDeleteFileKey(tea.KeyPressMsg{Text: "y"})
+	out, _ := app.handleConfirmDeleteFileKey(keyMsg("y"))
 	app = out.(App)
 
 	assert.Equal(t, []string{path + " — deleted"}, app.sessionStats.Summary())

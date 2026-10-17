@@ -27,20 +27,20 @@ func TestCompareExitRestoresCursorToSelected(t *testing.T) {
 	app.focus = FocusVars
 
 	// Enter compare mode: press 'c' to start, move down, Enter to confirm.
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "c"})
+	updated, _ := app.Update(keyMsg("c"))
 	app = updated.(App)
 	assert.Equal(t, ModeCompareSelect, app.mode)
 
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "j"})
+	updated, _ = app.Update(keyMsg("j"))
 	app = updated.(App)
 	assert.Equal(t, 1, app.fileList.Cursor, "cursor should have moved to second file")
 
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "enter"})
+	updated, _ = app.Update(keyMsg("enter"))
 	app = updated.(App)
 	assert.Equal(t, ModeComparing, app.mode)
 
 	// Exit compare with 'q'.
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "q"})
+	updated, _ = app.Update(keyMsg("q"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -58,17 +58,17 @@ func TestCompareSelectEscapeRestoresCursor(t *testing.T) {
 	app.focus = FocusVars
 
 	// Enter compare select mode.
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "c"})
+	updated, _ := app.Update(keyMsg("c"))
 	app = updated.(App)
 	assert.Equal(t, ModeCompareSelect, app.mode)
 
 	// Move cursor to second file.
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "j"})
+	updated, _ = app.Update(keyMsg("j"))
 	app = updated.(App)
 	assert.Equal(t, 1, app.fileList.Cursor)
 
 	// Press Escape to cancel.
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "esc"})
+	updated, _ = app.Update(keyMsg("esc"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeNormal, app.mode)
@@ -90,13 +90,13 @@ func enterCompareMode(t *testing.T, f1, f2 *model.EnvFile) App {
 	app = updated.(App)
 
 	// Press 'c' to start compare select
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "c"})
+	updated, _ = app.Update(keyMsg("c"))
 	app = updated.(App)
 
 	// Move to second file and confirm
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "j"})
+	updated, _ = app.Update(keyMsg("j"))
 	app = updated.(App)
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "enter"})
+	updated, _ = app.Update(keyMsg("enter"))
 	app = updated.(App)
 	assert.Equal(t, ModeComparing, app.mode)
 	return app
@@ -116,7 +116,7 @@ func TestCompareToggleSecretsRefiltersKeptSearch(t *testing.T) {
 
 	// Compare the files, reveal secrets there, exit.
 	for _, k := range []string{"c", "j", "enter", "ctrl+s", "q"} {
-		updated, _ := app.Update(tea.KeyPressMsg{Text: k})
+		updated, _ := app.Update(keyMsg(k))
 		app = updated.(App)
 	}
 
@@ -142,7 +142,7 @@ func TestCompareCopyRight(t *testing.T) {
 			break
 		}
 	}
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "l"})
+	updated, _ := app.Update(keyMsg("l"))
 	app = updated.(App)
 	assert.Contains(t, app.statusBar.Message, "SHARED")
 }
@@ -161,7 +161,7 @@ func TestCompareCopyLeft(t *testing.T) {
 			break
 		}
 	}
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "h"})
+	updated, _ := app.Update(keyMsg("h"))
 	app = updated.(App)
 	assert.Contains(t, app.statusBar.Message, "SHARED")
 }
@@ -208,14 +208,14 @@ func TestCompareFilterToggle(t *testing.T) {
 	assert.False(t, app.diffView.HideEqual)
 
 	// Press 'f' to filter
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "f"})
+	updated, _ := app.Update(keyMsg("f"))
 	app = updated.(App)
 	assert.True(t, app.diffView.HideEqual)
 	assert.Less(t, len(app.diffView.Entries), totalBefore)
 	assert.Contains(t, app.statusBar.Message, "differences only")
 
 	// Press 'f' again to unfilter
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "f"})
+	updated, _ = app.Update(keyMsg("f"))
 	app = updated.(App)
 	assert.False(t, app.diffView.HideEqual)
 	assert.Contains(t, app.statusBar.Message, "all entries")
@@ -231,12 +231,12 @@ func TestCompareNavigation(t *testing.T) {
 	assert.Equal(t, 0, app.diffView.Cursor)
 
 	// Move down
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "j"})
+	updated, _ := app.Update(keyMsg("j"))
 	app = updated.(App)
 	assert.Equal(t, 1, app.diffView.Cursor)
 
 	// Move up
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "k"})
+	updated, _ = app.Update(keyMsg("k"))
 	app = updated.(App)
 	assert.Equal(t, 0, app.diffView.Cursor)
 }
@@ -257,13 +257,13 @@ func TestCompareEditLeft(t *testing.T) {
 	}
 
 	// Press 'e' to edit left file
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "e"})
+	updated, _ := app.Update(keyMsg("e"))
 	app = updated.(App)
 	assert.Equal(t, ModeEditingCompare, app.mode)
 	assert.Equal(t, f1, app.compareEditFile)
 
 	// Cancel with escape
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "esc"})
+	updated, _ = app.Update(keyMsg("esc"))
 	app = updated.(App)
 	assert.Equal(t, ModeComparing, app.mode)
 }
@@ -283,7 +283,7 @@ func TestCompareEditRight(t *testing.T) {
 	}
 
 	// Press 'E' (uppercase) to edit right file
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "E"})
+	updated, _ := app.Update(keyMsg("E"))
 	app = updated.(App)
 	assert.Equal(t, ModeEditingCompare, app.mode)
 	assert.Equal(t, f2, app.compareEditFile)
@@ -304,12 +304,12 @@ func TestCompareEditConfirm(t *testing.T) {
 	}
 
 	// Edit left
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "e"})
+	updated, _ := app.Update(keyMsg("e"))
 	app = updated.(App)
 
 	// Set new value and confirm
 	app.editor.input.SetValue("edited_value")
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "enter"})
+	updated, _ = app.Update(keyMsg("enter"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeComparing, app.mode)
@@ -369,7 +369,7 @@ func TestCompareNeedsAtLeast2Files(t *testing.T) {
 	app.focus = FocusVars
 
 	// With only 1 file, compare should not enter compare mode
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "c"})
+	updated, _ := app.Update(keyMsg("c"))
 	app = updated.(App)
 	assert.Equal(t, ModeNormal, app.mode)
 }
@@ -392,7 +392,7 @@ func TestCompareResetUsesKeyMap(t *testing.T) {
 	app := enterCompareMode(t, fA, fB)
 	app.keys.Reset = key.NewBinding(key.WithKeys("x"))
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "x"})
+	updated, _ := app.Update(keyMsg("x"))
 	app = updated.(App)
 
 	assert.Contains(t, app.statusBar.Message, "Reset to saved state",
@@ -422,7 +422,7 @@ func TestCompareSaveUsesKeyMap(t *testing.T) {
 
 	app.keys.Save = key.NewBinding(key.WithKeys("Z"))
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "Z"})
+	updated, _ := app.Update(keyMsg("Z"))
 	app = updated.(App)
 
 	data, err := os.ReadFile(pathA)
@@ -439,7 +439,7 @@ func TestCompareEditRightUsesKeyMap(t *testing.T) {
 	app := enterCompareMode(t, f1, f2)
 	app.keys.EditRight = key.NewBinding(key.WithKeys("Y"))
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "Y"})
+	updated, _ := app.Update(keyMsg("Y"))
 	app = updated.(App)
 
 	assert.Equal(t, ModeEditingCompare, app.mode,
@@ -468,12 +468,12 @@ func TestCompareCopyDeleteThenExitDoesNotPanic(t *testing.T) {
 	}
 
 	// 'h' copies to the left: for a left-only entry this deletes it from f1.
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "h"})
+	updated, _ := app.Update(keyMsg("h"))
 	app = updated.(App)
 	require.Len(t, f1.Vars, 1, "ONLY_LEFT should have been deleted from the active file")
 
 	// Exit compare mode back to normal.
-	updated, _ = app.Update(tea.KeyPressMsg{Text: "esc"})
+	updated, _ = app.Update(keyMsg("esc"))
 	app = updated.(App)
 	require.Equal(t, ModeNormal, app.mode)
 
@@ -504,7 +504,7 @@ func TestCompareViewFillsTheNormalPanelHeight(t *testing.T) {
 	assert.Equal(t, normalBottom, panelBottomRow(app.View().Content),
 		"the diff panels should end on the same row as the normal panels")
 
-	app = sendKey(app, tea.KeyPressMsg{Text: "e"})
+	app = sendKey(app, keyMsg("e"))
 	require.Equal(t, ModeEditingCompare, app.mode)
 	assert.LessOrEqual(t, lipgloss.Height(app.View().Content), app.height,
 		"the editor bar must still fit in the terminal")
