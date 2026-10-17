@@ -9,13 +9,20 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/lazynop/lazyenv/internal/config"
 )
 
 // openHelp sizes a new app to the terminal and opens the help screen.
 func openHelp(width, height int) App {
-	app := newTestApp(nil)
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: width, Height: height})
-	return press(updated.(App), "?")
+	return openHelpWith(config.DefaultConfig(), width, height)
+}
+
+// openHelpWith is openHelp for an app started with cfg.
+func openHelpWith(cfg config.Config, width, height int) App {
+	var app tea.Model = NewApp(cfg, StartupMessages{})
+	app, _ = app.Update(tea.WindowSizeMsg{Width: width, Height: height})
+	return press(app.(App), "?")
 }
 
 // scrollPastTheEnd is more down presses than the help has rows to scroll at
@@ -165,16 +172,21 @@ func TestHelpIndentsWrappedRowsUnderTheirDescription(t *testing.T) {
 }
 
 // helpSections splits a help screen tall enough for the whole text into its
-// sections: each title, at the text's left margin, maps to its rows, trimmed.
+// sections: each title, at the text's left margin, maps to its rows, trimmed,
+// each joined with the continuation lines a wrap indents under it.
 func helpSections(screen string) map[string][]string {
+	keyRow := strings.Repeat(" ", helpPaddingWidth+4)
 	sections := map[string][]string{}
 	title := ""
 	for _, row := range strings.Split(screen, "\n") {
 		text := strings.TrimSpace(row)
+		rows := sections[title]
 		switch {
 		case text == "":
-		case strings.HasPrefix(row, strings.Repeat(" ", helpPaddingWidth+4)):
-			sections[title] = append(sections[title], text)
+		case strings.HasPrefix(row, keyRow+" ") && len(rows) > 0:
+			rows[len(rows)-1] += " " + text
+		case strings.HasPrefix(row, keyRow):
+			sections[title] = append(rows, text)
 		default:
 			title = text
 		}
@@ -268,4 +280,12 @@ func TestHelpJumpsToTheEndsWithHomeAndEnd(t *testing.T) {
 		"End shows the last row")
 	assert.Equal(t, helpScreen(end), helpScreen(press(end, "pgdown")), "PgDn at the end does nothing")
 	assert.Equal(t, top, helpScreen(press(end, "home")), "Home shows the first row")
+}
+
+func TestHelpNamesTheMouseWheelOnlyWithTheMouseOn(t *testing.T) {
+	assert.Contains(t, helpScreen(openHelp(120, 200)), "mouse wheel")
+
+	cfg := config.DefaultConfig()
+	cfg.NoMouse = true
+	assert.NotContains(t, helpScreen(openHelpWith(cfg, 120, 200)), "mouse wheel")
 }

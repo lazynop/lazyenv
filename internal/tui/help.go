@@ -1,13 +1,15 @@
 package tui
 
 import (
+	"fmt"
 	"strings"
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 )
 
-// helpText is the help screen's text, one row per line.
+// helpText is the help screen's text, one row per line. Its %s is
+// helpWheelNote with the mouse on, empty with it off.
 const helpText = `  lazyenv — TUI for managing .env files
 
   Main view
@@ -83,38 +85,51 @@ const helpText = `  lazyenv — TUI for managing .env files
   This help
     Esc / ?        Close
     q / Ctrl+C     Close
-    ↑/↓  j/k       Scroll (or the mouse wheel)
+    ↑/↓  j/k       Scroll%s
     PgUp/PgDn      Scroll a page
     Home/End       Jump to the top/bottom`
+
+// helpWheelNote names the mouse wheel on the scroll row of helpText.
+const helpWheelNote = " (or the mouse wheel)"
 
 // HelpViewModel manages the help screen (?): helpText, scrolled when it is
 // taller than the terminal.
 type HelpViewModel struct {
+	text   string // helpText as this session shows it
 	offset int
 	width  int
 	height int
-	lines  []string // helpText wrapped to width, one row per line
+	lines  []string // text wrapped to width, one row per line
 }
 
-// SetSize lays the text out for a screen of the given size, wrapping it to
-// the width and pulling the offset back if the resize leaves blank rows
-// below the text. App.Update calls it after every message, so it does
-// nothing while the size stays the same.
+// NewHelpViewModel creates the help screen; mouse says whether the mouse is
+// on, so the help names the wheel only when it scrolls.
+func NewHelpViewModel(mouse bool) HelpViewModel {
+	note := ""
+	if mouse {
+		note = helpWheelNote
+	}
+	return HelpViewModel{text: fmt.Sprintf(helpText, note)}
+}
+
+// SetSize lays the text out for a screen of the given size, pulling the
+// offset back if the resize leaves blank rows below the text. App.Update
+// calls it after every message, so the text is wrapped again only when the
+// width changes.
 func (m *HelpViewModel) SetSize(width, height int) {
-	if width == m.width && height == m.height {
-		return
+	if width != m.width {
+		m.width = width
+		textWidth := max(width-2*helpPaddingWidth, 1)
+		m.lines = nil
+		for _, row := range strings.Split(m.text, "\n") {
+			m.lines = append(m.lines, wrapHelpRow(row, textWidth)...)
+		}
 	}
-	m.width = width
 	m.height = height
-	textWidth := max(width-2*helpPaddingWidth, 1)
-	m.lines = nil
-	for _, row := range strings.Split(helpText, "\n") {
-		m.lines = append(m.lines, wrapHelpRow(row, textWidth)...)
-	}
 	m.scrollTo(m.offset)
 }
 
-// wrapHelpRow word-wraps one row of helpText to width with a hanging indent:
+// wrapHelpRow word-wraps one row of the help text to width with a hanging indent:
 // the continuation lines start under the row's description, the text after
 // its last run of two or more spaces (a heading has none and continues under
 // its first word). A row that fits is returned unchanged, and one whose
