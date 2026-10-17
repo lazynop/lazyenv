@@ -438,3 +438,29 @@ func TestFocusingTheVarListKeepsThePeekedCursorRowVisible(t *testing.T) {
 		})
 	}
 }
+
+// TestPeekLineLeavesRoomForDeletedVars fills a ten-row panel with five vars,
+// a peek line and deleted vars: four deleted vars fit below.
+func TestPeekLineLeavesRoomForDeletedVars(t *testing.T) {
+	f := makeTestFile(".env", "A", "B", "C", "D", "E", "X1", "X2", "X3", "X4", "X5")
+	for range 5 {
+		f.DeleteVar(5)
+	}
+	f.UpdateVar(0, "edited", false)
+	vlm := NewVarListModel(config.DefaultConfig().Layout)
+	vlm.SetFile(f)
+	vlm.Focused = true
+	vlm.Peeking = true
+	vlm.Width = 80
+	vlm.Height = panelChromeHeight + 10
+
+	view := stripAnsi(vlm.View(BuildTheme(true, config.ColorConfig{})))
+
+	drawn := 0
+	for _, key := range []string{"X1", "X2", "X3", "X4", "X5"} {
+		if strings.Contains(view, key) {
+			drawn++
+		}
+	}
+	assert.Equal(t, 4, drawn, "the rows left under five vars and the peek line should hold four deleted vars")
+}

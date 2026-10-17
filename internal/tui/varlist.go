@@ -486,11 +486,12 @@ func (m *VarListModel) renderPeekLine(v *model.EnvVar, keyWidth, maxValWidth int
 	return theme.MutedItem.Render(fmt.Sprintf("  %s  %s", padRight("", keyWidth), truncate(text, maxValWidth)))
 }
 
-// renderDeletedVars renders the deleted variables section.
-func (m *VarListModel) renderDeletedVars(visible, keyWidth, maxValWidth int, currentLines int, theme Theme) []string {
+// renderDeletedVars renders the deleted variables section in the panel rows
+// the currentLines already drawn leave.
+func (m *VarListModel) renderDeletedVars(keyWidth, maxValWidth int, currentLines int, theme Theme) []string {
 	var lines []string
 	for _, dv := range m.File.DeletedVars {
-		if currentLines+len(lines) >= visible {
+		if currentLines+len(lines) >= m.contentRows() {
 			break
 		}
 		key := padRight(truncate(dv.Key, keyWidth), keyWidth)
@@ -502,10 +503,15 @@ func (m *VarListModel) renderDeletedVars(visible, keyWidth, maxValWidth int, cur
 	return lines
 }
 
+// contentRows returns how many rows the panel has inside its chrome.
+func (m *VarListModel) contentRows() int {
+	return max(m.Height-panelChromeHeight, 1)
+}
+
 // visibleLines returns how many display items fit in the viewport, leaving a
 // row for the peek line when one is drawn.
 func (m *VarListModel) visibleLines() int {
-	visible := max(m.Height-panelChromeHeight, 1)
+	visible := m.contentRows()
 	if m.drawsPeekLine() {
 		visible = max(visible-1, 1)
 	}
@@ -605,7 +611,7 @@ func (m *VarListModel) View(theme Theme) string {
 	keyWidth, maxValWidth := m.calcColumnWidths()
 
 	lines := m.renderRows(visible, keyWidth, maxValWidth, theme)
-	lines = append(lines, m.renderDeletedVars(visible, keyWidth, maxValWidth, len(lines), theme)...)
+	lines = append(lines, m.renderDeletedVars(keyWidth, maxValWidth, len(lines), theme)...)
 
 	return m.renderPanel(title, strings.Join(lines, "\n"), theme)
 }
