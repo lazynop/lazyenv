@@ -309,8 +309,8 @@
 
 === help scrolled to the end
 
-      ▸              Collapsed group
-      ▾              Expanded group
+      ␀ … ␟          Other control character (␛ for Escape)
+      ␡              Delete character
 
     Compare Indicators
       =              Same value in both files

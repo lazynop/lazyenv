@@ -93,6 +93,13 @@ const helpText = `  lazyenv — TUI for managing .env files
     ▸              Collapsed group
     ▾              Expanded group
 
+  Value Indicators
+    ↵              Line break
+    ⇥              Tab
+    ↩              Carriage return
+    ␀ … ␟          Other control character (␛ for Escape)
+    ␡              Delete character
+
   Compare Indicators
     =              Same value in both files
     ≠              Different values
