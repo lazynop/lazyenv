@@ -26,7 +26,7 @@ group = false                     # start with prefix grouping enabled (toggle a
 include = [".env", ".env.*", "*.env"]
 exclude = ["*.bak"]
 
-# Layout tuning — all values in characters.
+# Layout tuning — all values in characters, except mouse-scroll-lines (lines).
 [layout]
 var-list-max-key-width = 30
 diff-max-key-width = 25
