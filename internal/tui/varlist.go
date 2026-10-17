@@ -235,17 +235,35 @@ func (m *VarListModel) SetCursor(index int) {
 }
 
 // IndexAtRow returns the index in displayItems of the item drawn on row, the
-// list's rows counted from the first one shown, or -1 past either end of the
-// list. The peek line maps to the item at the cursor, which it belongs to.
+// list's rows counted from the first one shown, or -1 for a row that draws no
+// item. The peek line maps to the item at the cursor, which it belongs to.
 func (m *VarListModel) IndexAtRow(row int) int {
-	index := m.Offset + row
-	if m.drawsPeekLine() && index > m.Cursor {
-		index-- // from the peek line down, each row shows the item above it
-	}
-	if index < 0 || index >= len(m.displayItems) {
+	rows := m.drawnRows(m.visibleLines())
+	if row < 0 || row >= len(rows) {
 		return -1
 	}
-	return index
+	return rows[row].item
+}
+
+// drawnRow is a row the list draws: the index in displayItems of the item it
+// shows, and whether it is the peek line under that item.
+type drawnRow struct {
+	item int
+	peek bool
+}
+
+// drawnRows returns the rows the list draws from Offset down: visible items,
+// and the peek line under the cursor's when one is drawn. renderRows draws
+// them and IndexAtRow maps clicks through them, so both follow one layout.
+func (m *VarListModel) drawnRows(visible int) []drawnRow {
+	var rows []drawnRow
+	for i := m.Offset; i < min(m.Offset+visible, len(m.displayItems)); i++ {
+		rows = append(rows, drawnRow{item: i})
+		if i == m.Cursor && m.drawsPeekLine() {
+			rows = append(rows, drawnRow{item: i, peek: true})
+		}
+	}
+	return rows
 }
 
 // SelectedVar returns the currently selected variable, or nil if the cursor
@@ -554,20 +572,15 @@ func (m *VarListModel) calcColumnWidths() (int, int) {
 // renderRows renders all visible rows (vars + headers) plus peek lines.
 func (m *VarListModel) renderRows(visible, keyWidth, maxValWidth int, theme Theme) []string {
 	var lines []string
-	end := min(m.Offset+visible, len(m.displayItems))
-
-	for i := m.Offset; i < end; i++ {
-		item := m.displayItems[i]
-		switch item.Kind {
-		case displayItemHeader:
-			lines = append(lines, m.renderHeaderLine(i, m.groups[item.GroupIdx], theme))
+	for _, row := range m.drawnRows(visible) {
+		item := m.displayItems[row.item]
+		switch {
+		case item.Kind == displayItemHeader:
+			lines = append(lines, m.renderHeaderLine(row.item, m.groups[item.GroupIdx], theme))
+		case row.peek:
+			lines = append(lines, m.renderPeekLine(&m.File.Vars[item.VarIdx], keyWidth, maxValWidth, theme))
 		default: // displayItemVar
-			v := &m.File.Vars[item.VarIdx]
-			lines = append(lines, m.renderVarLine(i, v, keyWidth, maxValWidth, theme))
-
-			if i == m.Cursor && m.drawsPeekLine() {
-				lines = append(lines, m.renderPeekLine(v, keyWidth, maxValWidth, theme))
-			}
+			lines = append(lines, m.renderVarLine(row.item, &m.File.Vars[item.VarIdx], keyWidth, maxValWidth, theme))
 		}
 	}
 	return lines

@@ -277,6 +277,23 @@ func TestMouseClickVarList_SelectsTheVarDrawnAtTheRow(t *testing.T) {
 	}
 }
 
+// TestMouseClickVarList_OutsideTheDrawnRowsKeepsTheCursor scrolls a var list
+// four rows tall to its middle, then clicks its title row and its bottom
+// border: they draw no var, though vars sit just off screen on either side,
+// so the cursor stays put.
+func TestMouseClickVarList_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
+	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J")
+	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: bottomChromeHeight + panelChromeHeight + 4})
+	app := press(updated.(App), "right", "j", "j", "j", "j", "j") // F, with C to F drawn
+	require.Equal(t, 2, app.varList.Offset)
+
+	for _, y := range []int{panelContentOffsetY - 1, panelContentOffsetY + 4} {
+		updated, _ = app.Update(tea.MouseClickMsg{X: 40, Y: y, Button: tea.MouseLeft})
+		clicked := updated.(App)
+		assert.Equal(t, "F", clicked.varList.SelectedVar().Key, "a click at Y=%d draws no var", y)
+	}
+}
+
 // TestMouseClickVarList_FromTheFileListSelectsTheVarDrawnAtTheRow clicks a var
 // while the file list has the focus and the var cursor sits on the bottom row,
 // on a modified var: focusing the var list draws a peek line under it and
