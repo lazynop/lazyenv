@@ -13,7 +13,9 @@ import (
 	"testing"
 
 	"charm.land/bubbles/v2/key"
+	tea "charm.land/bubbletea/v2"
 	"github.com/alecthomas/kong"
+	"github.com/charmbracelet/x/ansi"
 	toml "github.com/pelletier/go-toml/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -37,6 +39,9 @@ var (
 	goVersionRe  = regexp.MustCompile(`Go (\d+\.\d+)\+`)
 	goModRe      = regexp.MustCompile(`(?m)^go (\d+\.\d+)`)
 	terminalRe   = regexp.MustCompile(`at least (\d+)x(\d+)`)
+	// A help row's key column ends at its last run of two or more spaces,
+	// where wrapHelpRow starts the description: "↑/↓  k/j" is one column.
+	helpRowRe = regexp.MustCompile(`^ {2}(\S.*\S|\S) {2,}\S`)
 )
 
 // TestUsageDocumentsEveryFlag checks docs/usage.md against the Kong flags.
@@ -242,6 +247,175 @@ func TestDocsStateCurrentCounts(t *testing.T) {
 			assert.Equal(t, terminal, m[1:], "%s states the wrong minimum terminal size", path)
 		}
 	}
+}
+
+// helpDocSections maps each section of docs/keybindings.md that lists keys to
+// the help screen sections describing the same screen. Both main-view tables
+// list the keys shared by the two panels, which the help groups apart.
+var helpDocSections = map[string][]string{
+	"Main view — File list (left panel)":      {"Files panel", "Both panels"},
+	"Main view — Variable list (right panel)": {"Variables panel", "Both panels"},
+	"Compare — Pick the second file":          {"Compare: pick the second file"},
+	"Compare — Diff view":                     {"Compare view"},
+	"Completeness matrix":                     {"Matrix"},
+	"Prompts":                                 {"Prompts"},
+	"Help screen (`?`)":                       {"This help"},
+}
+
+// TestHelpScreenMatchesKeybindingsDoc checks that each screen's keys are the
+// same in the in-app help and in docs/keybindings.md: every key section of the
+// help maps to a doc section in helpDocSections, and every doc section that
+// lists keys is either mapped there or exempted in docOnlySections.
+func TestHelpScreenMatchesKeybindingsDoc(t *testing.T) {
+	help := map[string][][]string{}
+	for _, section := range helpScreenSections(t) {
+		help[section.title] = section.rows
+	}
+	mapped := map[string]bool{}
+	doc := readFile(t, "docs/keybindings.md")
+	for _, heading := range slices.Sorted(maps.Keys(helpDocSections)) {
+		helpKeys := map[string]bool{}
+		for _, title := range helpDocSections[heading] {
+			require.Contains(t, help, title, "the help screen has no section %q", title)
+			mapped[title] = true
+			for _, row := range help[title] {
+				for _, k := range row {
+					helpKeys[k] = true
+				}
+			}
+		}
+		assert.Equal(t, slices.Sorted(maps.Keys(helpKeys)), slices.Sorted(maps.Keys(docSectionKeys(t, doc, heading))),
+			"the help screen (%s) and docs/keybindings.md (%s) name different keys", strings.Join(helpDocSections[heading], " + "), heading)
+	}
+	for title := range help {
+		assert.True(t, mapped[title], "help section %q maps to no docs/keybindings.md section in helpDocSections", title)
+	}
+	for line := range strings.Lines(doc) {
+		// The same heading markdownSection looks for: "## " at the line start.
+		heading, ok := strings.CutPrefix(strings.TrimSuffix(line, "\n"), "## ")
+		if !ok || helpDocSections[heading] != nil || docOnlySections[heading] != "" {
+			continue
+		}
+		assert.Empty(t, docSectionKeys(t, doc, heading),
+			"docs/keybindings.md section %q lists keys but is in neither helpDocSections nor docOnlySections", heading)
+	}
+	for heading := range docOnlySections {
+		assert.NotContains(t, helpDocSections, heading, "docOnlySections exempts %q, which helpDocSections maps", heading)
+		assert.NotEmpty(t, docSectionKeys(t, doc, heading), "docOnlySections exempts %q, which lists no keys", heading)
+	}
+}
+
+// docOnlySections are the docs/keybindings.md sections that list keys the
+// help screen does not cover, each with the reason.
+var docOnlySections = map[string]string{
+	"Theme preview (`--themes`)": "a separate program mode with no help screen",
+}
+
+// docSectionKeys returns the keys the "## heading" section of
+// docs/keybindings.md names in its Key, Confirm and Cancel columns.
+func docSectionKeys(t *testing.T, doc, heading string) map[string]bool {
+	t.Helper()
+	keys := map[string]bool{}
+	for _, table := range markdownTables(markdownSection(t, doc, heading)) {
+		for _, row := range table.rows {
+			require.Len(t, row, len(table.header), "a row of the %q table has the wrong number of cells: %v", heading, row)
+		}
+		for i, column := range table.header {
+			if column != "Key" && column != "Confirm" && column != "Cancel" {
+				continue
+			}
+			for _, row := range table.rows {
+				for _, s := range codeSpans(row[i]) {
+					keys[s] = true
+				}
+			}
+		}
+	}
+	return keys
+}
+
+// helpSection is one section of the in-app help screen that lists keys: its
+// title and, for each row, the keys it names.
+type helpSection struct {
+	title string
+	rows  [][]string
+}
+
+// helpScreenWidth and helpScreenHeight are the terminal size
+// helpScreenSections renders the help at: wide enough that no row wraps, tall
+// enough that it does not scroll.
+const (
+	helpScreenWidth  = 300
+	helpScreenHeight = 200
+)
+
+// helpScreenSections renders the in-app help screen (?) on a terminal large
+// enough to show it unscrolled, with no row wrapped, and returns its key
+// sections, in order. The indicator sections list glyphs, not keys, and are
+// left out.
+func helpScreenSections(t *testing.T) []helpSection {
+	t.Helper()
+	screen := helpScreen(helpScreenHeight)
+	require.Equal(t, strings.Fields(helpScreen(2*helpScreenHeight)), strings.Fields(screen),
+		"the help does not fit in %d rows: raise helpScreenHeight", helpScreenHeight)
+
+	// Section titles sit at the screen's left margin, key rows two columns in.
+	var lines []string
+	margin := len(screen)
+	for line := range strings.Lines(screen) {
+		line = strings.TrimRight(line, " \n")
+		if line != "" {
+			lines = append(lines, line)
+			margin = min(margin, len(line)-len(strings.TrimLeft(line, " ")))
+		}
+	}
+	var sections []helpSection
+	for _, line := range lines {
+		line = line[margin:]
+		if !strings.HasPrefix(line, " ") {
+			sections = append(sections, helpSection{title: line})
+			continue
+		}
+		require.NotEmpty(t, sections, "the help screen has a key row before any section title: %q", line)
+		section := &sections[len(sections)-1]
+		if strings.Contains(section.title, "Indicators") {
+			continue // glyphs, not keys
+		}
+		m := helpRowRe.FindStringSubmatch(line)
+		require.NotNil(t, m, "row %q of help section %s has no key column; if it is a wrapped line, raise helpScreenWidth (%d)", line, section.title, helpScreenWidth)
+		section.rows = append(section.rows, helpKeys(m[1]))
+	}
+	return slices.DeleteFunc(sections, func(s helpSection) bool { return len(s.rows) == 0 })
+}
+
+// helpScreen renders the in-app help screen (?) at helpScreenWidth and height,
+// as plain text.
+func helpScreen(height int) string {
+	var app tea.Model = tui.NewApp(config.DefaultConfig(), tui.StartupMessages{})
+	app, _ = app.Update(tea.WindowSizeMsg{Width: helpScreenWidth, Height: height})
+	app, _ = app.Update(tea.KeyPressMsg{Code: '?', Text: "?"})
+	return ansi.Strip(app.View().Content)
+}
+
+// helpKeys splits a help-screen key column into keys: alternatives are
+// joined by " / " ("q / Ctrl+C"), the columns of a pair by spaces and its
+// halves by "/" ("↑/↓  k/j"), and "/" alone is the slash key.
+func helpKeys(column string) []string {
+	var keys []string
+	for _, alternative := range strings.Split(column, " / ") {
+		for _, part := range strings.Fields(alternative) {
+			if part == "/" {
+				keys = append(keys, part)
+				continue
+			}
+			for k := range strings.SplitSeq(part, "/") {
+				if k != "" {
+					keys = append(keys, k)
+				}
+			}
+		}
+	}
+	return keys
 }
 
 // TestKeybindingsDocumentsEveryKey checks docs/keybindings.md against the
@@ -498,6 +672,16 @@ func lineStartingWith(t *testing.T, doc, prefix string) string {
 	}
 	require.Failf(t, "missing line", "no line starts with %q", prefix)
 	return ""
+}
+
+// markdownSection returns the body of the "## heading" section of doc, up to
+// the next heading of the same level.
+func markdownSection(t *testing.T, doc, heading string) string {
+	t.Helper()
+	_, body, ok := strings.Cut(doc, "\n## "+heading+"\n")
+	require.True(t, ok, "no section %q", "## "+heading)
+	body, _, _ = strings.Cut(body, "\n## ")
+	return body
 }
 
 // codeSpans returns the text of each `code` span in s.
