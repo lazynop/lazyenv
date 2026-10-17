@@ -80,12 +80,7 @@ func (a App) handleCompareCopy(toRight bool) (tea.Model, tea.Cmd) {
 		target = a.diffView.FileA.Name
 	}
 	if k != "" {
-		// The copy may add or delete vars in the mutated file; if that file
-		// is the one shown in the var panel, its display rows must be
-		// recomputed or they keep indexing the pre-copy Vars slice.
-		if a.varList.File == mutated {
-			a.varList.Refresh()
-		}
+		a.refreshIfShown(mutated)
 		return a, a.flashMessage(k + " → " + target)
 	}
 	return a, nil
@@ -172,9 +167,7 @@ func (a App) handleEditingCompareKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 		varKey := a.compareEditFile.Vars[a.compareEditVarIdx].Key
 		a.compareEditFile.UpdateVar(a.compareEditVarIdx, result.Value, util.IsSecret(varKey, result.Value, a.config.Secrets))
-		if a.varList.File == a.compareEditFile {
-			a.varList.Refresh() // the new value may match the kept search or stop matching it
-		}
+		a.refreshIfShown(a.compareEditFile)
 		// Recompute diff
 		a.diffView.allEntries = model.ComputeDiff(a.diffView.FileA, a.diffView.FileB)
 		a.diffView.recompute()

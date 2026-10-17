@@ -69,9 +69,7 @@ func (a App) handleConfirmMatrixDeleteKey(msg tea.KeyPressMsg) (tea.Model, tea.C
 		deletedFile := a.matrixView.files[a.matrixView.cursorCol]
 		key, fileName := a.matrixView.DeleteAtCursor()
 		if key != "" {
-			if a.varList.File == deletedFile {
-				a.varList.Refresh()
-			}
+			a.refreshIfShown(deletedFile)
 			return a, a.flashMessage("Deleted " + key + " from " + fileName)
 		}
 		return a, nil
@@ -89,7 +87,9 @@ func (a App) handleMatrixEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.mode = ModeMatrix
 		return a, nil
 	case key.Matches(msg, a.keys.Enter):
+		addedTo := a.matrixView.files[a.matrixView.editFile]
 		a.matrixView.ConfirmEdit()
+		a.refreshIfShown(addedTo)
 		a.mode = ModeMatrix
 		return a, a.flashMessage("Variable added")
 	default:

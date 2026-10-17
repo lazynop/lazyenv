@@ -288,3 +288,18 @@ func TestMatrixDeleteNotPresent(t *testing.T) {
 	assert.Equal(t, ModeMatrix, app.mode, "should stay in matrix mode")
 	assert.Contains(t, app.statusBar.Message, "not present")
 }
+
+// TestMatrixAddShowsInTheVarList adds a var to the file the var list shows,
+// from the matrix: back in the var list, the new var is listed.
+func TestMatrixAddShowsInTheVarList(t *testing.T) {
+	env := makeTestFile(".env", "A")
+	updated, _ := newTestApp([]*model.EnvFile{env, makeTestFile(".env.prod", "A", "B")}).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	app := press(updated.(App), "m", "j", "a") // B, missing from .env
+	require.Equal(t, ModeMatrixEditing, app.mode)
+	app.matrixView.editor.SetValue("added")
+
+	app = press(app, "enter", "esc")
+
+	require.Equal(t, ModeNormal, app.mode)
+	assert.Len(t, app.varList.displayItems, 2, "the var list should list B")
+}
