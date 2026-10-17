@@ -70,6 +70,10 @@ func (m ThemePreviewModel) Init() tea.Cmd {
 }
 
 func (m ThemePreviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if handled, cmd := tooSmallInput(m.width, m.height, msg); handled {
+		return m, cmd
+	}
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -157,11 +161,17 @@ func (m ThemePreviewModel) View() tea.View {
 		return tea.NewView("")
 	}
 
-	listWidth := max(m.width/3, config.FileListMinWidth)
-	showcaseWidth := m.width - listWidth - 4 // borders
-
 	tc := m.currentColors()
 	rc := resolveThemeColors(tc)
+
+	if terminalTooSmall(m.width, m.height) {
+		title := lipgloss.NewStyle().Foreground(rc.primary).Bold(true)
+		muted := lipgloss.NewStyle().Foreground(rc.muted)
+		return m.newView(tooSmallView(m.width, m.height, title, muted), rc)
+	}
+
+	listWidth := max(m.width/3, config.FileListMinWidth)
+	showcaseWidth := m.width - listWidth - 4 // borders
 
 	left := m.renderThemeList(listWidth, rc)
 	right := m.renderShowcase(showcaseWidth, tc, rc)
@@ -172,7 +182,12 @@ func (m ThemePreviewModel) View() tea.View {
 	// Join panels side by side
 	panels := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
 
-	view := tea.NewView(lipgloss.JoinVertical(lipgloss.Left, panels, statusBar))
+	return m.newView(lipgloss.JoinVertical(lipgloss.Left, panels, statusBar), rc)
+}
+
+// newView wraps content in a view painted with the theme's background.
+func (m ThemePreviewModel) newView(content string, rc resolvedColors) tea.View {
+	view := tea.NewView(content)
 	view.BackgroundColor = rc.bg
 	if !m.noMouse {
 		view.MouseMode = tea.MouseModeCellMotion

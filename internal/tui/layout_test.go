@@ -195,10 +195,11 @@ var knownTooTall = map[string]string{
 }
 
 // gridWidths and gridHeights are the terminal sizes every scenario renders at.
-// The grid starts at 60x10, since below it the layout does not fit yet (#58).
+// The grid starts at the minimum terminal size, below which every screen gives
+// way to tooSmallView (TestTooSmallTerminalShowsANotice).
 var (
-	gridWidths  = []int{60, 80, 100, 120}
-	gridHeights = []int{10, 12, 16, 24, 40}
+	gridWidths  = []int{MinTerminalWidth, 80, 100, 120}
+	gridHeights = []int{MinTerminalHeight, 12, 16, 24, 40}
 )
 
 // TestViewsFitTheTerminalAndHideSecrets renders every scenario across the grid

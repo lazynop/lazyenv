@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lazynop/lazyenv/internal/model"
 )
@@ -102,4 +104,54 @@ func TestMatrixRendersInATinyTerminal(t *testing.T) {
 	updated, _ = app.Update(tea.WindowSizeMsg{Width: 1, Height: 24})
 
 	assert.NotPanics(t, func() { _ = updated.(App).View() })
+}
+
+// TestTooSmallTerminalShowsANotice shrinks the terminal below the minimum, in
+// width or in height: the App draws a notice that fits it instead of its
+// panels, and draws the panels again once the terminal is back to the minimum.
+func TestTooSmallTerminalShowsANotice(t *testing.T) {
+	sizes := []struct{ width, height int }{
+		{MinTerminalWidth - 1, 24},
+		{80, MinTerminalHeight - 1},
+		{30, 5},
+	}
+	for _, size := range sizes {
+		t.Run(fmt.Sprintf("%dx%d", size.width, size.height), func(t *testing.T) {
+			updated, _ := newTestApp([]*model.EnvFile{makeTestFile(".env", "A")}).Update(tea.WindowSizeMsg{Width: size.width, Height: size.height})
+			view := updated.(App).View().Content
+
+			assert.Contains(t, stripAnsi(view), "too small")
+			assert.NotContains(t, stripAnsi(view), ".env", "the panels should not be drawn")
+			assert.LessOrEqual(t, lipgloss.Width(view), size.width, "the notice should fit the terminal")
+			assert.LessOrEqual(t, lipgloss.Height(view), size.height, "the notice should fit the terminal")
+
+			updated, _ = updated.Update(tea.WindowSizeMsg{Width: MinTerminalWidth, Height: MinTerminalHeight})
+
+			assert.Contains(t, stripAnsi(updated.(App).View().Content), ".env", "the panels should be back")
+		})
+	}
+}
+
+// TestTooSmallTerminalIgnoresInputButCtrlC presses keys and clicks while the
+// terminal is below the minimum: none acts on the hidden screen, and Ctrl+C
+// still quits.
+func TestTooSmallTerminalIgnoresInputButCtrlC(t *testing.T) {
+	updated, _ := newTestApp([]*model.EnvFile{makeTestFile(".env", "A", "B")}).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	app := onVars(updated.(App))
+	updated, _ = app.Update(tea.WindowSizeMsg{Width: MinTerminalWidth - 1, Height: 24})
+	app = updated.(App)
+
+	app = press(app, "j", "d")
+	updated, cmd := app.Update(tea.MouseClickMsg{Button: tea.MouseLeft, X: 2, Y: 3})
+	app = updated.(App)
+
+	assert.Nil(t, cmd)
+	assert.Equal(t, ModeNormal, app.mode, "d should not open the delete confirmation")
+	assert.Equal(t, FocusVars, app.focus, "the click should not move the focus to the file list")
+	assert.Equal(t, 0, app.varList.Cursor, "j should not move the cursor")
+
+	_, cmd = app.Update(tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl})
+
+	require.NotNil(t, cmd)
+	assert.IsType(t, tea.QuitMsg{}, cmd())
 }

@@ -1,5 +1,9 @@
 # Installation
 
+## Requirements
+
+lazyenv needs a terminal of at least 60x10 (columns x rows). In a smaller one it shows a notice in place of its screens, and ignores every key and click but Ctrl+C, which quits, until the terminal grows back.
+
 ## From releases
 
 Download the latest binary for your platform from [GitHub Releases](https://github.com/lazynop/lazyenv/releases). Builds are available for Linux (amd64, arm64, armv7), macOS (amd64, arm64), Windows (amd64), and FreeBSD (amd64, arm64).

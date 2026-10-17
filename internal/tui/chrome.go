@@ -57,3 +57,12 @@ const (
 	// which has no border.
 	matrixPaddingWidth = 2
 )
+
+// MinTerminalWidth and MinTerminalHeight are the smallest terminal the TUI
+// lays its screens out in: below either, every screen outgrows the terminal
+// (the status bar wraps past the rows reserved for it, matrix rows wrap), so
+// the App and the theme preview draw tooSmallView instead.
+const (
+	MinTerminalWidth  = 60
+	MinTerminalHeight = 10
+)

@@ -200,8 +200,13 @@ func (a App) Init() tea.Cmd {
 
 // Update handles msg, then lays the views out for the terminal size and fits
 // the text input of the current mode's input bar to it, so View draws the
-// state Update leaves.
+// state Update leaves. Input arriving while the terminal is below the minimum
+// size goes to tooSmallInput instead.
 func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if handled, cmd := tooSmallInput(a.width, a.height, msg); handled {
+		return a, cmd
+	}
+
 	updated, cmd := a.update(msg)
 	if app, ok := updated.(App); ok {
 		app.updateLayout()
@@ -643,20 +648,36 @@ func (a App) View() tea.View {
 	}
 
 	var content string
+	if terminalTooSmall(a.width, a.height) {
+		content = tooSmallView(a.width, a.height, a.theme.PanelTitle, a.theme.MutedItem)
+	} else {
+		content = a.screen()
+	}
 
+	view := tea.NewView(content)
+	view.AltScreen = true
+	view.BackgroundColor = a.theme.ColorBg
+	if !a.config.NoMouse {
+		view.MouseMode = tea.MouseModeCellMotion
+	}
+	return view
+}
+
+// screen renders the current mode's screen.
+func (a App) screen() string {
 	switch a.mode {
 	case ModeConfigError:
-		content = a.viewConfigError()
+		return a.viewConfigError()
 	case ModeHelp:
-		content = a.viewHelp()
+		return a.viewHelp()
 	case ModeComparing:
-		content = a.withBottom(a.diffView.View(a.theme), a.statusBar.View(a.theme, a.mode, a.focus, "", 0, a.diffView.Stats))
+		return a.withBottom(a.diffView.View(a.theme), a.statusBar.View(a.theme, a.mode, a.focus, "", 0, a.diffView.Stats))
 	case ModeEditingCompare:
-		content = a.withBottom(a.diffView.View(a.theme), a.statusBar.View(a.theme, ModeEditing, a.focus, "", 0))
+		return a.withBottom(a.diffView.View(a.theme), a.statusBar.View(a.theme, ModeEditing, a.focus, "", 0))
 	case ModeMatrix, ModeConfirmMatrixDelete:
-		content = a.withBottom(a.matrixView.View(a.theme), a.statusBar.View(a.theme, a.mode, a.focus, "", 0))
+		return a.withBottom(a.matrixView.View(a.theme), a.statusBar.View(a.theme, a.mode, a.focus, "", 0))
 	case ModeMatrixEditing:
-		content = a.withBottom(a.matrixView.View(a.theme), a.statusBar.View(a.theme, ModeEditing, a.focus, "", 0))
+		return a.withBottom(a.matrixView.View(a.theme), a.statusBar.View(a.theme, ModeEditing, a.focus, "", 0))
 	default:
 		// Two-panel layout
 		filePanel := a.fileList.View(a.theme)
@@ -672,16 +693,8 @@ func (a App) View() tea.View {
 			varCount = len(f.Vars)
 		}
 
-		content = a.withBottom(panels, a.statusBar.View(a.theme, a.mode, a.focus, fileName, varCount))
+		return a.withBottom(panels, a.statusBar.View(a.theme, a.mode, a.focus, fileName, varCount))
 	}
-
-	view := tea.NewView(content)
-	view.AltScreen = true
-	view.BackgroundColor = a.theme.ColorBg
-	if !a.config.NoMouse {
-		view.MouseMode = tea.MouseModeCellMotion
-	}
-	return view
 }
 
 // withBottom stacks body over the current mode's input bar, if any, and

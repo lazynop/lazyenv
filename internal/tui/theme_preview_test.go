@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -279,9 +280,9 @@ func TestThemePreviewScrollOffset(t *testing.T) {
 }
 
 func TestThemePreviewFitsSmallTerminals(t *testing.T) {
-	// From 4 rows: the list's borders and title, and the status bar.
-	for _, width := range []int{40, 60, 80, 120} {
-		for height := 4; height <= 40; height++ {
+	// From the minimum terminal size: below it the preview draws tooSmallView.
+	for _, width := range []int{MinTerminalWidth, 80, 120} {
+		for height := MinTerminalHeight; height <= 40; height++ {
 			m := NewThemePreview(true)
 			m.searchPaths = []string{".lazyenvrc", "/home/user/.config/lazyenv/config.toml", "/home/user/.lazyenvrc"}
 			updated, _ := m.Update(tea.WindowSizeMsg{Width: width, Height: height})
@@ -330,4 +331,26 @@ func TestThemePreviewViewRendersWithMouseDisabled(t *testing.T) {
 	m = updated.(ThemePreviewModel)
 
 	assert.NotEmpty(t, m.View().Content, "view should still render with mouse disabled")
+}
+
+// TestThemePreviewTooSmallTerminal sizes the preview below the minimum: it
+// draws the notice that fits the terminal, ignores navigation, and quits on
+// Ctrl+C.
+func TestThemePreviewTooSmallTerminal(t *testing.T) {
+	updated, _ := NewThemePreview(false).Update(tea.WindowSizeMsg{Width: 40, Height: 8})
+	m := updated.(ThemePreviewModel)
+
+	view := m.View().Content
+	assert.Contains(t, stripAnsi(view), "too small")
+	assert.LessOrEqual(t, lipgloss.Width(view), 40, "the notice should fit the terminal")
+	assert.LessOrEqual(t, lipgloss.Height(view), 8, "the notice should fit the terminal")
+
+	updated, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
+	assert.Nil(t, cmd, "Enter should not select a theme")
+	updated, _ = updated.Update(tea.KeyPressMsg{Text: "j"})
+	assert.Equal(t, 0, updated.(ThemePreviewModel).cursor, "j should not move the cursor")
+
+	_, cmd = updated.Update(tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl})
+	require.NotNil(t, cmd)
+	assert.IsType(t, tea.QuitMsg{}, cmd())
 }

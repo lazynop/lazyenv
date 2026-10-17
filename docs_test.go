@@ -37,6 +37,7 @@ var (
 	themeCountRe = regexp.MustCompile(`(\d+) built-in (?:color )?themes`)
 	goVersionRe  = regexp.MustCompile(`Go (\d+\.\d+)\+`)
 	goModRe      = regexp.MustCompile(`(?m)^go (\d+\.\d+)`)
+	terminalRe   = regexp.MustCompile(`at least (\d+)x(\d+)`)
 	ansiRe       = regexp.MustCompile(`\x1b\[[0-9;]*m`)
 	helpRowRe    = regexp.MustCompile(`^ {2}(\S.*?) {2,}\S`)
 )
@@ -217,12 +218,15 @@ func colorsByKey(c config.ColorConfig) map[string]string {
 }
 
 // TestDocsStateCurrentCounts checks the numbers the docs quote against their
-// source: the built-in theme count and the minimum Go version.
+// source: the built-in theme count, the minimum Go version and the minimum
+// terminal size, which docs/installation.md must state.
 func TestDocsStateCurrentCounts(t *testing.T) {
 	m := goModRe.FindStringSubmatch(readFile(t, "go.mod"))
 	require.NotNil(t, m, "go.mod has no go directive")
 	goVersion := m[1]
 	themeCount := strconv.Itoa(len(config.ThemeNames()))
+	terminal := []string{strconv.Itoa(tui.MinTerminalWidth), strconv.Itoa(tui.MinTerminalHeight)}
+	assert.Regexp(t, terminalRe, readFile(t, "docs/installation.md"), "docs/installation.md should state the minimum terminal size")
 
 	docs, err := filepath.Glob("docs/*.md")
 	require.NoError(t, err)
@@ -236,6 +240,9 @@ func TestDocsStateCurrentCounts(t *testing.T) {
 		}
 		for _, m := range goVersionRe.FindAllStringSubmatch(doc, -1) {
 			assert.Equal(t, goVersion, m[1], "%s states a Go version other than go.mod's", path)
+		}
+		for _, m := range terminalRe.FindAllStringSubmatch(doc, -1) {
+			assert.Equal(t, terminal, m[1:], "%s states the wrong minimum terminal size", path)
 		}
 	}
 }
