@@ -356,6 +356,39 @@ func TestMouseClickCompareSelectMode_MovesCursorOnly(t *testing.T) {
 		"compare-select must not change the active file (Selected)")
 }
 
+// TestMouseClickEditingCompareMode_KeepsTheEditedEntry clicks another row of
+// the diff while its edit bar is open: the bar edits the entry it was opened
+// on, so the cursor stays there.
+func TestMouseClickEditingCompareMode_KeepsTheEditedEntry(t *testing.T) {
+	keys := []string{"ALPHA", "BRAVO", "CHARLIE"}
+	a, b := makeTestFile(".env", keys...), makeTestFile(".env.prod", keys...)
+	b.Vars[0].Value = "different"
+	app := press(enterCompareMode(t, a, b), "e")
+	require.Equal(t, ModeEditingCompare, app.mode)
+	row := rowDrawing(t, app.View().Content, "CHARLIE")
+
+	updated, _ := app.Update(tea.MouseClickMsg{X: 10, Y: row, Button: tea.MouseLeft})
+
+	assert.Equal(t, 0, updated.(App).diffView.Cursor, "the click should not move off the edited entry")
+}
+
+// TestMouseWheelConfirmMatrixDelete_KeepsTheKeyToDelete scrolls the matrix
+// while a delete waits for confirmation: the delete removes the key the
+// prompt names.
+func TestMouseWheelConfirmMatrixDelete_KeepsTheKeyToDelete(t *testing.T) {
+	a := makeTestFile(".env", "ALPHA", "BRAVO", "CHARLIE")
+	updated, _ := newTestApp([]*model.EnvFile{a, makeTestFile(".env.prod", "ALPHA")}).Update(tea.WindowSizeMsg{Width: 120, Height: 24})
+	app := press(updated.(App), "m", "d") // delete ALPHA from .env
+	require.Equal(t, ModeConfirmMatrixDelete, app.mode)
+	require.Contains(t, app.statusBar.Message, "ALPHA")
+
+	updated, _ = app.Update(tea.MouseWheelMsg{X: 10, Y: 5, Button: tea.MouseWheelDown})
+	press(updated.(App), "y")
+
+	assert.Nil(t, a.VarByKey("ALPHA"), "the key the prompt named should be deleted")
+	assert.NotNil(t, a.VarByKey("BRAVO"), "the wheel should not retarget the delete")
+}
+
 // TestMouseClickCompareSelectMode_IgnoresTheVarPanel clicks the var panel
 // while picking the second file to compare: only the file list picks it, so
 // the cursor stays on the first file.

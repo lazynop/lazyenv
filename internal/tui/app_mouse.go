@@ -10,7 +10,7 @@ func (a App) handleMouseClick(msg tea.MouseClickMsg) (tea.Model, tea.Cmd) {
 	switch a.mode {
 	case ModeNormal, ModeSearching:
 		return a.handleNormalMouseClick(msg), nil
-	case ModeComparing, ModeEditingCompare:
+	case ModeComparing:
 		return a.handleCompareMouseClick(msg), nil
 	case ModeCompareSelect:
 		return a.handleCompareSelectMouseClick(msg), nil
@@ -19,7 +19,7 @@ func (a App) handleMouseClick(msg tea.MouseClickMsg) (tea.Model, tea.Cmd) {
 	case ModeHelp:
 		a.mode = ModeNormal
 		return a, nil
-	case ModeEditing, ModeMatrixEditing, ModeConfirmDelete, ModeConfirmDeleteFile,
+	case ModeEditing, ModeEditingCompare, ModeMatrixEditing, ModeConfirmDelete, ModeConfirmDeleteFile,
 		ModeConfirmMatrixDelete, ModeCreateFile, ModeDuplicateFile, ModeRenameFile,
 		ModeTemplateFile, ModeReorderMenu, ModeReorderConfirm, ModeConfigError:
 		// Keyboard-only modes (text input, prompts, menus): clicks are ignored.
@@ -101,16 +101,18 @@ func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 		} else {
 			a = a.scrollVarList(up)
 		}
-	case ModeComparing, ModeEditingCompare:
+	case ModeComparing:
 		a = a.scrollDiffView(up)
 	case ModeCompareSelect:
 		a = a.scrollFileList(up)
-	case ModeMatrix, ModeMatrixEditing, ModeConfirmMatrixDelete:
+	case ModeMatrix:
 		a = a.scrollMatrix(up)
-	case ModeEditing, ModeConfirmDelete, ModeConfirmDeleteFile, ModeCreateFile,
-		ModeDuplicateFile, ModeRenameFile, ModeTemplateFile, ModeReorderMenu,
-		ModeReorderConfirm, ModeHelp, ModeConfigError:
-		// Keyboard-only modes and static screens: the wheel is ignored.
+	case ModeEditing, ModeEditingCompare, ModeMatrixEditing, ModeConfirmDelete, ModeConfirmDeleteFile,
+		ModeConfirmMatrixDelete, ModeCreateFile, ModeDuplicateFile, ModeRenameFile, ModeTemplateFile,
+		ModeReorderMenu, ModeReorderConfirm, ModeHelp, ModeConfigError:
+		// Keyboard-only modes and static screens: the wheel is ignored. Edit
+		// bars and confirmations act on the entry they were opened on, so
+		// moving the cursor under them would only mislead or retarget them.
 	}
 	return a
 }
