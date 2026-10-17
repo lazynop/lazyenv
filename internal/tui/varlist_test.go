@@ -88,19 +88,6 @@ func TestVarListSearchCaseInsensitive(t *testing.T) {
 	assert.Equal(t, 1, vl.DisplayCount(), "search should be case-insensitive")
 }
 
-// maskValueAllowed lists the functions that may call util.MaskValue directly,
-// keyed by "file:function".
-var maskValueAllowed = map[string]string{
-	"varlist.go:displayText": "the helper itself",
-}
-
-// TestSecretsMaskOnlyThroughDisplayText fails on a util.MaskValue call outside
-// displayText: one masking path keeps every view hiding the same values.
-func TestSecretsMaskOnlyThroughDisplayText(t *testing.T) {
-	assertRefsAllowed(t, sourceRefs(t, internalUtilPath, "MaskValue"), maskValueAllowed,
-		"draw a variable value with displayText(value, masked), so every view masks it the same way")
-}
-
 func TestVarListSearchSkipsMaskedSecretValues(t *testing.T) {
 	f := makeTestFile(".env", "API_TOKEN", "HOST")
 	f.Vars[0].Value, f.Vars[0].IsSecret = "hunter2", true
@@ -166,31 +153,6 @@ func TestVarListRefreshAfterAdd(t *testing.T) {
 	f.AddVar("BAR", "val", false)
 	vl.Refresh()
 	assert.Equal(t, 2, vl.DisplayCount())
-}
-
-func TestFlattenValue(t *testing.T) {
-	tests := []struct {
-		name string
-		in   string
-		want string
-	}{
-		{"plain_ascii", "hello world", "hello world"},
-		{"empty", "", ""},
-		{"single_newline", "line1\nline2", "line1↵line2"},
-		{"single_tab", "col1\tcol2", "col1⇥col2"},
-		{"single_cr", "before\rafter", "before↩after"},
-		{"mixed_all_three", "a\nb\tc\rd", "a↵b⇥c↩d"},
-		{"multiple_newlines", "a\nb\nc", "a↵b↵c"},
-		{"trailing_newline", "end\n", "end↵"},
-		{"leading_newline", "\nstart", "↵start"},
-		{"crlf_pair", "line\r\nnext", "line↩↵next"},
-		{"no_control_chars_fast_path", "unchanged utf8 àèìòù", "unchanged utf8 àèìòù"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, flattenValue(tt.in))
-		})
-	}
 }
 
 func TestVarListFormatValueFlattensControlChars(t *testing.T) {

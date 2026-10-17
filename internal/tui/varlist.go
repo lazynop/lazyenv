@@ -8,7 +8,6 @@ import (
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
-	"github.com/lazynop/lazyenv/internal/util"
 )
 
 // ungroupedHeaderLabel is the label shown above the trailing bucket of
@@ -439,26 +438,6 @@ func (m *VarListModel) renderWarningIndicators(v *model.EnvVar, theme Theme) str
 func (m *VarListModel) formatValue(v *model.EnvVar, maxValWidth int) string {
 	return padRight(truncate(displayText(v.Value, m.isMasked(v)), maxValWidth), maxValWidth)
 }
-
-// displayText returns value as the panel shows it: masked when masked is
-// set, and flattened to a single row.
-func displayText(value string, masked bool) string {
-	if masked {
-		value = util.MaskValue(value)
-	}
-	return flattenValue(value)
-}
-
-// controlCharReplacer maps control chars to width-1 glyphs from the Unicode
-// Arrows block, so values render on a single row without breaking the panel
-// layout. It is zero-alloc for inputs that contain none of the targets.
-var controlCharReplacer = strings.NewReplacer(
-	"\n", "↵", // U+21B5
-	"\t", "⇥", // U+21E5
-	"\r", "↩", // U+21A9
-)
-
-func flattenValue(s string) string { return controlCharReplacer.Replace(s) }
 
 // renderVarLine renders a single variable line including cursor highlighting, secret masking, and warnings.
 func (m *VarListModel) renderVarLine(rowIdx int, v *model.EnvVar, keyWidth, maxValWidth int, theme Theme) string {

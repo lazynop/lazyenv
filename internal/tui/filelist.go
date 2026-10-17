@@ -198,11 +198,3 @@ func (m *FileListModel) renderPanel(title, content string, theme Theme) string {
 	inner := fmt.Sprintf("%s\n%s", title, content)
 	return style.Render(inner)
 }
-
-func padRight(s string, width int) string {
-	visLen := lipgloss.Width(s)
-	if visLen >= width {
-		return s
-	}
-	return s + strings.Repeat(" ", width-visLen)
-}

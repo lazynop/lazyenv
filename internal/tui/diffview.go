@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
-	"github.com/mattn/go-runewidth"
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
@@ -355,22 +354,4 @@ func (l columnLimits) split(longestKey, width int) (keyWidth, valWidth int) {
 	room := max(width-l.padding, 0)
 	keyWidth = min(longestKey, l.maxKey, max(room-l.minValue, 0))
 	return keyWidth, room - keyWidth
-}
-
-// truncate fits s into maxCols display columns, appending ".." when the
-// string is actually shortened. It operates on Unicode display width (via
-// go-runewidth, the same oracle lipgloss.Width uses), so multi-byte runes
-// like secret bullets or flatten glyphs are never sliced mid-sequence.
-func truncate(s string, maxCols int) string {
-	if maxCols <= 0 {
-		return ""
-	}
-	if runewidth.StringWidth(s) <= maxCols {
-		return s
-	}
-	if maxCols <= 2 {
-		// Not enough room for the ".." ellipsis — hard-truncate with no tail.
-		return runewidth.Truncate(s, maxCols, "")
-	}
-	return runewidth.Truncate(s, maxCols, "..")
 }
