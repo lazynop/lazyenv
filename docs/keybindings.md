@@ -138,4 +138,4 @@ Mouse is enabled by default. Disable with `--no-mouse` or `no-mouse = true` in c
 | Click on matrix cell  | Move cursor to that cell                 |
 | Scroll wheel          | Scroll the panel under the mouse cursor  |
 
-While an input bar, a prompt or a confirmation is open, clicks and the wheel are ignored: it acts on the entry it was opened on. On the help screen the wheel scrolls it and clicks are ignored.
+While an edit bar, a file-name bar, a prompt or a confirmation is open, clicks and the wheel are ignored: it acts on the entry it was opened on. The search bar is the exception: the mouse keeps working while you type a search. While you pick the second file to compare, only clicks on the file list count, and the wheel moves the cursor without changing the active file. On the help screen the wheel scrolls it and clicks are ignored.

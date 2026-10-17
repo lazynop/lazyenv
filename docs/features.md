@@ -143,7 +143,7 @@ Silent when nothing changed. Disable via `session-summary = false` in config or 
 
 ## Mouse support
 
-Click to select files, variables, diff entries, and matrix cells. Scroll wheel navigates the panel under the mouse cursor. While an input bar or a confirmation is open, the mouse is ignored, so it can't move the entry it acts on. Disable with `--no-mouse` or `no-mouse = true` in config.
+Click to select files, variables, diff entries, and matrix cells. Scroll wheel navigates the panel under the mouse cursor. While an edit bar, a file-name bar, a prompt or a confirmation is open, the mouse is ignored, so it can't move the entry it acts on; during a search it keeps working. Disable with `--no-mouse` or `no-mouse = true` in config.
 
 ## Theme preview
 
