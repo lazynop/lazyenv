@@ -188,7 +188,7 @@ func modeHints(theme Theme, keys KeyMap, mode AppMode, focus Focus, diffStats st
 	case ModeEditing:
 		return inputHint(theme, keys, "confirm")
 	case ModeConfirmDelete:
-		return theme.DuplicateWarn.Render(fmt.Sprintf("Delete variable? (%s)", shortKeys(keys.Confirm, keys.Deny)))
+		return theme.DuplicateWarn.Render("Delete variable? " + yesNo(keys))
 	case ModeConfirmDeleteFile, ModeConfirmMatrixDelete:
 		// The prompt set on entering the mode names what gets deleted and
 		// stays until the mode ends, so a hint here would never show.

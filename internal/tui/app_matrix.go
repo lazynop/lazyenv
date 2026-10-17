@@ -71,7 +71,7 @@ func (a App) handleMatrixEdit(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			return a, a.flashWarning("Variable not present in this file")
 		}
 		a.mode = ModeConfirmMatrixDelete
-		a.statusBar.SetAlert(fmt.Sprintf("Delete %s from %s? (y/n)", entry.Key, a.matrixView.fileNames[a.matrixView.cursorCol]))
+		a.statusBar.SetAlert(fmt.Sprintf("Delete %s from %s? %s", entry.Key, a.matrixView.fileNames[a.matrixView.cursorCol], yesNo(a.keys)))
 	}
 	return a, nil
 }

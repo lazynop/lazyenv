@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
@@ -449,5 +450,26 @@ func TestDeletePromptsRenderInErrorColor(t *testing.T) {
 		require.Equal(t, ModeConfirmMatrixDelete, app.mode)
 		assert.Equal(t, "Delete A from .env? (y/n)", app.statusBar.Message)
 		assertStatusColor(t, statusView(app), statusErrorSGR)
+	})
+}
+
+func TestYesNoPromptsNameTheKeysTheKeyMapBinds(t *testing.T) {
+	rebind := func(app App) App {
+		app.keys.Confirm = key.NewBinding(key.WithKeys("j"))
+		app.keys.Deny = key.NewBinding(key.WithKeys("x"))
+		return app
+	}
+
+	t.Run("delete file", func(t *testing.T) {
+		app := rebind(newTestApp([]*model.EnvFile{makeTestFile(".env", "FOO")}))
+		app.focus = FocusFiles
+		app = pressKeys(app, "D")
+		assert.Equal(t, "Delete .env? (j/x)", app.statusBar.Message)
+	})
+
+	t.Run("delete matrix variable", func(t *testing.T) {
+		app := rebind(newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.local", "A")}))
+		app = pressKeys(app, "m", "d")
+		assert.Equal(t, "Delete A from .env? (j/x)", app.statusBar.Message)
 	})
 }

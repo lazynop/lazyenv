@@ -72,6 +72,12 @@ func shortKeys(bindings ...key.Binding) string {
 	return strings.Join(labels, "/")
 }
 
+// yesNo is the "(y/n)" that ends a yes/no prompt, naming the short keys of
+// keys.Confirm and keys.Deny.
+func yesNo(keys KeyMap) string {
+	return "(" + shortKeys(keys.Confirm, keys.Deny) + ")"
+}
+
 // glyph is the row of an indicator, a glyph the panels draw rather than a key.
 func glyph(label, desc string) helpRow {
 	return helpRow{label, desc}

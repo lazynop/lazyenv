@@ -429,7 +429,7 @@ func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bo
 			return a, a.flashWarning("Save or reset changes before deleting"), true
 		}
 		a.mode = ModeConfirmDeleteFile
-		a.statusBar.SetAlert("Delete " + f.Name + "? (y/n)")
+		a.statusBar.SetAlert("Delete " + f.Name + "? " + yesNo(a.keys))
 		return a, nil, true
 
 	case key.Matches(msg, a.keys.RenameFile):

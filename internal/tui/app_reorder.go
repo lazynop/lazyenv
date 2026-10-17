@@ -57,8 +57,8 @@ func (a App) promptReorderConfirm() (tea.Model, tea.Cmd) {
 	}
 	a.mode = ModeReorderConfirm
 	a.statusBar.SetMessage(fmt.Sprintf(
-		"Reorder %d variables in %s (%s)? This rewrites the file. (y/n)",
-		len(f.Vars), f.Name, a.reorderModeLabel(),
+		"Reorder %d variables in %s (%s)? This rewrites the file. %s",
+		len(f.Vars), f.Name, a.reorderModeLabel(), yesNo(a.keys),
 	))
 	return a, nil
 }

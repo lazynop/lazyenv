@@ -2,6 +2,7 @@ package tui
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"charm.land/bubbles/v2/key"
@@ -141,6 +142,17 @@ func TestReorderMenuNamesTheKeysTheKeyMapBinds(t *testing.T) {
 	app = sendKey(app, tea.KeyPressMsg{Text: "O"})
 
 	assert.Equal(t, "Reorder on disk: [x]alphabetical  [g]grouped  [Esc]cancel", app.statusBar.Message)
+}
+
+func TestReorderConfirmNamesTheKeysTheKeyMapBinds(t *testing.T) {
+	app, _ := newTestAppWithDiskFile(t, "B=2\nA=1\n")
+	app.keys.Confirm = key.NewBinding(key.WithKeys("j"))
+	app.keys.Deny = key.NewBinding(key.WithKeys("x"))
+
+	app = sendKey(app, tea.KeyPressMsg{Text: "O"})
+	app = sendKey(app, tea.KeyPressMsg{Text: "a"})
+
+	assert.True(t, strings.HasSuffix(app.statusBar.Message, "This rewrites the file. (j/x)"), app.statusBar.Message)
 }
 
 // sendKey feeds one key press to the app and returns the updated model.
