@@ -2,10 +2,8 @@ package tui
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
 
-	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/require"
 
@@ -28,11 +26,11 @@ type cursorInput struct {
 
 // cursorInputs returns the first key of every KeyMap binding, plus a wheel
 // tick down over each panel.
-func cursorInputs(app App) []cursorInput {
+func cursorInputs(t *testing.T, app App) []cursorInput {
+	t.Helper()
 	var inputs []cursorInput
-	keyMap := reflect.ValueOf(DefaultKeyMap())
-	for i := range keyMap.NumField() {
-		k := keyMap.Field(i).Interface().(key.Binding).Keys()[0]
+	for _, b := range keyMapBindings(t) {
+		k := b.binding.Keys()[0]
 		inputs = append(inputs, cursorInput{k, tea.KeyPressMsg{Text: k}})
 	}
 	return append(inputs,
@@ -60,7 +58,7 @@ func TestMainViewCursorStaysOnTheActiveFile(t *testing.T) {
 		m, _ = m.Update(FilesLoadedMsg{Files: files})
 		return m.(App)
 	}
-	inputs := cursorInputs(newApp(t))
+	inputs := cursorInputs(t, newApp(t))
 	for _, first := range inputs {
 		for _, second := range inputs {
 			for _, followUps := range cursorFollowUps {

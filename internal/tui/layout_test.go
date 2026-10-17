@@ -67,18 +67,10 @@ func appScenario(name string, mode AppMode, setup func(app App) App) viewScenari
 	}}
 }
 
-// press sends keys to app: named keys (enter, esc, tab, arrows) by code, the
-// rest as text.
+// press sends keys to app, each as keyMsg builds it.
 func press(app App, keys ...string) App {
-	codes := map[string]rune{"enter": tea.KeyEnter, "esc": tea.KeyEscape, "tab": tea.KeyTab,
-		"up": tea.KeyUp, "down": tea.KeyDown, "left": tea.KeyLeft, "right": tea.KeyRight,
-		"pgup": tea.KeyPgUp, "pgdown": tea.KeyPgDown, "home": tea.KeyHome, "end": tea.KeyEnd}
 	for _, k := range keys {
-		msg := tea.KeyPressMsg{Text: k}
-		if code, ok := codes[k]; ok {
-			msg = tea.KeyPressMsg{Code: code}
-		}
-		updated, _ := app.Update(msg)
+		updated, _ := app.Update(keyMsg(k))
 		app = updated.(App)
 	}
 	return app

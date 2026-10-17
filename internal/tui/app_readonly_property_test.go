@@ -3,10 +3,8 @@ package tui
 import (
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 
-	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/require"
 
@@ -79,16 +77,14 @@ var readOnlyFixture = map[string]string{
 }
 
 func TestReadOnlyNoKeyChangesFiles(t *testing.T) {
-	keyMap := reflect.ValueOf(DefaultKeyMap())
+	bindings := keyMapBindings(t)
 	for _, st := range readOnlyStartStates {
 		t.Run(st.name, func(t *testing.T) {
-			for i := range keyMap.NumField() {
-				name := keyMap.Type().Field(i).Name
-				binding, ok := keyMap.Field(i).Interface().(key.Binding)
-				require.True(t, ok, "KeyMap.%s is not a key.Binding", name)
-				require.NotEmpty(t, binding.Keys(), "KeyMap.%s has no keys", name)
+			for _, b := range bindings {
+				binding := b.binding
+				require.NotEmpty(t, binding.Keys(), "KeyMap.%s has no keys", b.field)
 
-				t.Run(name, func(t *testing.T) {
+				t.Run(b.field, func(t *testing.T) {
 					app, dir := newReadOnlyDiskApp(t)
 					for _, k := range st.keys {
 						app = sendKey(app, tea.KeyPressMsg{Text: k})
