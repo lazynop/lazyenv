@@ -25,39 +25,43 @@ var updateGolden = flag.Bool("update", false, "rewrite "+viewsGoldenPath+" from 
 const viewsGoldenPath = "testdata/views.golden"
 
 // layoutSecrets are the secret values of layoutFiles: none may be on screen
-// while secrets are masked. They are short enough for the narrowest value
-// column in the grid to show them whole, so a truncated leak still matches.
-var layoutSecrets = []string{"hunter2pass", "ghp_x7Kq9", "stg-secret"}
+// while secrets are masked. A leak shows only what its column fits, so each
+// must be short enough for every column to draw it whole, which
+// TestLayoutSecretsAreDrawnWhole checks.
+var layoutSecrets = []string{"hunter2", "ghp_x7Kq9", "stg-pass"}
 
 // layoutFiles returns two files whose secrets are detected by key name
 // (API_TOKEN) and by value (GREETING), with more vars than any panel shows.
 func layoutFiles() []*model.EnvFile {
 	var env strings.Builder
-	env.WriteString("API_TOKEN=hunter2pass\nGREETING=ghp_x7Kq9\nHOST=localhost\nEMPTY=\n")
+	env.WriteString("API_TOKEN=hunter2\nGREETING=ghp_x7Kq9\nHOST=localhost\nEMPTY=\n")
 	for i := range 30 {
 		fmt.Fprintf(&env, "VAR_%02d=value_%02d\n", i, i)
 	}
-	local := "API_TOKEN=stg-secret\nHOST=example.com\nVAR_00=value_00\nONLY_LOCAL=1\n"
+	local := "API_TOKEN=stg-pass\nHOST=example.com\nVAR_00=value_00\nONLY_LOCAL=1\n"
 	return []*model.EnvFile{
 		parser.ParseBytes(".env", []byte(env.String()), config.SecretsConfig{}),
 		parser.ParseBytes(".env.local", []byte(local), config.SecretsConfig{}),
 	}
 }
 
-// viewScenario renders one screen of the TUI at a terminal size.
+// viewScenario renders one screen of the TUI at a terminal size, with secrets
+// revealed or masked.
 type viewScenario struct {
 	name   string
 	mode   AppMode // -1 for a screen outside App
-	render func(t *testing.T, width, height int) string
+	render func(t *testing.T, width, height int, reveal bool) string
 }
 
 // appScenario sizes a fresh App over layoutFiles, drives it with setup and
 // renders it, failing unless setup reached mode.
 func appScenario(name string, mode AppMode, setup func(app App) App) viewScenario {
-	return viewScenario{name, mode, func(t *testing.T, width, height int) string {
+	return viewScenario{name, mode, func(t *testing.T, width, height int, reveal bool) string {
 		t.Helper()
 		updated, _ := newTestApp(layoutFiles()).Update(tea.WindowSizeMsg{Width: width, Height: height})
-		app := setup(updated.(App))
+		app := updated.(App)
+		app.varList.SetShowSecrets(reveal)
+		app = setup(app)
 		require.Equal(t, mode, app.mode, "%s: setup should reach the mode", name)
 		return app.View().Content
 	}}
@@ -132,13 +136,13 @@ var viewScenarios = []viewScenario{
 		return press(app, "m", "j", "right", "a") // EMPTY, missing from .env.local
 	}),
 	appScenario("matrix confirm delete", ModeConfirmMatrixDelete, func(app App) App { return press(app, "m", "d") }),
-	{"config error", ModeConfigError, func(t *testing.T, width, height int) string {
+	{"config error", ModeConfigError, func(t *testing.T, width, height int, _ bool) string {
 		app := NewApp(config.DefaultConfig(), StartupMessages{ConfigErrors: []string{`invalid sort value: "random"`}})
 		updated, _ := app.Update(tea.WindowSizeMsg{Width: width, Height: height})
 		require.Equal(t, ModeConfigError, updated.(App).mode)
 		return updated.(App).View().Content
 	}},
-	{"theme preview", -1, func(t *testing.T, width, height int) string {
+	{"theme preview", -1, func(t *testing.T, width, height int, _ bool) string {
 		m := NewThemePreview(true)
 		m.searchPaths = []string{".lazyenvrc", "/home/user/.config/lazyenv/config.toml", "/home/user/.lazyenvrc"}
 		updated, _ := m.Update(tea.WindowSizeMsg{Width: width, Height: height})
@@ -179,16 +183,22 @@ var knownTooTall = map[string]string{
 	"help": "#57",
 }
 
-// TestViewsFitTheTerminalAndHideSecrets renders every scenario across a grid
-// of terminal sizes. The grid starts at 60x10, since below it the layout does
-// not fit yet (#58).
+// gridWidths and gridHeights are the terminal sizes every scenario renders at.
+// The grid starts at 60x10, since below it the layout does not fit yet (#58).
+var (
+	gridWidths  = []int{60, 80, 100, 120}
+	gridHeights = []int{10, 12, 16, 24, 40}
+)
+
+// TestViewsFitTheTerminalAndHideSecrets renders every scenario across the grid
+// of terminal sizes.
 func TestViewsFitTheTerminalAndHideSecrets(t *testing.T) {
 	for _, sc := range viewScenarios {
 		_, known := knownTooTall[sc.name]
 		tooTall := false
-		for _, width := range []int{60, 80, 100, 120} {
-			for _, height := range []int{10, 12, 16, 24, 40} {
-				view := sc.render(t, width, height)
+		for _, width := range gridWidths {
+			for _, height := range gridHeights {
+				view := sc.render(t, width, height, false)
 				at := fmt.Sprintf("%s at %dx%d", sc.name, width, height)
 				if lipgloss.Height(view) > height {
 					tooTall = true
@@ -203,6 +213,32 @@ func TestViewsFitTheTerminalAndHideSecrets(t *testing.T) {
 		if known {
 			assert.True(t, tooTall, "%s now fits the terminal: remove it from knownTooTall", sc.name)
 		}
+	}
+}
+
+// TestLayoutSecretsAreDrawnWhole renders every scenario across the grid with
+// secrets revealed. A column that draws a secret cut (its start, then "..")
+// would show only that start on a leak, which the check for the whole secret
+// in TestViewsFitTheTerminalAndHideSecrets misses. Each secret must also be
+// drawn somewhere, or that check could not catch its leak at all.
+func TestLayoutSecretsAreDrawnWhole(t *testing.T) {
+	drawn := map[string]bool{}
+	for _, sc := range viewScenarios {
+		for _, width := range gridWidths {
+			for _, height := range gridHeights {
+				view := stripAnsi(sc.render(t, width, height, true))
+				for _, secret := range layoutSecrets {
+					drawn[secret] = drawn[secret] || strings.Contains(view, secret)
+					for n := 1; n < len(secret); n++ {
+						assert.NotContains(t, view, secret[:n]+"..", "%s at %dx%d: %q is drawn cut, shorten it",
+							sc.name, width, height, secret)
+					}
+				}
+			}
+		}
+	}
+	for _, secret := range layoutSecrets {
+		assert.True(t, drawn[secret], "%q is never drawn, even revealed", secret)
 	}
 }
 
@@ -222,7 +258,7 @@ func plainRows(view string) string {
 func TestViewsMatchGolden(t *testing.T) {
 	var got strings.Builder
 	for _, sc := range viewScenarios {
-		fmt.Fprintf(&got, "=== %s\n%s\n", sc.name, plainRows(sc.render(t, 80, 24)))
+		fmt.Fprintf(&got, "=== %s\n%s\n", sc.name, plainRows(sc.render(t, 80, 24, false)))
 	}
 	if *updateGolden {
 		require.NoError(t, os.MkdirAll("testdata", 0o755))
