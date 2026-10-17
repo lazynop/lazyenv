@@ -481,3 +481,39 @@ func TestDeletedVarsShowAtTheEndOfALongList(t *testing.T) {
 	assert.Contains(t, view, "GONE1")
 	assert.Contains(t, view, "GONE2")
 }
+
+// TestMovingUpFromTheLastVarKeepsTheScroll shows the deleted vars from the last
+// var, then moves up one var: the list keeps its scroll instead of jumping
+// back, since the cursor row is still in view.
+func TestMovingUpFromTheLastVarKeepsTheScroll(t *testing.T) {
+	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F", "G", "H", "GONE1", "GONE2")
+	f.DeleteVar(9)
+	f.DeleteVar(8)
+	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: bottomChromeHeight + panelChromeHeight + 4})
+	app := press(updated.(App), "right", "j", "j", "j", "j", "j", "j", "j") // H, the last var
+	offset := app.varList.Offset
+
+	app = press(app, "k") // G
+
+	assert.Equal(t, offset, app.varList.Offset, "the list should not scroll while G is in view")
+	assert.Contains(t, stripAnsi(app.View().Content), "GONE2")
+}
+
+// TestMoreDeletedVarsThanRowsKeepTheCursorInView deletes more vars than the
+// panel has rows, then moves to the last var: the cursor row stays in view,
+// with as many deleted vars below it as fit.
+func TestMoreDeletedVarsThanRowsKeepTheCursorInView(t *testing.T) {
+	f := makeTestFile(".env", "A", "B", "GONE1", "GONE2", "GONE3", "GONE4", "GONE5", "GONE6")
+	for range 6 {
+		f.DeleteVar(2)
+	}
+	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: bottomChromeHeight + panelChromeHeight + 4})
+	app := press(updated.(App), "right", "j") // B, the last var
+
+	view := stripAnsi(app.View().Content)
+
+	assert.Contains(t, view, "val_B", "the cursor row should stay in view")
+	for _, key := range []string{"GONE1", "GONE2", "GONE3"} {
+		assert.Contains(t, view, key, "the rows under the cursor should hold deleted vars")
+	}
+}
