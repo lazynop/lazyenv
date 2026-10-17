@@ -737,7 +737,7 @@ const minInputWidth = 10
 // left for in's value.
 func (a App) layoutInputBar(label string, in *textinput.Model) (string, int) {
 	room := a.inputBarRoom()
-	inputChrome := lipgloss.Width(in.Prompt) + 1 // the prompt, and the cursor after the value
+	inputChrome := lipgloss.Width(in.Prompt) + inputCursorWidth
 	label = truncate(label, max(room-inputChrome-minInputWidth, 0))
 	return label, max(room-lipgloss.Width(label)-inputChrome, 1)
 }

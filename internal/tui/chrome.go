@@ -49,6 +49,10 @@ const (
 	// rows: header + separator row + stats footer.
 	matrixChromeHeight = matrixContentOffsetY + 1
 
+	// inputCursorWidth is the column a text input draws after its value for
+	// the cursor at the end.
+	inputCursorWidth = 1
+
 	// matrixPaddingWidth is the left + right padding of the matrix view,
 	// which has no border.
 	matrixPaddingWidth = 2
