@@ -2,8 +2,10 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
+	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -198,6 +200,32 @@ func TestFileListViewShowsVarCount(t *testing.T) {
 	view := fl.View(theme)
 	// Right-aligned count: number appears after gap
 	assert.Contains(t, view, "3")
+}
+
+// TestFileListViewAlignsVarCountsOfNonASCIINames checks that the var count
+// sits in the same column on every row, whether the file name has accented
+// letters, wide characters or plain ASCII, on the cursor row and the others.
+func TestFileListViewAlignsVarCountsOfNonASCIINames(t *testing.T) {
+	theme := BuildTheme(true, config.ColorConfig{})
+	for _, focused := range []bool{false, true} {
+		var fl FileListModel
+		for _, name := range []string{".env", ".env.café", ".env.日本"} {
+			fl.Files = append(fl.Files, makeTestFile(name, "A", "B", "C"))
+		}
+		fl.Width = 30
+		fl.Height = 10
+		fl.Focused = focused
+
+		var countCols []int
+		for _, line := range strings.Split(stripAnsi(fl.View(theme)), "\n") {
+			if i := strings.LastIndex(line, "3"); i >= 0 && strings.Contains(line, ".env") {
+				countCols = append(countCols, ansi.StringWidth(line[:i]))
+			}
+		}
+		require.Len(t, countCols, 3, "focused=%v", focused)
+		assert.Equal(t, countCols[0], countCols[1], ".env.café, focused=%v", focused)
+		assert.Equal(t, countCols[0], countCols[2], ".env.日本, focused=%v", focused)
+	}
 }
 
 func TestFileListViewShowsZeroVarCount(t *testing.T) {

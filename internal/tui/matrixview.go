@@ -204,13 +204,13 @@ func (m *MatrixModel) CancelEdit() {
 
 func (m *MatrixModel) renderHeaderRow(endCol int, theme Theme) string {
 	var hdr strings.Builder
-	fmt.Fprintf(&hdr, "%-*s", m.layout.MatrixKeyWidth, "KEY")
+	hdr.WriteString(padRight("KEY", m.layout.MatrixKeyWidth))
 	for ci := m.offsetCol; ci < endCol; ci++ {
 		name := truncate(m.fileNames[ci], m.layout.MatrixColWidth-2)
 		if ci == m.cursorCol {
-			hdr.WriteString(theme.SelectedItem.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, name)))
+			hdr.WriteString(theme.SelectedItem.Render(padRight(name, m.layout.MatrixColWidth)))
 		} else {
-			hdr.WriteString(theme.HelpKey.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, name)))
+			hdr.WriteString(theme.HelpKey.Render(padRight(name, m.layout.MatrixColWidth)))
 		}
 	}
 	return hdr.String()
@@ -221,7 +221,7 @@ func (m *MatrixModel) renderBodyRow(ri, endCol int, checkMark, crossMark string,
 
 	// Key name
 	keyStr := truncate(entry.Key, m.layout.MatrixKeyWidth-2)
-	keyFormatted := fmt.Sprintf("%-*s", m.layout.MatrixKeyWidth, keyStr)
+	keyFormatted := padRight(keyStr, m.layout.MatrixKeyWidth)
 	if ri == m.cursorRow {
 		keyFormatted = theme.SelectedItem.Render(keyFormatted)
 	} else {
@@ -235,14 +235,14 @@ func (m *MatrixModel) renderBodyRow(ri, endCol int, checkMark, crossMark string,
 		if ri == m.cursorRow && ci == m.cursorCol {
 			// Highlight active cell
 			if entry.Present[ci] {
-				cell = theme.SelectedItem.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+checkMark))
+				cell = theme.SelectedItem.Render(padRight(" "+checkMark, m.layout.MatrixColWidth))
 			} else {
-				cell = theme.DiffRemoved.Bold(true).Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+crossMark))
+				cell = theme.DiffRemoved.Bold(true).Render(padRight(" "+crossMark, m.layout.MatrixColWidth))
 			}
 		} else if entry.Present[ci] {
-			cell = theme.DiffEqual.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+checkMark))
+			cell = theme.DiffEqual.Render(padRight(" "+checkMark, m.layout.MatrixColWidth))
 		} else {
-			cell = theme.DiffRemoved.Render(fmt.Sprintf("%-*s", m.layout.MatrixColWidth, " "+crossMark))
+			cell = theme.DiffRemoved.Render(padRight(" "+crossMark, m.layout.MatrixColWidth))
 		}
 		row.WriteString(cell)
 	}

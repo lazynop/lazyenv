@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -309,6 +310,33 @@ func TestMatrixViewNarrowWidthKeepsEachRowOnOneRow(t *testing.T) {
 		m.Width, m.Height = width, height
 		return m.View(theme)
 	})
+}
+
+// TestMatrixViewAlignsColumnsAfterANonASCIIFileName checks that a file name
+// whose display width differs from its rune count (wide characters, a
+// combining accent) fills exactly one column, so the next file's name and its
+// check mark start where the column layout puts them.
+func TestMatrixViewAlignsColumnsAfterANonASCIIFileName(t *testing.T) {
+	layout := config.DefaultConfig().Layout
+	theme := BuildTheme(true, config.ColorConfig{})
+	colOf := func(line, s string) int {
+		i := strings.LastIndex(line, s)
+		require.GreaterOrEqual(t, i, 0, "%q not in %q", s, line)
+		return ansi.StringWidth(line[:i])
+	}
+
+	for _, name := range []string{".env.日本", ".env.cafe\u0301"} {
+		// KEY is only in the second file: its row reads ✗ then ✓.
+		files := []*model.EnvFile{makeTestFile(name), makeTestFile(".env", "KEY_A")}
+		m := NewMatrixModel(files, layout, config.SecretsConfig{})
+		m.Width, m.Height = 80, 10
+		lines := strings.Split(stripAnsi(m.View(theme)), "\n")
+
+		header, row := lines[0], lines[2]
+		secondCol := colOf(header, "KEY") + layout.MatrixKeyWidth + layout.MatrixColWidth
+		assert.Equal(t, secondCol, colOf(header, ".env"), "second file name after %q", name)
+		assert.Equal(t, secondCol+1, colOf(row, "✓"), "check mark after %q", name)
+	}
 }
 
 // TestZeroMatrixModelSurvivesALayout sizes a MatrixModel that was never built
