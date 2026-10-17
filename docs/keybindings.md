@@ -54,9 +54,21 @@ Keybindings are context-sensitive: each screen only responds to the keys listed 
 | `?`            | Show help screen                             |
 | `q` / `Ctrl+C` | Quit                                         |
 
+## Compare — Pick the second file
+
+After `c`, pick the file to compare the active file with.
+
+| Key            | Action                             |
+| -------------- | ---------------------------------- |
+| `↑` / `k`      | Move up                            |
+| `↓` / `j`      | Move down                          |
+| `Enter`        | Compare with the file under cursor |
+| `Esc`          | Cancel                             |
+| `q` / `Ctrl+C` | Cancel                             |
+
 ## Compare — Diff view
 
-Side-by-side diff between two `.env` files. After `c`, pick the second file with `↑` / `↓` and press `Enter`, or `Esc`, `q` or `Ctrl+C` to cancel.
+Side-by-side diff between two `.env` files.
 
 | Key       | Action                                   |
 | --------- | ---------------------------------------- |
