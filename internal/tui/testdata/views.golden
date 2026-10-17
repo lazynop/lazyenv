@@ -305,7 +305,7 @@
       R              Rename file
       T              Create template (keys only, no values)
 
-    Press ↑/↓ to scroll, Esc or ? to close
+    Press ↑/↓ or j/k to scroll, Esc, ? or q to close
 
 === help scrolled to the end
 
@@ -330,7 +330,7 @@
       q / Ctrl+C     Quit (in compare and matrix: back to main view)
       Esc            Back / cancel
 
-    Press ↑/↓ to scroll, Esc or ? to close
+    Press ↑/↓ or j/k to scroll, Esc, ? or q to close
 
 === new file
 ╭──────────────────╮╭──────────────────────────────────────────────────────────╮

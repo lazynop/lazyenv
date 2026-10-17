@@ -29,7 +29,7 @@ func TestViewHelp(t *testing.T) {
 	assert.Contains(t, help, "lazyenv")
 	assert.Contains(t, help, "Navigation")
 	assert.Contains(t, help, "Actions")
-	assert.Contains(t, help, "Esc or ? to close")
+	assert.Contains(t, help, "Esc, ? or q to close")
 }
 
 func TestHelpScrollsDownToItsLastRow(t *testing.T) {
@@ -45,7 +45,7 @@ func TestHelpScrollsDownToItsLastRow(t *testing.T) {
 	assert.Equal(t, 24, lipgloss.Height(screen))
 	assert.Contains(t, screen, "Back / cancel", "the last row is reachable")
 	assert.NotContains(t, screen, "lazyenv — TUI for managing .env files")
-	assert.Contains(t, screen, "Esc or ? to close", "the footer stays on screen")
+	assert.Contains(t, screen, "Esc, ? or q to close", "the footer stays on screen")
 }
 
 func TestHelpScrollStopsAtBothEnds(t *testing.T) {
@@ -84,10 +84,10 @@ func TestHelpScrollsWithTheMouseWheel(t *testing.T) {
 }
 
 func TestHelpHintsAtScrollingOnlyWhenItOverflows(t *testing.T) {
-	assert.Contains(t, helpScreen(openHelp(80, 24)), "↑/↓ to scroll")
+	assert.Contains(t, helpScreen(openHelp(80, 24)), "↑/↓ or j/k to scroll")
 
 	tall := helpScreen(openHelp(120, 80))
-	assert.NotContains(t, tall, "↑/↓ to scroll")
+	assert.NotContains(t, tall, "to scroll")
 	assert.Contains(t, tall, "lazyenv — TUI", "a terminal tall enough shows the whole help")
 	assert.Contains(t, tall, "Back / cancel", "a terminal tall enough shows the whole help")
 }
@@ -113,4 +113,13 @@ func TestHelpIgnoresClicks(t *testing.T) {
 
 	assert.Equal(t, ModeHelp, app.mode, "a click keeps the help open")
 	assert.Equal(t, before, helpScreen(app), "and where it was scrolled to")
+}
+
+func TestHelpFooterNamesEveryCloseAndScrollKeyOnOneRowAtTheMinimumWidth(t *testing.T) {
+	overflowing := helpScreen(openHelp(MinTerminalWidth, MinTerminalHeight))
+	assert.Contains(t, overflowing, "Press ↑/↓ or j/k to scroll, Esc, ? or q to close")
+
+	fitting := helpScreen(openHelp(MinTerminalWidth, 80))
+	assert.Contains(t, fitting, "Back / cancel", "a terminal tall enough shows the whole help")
+	assert.Contains(t, fitting, "Press Esc, ? or q to close")
 }

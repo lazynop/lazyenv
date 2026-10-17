@@ -114,9 +114,9 @@ func (m *HelpViewModel) View(theme Theme) string {
 	end := min(m.offset+visible, len(m.lines))
 	text := lipgloss.NewStyle().Foreground(theme.ColorFg).Render(strings.Join(m.lines[m.offset:end], "\n"))
 
-	hint := "  Press Esc or ? to close"
+	hint := "  Press Esc, ? or q to close"
 	if len(m.lines) > visible {
-		hint = "  Press ↑/↓ to scroll, Esc or ? to close"
+		hint = "  Press ↑/↓ or j/k to scroll, Esc, ? or q to close"
 	}
 	footer := theme.MutedItem.Render(hint)
 
