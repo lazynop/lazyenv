@@ -198,11 +198,13 @@ func (a App) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-// Update handles msg, then fits the text input of the current mode's input bar
-// to the terminal width.
+// Update handles msg, then lays the views out for the terminal size and fits
+// the text input of the current mode's input bar to it, so View draws the
+// state Update leaves.
 func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	updated, cmd := a.update(msg)
 	if app, ok := updated.(App); ok {
+		app.updateLayout()
 		app.fitInputBar()
 		return app, cmd
 	}
@@ -215,7 +217,6 @@ func (a App) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.width = msg.Width
 		a.height = msg.Height
 		a.ready = true
-		a.updateLayout()
 		return a, nil
 
 	case tea.BackgroundColorMsg:
@@ -438,7 +439,6 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 			return a, a.flashWarning("Need at least 2 files for matrix")
 		}
 		a.matrixView = NewMatrixModel(a.fileList.Files, a.config.Layout, a.config.Secrets)
-		a.updateLayout()
 		a.mode = ModeMatrix
 	}
 
@@ -658,8 +658,6 @@ func (a App) View() tea.View {
 	case ModeMatrixEditing:
 		content = a.withBottom(a.matrixView.View(a.theme), a.statusBar.View(a.theme, ModeEditing, a.focus, "", 0))
 	default:
-		a.updateLayout()
-
 		// Two-panel layout
 		filePanel := a.fileList.View(a.theme)
 		varPanel := a.varList.View(a.theme)
@@ -782,12 +780,11 @@ func (a *App) updateLayout() {
 	// Each view scrolls its cursor back into its new size.
 	a.fileList.Width = a.fileWidth
 	a.fileList.Height = panelHeight
-	a.fileList.Focused = a.focus == FocusFiles
 	a.fileList.ensureCursorVisible()
 
 	a.varList.Width = varWidth
 	a.varList.Height = panelHeight
-	a.varList.SetFocused(a.focus == FocusVars)
+	a.setFocus(a.focus) // also scrolls the var cursor, and the peek line under it, into view
 
 	a.diffView.Width = a.width - compareMarginWidth
 	a.diffView.Height = panelHeight
