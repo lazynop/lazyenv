@@ -40,8 +40,8 @@ func helpScreen(app App) string {
 func TestViewHelp(t *testing.T) {
 	help := helpScreen(openHelp(100, 40))
 	assert.Contains(t, help, "lazyenv")
-	assert.Contains(t, help, "Main view")
-	assert.Contains(t, help, "Compare view")
+	assert.Contains(t, help, "Files panel")
+	assert.Contains(t, help, "Variables panel")
 	assert.Contains(t, help, "Esc, ? or q to close")
 }
 
@@ -207,8 +207,17 @@ func helpRow(sections map[string][]string, section, keys string) string {
 func TestHelpGroupsTheKeysByScreen(t *testing.T) {
 	sections := helpSections(helpScreen(openHelp(120, 200)))
 
-	assert.Contains(t, helpRow(sections, "Main view", "N"), "Create new .env file")
-	assert.Contains(t, helpRow(sections, "Main view", "q / Ctrl+C"), "Quit")
+	assert.Contains(t, helpRow(sections, "Files panel", "N"), "Create new .env file")
+	assert.Contains(t, helpRow(sections, "Files panel", "D"), "with confirmation")
+	assert.Contains(t, helpRow(sections, "Variables panel", "e"), "Edit variable value")
+	assert.Contains(t, helpRow(sections, "Variables panel", "Enter/Space"), "group")
+	assert.Contains(t, helpRow(sections, "Both panels", "w"), "Save changes")
+	assert.Contains(t, helpRow(sections, "Both panels", "q / Ctrl+C"), "Quit")
+	assert.Contains(t, helpRow(sections, "Compare: pick the second file", "Enter"), "Compare")
+	assert.Contains(t, helpRow(sections, "Compare: pick the second file", "Esc"), "Cancel")
+	assert.Contains(t, helpRow(sections, "Prompts", "Esc"), "clear the filter")
+	assert.Contains(t, helpRow(sections, "Variable Indicators", "▸"), "Collapsed group")
+	assert.Contains(t, helpRow(sections, "Variable Indicators", "▾"), "Expanded group")
 	assert.Contains(t, helpRow(sections, "Compare view", "n/N"), "next/prev difference")
 	assert.Contains(t, helpRow(sections, "Compare view", "←/→  h/l"), "Copy value")
 	assert.Contains(t, helpRow(sections, "Compare view", "←/→  h/l"), "delete",

@@ -286,10 +286,15 @@
 
     lazyenv — TUI for managing .env files
 
-    Main view
-      ↑/↓  j/k       Navigate items
-      ←/→  h/l       Switch panels (files / variables)
-      Enter          Select file, or collapse/expand a group header
+    Files panel
+      Enter          Select file and switch to the variables panel
+      N              Create new .env file
+      C              Duplicate file with new name
+      D              Delete file from disk (with confirmation)
+      R              Rename file
+      T              Create template (keys only, no values)
+
+    Variables panel
       e              Edit variable value
       E              Rename variable key
       a              Add new variable
@@ -297,20 +302,13 @@
       y              Copy value to clipboard
       Y              Copy KEY=value to clipboard
       p              Peek original value (toggle)
-      N              Create new .env file
-      C              Duplicate file with new name
-      D              Delete file from disk
-      R              Rename file
-      T              Create template (keys only, no values)
-      w              Save changes
-      r              Reset file (discard changes)
+      Enter/Space    Collapse/expand group (on header)
+
 
     Press ↑/↓ or j/k to scroll, Esc, ? or q to close
 
 === help scrolled to the end
 
-
-    File Indicators
       ●              Selected file
       *              Modified (unsaved changes)
       !              Not covered by .gitignore
@@ -322,6 +320,8 @@
       D              Duplicate key
       ○              Empty value
       …              Placeholder value
+      ▸              Collapsed group
+      ▾              Expanded group
 
     This help
       Esc / ?        Close

@@ -12,10 +12,15 @@ import (
 // helpWheelNote with the mouse on, empty with it off.
 const helpText = `  lazyenv — TUI for managing .env files
 
-  Main view
-    ↑/↓  j/k       Navigate items
-    ←/→  h/l       Switch panels (files / variables)
-    Enter          Select file, or collapse/expand a group header
+  Files panel
+    Enter          Select file and switch to the variables panel
+    N              Create new .env file
+    C              Duplicate file with new name
+    D              Delete file from disk (with confirmation)
+    R              Rename file
+    T              Create template (keys only, no values)
+
+  Variables panel
     e              Edit variable value
     E              Rename variable key
     a              Add new variable
@@ -23,11 +28,11 @@ const helpText = `  lazyenv — TUI for managing .env files
     y              Copy value to clipboard
     Y              Copy KEY=value to clipboard
     p              Peek original value (toggle)
-    N              Create new .env file
-    C              Duplicate file with new name
-    D              Delete file from disk
-    R              Rename file
-    T              Create template (keys only, no values)
+    Enter/Space    Collapse/expand group (on header)
+
+  Both panels
+    ↑/↓  j/k       Navigate items
+    ←/→  h/l       Switch panels (files / variables)
     w              Save changes
     r              Reset file (discard changes)
     c              Compare two files (diff view)
@@ -36,10 +41,14 @@ const helpText = `  lazyenv — TUI for managing .env files
     o              Toggle sort (position / alphabetical)
     O              Reorder variables on disk (alphabetical / grouped)
     g              Toggle variable grouping by prefix
-    Space          Collapse/expand group (on header)
     Ctrl+S         Toggle secret masking
     ?              Show this help
     q / Ctrl+C     Quit
+
+  Compare: pick the second file
+    ↑/↓  j/k       Choose the file
+    Enter          Compare with it
+    Esc            Cancel
 
   Compare view
     ↑/↓  j/k       Navigate entries
@@ -67,7 +76,7 @@ const helpText = `  lazyenv — TUI for managing .env files
     y              Confirm a yes/no prompt
     n              Decline a yes/no prompt
     a / g          Reorder alphabetical / grouped (after O)
-    Esc            Cancel
+    Esc            Cancel (in a search, also clear the filter)
 
   File Indicators
     ●              Selected file
@@ -81,6 +90,8 @@ const helpText = `  lazyenv — TUI for managing .env files
     D              Duplicate key
     ○              Empty value
     …              Placeholder value
+    ▸              Collapsed group
+    ▾              Expanded group
 
   This help
     Esc / ?        Close
