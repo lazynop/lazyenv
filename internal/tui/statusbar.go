@@ -193,7 +193,9 @@ func modeHints(theme Theme, mode AppMode, focus Focus, diffStats string) string 
 		// stays until the mode ends, so a hint here would never show.
 		return ""
 	case ModeHelp:
-		return theme.MutedItem.Render("Press Esc or ? to close help")
+		// The help screen fills the terminal with no status bar; its own
+		// footer names the keys.
+		return ""
 	case ModeSearching:
 		return theme.MutedItem.Render("Type to search, Enter to keep the filter, Esc to clear it")
 	case ModeCreateFile:

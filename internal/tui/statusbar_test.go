@@ -83,15 +83,6 @@ func TestStatusBarViewConfirmDelete(t *testing.T) {
 	assert.Contains(t, view, "Delete variable")
 }
 
-func TestStatusBarViewHelp(t *testing.T) {
-	sb := NewStatusBarModel()
-	sb.Width = 120
-	theme := BuildTheme(true, config.ColorConfig{})
-
-	view := sb.View(theme, ModeHelp, FocusVars, "", 0)
-	assert.Contains(t, view, "close help")
-}
-
 func TestStatusBarViewSearching(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120
