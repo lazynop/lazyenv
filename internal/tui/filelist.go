@@ -69,6 +69,9 @@ func (m *FileListModel) SetCursor(index int) {
 // keeping the selected file: compare-select points at a file without making it
 // the active one.
 func (m *FileListModel) MoveCursorTo(index int) {
+	if len(m.Files) == 0 {
+		return
+	}
 	m.Cursor = max(0, min(index, len(m.Files)-1))
 	m.ensureCursorVisible()
 }

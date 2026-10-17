@@ -709,8 +709,7 @@ func (a *App) inputBar() (string, *textinput.Model) {
 	case ModeEditing, ModeEditingCompare:
 		return "  " + a.editor.label, &a.editor.input
 	case ModeMatrixEditing:
-		m := &a.matrixView
-		return fmt.Sprintf("  Add %s to %s: ", m.editKey, m.fileNames[m.editFile]), &m.editor
+		return a.matrixView.EditBar()
 	}
 	if label, ok := fileInputLabels[a.mode]; ok {
 		return label, a.activeFileInput()

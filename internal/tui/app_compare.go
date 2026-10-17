@@ -157,9 +157,8 @@ func (a App) handleEditingCompareKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a, nil
 	case key.Matches(msg, a.keys.Enter):
 		a.mode = ModeComparing
-		result := a.editor.Finish()
-		cmd := a.commitValueEdit(a.compareEditFile, result)
-		if !result.Untouched {
+		cmd, wrote := a.commitValueEdit(a.compareEditFile, a.editor.Finish())
+		if wrote {
 			a.diffView.Rediff()
 		}
 		return a, cmd

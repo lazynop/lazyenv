@@ -32,7 +32,8 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			a.varList.Refresh()
 			return a, a.flashMessage("Added " + a.editor.addKey)
 		}
-		return a, a.commitValueEdit(a.varList.File, result)
+		cmd, _ := a.commitValueEdit(a.varList.File, result)
+		return a, cmd
 	default:
 		var cmd tea.Cmd
 		a.editor.input, cmd = a.editor.input.Update(msg)
@@ -41,13 +42,14 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 }
 
 // commitValueEdit writes the value confirmed in the edit bar to its var in f,
-// unless the edit was untouched, and reports the change.
-func (a *App) commitValueEdit(f *model.EnvFile, result EditorResult) tea.Cmd {
+// unless the edit was untouched, and reports the change. It returns whether it
+// wrote.
+func (a *App) commitValueEdit(f *model.EnvFile, result EditorResult) (tea.Cmd, bool) {
 	if result.Untouched {
-		return nil
+		return nil, false
 	}
 	varKey := f.Vars[result.VarIndex].Key
 	f.UpdateVar(result.VarIndex, result.Value, util.IsSecret(varKey, result.Value, a.config.Secrets))
 	a.refreshIfShown(f)
-	return a.flashMessage("Modified " + varKey)
+	return a.flashMessage("Modified " + varKey), true
 }

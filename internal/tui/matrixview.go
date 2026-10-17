@@ -162,6 +162,11 @@ func (m *MatrixModel) StartEdit() tea.Cmd {
 	return m.editor.Focus()
 }
 
+// EditBar returns the label and the text input of the bar that adds a value.
+func (m *MatrixModel) EditBar() (string, *textinput.Model) {
+	return fmt.Sprintf("  Add %s to %s: ", m.editKey, m.fileNames[m.editFile]), &m.editor
+}
+
 // ConfirmEdit adds the variable to the target file.
 func (m *MatrixModel) ConfirmEdit() {
 	if !m.editing {
