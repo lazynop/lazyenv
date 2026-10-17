@@ -32,9 +32,15 @@ const scrollPastTheEnd = 120
 // helpLastRow is the description on the last row of the help.
 const helpLastRow = "Jump to the top/bottom"
 
-// helpScreen is the help screen as plain text.
+// helpScreen is the help screen as plain text, each row without the spaces
+// that pad it to the terminal width, so a failed assertion prints the text
+// rather than a screenful of blanks.
 func helpScreen(app App) string {
-	return stripAnsi(app.View().Content)
+	rows := strings.Split(stripAnsi(app.View().Content), "\n")
+	for i, row := range rows {
+		rows[i] = strings.TrimRight(row, " ")
+	}
+	return strings.Join(rows, "\n")
 }
 
 func TestViewHelp(t *testing.T) {
