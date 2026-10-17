@@ -623,27 +623,27 @@
 
 
 === theme preview
-╭────────────────────────╮╭────────────────────────────────────────────────╮
-│ Themes (56)            ││ andromeda                                      │
-│▸ andromeda             ││                                                │
-│  ayu-dark              ││  ██ primary    #00E8C6                         │
-│  ayu-light             ││  ██ warning    #FFE66D                         │
-│  ayu-mirage            ││  ██ error      #EE5D43                         │
-│  base16-eighties       ││  ██ success    #96E072                         │
-│  catppuccin-frappe     ││  ██ muted      #5C6370                         │
-│  catppuccin-latte      ││  ██ fg         #D5CED9                         │
-│  catppuccin-macchiato  ││  ██ bg         #23262E                         │
-│  catppuccin-mocha      ││  ██ border     #2B2F3A                         │
-│  cobalt2               ││  ██ cursor-bg  #2B2F3A                         │
-│  cyberpunk             ││  ██ modified   #FFE66D                         │
-│  dawnfox               ││  ██ added      #96E072                         │
-│  default-dark          ││  ██ deleted    #EE5D43                         │
-│  default-light         ││                                                │
-│  dracula               ││                                                │
-│  everforest            ││                                                │
-│  github-dark           ││                                                │
-│  github-light          ││                                                │
-│  gruvbox-dark          ││                                                │
-│  gruvbox-light         ││                                                │
-╰────────────────────────╯╰────────────────────────────────────────────────╯
+╭────────────────────────╮╭────────────────────────────────────────────────────╮
+│ Themes (56)            ││ andromeda                                          │
+│▸ andromeda             ││                                                    │
+│  ayu-dark              ││  ██ primary    #00E8C6                             │
+│  ayu-light             ││  ██ warning    #FFE66D                             │
+│  ayu-mirage            ││  ██ error      #EE5D43                             │
+│  base16-eighties       ││  ██ success    #96E072                             │
+│  catppuccin-frappe     ││  ██ muted      #5C6370                             │
+│  catppuccin-latte      ││  ██ fg         #D5CED9                             │
+│  catppuccin-macchiato  ││  ██ bg         #23262E                             │
+│  catppuccin-mocha      ││  ██ border     #2B2F3A                             │
+│  cobalt2               ││  ██ cursor-bg  #2B2F3A                             │
+│  cyberpunk             ││  ██ modified   #FFE66D                             │
+│  dawnfox               ││  ██ added      #96E072                             │
+│  default-dark          ││  ██ deleted    #EE5D43                             │
+│  default-light         ││                                                    │
+│  dracula               ││                                                    │
+│  everforest            ││                                                    │
+│  github-dark           ││                                                    │
+│  github-light          ││                                                    │
+│  gruvbox-dark          ││                                                    │
+│  gruvbox-light         ││                                                    │
+╰────────────────────────╯╰────────────────────────────────────────────────────╯
  ↑↓/jk navigate  enter select  q/esc quit

@@ -281,6 +281,8 @@ func TestThemePreviewScrollOffset(t *testing.T) {
 
 func TestThemePreviewFitsSmallTerminals(t *testing.T) {
 	// From the minimum terminal size: below it the preview draws tooSmallView.
+	// The panels fill the terminal in both directions, with no columns left
+	// over on the right.
 	for _, width := range []int{MinTerminalWidth, 80, 120} {
 		for height := MinTerminalHeight; height <= 40; height++ {
 			m := NewThemePreview(true)
@@ -290,6 +292,9 @@ func TestThemePreviewFitsSmallTerminals(t *testing.T) {
 
 			if assert.Len(t, rows, height, "%dx%d: the preview should fill the terminal exactly", width, height) {
 				assert.Contains(t, rows[height-2], "╯╰", "%dx%d: both panels should end above the status bar", width, height)
+				for i, row := range rows[:height-1] {
+					assert.Equal(t, width, lipgloss.Width(strings.TrimRight(row, " ")), "%dx%d: panel row %d should span the terminal width", width, height, i)
+				}
 			}
 		}
 	}

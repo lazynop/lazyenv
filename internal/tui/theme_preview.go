@@ -171,7 +171,9 @@ func (m ThemePreviewModel) View() tea.View {
 	}
 
 	listWidth := max(m.width/3, config.FileListMinWidth)
-	showcaseWidth := m.width - listWidth - 4 // borders
+	// A Lip Gloss Width includes the border, so the two panels split the
+	// terminal width between them.
+	showcaseWidth := m.width - listWidth
 
 	left := m.renderThemeList(listWidth, rc)
 	right := m.renderShowcase(showcaseWidth, tc, rc)
@@ -208,9 +210,9 @@ func (m ThemePreviewModel) renderThemeList(width int, rc resolvedColors) string 
 	contentHeight := m.listRows()
 	offset := m.scrollOffset()
 
-	itemWidth := width - panelBorderWidth
-	itemStyle := lipgloss.NewStyle().Foreground(rc.muted).Width(itemWidth)
-	cursorStyle := lipgloss.NewStyle().Bold(true).Foreground(rc.fg).Background(rc.cursorBg).Width(itemWidth)
+	innerWidth := width - panelBorderWidth
+	itemStyle := lipgloss.NewStyle().Foreground(rc.muted).Width(innerWidth)
+	cursorStyle := lipgloss.NewStyle().Bold(true).Foreground(rc.fg).Background(rc.cursorBg).Width(innerWidth)
 	lines := []string{title}
 	for i := offset; i < len(m.themes) && i < offset+contentHeight; i++ {
 		prefix, style := "  ", itemStyle
@@ -218,7 +220,7 @@ func (m ThemePreviewModel) renderThemeList(width int, rc resolvedColors) string 
 			prefix, style = "▸ ", cursorStyle
 		}
 		// Truncate rather than wrap, so each theme keeps to one row.
-		lines = append(lines, style.Render(truncate(prefix+m.themes[i], itemWidth)))
+		lines = append(lines, style.Render(truncate(prefix+m.themes[i], innerWidth)))
 	}
 
 	panel := lipgloss.NewStyle().
@@ -271,12 +273,12 @@ func (m ThemePreviewModel) renderShowcase(width int, tc themes.Colors, rc resolv
 
 	colorSection := strings.Join(colorLines, "\n")
 
-	// Config box
-	configBox := m.renderConfigBox(width-4, themeName, rc)
+	innerWidth := width - panelBorderWidth
+	configBox := m.renderConfigBox(innerWidth, themeName, rc)
 
 	// Fit the content to the rows inside the border: show the config box only
 	// when it fits, and cut the colors short on the shortest terminals.
-	inner := lipgloss.NewStyle().Width(width - panelBorderWidth)
+	inner := lipgloss.NewStyle().Width(innerWidth)
 	innerRows := max(m.panelHeight()-panelBorderHeight, 1)
 	content := inner.Render(title + "\n\n" + colorSection)
 	if box := inner.Render(configBox); lipgloss.Height(content)+1+lipgloss.Height(box) <= innerRows {
