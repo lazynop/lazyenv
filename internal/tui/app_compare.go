@@ -168,6 +168,9 @@ func (a App) handleEditingCompareKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		result := a.editor.Finish()
 		varKey := a.compareEditFile.Vars[a.compareEditVarIdx].Key
 		a.compareEditFile.UpdateVar(a.compareEditVarIdx, result.Value, util.IsSecret(varKey, result.Value, a.config.Secrets))
+		if a.varList.File == a.compareEditFile {
+			a.varList.Refresh() // the new value may match the kept search or stop matching it
+		}
 		// Recompute diff
 		a.diffView.allEntries = model.ComputeDiff(a.diffView.FileA, a.diffView.FileB)
 		a.diffView.recompute()

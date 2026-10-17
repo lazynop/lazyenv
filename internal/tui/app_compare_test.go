@@ -345,6 +345,24 @@ func TestCompareEditMasksTheNewValueWhenItIsASecret(t *testing.T) {
 	}
 }
 
+// TestCompareEditRefiltersKeptSearch keeps a search that matches a var by its
+// value, edits that value in compare so it no longer matches, and goes back:
+// the var list drops the var.
+func TestCompareEditRefiltersKeptSearch(t *testing.T) {
+	left := parser.ParseBytes(".env", []byte("HOST=localhost\nPORT=80\n"), config.SecretsConfig{})
+	right := parser.ParseBytes(".env.prod", []byte("HOST=example.com\n"), config.SecretsConfig{})
+	app := enterCompareMode(t, left, right)
+	app = press(app, "q", "/", "l", "o", "c", "a", "l", "enter")
+	require.Equal(t, 1, len(app.varList.displayItems), "the search should match HOST by its value")
+
+	app = press(app, "c", "j", "enter", "e")
+	require.Equal(t, ModeEditingCompare, app.mode)
+	app.editor.input.SetValue("remote")
+	app = press(app, "enter", "q")
+
+	assert.Empty(t, app.varList.displayItems, "HOST no longer matches the kept search")
+}
+
 func TestCompareNeedsAtLeast2Files(t *testing.T) {
 	f1 := makeTestFile(".env", "FOO")
 	app := newTestApp([]*model.EnvFile{f1})
