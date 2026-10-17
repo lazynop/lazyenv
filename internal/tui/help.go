@@ -42,7 +42,7 @@ const helpText = `  lazyenv — TUI for managing .env files
   Compare view
     ↑/↓  j/k       Navigate entries
     n/N            Jump to next/prev difference
-    ←/→  h/l       Copy value to the left/right file
+    ←/→  h/l       Copy value to the left/right file; if the source file lacks the key, delete it there
     e/E            Edit value in the left/right file
     f              Toggle filter: differences only
     w              Save both files
@@ -63,6 +63,8 @@ const helpText = `  lazyenv — TUI for managing .env files
   Prompts
     Enter          Confirm a text input or a search
     y              Confirm a yes/no prompt
+    n              Decline a yes/no prompt
+    a / g          Reorder alphabetical / grouped (after O)
     Esc            Cancel
 
   File Indicators

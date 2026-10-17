@@ -104,7 +104,7 @@ func TestHelpGrowingTheTerminalScrollsBackToFit(t *testing.T) {
 		app = press(app, "down")
 	}
 
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 80})
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 200})
 
 	assert.Contains(t, helpScreen(updated.(App)), "lazyenv — TUI for managing .env files",
 		"a terminal tall enough for the whole help shows it from the top")
@@ -199,6 +199,10 @@ func TestHelpGroupsTheKeysByScreen(t *testing.T) {
 	assert.Contains(t, helpRow(sections, "Main view", "q / Ctrl+C"), "Quit")
 	assert.Contains(t, helpRow(sections, "Compare view", "n/N"), "next/prev difference")
 	assert.Contains(t, helpRow(sections, "Compare view", "←/→  h/l"), "Copy value")
+	assert.Contains(t, helpRow(sections, "Compare view", "←/→  h/l"), "delete",
+		"the copy deletes the key from the target when the source lacks it")
+	assert.Contains(t, helpRow(sections, "Prompts", "n"), "yes/no")
+	assert.Contains(t, helpRow(sections, "Prompts", "a / g"), "alphabetical / grouped")
 	assert.Contains(t, helpRow(sections, "Compare view", "e/E"), "left/right file")
 	assert.Contains(t, helpRow(sections, "Compare view", "f"), "differences only")
 	assert.Contains(t, helpRow(sections, "Compare view", "q / Ctrl+C"), "Back to main view")
