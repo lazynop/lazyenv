@@ -9,7 +9,7 @@ How code in lazyenv is written: the conventions every change follows, the pitfal
 - **English everywhere**: UI strings, status and error messages, comments, identifiers, docs.
 - **Packages** live under `internal/`; the module exports nothing.
 - **Errors** are wrapped with context: `fmt.Errorf("reading %s: %w", path, err)`.
-- **Tests** sit next to the code (`foo_test.go`, same package) and use testify (`assert`, `require`).
+- **Tests** sit next to the code (`foo_test.go`, same package) and use testify (`assert`, `require`). Setup that sets state a test never reads (what an unused-write lint flags, e.g. `app.focus = FocusVars`) stays: it states the test's premise and keeps the state realistic.
 - **Charm v2 stack**: imports are `charm.land/bubbletea/v2`, `charm.land/bubbles/v2`, `charm.land/lipgloss/v2`. v1 snippets (`github.com/charmbracelet/...`, `View() string` on a `tea.Model`) don't compile here.
 - **Naming**: TUI sub-models end in `Model`, Bubble Tea messages in `Msg`.
 - **Receivers**: the top-level `tea.Model`s (`App`, `ThemePreviewModel`) use value receivers; each handler takes a copy and returns the updated model. Helpers that mutate that copy in place (`flashMessage`, `updateLayout`) take `*App`. Sub-models (`FileListModel`, `VarListModel`, `DiffViewModel`, …) are not `tea.Model`s: `App` owns them and calls their pointer-receiver methods. Input is routed by `AppMode` first, then by `Focus` (files or vars panel).
@@ -24,6 +24,7 @@ How code in lazyenv is written: the conventions every change follows, the pitfal
 - **Secret detection**: whether a variable is a secret depends only on its key and value, as `util.IsSecret` judges them with the `[secrets]` config: the parser decides it on load, and `EnvFile.AddVar`, `UpdateVar` and `RenameVar` take the verdict for the new key or value from their caller. A variable's value is masked exactly as it will be once a save re-parses the file, whatever the variable was earlier in the session; only its original value, shown by peek, keeps the status it had (`OriginalIsSecret`).
 - **Secret masking**: every variable value a panel or row draws, current or original, goes through `displayText(value, masked)`, the one place that masks and flattens it: line breaks become arrows and every other control character a visible stand-in, so a value never sends the terminal a control sequence. A value drawn any other way shows a secret in clear, or a raw escape, whenever that path forgets. `TestSecretsMaskOnlyThroughDisplayText` fails on a `util.MaskValue` call outside `displayText`. The edit bars are the one exception, by design: they show the value being edited in clear.
 - **Shell semantics**: with duplicate keys the last occurrence wins (`EnvFile.VarByKey`, diffs, session snapshots).
+- **Cursor on the active file**: in the main view the file list's cursor sits on the active file (`FileListModel.Cursor == Selected`), so the highlighted file is the one the var list shows. A mode that moves the cursor to pick something else (the compare picker) moves it back on every way out. `TestMainViewCursorStaysOnTheActiveFile` fails on an exit that leaves it elsewhere.
 - **One background**: the terminal background is painted once, via `tea.View.BackgroundColor` in `App.View`, not per panel.
 
 ### Pitfalls
