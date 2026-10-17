@@ -82,3 +82,14 @@ func TestGrowingTheTerminalScrollsBackToFillTheView(t *testing.T) {
 		})
 	}
 }
+
+// TestStartupFocusesTheFileList lays out a fresh App: the file list, which
+// holds the focus, is drawn focused.
+func TestStartupFocusesTheFileList(t *testing.T) {
+	updated, _ := newTestApp([]*model.EnvFile{makeTestFile(".env", "A")}).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	app := updated.(App)
+
+	assert.Equal(t, FocusFiles, app.focus)
+	assert.True(t, app.fileList.Focused, "the file list should be drawn focused")
+	assert.False(t, app.varList.Focused)
+}

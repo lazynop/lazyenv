@@ -149,7 +149,6 @@ func NewApp(cfg config.Config, startup StartupMessages) App {
 		keys:          DefaultKeyMap(),
 		theme:         BuildTheme(true, cfg.Colors), // default to dark, will update on BackgroundColorMsg
 		hasDarkBg:     true,
-		focus:         FocusFiles,
 		mode:          ModeNormal,
 		fileList:      NewFileListModel(),
 		varList:       varList,
@@ -162,6 +161,7 @@ func NewApp(cfg config.Config, startup StartupMessages) App {
 		backedUpPaths: make(map[string]bool),
 		sessionStats:  stats,
 	}
+	app.setFocus(FocusFiles)
 	if len(startup.ConfigErrors) > 0 {
 		// The run stops on this screen, so the notices go on it too.
 		app.configError = strings.Join(slices.Concat(startup.ConfigErrors, startup.Notices), "; ")
