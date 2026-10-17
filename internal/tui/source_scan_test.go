@@ -19,6 +19,7 @@ import (
 const (
 	internalParserPath = "github.com/lazynop/lazyenv/internal/parser"
 	internalUtilPath   = "github.com/lazynop/lazyenv/internal/util"
+	bubbleteaPath      = "charm.land/bubbletea/v2"
 )
 
 // sourceRef is a reference, in this package's non-test source, to a function
@@ -99,6 +100,16 @@ func refIdent(n ast.Node, local string) *ast.Ident {
 		}
 	}
 	return nil
+}
+
+// isSelector reports whether expr is pkg.name.
+func isSelector(expr ast.Expr, pkg, name string) bool {
+	sel, ok := expr.(*ast.SelectorExpr)
+	if !ok || sel.Sel.Name != name {
+		return false
+	}
+	id, ok := sel.X.(*ast.Ident)
+	return ok && id.Name == pkg
 }
 
 // importName returns the name file uses for the package at importPath, or ""

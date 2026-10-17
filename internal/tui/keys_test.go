@@ -57,7 +57,8 @@ func TestEveryBoundKeyCanBePressed(t *testing.T) {
 // TestKeyPressesCarryTheirCode fails on a tea.KeyPressMsg literal, in this
 // package's test files, that sets Text but no Code: no terminal sends one, and
 // a named key pressed that way ({Text: "enter"}) still matches its binding
-// through String() while a handler reading Code sees no key at all.
+// through String() while a handler reading Code sees no key at all. It checks
+// elided literals too, as in []tea.KeyPressMsg{{Text: "q"}}.
 func TestKeyPressesCarryTheirCode(t *testing.T) {
 	names, err := filepath.Glob("*_test.go")
 	require.NoError(t, err)
@@ -66,25 +67,38 @@ func TestKeyPressesCarryTheirCode(t *testing.T) {
 	for _, name := range names {
 		file, err := goparser.ParseFile(fset, name, nil, goparser.SkipObjectResolution)
 		require.NoError(t, err)
-		tea := importName(file, "charm.land/bubbletea/v2")
-		if tea == "" {
+		local := importName(file, bubbleteaPath)
+		if local == "" {
 			continue
+		}
+		isKeyPress := func(expr ast.Expr) bool {
+			if star, ok := expr.(*ast.StarExpr); ok {
+				expr = star.X
+			}
+			return isSelector(expr, local, "KeyPressMsg")
+		}
+		check := func(lit *ast.CompositeLit) {
+			if fields := keyedFields(lit); fields["Text"] && !fields["Code"] {
+				textOnly = append(textOnly, fset.Position(lit.Pos()).String())
+			}
 		}
 		ast.Inspect(file, func(n ast.Node) bool {
 			lit, ok := n.(*ast.CompositeLit)
-			if !ok || !isSelector(lit.Type, tea, "KeyPressMsg") {
+			if !ok {
 				return true
 			}
-			fields := make(map[string]bool, len(lit.Elts))
-			for _, elt := range lit.Elts {
-				if kv, ok := elt.(*ast.KeyValueExpr); ok {
-					if id, ok := kv.Key.(*ast.Ident); ok {
-						fields[id.Name] = true
+			if isKeyPress(lit.Type) {
+				check(lit)
+			}
+			if isKeyPress(elemType(lit.Type)) {
+				for _, elt := range lit.Elts {
+					if kv, ok := elt.(*ast.KeyValueExpr); ok {
+						elt = kv.Value
+					}
+					if inner, ok := elt.(*ast.CompositeLit); ok && inner.Type == nil {
+						check(inner)
 					}
 				}
-			}
-			if fields["Text"] && !fields["Code"] {
-				textOnly = append(textOnly, fset.Position(lit.Pos()).String())
 			}
 			return true
 		})
@@ -92,14 +106,28 @@ func TestKeyPressesCarryTheirCode(t *testing.T) {
 	assert.Empty(t, textOnly, "press keys with keyMsg(k), or press(app, k...), which build the press a terminal sends")
 }
 
-// isSelector reports whether expr is pkg.name.
-func isSelector(expr ast.Expr, pkg, name string) bool {
-	sel, ok := expr.(*ast.SelectorExpr)
-	if !ok || sel.Sel.Name != name {
-		return false
+// elemType returns the element type of a slice, array or map type, or nil.
+func elemType(typ ast.Expr) ast.Expr {
+	switch typ := typ.(type) {
+	case *ast.ArrayType:
+		return typ.Elt
+	case *ast.MapType:
+		return typ.Value
 	}
-	id, ok := sel.X.(*ast.Ident)
-	return ok && id.Name == pkg
+	return nil
+}
+
+// keyedFields returns the field names a struct literal sets by key.
+func keyedFields(lit *ast.CompositeLit) map[string]bool {
+	fields := make(map[string]bool, len(lit.Elts))
+	for _, elt := range lit.Elts {
+		if kv, ok := elt.(*ast.KeyValueExpr); ok {
+			if id, ok := kv.Key.(*ast.Ident); ok {
+				fields[id.Name] = true
+			}
+		}
+	}
+	return fields
 }
 
 // keyMapBinding is one field of the KeyMap: its name and its binding.
