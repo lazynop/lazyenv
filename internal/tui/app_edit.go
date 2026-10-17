@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"strings"
+
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 
@@ -24,7 +26,14 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 		if result.IsAdd {
 			if result.AddStep == addStepKey {
-				a.editor.StartAddValue(result.Value)
+				newKey := strings.TrimSpace(result.Value)
+				if newKey == "" {
+					return a, nil
+				}
+				if problem := newKeyProblem(a.varList.File, newKey, -1); problem != "" {
+					return a, a.flashWarning(problem)
+				}
+				a.editor.StartAddValue(newKey)
 				a.mode = ModeEditing
 				return a, a.editor.input.Focus()
 			}

@@ -160,6 +160,64 @@ func TestAddVariableTwoStepFlow(t *testing.T) {
 	assert.Equal(t, "new_value", f.Vars[1].Value)
 }
 
+// startAddWithKey presses 'a' on f and confirms key as the new key's name.
+func startAddWithKey(t *testing.T, f *model.EnvFile, key string) App {
+	t.Helper()
+	app := newTestApp([]*model.EnvFile{f})
+	app.focus = FocusVars
+	updated, _ := app.Update(keyMsg("a"))
+	app = updated.(App)
+	require.Equal(t, ModeEditing, app.mode)
+	app.editor.input.SetValue(key)
+	updated, _ = app.Update(keyMsg("enter"))
+	return updated.(App)
+}
+
+// TestAddVariableRejectsAKeyTheParserDrops checks that the add flow refuses a
+// key the parser would drop when it reads the file back, so a saved variable
+// never vanishes on reload.
+func TestAddVariableRejectsAKeyTheParserDrops(t *testing.T) {
+	for _, key := range []string{"has space", "CAFÉ", "日本", "1ST"} {
+		f := makeTestFile(".env", "EXISTING")
+		app := startAddWithKey(t, f, key)
+
+		assert.Equal(t, ModeNormal, app.mode, key)
+		assert.Contains(t, app.statusBar.Message, "Invalid key", key)
+		assert.Len(t, f.Vars, 1, key)
+	}
+}
+
+func TestAddVariableRejectsAnExistingKey(t *testing.T) {
+	f := makeTestFile(".env", "EXISTING")
+	app := startAddWithKey(t, f, "EXISTING")
+
+	assert.Equal(t, ModeNormal, app.mode)
+	assert.Contains(t, app.statusBar.Message, "already exists")
+	assert.Len(t, f.Vars, 1)
+}
+
+func TestAddVariableEmptyKeyNoOp(t *testing.T) {
+	f := makeTestFile(".env", "EXISTING")
+	app := startAddWithKey(t, f, "   ")
+
+	assert.Equal(t, ModeNormal, app.mode)
+	assert.Empty(t, app.statusBar.Message)
+	assert.Len(t, f.Vars, 1)
+}
+
+func TestAddVariableTrimsTheKey(t *testing.T) {
+	f := makeTestFile(".env", "EXISTING")
+	app := startAddWithKey(t, f, "  NEW_KEY ")
+	require.Equal(t, addStepValue, app.editor.addStep)
+
+	app.editor.input.SetValue("v")
+	updated, _ := app.Update(keyMsg("enter"))
+	_ = updated.(App)
+
+	require.Len(t, f.Vars, 2)
+	assert.Equal(t, "NEW_KEY", f.Vars[1].Key)
+}
+
 func TestEditWithNoVarSelected(t *testing.T) {
 	// Empty file — no vars to edit
 	f := makeTestFile(".env")
