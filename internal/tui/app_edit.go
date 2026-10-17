@@ -7,6 +7,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/lazynop/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/parser"
 	"github.com/lazynop/lazyenv/internal/util"
 )
 
@@ -61,4 +62,19 @@ func (a *App) commitValueEdit(f *model.EnvFile, result EditorResult) (tea.Cmd, b
 	f.UpdateVar(result.VarIndex, result.Value, util.IsSecret(varKey, result.Value, a.config.Secrets))
 	a.refreshIfShown(f)
 	return a.flashMessage("Modified " + varKey), true
+}
+
+// newKeyProblem returns why name cannot name a variable of f, the one at index
+// self aside (-1 when adding), or "" when it can. A name the parser rejects
+// would be saved and then dropped on the next read of the file.
+func newKeyProblem(f *model.EnvFile, name string, self int) string {
+	if !parser.IsValidKey(name) {
+		return "Invalid key name"
+	}
+	for i, v := range f.Vars {
+		if i != self && v.Key == name {
+			return "Key already exists: " + name
+		}
+	}
+	return ""
 }

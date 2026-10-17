@@ -66,6 +66,9 @@ func truncate(s string, maxCols int) string {
 	return ansi.Truncate(s, maxCols, "..")
 }
 
+// padRight pads s with spaces to width display columns, measured by grapheme
+// cluster like truncate, so a cell it pads is width columns wide whatever runes
+// s holds. A string already that wide or wider comes back unchanged.
 func padRight(s string, width int) string {
 	visLen := lipgloss.Width(s)
 	if visLen >= width {
