@@ -356,6 +356,24 @@ func TestMouseClickCompareSelectMode_MovesCursorOnly(t *testing.T) {
 		"compare-select must not change the active file (Selected)")
 }
 
+// TestMouseWheelCompareSelectMode_MovesCursorOnly scrolls the file list while
+// picking the second file to compare: like the keys and clicks there, the
+// wheel moves the cursor to the compare target and keeps the active file.
+func TestMouseWheelCompareSelectMode_MovesCursorOnly(t *testing.T) {
+	f1 := makeTestFile(".env", "A")
+	f2 := makeTestFile(".env.prod", "B")
+	f3 := makeTestFile(".env.local", "C")
+	updated, _ := newTestApp([]*model.EnvFile{f1, f2, f3}).Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	app := press(updated.(App), "c")
+	require.Equal(t, ModeCompareSelect, app.mode)
+
+	updated, _ = app.Update(tea.MouseWheelMsg{X: 5, Y: 4, Button: tea.MouseWheelDown})
+	app = updated.(App)
+	assert.Equal(t, 1, app.fileList.Cursor, "the wheel moves the cursor")
+	assert.Equal(t, 0, app.fileList.Selected, "the wheel must not change the active file")
+	assert.Same(t, f1, app.varList.File, "the var list keeps the active file")
+}
+
 // TestMouseClickEditingCompareMode_KeepsTheEditedEntry clicks another row of
 // the diff while its edit bar is open: the bar edits the entry it was opened
 // on, so the cursor stays there.
