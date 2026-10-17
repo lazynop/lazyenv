@@ -17,9 +17,16 @@ const (
 	// of any panel.
 	panelChromeHeight = panelBorderHeight + 1
 
-	// panelChromeWidth is the total horizontal overhead: borders + the
-	// implicit left/right padding lipgloss adds = 4 columns.
-	panelChromeWidth = 4
+	// panelRowMarginWidth is the blank columns the file list and the compare
+	// view leave between a row, cursor highlight included, and the right
+	// border. Lip Gloss adds no padding of its own: a style's Width already
+	// includes its border, so the area inside a panel is
+	// Width - panelBorderWidth.
+	panelRowMarginWidth = 2
+
+	// panelChromeWidth is the columns of a panel's Width its rows leave
+	// unused: borders + the right margin.
+	panelChromeWidth = panelBorderWidth + panelRowMarginWidth
 
 	// statusBarHeight is the status bar row at the bottom of the screen.
 	statusBarHeight = 1
