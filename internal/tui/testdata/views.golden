@@ -305,23 +305,23 @@
       Enter/Space    Collapse/expand group (on header)
 
 
-    Press ↑/↓ or j/k to scroll, Esc, ? or q to close
+    Press ↑/↓ j/k PgUp/PgDn to scroll, Esc ? q to close
 
 === help scrolled to the end
 
-      ●              Selected file
-      *              Modified (unsaved changes)
-      !              Not covered by .gitignore
-
-    Variable Indicators
-      +              Newly added variable
-      *              Modified variable
-      -              Deleted variable (until save)
-      D              Duplicate key
-      ○              Empty value
-      …              Placeholder value
       ▸              Collapsed group
       ▾              Expanded group
+
+    Compare Indicators
+      =              Same value in both files
+      ≠              Different values
+      +              Only in the left file
+      -              Only in the right file
+      *              File modified (after its name)
+
+    Matrix Indicators
+      ✓              The file has the variable
+      ✗              The file lacks the variable
 
     This help
       Esc / ?        Close
@@ -330,7 +330,7 @@
       PgUp/PgDn      Scroll a page
       Home/End       Jump to the top/bottom
 
-    Press ↑/↓ or j/k to scroll, Esc, ? or q to close
+    Press ↑/↓ j/k PgUp/PgDn to scroll, Esc ? q to close
 
 === new file
 ╭──────────────────╮╭──────────────────────────────────────────────────────────╮

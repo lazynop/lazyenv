@@ -42,7 +42,7 @@ func TestViewHelp(t *testing.T) {
 	assert.Contains(t, help, "lazyenv")
 	assert.Contains(t, help, "Files panel")
 	assert.Contains(t, help, "Variables panel")
-	assert.Contains(t, help, "Esc, ? or q to close")
+	assert.Contains(t, help, "Esc ? q to close")
 }
 
 func TestHelpScrollsDownToItsLastRow(t *testing.T) {
@@ -58,7 +58,7 @@ func TestHelpScrollsDownToItsLastRow(t *testing.T) {
 	assert.Equal(t, 24, lipgloss.Height(screen))
 	assert.Contains(t, screen, helpLastRow, "the last row is reachable")
 	assert.NotContains(t, screen, "lazyenv — TUI for managing .env files")
-	assert.Contains(t, screen, "Esc, ? or q to close", "the footer stays on screen")
+	assert.Contains(t, screen, "Esc ? q to close", "the footer stays on screen")
 }
 
 func TestHelpScrollStopsAtBothEnds(t *testing.T) {
@@ -97,7 +97,7 @@ func TestHelpScrollsWithTheMouseWheel(t *testing.T) {
 }
 
 func TestHelpHintsAtScrollingOnlyWhenItOverflows(t *testing.T) {
-	assert.Contains(t, helpScreen(openHelp(80, 24)), "↑/↓ or j/k to scroll")
+	assert.Contains(t, helpScreen(openHelp(80, 24)), "↑/↓ j/k PgUp/PgDn to scroll")
 
 	tall := helpScreen(openHelp(120, 200))
 	assert.NotContains(t, tall, "to scroll")
@@ -130,11 +130,11 @@ func TestHelpIgnoresClicks(t *testing.T) {
 
 func TestHelpFooterNamesEveryCloseAndScrollKeyOnOneRowAtTheMinimumWidth(t *testing.T) {
 	overflowing := helpScreen(openHelp(MinTerminalWidth, MinTerminalHeight))
-	assert.Contains(t, overflowing, "Press ↑/↓ or j/k to scroll, Esc, ? or q to close")
+	assert.Contains(t, overflowing, "Press ↑/↓ j/k PgUp/PgDn to scroll, Esc ? q to close")
 
 	fitting := helpScreen(openHelp(MinTerminalWidth, 200))
 	assert.Contains(t, fitting, helpLastRow, "a terminal tall enough shows the whole help")
-	assert.Contains(t, fitting, "Press Esc, ? or q to close")
+	assert.Contains(t, fitting, "Press Esc ? q to close")
 }
 
 // continuationIndent finds the screen row holding description and returns the
@@ -230,6 +230,11 @@ func TestHelpGroupsTheKeysByScreen(t *testing.T) {
 	assert.Contains(t, helpRow(sections, "Compare view", "q / Ctrl+C"), "Back to main view")
 	assert.Contains(t, helpRow(sections, "Matrix", "a"), "Add missing variable")
 	assert.Contains(t, helpRow(sections, "Matrix", "o"), "completeness")
+	assert.Contains(t, helpRow(sections, "Matrix", "d"), "with confirmation")
+	assert.Contains(t, helpRow(sections, "Compare Indicators", "≠"), "Different values")
+	assert.Contains(t, helpRow(sections, "Compare Indicators", "+"), "Only in the left file")
+	assert.Contains(t, helpRow(sections, "Compare Indicators", "-"), "Only in the right file")
+	assert.Contains(t, helpRow(sections, "Matrix Indicators", "✗"), "lacks")
 	assert.Contains(t, helpRow(sections, "This help", "↑/↓  j/k"), "mouse wheel")
 	assert.Contains(t, helpRow(sections, "This help", "q / Ctrl+C"), "Close")
 	assert.Contains(t, helpRow(sections, "This help", "Esc / ?"), "Close")

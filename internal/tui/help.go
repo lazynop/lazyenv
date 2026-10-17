@@ -67,7 +67,7 @@ const helpText = `  lazyenv — TUI for managing .env files
     ↑/↓  j/k       Move between variables
     ←/→  h/l       Move between files
     a              Add missing variable to the file
-    d              Delete variable from the file
+    d              Delete variable from the file (with confirmation)
     o              Toggle sort (alphabetical / completeness)
     Esc            Back to main view
     q / Ctrl+C     Back to main view
@@ -93,6 +93,17 @@ const helpText = `  lazyenv — TUI for managing .env files
     …              Placeholder value
     ▸              Collapsed group
     ▾              Expanded group
+
+  Compare Indicators
+    =              Same value in both files
+    ≠              Different values
+    +              Only in the left file
+    -              Only in the right file
+    *              File modified (after its name)
+
+  Matrix Indicators
+    ✓              The file has the variable
+    ✗              The file lacks the variable
 
   This help
     Esc / ?        Close
@@ -225,9 +236,9 @@ func (m *HelpViewModel) View(theme Theme) string {
 	end := min(m.offset+visible, len(m.lines))
 	text := lipgloss.NewStyle().Foreground(theme.ColorFg).Render(strings.Join(m.lines[m.offset:end], "\n"))
 
-	hint := "  Press Esc, ? or q to close"
+	hint := "  Press Esc ? q to close"
 	if len(m.lines) > visible {
-		hint = "  Press ↑/↓ or j/k to scroll, Esc, ? or q to close"
+		hint = "  Press ↑/↓ j/k PgUp/PgDn to scroll, Esc ? q to close"
 	}
 	footer := theme.MutedItem.Render(hint)
 
