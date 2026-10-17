@@ -9,6 +9,7 @@ import (
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
@@ -735,7 +736,7 @@ const minInputWidth = 10
 // cut when it would leave in fewer than minInputWidth columns, and the width
 // left for in's value.
 func (a App) layoutInputBar(label string, in *textinput.Model) (string, int) {
-	room := a.width - a.theme.StatusBar.GetHorizontalFrameSize()
+	room := a.inputBarRoom()
 	inputChrome := lipgloss.Width(in.Prompt) + 1 // the prompt, and the cursor after the value
 	label = truncate(label, max(room-inputChrome-minInputWidth, 0))
 	return label, max(room-lipgloss.Width(label)-inputChrome, 1)
@@ -769,7 +770,15 @@ func (a App) inputBarView() string {
 		return ""
 	}
 	label, _ = a.layoutInputBar(label, in)
-	return a.theme.StatusBar.Width(a.width).Render(label + in.View())
+	// textinput measures runes with go-runewidth, which counts some emoji
+	// (those with a variation selector) one column narrower than drawn: cut
+	// what overflows so the bar keeps its one row.
+	return a.theme.StatusBar.Width(a.width).Render(ansi.Truncate(label+in.View(), a.inputBarRoom(), ""))
+}
+
+// inputBarRoom is the columns inside an input bar as wide as the terminal.
+func (a App) inputBarRoom() int {
+	return a.width - a.theme.StatusBar.GetHorizontalFrameSize()
 }
 
 func (a *App) updateLayout() {

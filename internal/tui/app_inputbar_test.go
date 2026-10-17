@@ -72,6 +72,20 @@ func TestInputBarsScrollALongValueOnOneRow(t *testing.T) {
 	}
 }
 
+// TestInputBarsKeepOneRowWithWideGraphemes types emoji with a variation
+// selector, which the text input measures as one column and the terminal draws
+// in two: the bar still keeps one row.
+func TestInputBarsKeepOneRowWithWideGraphemes(t *testing.T) {
+	for _, tc := range inputBarCases {
+		t.Run(tc.name, func(t *testing.T) {
+			short := openInputBar(t, tc, 80, "short").View().Content
+			view := openInputBar(t, tc, 80, strings.Repeat("\u2764\uFE0F", 40)).View().Content
+
+			assert.Equal(t, lipgloss.Height(short), lipgloss.Height(view), "the bar should keep one row")
+		})
+	}
+}
+
 // TestInputBarsRefitAfterAResize shrinks the terminal while every input bar
 // holds a long value: the bar refits to the new width and keeps one row.
 func TestInputBarsRefitAfterAResize(t *testing.T) {
