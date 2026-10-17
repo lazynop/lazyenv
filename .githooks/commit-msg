@@ -1,4 +1,9 @@
 #!/bin/sh
+# Commit messages carry no Co-Authored-By trailers.
+if grep -qi '^Co-Authored-By:' "$1"; then
+	echo "commit-msg: drop the Co-Authored-By line" >&2
+	exit 1
+fi
 # A commit that rewrites the screen snapshots names each changed screen on a
 # "Screens:" line (CODING_STANDARDS.md § Screen snapshots).
 if git diff --cached --name-only | grep -qx 'internal/tui/testdata/views.golden'; then
