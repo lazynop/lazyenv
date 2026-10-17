@@ -1,6 +1,10 @@
 package tui
 
-import "charm.land/bubbles/v2/key"
+import (
+	"strings"
+
+	"charm.land/bubbles/v2/key"
+)
 
 // KeyMap defines all keybindings for the app.
 type KeyMap struct {
@@ -40,6 +44,8 @@ type KeyMap struct {
 	RenameFile     key.Binding
 	TemplateFile   key.Binding
 	Reorder        key.Binding
+	ReorderAlpha   key.Binding
+	ReorderGrouped key.Binding
 	PageUp         key.Binding
 	PageDown       key.Binding
 	Home           key.Binding
@@ -193,6 +199,14 @@ func DefaultKeyMap() KeyMap {
 			key.WithKeys("O"),
 			key.WithHelp("O", "reorder on disk"),
 		),
+		ReorderAlpha: key.NewBinding(
+			key.WithKeys("a"),
+			key.WithHelp("a", "alphabetical"),
+		),
+		ReorderGrouped: key.NewBinding(
+			key.WithKeys("g"),
+			key.WithHelp("g", "grouped"),
+		),
 		PageUp: key.NewBinding(
 			key.WithKeys("pgup"),
 			key.WithHelp("pgup", "page up"),
@@ -210,4 +224,42 @@ func DefaultKeyMap() KeyMap {
 			key.WithHelp("end", "bottom"),
 		),
 	}
+}
+
+// keyLabels are the labels of the key names that are not a single character
+// or a ctrl+<x> combination.
+var keyLabels = map[string]string{
+	"up":     "↑",
+	"down":   "↓",
+	"left":   "←",
+	"right":  "→",
+	"enter":  "Enter",
+	"esc":    "Esc",
+	"space":  "Space",
+	"pgup":   "PgUp",
+	"pgdown": "PgDn",
+	"home":   "Home",
+	"end":    "End",
+}
+
+// KeyLabel returns how the help screen and docs/keybindings.md write the key
+// named k: a single character as it is, ctrl+<x> as Ctrl+<X>, any other name
+// from keyLabels, or as it is when keyLabels has no entry for it.
+func KeyLabel(k string) string {
+	label, _ := keyLabel(k)
+	return label
+}
+
+// keyLabel is KeyLabel, also reporting whether k has a label of its own.
+func keyLabel(k string) (string, bool) {
+	if len([]rune(k)) == 1 {
+		return k, true
+	}
+	if c, ok := strings.CutPrefix(k, "ctrl+"); ok {
+		return "Ctrl+" + strings.ToUpper(c), true
+	}
+	if label, ok := keyLabels[k]; ok {
+		return label, true
+	}
+	return k, false
 }

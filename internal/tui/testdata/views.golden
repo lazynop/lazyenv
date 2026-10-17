@@ -287,50 +287,50 @@
     lazyenv — TUI for managing .env files
 
     Files panel
-      Enter          Select file and switch to the variables panel
-      N              Create new .env file
-      C              Duplicate file with new name
-      D              Delete file from disk (with confirmation)
-      R              Rename file
-      T              Create template (keys only, no values)
+      Enter           Select file and switch to the variables panel
+      N               Create new .env file
+      C               Duplicate file with new name
+      D               Delete file from disk (with confirmation)
+      R               Rename file
+      T               Create template (keys only, no values)
 
     Variables panel
-      e              Edit variable value
-      E              Rename variable key
-      a              Add new variable
-      d              Delete variable (with confirmation)
-      y              Copy value to clipboard
-      Y              Copy KEY=value to clipboard
-      p              Peek original value (toggle)
-      Enter/Space    Collapse/expand group (on header)
+      e               Edit variable value
+      E               Rename variable key
+      a               Add new variable
+      d               Delete variable (with confirmation)
+      y               Copy value to clipboard
+      Y               Copy KEY=value to clipboard
+      p               Peek original value (toggle)
+      Enter / Space   Collapse/expand group (on header)
 
 
-    Press ↑/↓ j/k PgUp/PgDn to scroll, Esc ? q to close
+    Press ↑/↓ k/j PgUp/PgDn to scroll, Esc ? q to close
 
 === help scrolled to the end
 
-      ␡              Delete character
-      �              Invalid byte or C1 control character
+      ␡               Delete character
+      �               Invalid byte or C1 control character
 
     Compare Indicators
-      =              Same value in both files
-      ≠              Different values
-      +              Only in the left file
-      -              Only in the right file
-      *              File modified (after its name)
+      =               Same value in both files
+      ≠               Different values
+      +               Only in the left file
+      -               Only in the right file
+      *               File modified (after its name)
 
     Matrix Indicators
-      ✓              The file has the variable
-      ✗              The file lacks the variable
+      ✓               The file has the variable
+      ✗               The file lacks the variable
 
     This help
-      Esc / ?        Close
-      q / Ctrl+C     Close
-      ↑/↓  j/k       Scroll (or the mouse wheel)
-      PgUp/PgDn      Scroll a page
-      Home/End       Jump to the top/bottom
+      Esc / ?         Close
+      q / Ctrl+C      Close
+      ↑/↓  k/j        Scroll (or the mouse wheel)
+      PgUp/PgDn       Scroll a page
+      Home/End        Jump to the top/bottom
 
-    Press ↑/↓ j/k PgUp/PgDn to scroll, Esc ? q to close
+    Press ↑/↓ k/j PgUp/PgDn to scroll, Esc ? q to close
 
 === new file
 ╭──────────────────╮╭──────────────────────────────────────────────────────────╮

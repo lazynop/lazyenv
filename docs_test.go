@@ -13,7 +13,6 @@ import (
 	"testing"
 
 	"charm.land/bubbles/v2/key"
-	tea "charm.land/bubbletea/v2"
 	"github.com/alecthomas/kong"
 	toml "github.com/pelletier/go-toml/v2"
 	"github.com/stretchr/testify/assert"
@@ -38,8 +37,6 @@ var (
 	goVersionRe  = regexp.MustCompile(`Go (\d+\.\d+)\+`)
 	goModRe      = regexp.MustCompile(`(?m)^go (\d+\.\d+)`)
 	terminalRe   = regexp.MustCompile(`at least (\d+)x(\d+)`)
-	ansiRe       = regexp.MustCompile(`\x1b\[[0-9;]*m`)
-	helpRowRe    = regexp.MustCompile(`^ {2}(\S.*?) {2,}\S`)
 )
 
 // TestUsageDocumentsEveryFlag checks docs/usage.md against the Kong flags.
@@ -247,86 +244,6 @@ func TestDocsStateCurrentCounts(t *testing.T) {
 	}
 }
 
-// TestHelpScreenNamesBoundKeys checks the in-app help screen (?): every key
-// it names is bound in the KeyMap. The indicator sections list glyphs, not
-// keys. The terminal is tall enough to show the whole help unscrolled.
-func TestHelpScreenNamesBoundKeys(t *testing.T) {
-	bound := map[string]bool{}
-	keyMap := reflect.ValueOf(tui.DefaultKeyMap())
-	for field := range keyMap.Type().Fields() {
-		for _, k := range keyMap.FieldByIndex(field.Index).Interface().(key.Binding).Keys() {
-			bound[docKeyNotation(k)] = true
-		}
-	}
-
-	var app tea.Model = tui.NewApp(config.DefaultConfig(), tui.StartupMessages{})
-	app, _ = app.Update(tea.WindowSizeMsg{Width: 120, Height: 200})
-	app, _ = app.Update(tea.KeyPressMsg{Text: "?"})
-	screen := ansiRe.ReplaceAllString(app.View().Content, "")
-
-	// Section titles sit at the screen's left margin, key rows two columns in.
-	var lines []string
-	margin := len(screen)
-	for line := range strings.Lines(screen) {
-		line = strings.TrimRight(line, " \n")
-		if line != "" {
-			lines = append(lines, line)
-			margin = min(margin, len(line)-len(strings.TrimLeft(line, " ")))
-		}
-	}
-	named := 0
-	section := ""
-	for _, line := range lines {
-		line = line[margin:]
-		if !strings.HasPrefix(line, " ") {
-			section = line
-			continue
-		}
-		m := helpRowRe.FindStringSubmatch(line)
-		if m == nil || strings.Contains(section, "Indicators") {
-			continue
-		}
-		for _, k := range helpKeys(m[1]) {
-			named++
-			assert.True(t, bound[k], "the help screen names %s (section %s), but no KeyMap binding uses it", k, section)
-		}
-	}
-	assert.NotZero(t, named, "found no key rows on the help screen; has its layout changed?")
-}
-
-// helpKeys splits a help-screen key column ("q / Ctrl+C", "↑/↓  j/k", "/")
-// into keys.
-func helpKeys(column string) []string {
-	if column == "/" {
-		return []string{"/"}
-	}
-	var keys []string
-	for _, part := range strings.Fields(column) {
-		for k := range strings.SplitSeq(part, "/") {
-			if k != "" {
-				keys = append(keys, k)
-			}
-		}
-	}
-	return keys
-}
-
-// keyNotation is how docs/keybindings.md writes the key names that are not a
-// single character; ctrl+<x> is written Ctrl+<X>.
-var keyNotation = map[string]string{
-	"up":     "↑",
-	"down":   "↓",
-	"left":   "←",
-	"right":  "→",
-	"enter":  "Enter",
-	"esc":    "Esc",
-	"space":  "Space",
-	"pgup":   "PgUp",
-	"pgdown": "PgDn",
-	"home":   "Home",
-	"end":    "End",
-}
-
 // TestKeybindingsDocumentsEveryKey checks docs/keybindings.md against the
 // KeyMap: every bound key has a row in some Key column, and every key in a Key
 // column is bound.
@@ -349,8 +266,7 @@ func TestKeybindingsDocumentsEveryKey(t *testing.T) {
 		binding, ok := keyMap.FieldByIndex(field.Index).Interface().(key.Binding)
 		require.True(t, ok, "KeyMap.%s is not a key.Binding", field.Name)
 		for _, k := range binding.Keys() {
-			notation := docKeyNotation(k)
-			require.NotEmpty(t, notation, "KeyMap.%s binds %q, which has no doc notation: add it to keyNotation", field.Name, k)
+			notation := tui.KeyLabel(k)
 			bound[notation] = true
 			assert.True(t, documented[notation], "KeyMap.%s binds %q, but no Key column in docs/keybindings.md has `%s`", field.Name, k, notation)
 		}
@@ -358,18 +274,6 @@ func TestKeybindingsDocumentsEveryKey(t *testing.T) {
 	for _, s := range slices.Sorted(maps.Keys(documented)) {
 		assert.True(t, bound[s], "docs/keybindings.md documents `%s`, but no KeyMap binding uses it", s)
 	}
-}
-
-// docKeyNotation returns how docs/keybindings.md writes the key named k, or ""
-// when keyNotation has no entry for it.
-func docKeyNotation(k string) string {
-	if len([]rune(k)) == 1 {
-		return k
-	}
-	if c, ok := strings.CutPrefix(k, "ctrl+"); ok {
-		return "Ctrl+" + strings.ToUpper(c)
-	}
-	return keyNotation[k]
 }
 
 // notInRepo are the code spans CODING_STANDARDS.md uses on purpose although

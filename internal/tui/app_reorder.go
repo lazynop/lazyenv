@@ -33,15 +33,14 @@ func (a App) handleReorderKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 // handleReorderMenuKey handles the mode-selection menu shown after pressing O.
 func (a App) handleReorderMenuKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	if key.Matches(msg, a.keys.Escape) {
+	switch {
+	case key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
 		return a, a.flashMessage("Reorder cancelled")
-	}
-	switch msg.String() {
-	case "a":
+	case key.Matches(msg, a.keys.ReorderAlpha):
 		a.reorderMode = model.ReorderAlphabetical
 		return a.promptReorderConfirm()
-	case "g":
+	case key.Matches(msg, a.keys.ReorderGrouped):
 		a.reorderMode = model.ReorderGrouped
 		return a.promptReorderConfirm()
 	}

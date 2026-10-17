@@ -145,9 +145,10 @@ func NewApp(cfg config.Config, startup StartupMessages) App {
 		stats = NewSessionStats()
 	}
 
+	keys := DefaultKeyMap()
 	app := App{
 		config:        cfg,
-		keys:          DefaultKeyMap(),
+		keys:          keys,
 		theme:         BuildTheme(true, cfg.Colors), // default to dark, will update on BackgroundColorMsg
 		hasDarkBg:     true,
 		mode:          ModeNormal,
@@ -155,7 +156,7 @@ func NewApp(cfg config.Config, startup StartupMessages) App {
 		varList:       varList,
 		statusBar:     sb,
 		diffView:      NewDiffViewModel(cfg.Layout, cfg.Secrets),
-		helpView:      NewHelpViewModel(!cfg.NoMouse && cfg.Layout.MouseScrollLines > 0),
+		helpView:      NewHelpViewModel(keys, !cfg.NoMouse && cfg.Layout.MouseScrollLines > 0),
 		matrixView:    NewMatrixModel(nil, cfg.Layout, cfg.Secrets),
 		editor:        NewEditorModel(),
 		searchInput:   ti,
@@ -343,6 +344,55 @@ func (a App) handleNormalKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 	// Global actions (Compare/Save/Reset/Toggle/Search/Matrix)
 	return a.handleNormalGlobalAction(msg)
+}
+
+// filesPanelHelp is the help section of the keys handleNormalFileAction and
+// handleNormalNavigation match with the files panel focused.
+func filesPanelHelp(keys KeyMap) helpSection {
+	return helpSection{"Files panel", []helpRow{
+		alternatives("Select file and switch to the variables panel", keys.Enter),
+		alternatives("Create new .env file", keys.CreateFile),
+		alternatives("Duplicate file with new name", keys.DuplicateFile),
+		alternatives("Delete file from disk (with confirmation)", keys.DeleteFile),
+		alternatives("Rename file", keys.RenameFile),
+		alternatives("Create template (keys only, no values)", keys.TemplateFile),
+	}}
+}
+
+// varsPanelHelp is the help section of the keys handleNormalVarAction and
+// handleNormalNavigation match with the variables panel focused.
+func varsPanelHelp(keys KeyMap) helpSection {
+	return helpSection{"Variables panel", []helpRow{
+		alternatives("Edit variable value", keys.Edit),
+		alternatives("Rename variable key", keys.EditKey),
+		alternatives("Add new variable", keys.Add),
+		alternatives("Delete variable (with confirmation)", keys.Delete),
+		alternatives("Copy value to clipboard", keys.YankValue),
+		alternatives("Copy KEY=value to clipboard", keys.YankLine),
+		alternatives("Peek original value (toggle)", keys.Peek),
+		alternatives("Collapse/expand group (on header)", keys.Enter, keys.ToggleCollapse),
+	}}
+}
+
+// bothPanelsHelp is the help section of the keys handleNormalKey,
+// handleNormalNavigation and handleNormalGlobalAction match whichever panel
+// has the focus.
+func bothPanelsHelp(keys KeyMap) helpSection {
+	return helpSection{"Both panels", []helpRow{
+		pair("Navigate items", keys.Up, keys.Down),
+		pair("Switch panels (files / variables)", keys.Left, keys.Right),
+		alternatives("Save changes", keys.Save),
+		alternatives("Reset file (discard changes)", keys.Reset),
+		alternatives("Compare two files (diff view)", keys.Compare),
+		alternatives("Completeness matrix (multi-file)", keys.Matrix),
+		alternatives("Search variables", keys.Search),
+		alternatives("Toggle sort (position / alphabetical)", keys.ToggleSort),
+		alternatives("Reorder variables on disk (alphabetical / grouped)", keys.Reorder),
+		alternatives("Toggle variable grouping by prefix", keys.ToggleGroup),
+		alternatives("Toggle secret masking", keys.ToggleSecret),
+		alternatives("Show this help", keys.Help),
+		alternatives("Quit", keys.Quit),
+	}}
 }
 
 func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bool) {
@@ -620,6 +670,22 @@ func (a App) handleConfirmDeleteKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.mode = ModeNormal
 	}
 	return a, nil
+}
+
+// helpScreenHelp is the help section of the help screen itself, whose keys
+// handleHelpKey matches; wheel adds the mouse wheel to the scroll row.
+func helpScreenHelp(keys KeyMap, wheel bool) helpSection {
+	scroll := "Scroll"
+	if wheel {
+		scroll += helpWheelNote
+	}
+	return helpSection{"This help", []helpRow{
+		alternatives("Close", keys.Escape, keys.Help),
+		alternatives("Close", keys.Quit),
+		pair(scroll, keys.Up, keys.Down),
+		pair("Scroll a page", keys.PageUp, keys.PageDown),
+		pair("Jump to the top/bottom", keys.Home, keys.End),
+	}}
 }
 
 func (a App) handleHelpKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {

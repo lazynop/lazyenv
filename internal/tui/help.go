@@ -3,132 +3,150 @@ package tui
 import (
 	"strings"
 
+	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 )
 
-// helpText is the help screen's text, one row per line. Its helpWheelSlot
-// becomes helpWheelNote while the wheel scrolls, and goes away otherwise.
-const helpText = `  lazyenv — TUI for managing .env files
+// helpTitle is the first row of the help screen.
+const helpTitle = "lazyenv — TUI for managing .env files"
 
-  Files panel
-    Enter          Select file and switch to the variables panel
-    N              Create new .env file
-    C              Duplicate file with new name
-    D              Delete file from disk (with confirmation)
-    R              Rename file
-    T              Create template (keys only, no values)
-
-  Variables panel
-    e              Edit variable value
-    E              Rename variable key
-    a              Add new variable
-    d              Delete variable (with confirmation)
-    y              Copy value to clipboard
-    Y              Copy KEY=value to clipboard
-    p              Peek original value (toggle)
-    Enter/Space    Collapse/expand group (on header)
-
-  Both panels
-    ↑/↓  j/k       Navigate items
-    ←/→  h/l       Switch panels (files / variables)
-    w              Save changes
-    r              Reset file (discard changes)
-    c              Compare two files (diff view)
-    m              Completeness matrix (multi-file)
-    /              Search variables
-    o              Toggle sort (position / alphabetical)
-    O              Reorder variables on disk (alphabetical / grouped)
-    g              Toggle variable grouping by prefix
-    Ctrl+S         Toggle secret masking
-    ?              Show this help
-    q / Ctrl+C     Quit
-
-  Compare: pick the second file
-    ↑/↓  j/k       Choose the file
-    Enter          Compare with it
-    Esc            Cancel
-    q / Ctrl+C     Cancel
-
-  Compare view
-    ↑/↓  j/k       Navigate entries
-    n/N            Jump to next/prev difference
-    ←/→  h/l       Copy value to the left/right file; if the source file lacks the key, delete it there
-    e/E            Edit value in the left/right file
-    f              Toggle filter: differences only
-    w              Save both files
-    r              Reset both files
-    Ctrl+S         Toggle secret masking
-    Esc            Back to main view
-    q / Ctrl+C     Back to main view
-
-  Matrix
-    ↑/↓  j/k       Move between variables
-    ←/→  h/l       Move between files
-    a              Add missing variable to the file
-    d              Delete variable from the file (with confirmation)
-    o              Toggle sort (alphabetical / completeness)
-    Esc            Back to main view
-    q / Ctrl+C     Back to main view
-
-  Prompts
-    Enter          Confirm a text input or a search
-    y              Confirm a yes/no prompt
-    n              Decline a yes/no prompt
-    a / g          Reorder alphabetical / grouped (after O)
-    Esc            Cancel (in a search, also clear the filter)
-
-  File Indicators
-    ●              Selected file
-    *              Modified (unsaved changes)
-    !              Not covered by .gitignore
-
-  Variable Indicators
-    +              Newly added variable
-    *              Modified variable
-    -              Deleted variable (until save)
-    D              Duplicate key
-    ○              Empty value
-    …              Placeholder value
-    ▸              Collapsed group
-    ▾              Expanded group
-
-  Value Indicators
-    ↵              Line break
-    ⇥              Tab
-    ↩              Carriage return
-    ␀ … ␟          Other control character (␛ for Escape)
-    ␡              Delete character
-    �              Invalid byte or C1 control character
-
-  Compare Indicators
-    =              Same value in both files
-    ≠              Different values
-    +              Only in the left file
-    -              Only in the right file
-    *              File modified (after its name)
-
-  Matrix Indicators
-    ✓              The file has the variable
-    ✗              The file lacks the variable
-
-  This help
-    Esc / ?        Close
-    q / Ctrl+C     Close
-    ↑/↓  j/k       Scroll{wheel}
-    PgUp/PgDn      Scroll a page
-    Home/End       Jump to the top/bottom`
-
-// helpWheelSlot marks where helpWheelNote goes in helpText.
-const helpWheelSlot = "{wheel}"
-
-// helpWheelNote names the mouse wheel on the scroll row of helpText.
+// helpWheelNote names the mouse wheel on the help's scroll row.
 const helpWheelNote = " (or the mouse wheel)"
 
-// HelpViewModel manages the help screen (?): helpText, scrolled when it is
-// taller than the terminal.
+// helpSection is one titled group of rows on the help screen.
+type helpSection struct {
+	title string
+	rows  []helpRow
+}
+
+// helpRow is one row of a helpSection: the keys it names and what they do.
+type helpRow struct {
+	keys string
+	desc string
+}
+
+// alternatives is the row of bindings whose keys all do desc, joined as
+// alternatives: "q / Ctrl+C".
+func alternatives(desc string, bindings ...key.Binding) helpRow {
+	var labels []string
+	for _, b := range bindings {
+		for _, k := range b.Keys() {
+			labels = append(labels, KeyLabel(k))
+		}
+	}
+	return helpRow{strings.Join(labels, " / "), desc}
+}
+
+// pair is the row of two bindings that do the two halves of desc (up and
+// down, left and right file), their keys paired by position: "↑/↓  k/j".
+func pair(desc string, first, second key.Binding) helpRow {
+	var columns []string
+	for i := range max(len(first.Keys()), len(second.Keys())) {
+		var labels []string
+		for _, b := range []key.Binding{first, second} {
+			if i < len(b.Keys()) {
+				labels = append(labels, KeyLabel(b.Keys()[i]))
+			}
+		}
+		columns = append(columns, strings.Join(labels, "/"))
+	}
+	return helpRow{strings.Join(columns, "  "), desc}
+}
+
+// glyph is the row of an indicator, a glyph the panels draw rather than a key.
+func glyph(label, desc string) helpRow {
+	return helpRow{label, desc}
+}
+
+// helpContents returns the sections of the help screen for keys, in the
+// order it shows them. Each screen's section sits next to the handler of its
+// keys, except promptsHelp, whose keys several handlers match; wheel says
+// whether the mouse wheel scrolls the help.
+func helpContents(keys KeyMap, wheel bool) []helpSection {
+	return []helpSection{
+		filesPanelHelp(keys),
+		varsPanelHelp(keys),
+		bothPanelsHelp(keys),
+		compareSelectHelp(keys),
+		compareHelp(keys),
+		matrixHelp(keys),
+		promptsHelp(keys),
+		{"File Indicators", []helpRow{
+			glyph("●", "Selected file"),
+			glyph("*", "Modified (unsaved changes)"),
+			glyph("!", "Not covered by .gitignore"),
+		}},
+		{"Variable Indicators", []helpRow{
+			glyph("+", "Newly added variable"),
+			glyph("*", "Modified variable"),
+			glyph("-", "Deleted variable (until save)"),
+			glyph("D", "Duplicate key"),
+			glyph("○", "Empty value"),
+			glyph("…", "Placeholder value"),
+			glyph("▸", "Collapsed group"),
+			glyph("▾", "Expanded group"),
+		}},
+		{"Value Indicators", []helpRow{
+			glyph("↵", "Line break"),
+			glyph("⇥", "Tab"),
+			glyph("↩", "Carriage return"),
+			glyph("␀ … ␟", "Other control character (␛ for Escape)"),
+			glyph("␡", "Delete character"),
+			glyph("�", "Invalid byte or C1 control character"),
+		}},
+		{"Compare Indicators", []helpRow{
+			glyph("=", "Same value in both files"),
+			glyph("≠", "Different values"),
+			glyph("+", "Only in the left file"),
+			glyph("-", "Only in the right file"),
+			glyph("*", "File modified (after its name)"),
+		}},
+		{"Matrix Indicators", []helpRow{
+			glyph("✓", "The file has the variable"),
+			glyph("✗", "The file lacks the variable"),
+		}},
+		helpScreenHelp(keys, wheel),
+	}
+}
+
+// promptsHelp is the help section of the input bars and yes/no prompts,
+// whose keys the editing, search, confirm and reorder handlers match.
+func promptsHelp(keys KeyMap) helpSection {
+	return helpSection{"Prompts", []helpRow{
+		alternatives("Confirm a text input or a search", keys.Enter),
+		alternatives("Confirm a yes/no prompt", keys.Confirm),
+		alternatives("Decline a yes/no prompt", keys.Deny),
+		pair("Reorder alphabetical / grouped (after O)", keys.ReorderAlpha, keys.ReorderGrouped),
+		alternatives("Cancel (in a search, also clear the filter)", keys.Escape),
+	}}
+}
+
+// helpText lays sections out as the help screen's text, one row per line:
+// the title, then each section's title and its rows, the descriptions
+// aligned three columns past the widest key column.
+func helpText(sections []helpSection) string {
+	width := 0
+	for _, section := range sections {
+		for _, row := range section.rows {
+			width = max(width, lipgloss.Width(row.keys))
+		}
+	}
+	lines := []string{"  " + helpTitle}
+	for _, section := range sections {
+		lines = append(lines, "", "  "+section.title)
+		for _, row := range section.rows {
+			pad := strings.Repeat(" ", width-lipgloss.Width(row.keys)+3)
+			lines = append(lines, "    "+row.keys+pad+row.desc)
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+// HelpViewModel manages the help screen (?): the help text, scrolled when it
+// is taller than the terminal.
 type HelpViewModel struct {
-	text   string // helpText as this session shows it
+	text   string // the help text, one row per line
 	offset int
 	width  int
 	height int
@@ -136,14 +154,10 @@ type HelpViewModel struct {
 	rows   []int    // for each of lines, the row of text it wraps
 }
 
-// NewHelpViewModel creates the help screen; wheel says whether the mouse
-// wheel scrolls it, so the help names the wheel only then.
-func NewHelpViewModel(wheel bool) HelpViewModel {
-	note := ""
-	if wheel {
-		note = helpWheelNote
-	}
-	return HelpViewModel{text: strings.Replace(helpText, helpWheelSlot, note, 1)}
+// NewHelpViewModel creates the help screen for keys; wheel says whether the
+// mouse wheel scrolls it, so the help names the wheel only then.
+func NewHelpViewModel(keys KeyMap, wheel bool) HelpViewModel {
+	return HelpViewModel{text: helpText(helpContents(keys, wheel))}
 }
 
 // SetSize lays the text out for a screen of the given size, pulling the
@@ -198,7 +212,7 @@ func wrapHelpRow(row string, width int) []string {
 	return lines
 }
 
-// visibleLines returns how many rows of helpText fit on the screen.
+// visibleLines returns how many rows of the help text fit on the screen.
 func (m *HelpViewModel) visibleLines() int {
 	return max(m.height-helpChromeHeight, 1)
 }
@@ -239,7 +253,7 @@ func (m *HelpViewModel) ScrollDown() {
 	m.scrollTo(m.offset + 1)
 }
 
-// View renders the rows of helpText that fit, then the footer, which names
+// View renders the rows of the help text that fit, then the footer, which names
 // the scroll keys only when the text does not fit.
 func (m *HelpViewModel) View(theme Theme) string {
 	visible := m.visibleLines()
@@ -248,7 +262,7 @@ func (m *HelpViewModel) View(theme Theme) string {
 
 	hint := "  Press Esc ? q to close"
 	if len(m.lines) > visible {
-		hint = "  Press ↑/↓ j/k PgUp/PgDn to scroll, Esc ? q to close"
+		hint = "  Press ↑/↓ k/j PgUp/PgDn to scroll, Esc ? q to close"
 	}
 	footer := theme.MutedItem.Render(hint)
 

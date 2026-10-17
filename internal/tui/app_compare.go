@@ -10,6 +10,23 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
+// compareHelp is the help section of the keys handleComparingKey and
+// handleComparingEdit match.
+func compareHelp(keys KeyMap) helpSection {
+	return helpSection{"Compare view", []helpRow{
+		pair("Navigate entries", keys.Up, keys.Down),
+		pair("Jump to next/prev difference", keys.NextDiff, keys.PrevDiff),
+		pair("Copy value to the left/right file; if the source file lacks the key, delete it there", keys.Left, keys.Right),
+		pair("Edit value in the left/right file", keys.Edit, keys.EditRight),
+		alternatives("Toggle filter: differences only", keys.Filter),
+		alternatives("Save both files", keys.Save),
+		alternatives("Reset both files", keys.Reset),
+		alternatives("Toggle secret masking", keys.ToggleSecret),
+		alternatives("Back to main view", keys.Escape),
+		alternatives("Back to main view", keys.Quit),
+	}}
+}
+
 func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	// Mutating actions (copy, edit, save) — blocked in read-only mode
 	if key.Matches(msg, a.keys.Right, a.keys.Left, a.keys.Save, a.keys.Edit, a.keys.EditRight) {
@@ -167,6 +184,17 @@ func (a App) handleEditingCompareKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.editor.input, cmd = a.editor.input.Update(msg)
 		return a, cmd
 	}
+}
+
+// compareSelectHelp is the help section of the keys handleCompareSelectKey
+// matches.
+func compareSelectHelp(keys KeyMap) helpSection {
+	return helpSection{"Compare: pick the second file", []helpRow{
+		pair("Choose the file", keys.Up, keys.Down),
+		alternatives("Compare with it", keys.Enter),
+		alternatives("Cancel", keys.Escape),
+		alternatives("Cancel", keys.Quit),
+	}}
 }
 
 func (a App) handleCompareSelectKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {

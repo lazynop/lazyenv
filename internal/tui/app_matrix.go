@@ -9,6 +9,20 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
+// matrixHelp is the help section of the keys handleMatrixKey and
+// handleMatrixEdit match.
+func matrixHelp(keys KeyMap) helpSection {
+	return helpSection{"Matrix", []helpRow{
+		pair("Move between variables", keys.Up, keys.Down),
+		pair("Move between files", keys.Left, keys.Right),
+		alternatives("Add missing variable to the file", keys.Add),
+		alternatives("Delete variable from the file (with confirmation)", keys.Delete),
+		alternatives("Toggle sort (alphabetical / completeness)", keys.ToggleSort),
+		alternatives("Back to main view", keys.Escape),
+		alternatives("Back to main view", keys.Quit),
+	}}
+}
+
 func (a App) handleMatrixKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Quit), key.Matches(msg, a.keys.Escape):

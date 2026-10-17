@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
@@ -103,7 +104,7 @@ func TestHelpScrollsWithTheMouseWheel(t *testing.T) {
 }
 
 func TestHelpHintsAtScrollingOnlyWhenItOverflows(t *testing.T) {
-	assert.Contains(t, helpScreen(openHelp(80, 24)), "↑/↓ j/k PgUp/PgDn to scroll")
+	assert.Contains(t, helpScreen(openHelp(80, 24)), "↑/↓ k/j PgUp/PgDn to scroll")
 
 	tall := helpScreen(openHelp(120, 200))
 	assert.NotContains(t, tall, "to scroll")
@@ -136,7 +137,7 @@ func TestHelpIgnoresClicks(t *testing.T) {
 
 func TestHelpFooterNamesEveryCloseAndScrollKeyOnOneRowAtTheMinimumWidth(t *testing.T) {
 	overflowing := helpScreen(openHelp(MinTerminalWidth, MinTerminalHeight))
-	assert.Contains(t, overflowing, "Press ↑/↓ j/k PgUp/PgDn to scroll, Esc ? q to close")
+	assert.Contains(t, overflowing, "Press ↑/↓ k/j PgUp/PgDn to scroll, Esc ? q to close")
 
 	fitting := helpScreen(openHelp(MinTerminalWidth, 200))
 	assert.Contains(t, fitting, helpLastRow, "a terminal tall enough shows the whole help")
@@ -200,8 +201,8 @@ func helpSections(screen string) map[string][]string {
 	return sections
 }
 
-// helpRow returns the row of section whose key column is keys, or "".
-func helpRow(sections map[string][]string, section, keys string) string {
+// findHelpRow returns the row of section whose key column is keys, or "".
+func findHelpRow(sections map[string][]string, section, keys string) string {
 	for _, row := range sections[section] {
 		if column, _, _ := strings.Cut(row, "   "); strings.TrimSpace(column) == keys {
 			return row
@@ -210,43 +211,69 @@ func helpRow(sections map[string][]string, section, keys string) string {
 	return ""
 }
 
+func TestHelpPairsOppositeKeysByPosition(t *testing.T) {
+	keys := DefaultKeyMap()
+	assert.Equal(t, "↑/↓  k/j", pair("", keys.Up, keys.Down).keys)
+	assert.Equal(t, "n/N", pair("", keys.NextDiff, keys.PrevDiff).keys)
+	assert.Equal(t, "↑/n  k", pair("", keys.Up, keys.NextDiff).keys,
+		"a key with no counterpart stands alone in its column")
+}
+
+func TestHelpJoinsAlternativeKeys(t *testing.T) {
+	keys := DefaultKeyMap()
+	assert.Equal(t, "q / Ctrl+C", alternatives("", keys.Quit).keys)
+	assert.Equal(t, "Esc / ?", alternatives("", keys.Escape, keys.Help).keys)
+}
+
+func TestHelpNamesTheKeysTheKeyMapBinds(t *testing.T) {
+	keys := DefaultKeyMap()
+	keys.Save = key.NewBinding(key.WithKeys("s"))
+	help := NewHelpViewModel(keys, false)
+	help.SetSize(120, 200)
+	sections := helpSections(stripAnsi(help.View(BuildTheme(true, config.ColorConfig{}))))
+
+	assert.Contains(t, findHelpRow(sections, "Both panels", "s"), "Save changes")
+	assert.Empty(t, findHelpRow(sections, "Both panels", "w"), "the old key is gone")
+	assert.Contains(t, findHelpRow(sections, "Compare view", "s"), "Save both files")
+}
+
 func TestHelpGroupsTheKeysByScreen(t *testing.T) {
 	sections := helpSections(helpScreen(openHelp(120, 200)))
 
-	assert.Contains(t, helpRow(sections, "Files panel", "N"), "Create new .env file")
-	assert.Contains(t, helpRow(sections, "Files panel", "D"), "with confirmation")
-	assert.Contains(t, helpRow(sections, "Variables panel", "e"), "Edit variable value")
-	assert.Contains(t, helpRow(sections, "Variables panel", "Enter/Space"), "group")
-	assert.Contains(t, helpRow(sections, "Both panels", "w"), "Save changes")
-	assert.Contains(t, helpRow(sections, "Both panels", "q / Ctrl+C"), "Quit")
-	assert.Contains(t, helpRow(sections, "Compare: pick the second file", "Enter"), "Compare")
-	assert.Contains(t, helpRow(sections, "Compare: pick the second file", "Esc"), "Cancel")
-	assert.Contains(t, helpRow(sections, "Compare: pick the second file", "q / Ctrl+C"), "Cancel")
-	assert.Contains(t, helpRow(sections, "Prompts", "Esc"), "clear the filter")
-	assert.Contains(t, helpRow(sections, "Variable Indicators", "▸"), "Collapsed group")
-	assert.Contains(t, helpRow(sections, "Variable Indicators", "▾"), "Expanded group")
-	assert.Contains(t, helpRow(sections, "Compare view", "n/N"), "next/prev difference")
-	assert.Contains(t, helpRow(sections, "Compare view", "←/→  h/l"), "Copy value")
-	assert.Contains(t, helpRow(sections, "Compare view", "←/→  h/l"), "delete",
+	assert.Contains(t, findHelpRow(sections, "Files panel", "N"), "Create new .env file")
+	assert.Contains(t, findHelpRow(sections, "Files panel", "D"), "with confirmation")
+	assert.Contains(t, findHelpRow(sections, "Variables panel", "e"), "Edit variable value")
+	assert.Contains(t, findHelpRow(sections, "Variables panel", "Enter / Space"), "group")
+	assert.Contains(t, findHelpRow(sections, "Both panels", "w"), "Save changes")
+	assert.Contains(t, findHelpRow(sections, "Both panels", "q / Ctrl+C"), "Quit")
+	assert.Contains(t, findHelpRow(sections, "Compare: pick the second file", "Enter"), "Compare")
+	assert.Contains(t, findHelpRow(sections, "Compare: pick the second file", "Esc"), "Cancel")
+	assert.Contains(t, findHelpRow(sections, "Compare: pick the second file", "q / Ctrl+C"), "Cancel")
+	assert.Contains(t, findHelpRow(sections, "Prompts", "Esc"), "clear the filter")
+	assert.Contains(t, findHelpRow(sections, "Variable Indicators", "▸"), "Collapsed group")
+	assert.Contains(t, findHelpRow(sections, "Variable Indicators", "▾"), "Expanded group")
+	assert.Contains(t, findHelpRow(sections, "Compare view", "n/N"), "next/prev difference")
+	assert.Contains(t, findHelpRow(sections, "Compare view", "←/→  h/l"), "Copy value")
+	assert.Contains(t, findHelpRow(sections, "Compare view", "←/→  h/l"), "delete",
 		"the copy deletes the key from the target when the source lacks it")
-	assert.Contains(t, helpRow(sections, "Prompts", "n"), "yes/no")
-	assert.Contains(t, helpRow(sections, "Prompts", "a / g"), "alphabetical / grouped")
-	assert.Contains(t, helpRow(sections, "Compare view", "e/E"), "left/right file")
-	assert.Contains(t, helpRow(sections, "Compare view", "f"), "differences only")
-	assert.Contains(t, helpRow(sections, "Compare view", "q / Ctrl+C"), "Back to main view")
-	assert.Contains(t, helpRow(sections, "Matrix", "a"), "Add missing variable")
-	assert.Contains(t, helpRow(sections, "Matrix", "o"), "completeness")
-	assert.Contains(t, helpRow(sections, "Matrix", "d"), "with confirmation")
-	assert.Contains(t, helpRow(sections, "Compare Indicators", "≠"), "Different values")
-	assert.Contains(t, helpRow(sections, "Compare Indicators", "+"), "Only in the left file")
-	assert.Contains(t, helpRow(sections, "Compare Indicators", "-"), "Only in the right file")
-	assert.Contains(t, helpRow(sections, "Matrix Indicators", "✗"), "lacks")
-	assert.Contains(t, helpRow(sections, "Value Indicators", "↵"), "Line break")
-	assert.Contains(t, helpRow(sections, "Value Indicators", "␀ … ␟"), "control character")
-	assert.Contains(t, helpRow(sections, "Value Indicators", "�"), "Invalid byte")
-	assert.Contains(t, helpRow(sections, "This help", "↑/↓  j/k"), "mouse wheel")
-	assert.Contains(t, helpRow(sections, "This help", "q / Ctrl+C"), "Close")
-	assert.Contains(t, helpRow(sections, "This help", "Esc / ?"), "Close")
+	assert.Contains(t, findHelpRow(sections, "Prompts", "n"), "yes/no")
+	assert.Contains(t, findHelpRow(sections, "Prompts", "a/g"), "alphabetical / grouped")
+	assert.Contains(t, findHelpRow(sections, "Compare view", "e/E"), "left/right file")
+	assert.Contains(t, findHelpRow(sections, "Compare view", "f"), "differences only")
+	assert.Contains(t, findHelpRow(sections, "Compare view", "q / Ctrl+C"), "Back to main view")
+	assert.Contains(t, findHelpRow(sections, "Matrix", "a"), "Add missing variable")
+	assert.Contains(t, findHelpRow(sections, "Matrix", "o"), "completeness")
+	assert.Contains(t, findHelpRow(sections, "Matrix", "d"), "with confirmation")
+	assert.Contains(t, findHelpRow(sections, "Compare Indicators", "≠"), "Different values")
+	assert.Contains(t, findHelpRow(sections, "Compare Indicators", "+"), "Only in the left file")
+	assert.Contains(t, findHelpRow(sections, "Compare Indicators", "-"), "Only in the right file")
+	assert.Contains(t, findHelpRow(sections, "Matrix Indicators", "✗"), "lacks")
+	assert.Contains(t, findHelpRow(sections, "Value Indicators", "↵"), "Line break")
+	assert.Contains(t, findHelpRow(sections, "Value Indicators", "␀ … ␟"), "control character")
+	assert.Contains(t, findHelpRow(sections, "Value Indicators", "�"), "Invalid byte")
+	assert.Contains(t, findHelpRow(sections, "This help", "↑/↓  k/j"), "mouse wheel")
+	assert.Contains(t, findHelpRow(sections, "This help", "q / Ctrl+C"), "Close")
+	assert.Contains(t, findHelpRow(sections, "This help", "Esc / ?"), "Close")
 }
 
 func TestHelpNamesEachKeyOnceASection(t *testing.T) {
