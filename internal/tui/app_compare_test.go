@@ -166,6 +166,42 @@ func TestCompareCopyLeft(t *testing.T) {
 	assert.Contains(t, app.statusBar.Message, "SHARED")
 }
 
+// TestCompareCopyMasksTheCopiedValueWhenItIsASecret copies a value in compare
+// (#52), then leaves compare and shows the target file: its row is masked
+// exactly when the key and the copied value are detected as a secret, as they
+// are once the file is saved and read again.
+func TestCompareCopyMasksTheCopiedValueWhenItIsASecret(t *testing.T) {
+	tests := []struct {
+		name, left, right, copyKey string
+		showTarget                 []string // keys that leave compare and show the target file
+		copied                     string
+		masked                     bool
+	}{
+		{"token copied left", "hello", "ghp_x7Kq9", "h", []string{"q"}, "ghp_x7Kq9", true},
+		{"token copied right", "ghp_x7Kq9", "hello", "l", []string{"q", "j"}, "ghp_x7Kq9", true},
+		{"plain value copied left", "ghp_x7Kq9", "hello", "h", []string{"q"}, "hello", false},
+		{"plain value copied right", "hello", "ghp_x7Kq9", "l", []string{"q", "j"}, "hello", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			left := parser.ParseBytes(".env", []byte("GREETING="+tt.left+"\n"), config.SecretsConfig{})
+			right := parser.ParseBytes(".env.prod", []byte("GREETING="+tt.right+"\n"), config.SecretsConfig{})
+			app := press(enterCompareMode(t, left, right), tt.copyKey)
+			app = press(app, tt.showTarget...)
+			require.Equal(t, ModeNormal, app.mode)
+
+			view := stripAnsi(app.View().Content)
+
+			if tt.masked {
+				assert.NotContains(t, view, tt.copied, "a secret value must be masked")
+				assert.Contains(t, view, "••••••••")
+			} else {
+				assert.Contains(t, view, tt.copied, "a plain value must be shown")
+			}
+		})
+	}
+}
+
 func TestCompareFilterToggle(t *testing.T) {
 	f1 := makeTestFile(".env", "SAME", "DIFF")
 	f2 := makeTestFile(".env.prod", "SAME", "DIFF")
@@ -286,6 +322,39 @@ func TestCompareEditConfirm(t *testing.T) {
 	assert.Contains(t, app.statusBar.Message, "Modified")
 }
 
+// TestCompareEditMasksTheNewValueWhenItIsASecret edits a value in compare: the
+// row is masked exactly when the key and the new value are detected as a
+// secret, as they are once the file is saved and read again.
+func TestCompareEditMasksTheNewValueWhenItIsASecret(t *testing.T) {
+	tests := []struct {
+		name, left, right, editKey, newValue string
+		masked                               bool
+	}{
+		{"plain value edited to a token", "localhost", "example.com", "e", "ghp_x7Kq9", true},
+		{"token edited to a plain value", "localhost", "ghp_x7Kq9", "E", "example.com", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			left := parser.ParseBytes(".env", []byte("HOST="+tt.left+"\n"), config.SecretsConfig{})
+			right := parser.ParseBytes(".env.prod", []byte("HOST="+tt.right+"\n"), config.SecretsConfig{})
+			app := press(enterCompareMode(t, left, right), tt.editKey)
+			require.Equal(t, ModeEditingCompare, app.mode)
+			app.editor.input.SetValue(tt.newValue)
+
+			app = press(app, "enter")
+
+			require.Equal(t, ModeComparing, app.mode)
+			view := stripAnsi(app.View().Content)
+			if tt.masked {
+				assert.NotContains(t, view, tt.newValue, "a secret value must be masked")
+				assert.Contains(t, view, "••••••••")
+			} else {
+				assert.Contains(t, view, tt.newValue, "a plain value must be shown")
+			}
+		})
+	}
+}
+
 func TestCompareNeedsAtLeast2Files(t *testing.T) {
 	f1 := makeTestFile(".env", "FOO")
 	app := newTestApp([]*model.EnvFile{f1})
@@ -340,7 +409,7 @@ func TestCompareSaveUsesKeyMap(t *testing.T) {
 	app := enterCompareMode(t, fA, fB)
 
 	// Modify file A so handleCompareSave actually has work to do.
-	app.diffView.FileA.UpdateVar(0, "changed")
+	app.diffView.FileA.UpdateVar(0, "changed", false)
 	require.True(t, app.diffView.FileA.Modified)
 
 	app.keys.Save = key.NewBinding(key.WithKeys("Z"))

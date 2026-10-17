@@ -171,7 +171,7 @@ func TestFlash_ToggleSecrets(t *testing.T) {
 
 func TestFlash_SaveSilentlyDowngradesSingleQuoteWithApostrophe(t *testing.T) {
 	app, envPath := newTestAppWithDiskFile(t, "FOO='original'\n")
-	app.fileList.Files[0].UpdateVar(0, "it's a trap")
+	app.fileList.Files[0].UpdateVar(0, "it's a trap", false)
 	require.True(t, app.fileList.Files[0].Modified)
 
 	updated, cmd := app.Update(tea.KeyPressMsg{Text: "w"})
@@ -193,7 +193,7 @@ func TestFlash_SaveSingleQuoteSafeNoDowngradeMessage(t *testing.T) {
 
 	// A safe update (no apostrophe in value) must not trigger the downgrade
 	// suffix and must preserve the user's single-quote style on disk.
-	app.fileList.Files[0].UpdateVar(0, "plain update")
+	app.fileList.Files[0].UpdateVar(0, "plain update", false)
 	require.True(t, app.fileList.Files[0].Modified)
 
 	updated, _ := app.Update(tea.KeyPressMsg{Text: "w"})

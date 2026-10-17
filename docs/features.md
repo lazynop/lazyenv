@@ -59,6 +59,8 @@ Sensitive keys (passwords, tokens, secrets) are automatically detected and maske
 
 Detection uses key name patterns (e.g. `*_PASSWORD`, `*_TOKEN`, `*_SECRET`), known value prefixes (`sk-`, `ghp_`, `Bearer`), and entropy-based heuristic for random-looking values.
 
+Detection runs again whenever a key or value changes (an edit, a rename, a copy in compare), so a variable is masked exactly as it will be after saving: a `ghp_` token pasted into a plain variable is masked, and a secret renamed to a plain key is shown unless its value looks like a secret too. The edit bar shows the value being edited in clear.
+
 Customize detection with the [`[secrets]`](configuration.md#secrets) config section — mark keys as safe, add extra patterns, or disable the value heuristic entirely.
 
 !!! warning "Detection is heuristic"

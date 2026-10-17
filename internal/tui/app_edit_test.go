@@ -7,7 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 // --- handleEditingKey tests ---
@@ -32,6 +34,37 @@ func TestEditExistingVarConfirm(t *testing.T) {
 	assert.Equal(t, ModeNormal, app.mode)
 	assert.Equal(t, "new_value", f.Vars[0].Value)
 	assert.True(t, f.Modified)
+}
+
+// TestEditMasksTheNewValueWhenItIsASecret edits a value in the var list: the
+// row is masked exactly when the key and the new value are detected as a
+// secret, as they are once the file is saved and read again.
+func TestEditMasksTheNewValueWhenItIsASecret(t *testing.T) {
+	tests := []struct {
+		name, line, newValue string
+		masked               bool
+	}{
+		{"plain value edited to a token", "GREETING=hello", "ghp_x7Kq9", true},
+		{"token edited to a plain value", "GREETING=ghp_x7Kq9", "hello", false},
+		{"secret key edited to a plain value", "API_TOKEN=hunter2", "hello", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := parser.ParseBytes(".env", []byte(tt.line+"\n"), config.SecretsConfig{})
+			updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+			app := press(updated.(App), "right", "e")
+			app.editor.input.SetValue(tt.newValue)
+
+			view := stripAnsi(press(app, "enter").View().Content)
+
+			if tt.masked {
+				assert.NotContains(t, view, tt.newValue, "a secret value must be masked")
+				assert.Contains(t, view, "••••••••")
+			} else {
+				assert.Contains(t, view, tt.newValue, "a plain value must be shown")
+			}
+		})
+	}
 }
 
 func TestEditExistingVarCancel(t *testing.T) {

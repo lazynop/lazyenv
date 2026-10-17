@@ -77,7 +77,7 @@ func TestEscapeDouble(t *testing.T) {
 
 func TestReconstructLineSingleQuoted(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO='original'\n"), config.SecretsConfig{})
-	ef.UpdateVar(0, "updated value")
+	ef.UpdateVar(0, "updated value", false)
 
 	output := string(Marshal(ef))
 	assert.Equal(t, "FOO='updated value'\n", output)
@@ -85,7 +85,7 @@ func TestReconstructLineSingleQuoted(t *testing.T) {
 
 func TestReconstructLineExportWithComment(t *testing.T) {
 	ef := ParseBytes(".env", []byte("export FOO=bar # keep this\n"), config.SecretsConfig{})
-	ef.UpdateVar(0, "baz")
+	ef.UpdateVar(0, "baz", false)
 
 	output := string(Marshal(ef))
 	assert.Equal(t, "export FOO=baz # keep this\n", output)
@@ -93,7 +93,7 @@ func TestReconstructLineExportWithComment(t *testing.T) {
 
 func TestReconstructLineDoubleQuotedEscape(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO=\"old\"\n"), config.SecretsConfig{})
-	ef.UpdateVar(0, "has \"quotes\" and\nnewline")
+	ef.UpdateVar(0, "has \"quotes\" and\nnewline", false)
 
 	output := string(Marshal(ef))
 	assert.Equal(t, "FOO=\"has \\\"quotes\\\" and\\nnewline\"\n", output)
@@ -206,7 +206,7 @@ func TestWriteFileNoPath(t *testing.T) {
 
 func TestNormalizeForWriteSingleQuoteWithApostrophe(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO='original'\n"), config.SecretsConfig{})
-	ef.UpdateVar(0, "it's a trap")
+	ef.UpdateVar(0, "it's a trap", false)
 
 	NormalizeForWrite(ef)
 
@@ -216,7 +216,7 @@ func TestNormalizeForWriteSingleQuoteWithApostrophe(t *testing.T) {
 
 func TestNormalizeForWriteNoApostropheNoOp(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO='original'\n"), config.SecretsConfig{})
-	ef.UpdateVar(0, "plain value")
+	ef.UpdateVar(0, "plain value", false)
 
 	NormalizeForWrite(ef)
 
@@ -225,7 +225,7 @@ func TestNormalizeForWriteNoApostropheNoOp(t *testing.T) {
 
 func TestNormalizeForWriteDoubleQuoteUnchanged(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO=\"original\"\n"), config.SecretsConfig{})
-	ef.UpdateVar(0, "it's fine")
+	ef.UpdateVar(0, "it's fine", false)
 
 	NormalizeForWrite(ef)
 
@@ -234,7 +234,7 @@ func TestNormalizeForWriteDoubleQuoteUnchanged(t *testing.T) {
 
 func TestNormalizeForWriteUnquotedSafeValueUnchanged(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO=original\n"), config.SecretsConfig{})
-	ef.UpdateVar(0, "anything_safe")
+	ef.UpdateVar(0, "anything_safe", false)
 
 	NormalizeForWrite(ef)
 
@@ -243,8 +243,8 @@ func TestNormalizeForWriteUnquotedSafeValueUnchanged(t *testing.T) {
 
 func TestNormalizeForWriteMultipleVars(t *testing.T) {
 	ef := ParseBytes(".env", []byte("A='x'\nB='y'\nC='z'\n"), config.SecretsConfig{})
-	ef.UpdateVar(0, "has ' apostrophe")
-	ef.UpdateVar(2, "also 'quoted'")
+	ef.UpdateVar(0, "has ' apostrophe", false)
+	ef.UpdateVar(2, "also 'quoted'", false)
 
 	NormalizeForWrite(ef)
 
@@ -255,7 +255,7 @@ func TestNormalizeForWriteMultipleVars(t *testing.T) {
 
 func TestNormalizeForWriteSingleQuoteToDoubleMarshal(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO='original'\n"), config.SecretsConfig{})
-	ef.UpdateVar(0, "it's a trap")
+	ef.UpdateVar(0, "it's a trap", false)
 
 	NormalizeForWrite(ef)
 	out := string(Marshal(ef))
@@ -269,7 +269,7 @@ func TestNormalizeForWriteSingleQuoteToDoubleMarshal(t *testing.T) {
 
 func TestNormalizeForWriteIdempotent(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO='original'\n"), config.SecretsConfig{})
-	ef.UpdateVar(0, "it's a trap")
+	ef.UpdateVar(0, "it's a trap", false)
 
 	NormalizeForWrite(ef)
 	NormalizeForWrite(ef) // second call must be a no-op

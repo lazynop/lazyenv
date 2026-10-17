@@ -72,7 +72,7 @@ func TestReparseKeepsRuntimeStateAndDropsEdits(t *testing.T) {
 	// Runtime-only state: every reparseCarriesOver field needs a non-zero value.
 	old.GitWarning = true
 	// Unsaved edits, which the re-parse discards.
-	old.UpdateVar(0, "edited")
+	old.UpdateVar(0, "edited", false)
 	old.DeleteVar(1)
 
 	refreshed, err := reparse(old, config.SecretsConfig{})

@@ -8,6 +8,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/lazynop/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/util"
 )
 
 func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
@@ -165,12 +166,13 @@ func (a App) handleEditingCompareKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a, nil
 	case key.Matches(msg, a.keys.Enter):
 		result := a.editor.Finish()
-		a.compareEditFile.UpdateVar(a.compareEditVarIdx, result.Value)
+		varKey := a.compareEditFile.Vars[a.compareEditVarIdx].Key
+		a.compareEditFile.UpdateVar(a.compareEditVarIdx, result.Value, util.IsSecret(varKey, result.Value, a.config.Secrets))
 		// Recompute diff
 		a.diffView.allEntries = model.ComputeDiff(a.diffView.FileA, a.diffView.FileB)
 		a.diffView.recompute()
 		a.mode = ModeComparing
-		return a, a.flashMessage("Modified " + a.compareEditFile.Vars[a.compareEditVarIdx].Key)
+		return a, a.flashMessage("Modified " + varKey)
 	default:
 		var cmd tea.Cmd
 		a.editor.input, cmd = a.editor.input.Update(msg)

@@ -37,7 +37,7 @@ func TestResetPreservesGitWarning(t *testing.T) {
 	app, _ := newTestAppWithDiskFile(t, "FOO=bar\n")
 
 	// Simulate an edit so Modified=true (reset requires it).
-	app.fileList.Files[0].UpdateVar(0, "changed")
+	app.fileList.Files[0].UpdateVar(0, "changed", false)
 	require.True(t, app.fileList.Files[0].Modified)
 
 	updated, _ := app.Update(tea.KeyPressMsg{Text: "r"})
@@ -52,7 +52,7 @@ func TestResetPreservesGitWarning(t *testing.T) {
 func TestSavePreservesGitWarning(t *testing.T) {
 	app, _ := newTestAppWithDiskFile(t, "FOO=bar\n")
 
-	app.fileList.Files[0].UpdateVar(0, "new_value")
+	app.fileList.Files[0].UpdateVar(0, "new_value", false)
 	require.True(t, app.fileList.Files[0].Modified)
 
 	updated, _ := app.Update(tea.KeyPressMsg{Text: "w"})
@@ -90,7 +90,7 @@ func TestCompareSavePreservesGitWarning(t *testing.T) {
 	app.diffView.FileA = fA
 	app.diffView.FileB = fB
 	app.diffView.SetFiles(fA, fB)
-	fA.UpdateVar(0, "changed")
+	fA.UpdateVar(0, "changed", false)
 	require.True(t, fA.Modified)
 
 	// Press 'w' to save in compare mode.
@@ -124,7 +124,7 @@ func TestCompareResetPreservesGitWarning(t *testing.T) {
 	// Enter compare mode and modify file A.
 	app.mode = ModeComparing
 	app.diffView.SetFiles(fA, fB)
-	fA.UpdateVar(0, "changed")
+	fA.UpdateVar(0, "changed", false)
 	require.True(t, fA.Modified)
 
 	// Press 'r' to reset in compare mode.
@@ -143,7 +143,7 @@ func TestSavePreservesNoTrailingNewline(t *testing.T) {
 	require.False(t, app.fileList.Files[0].TrailingNewline,
 		"ParseFile must detect no trailing newline on source")
 
-	app.fileList.Files[0].UpdateVar(0, "first")
+	app.fileList.Files[0].UpdateVar(0, "first", false)
 	require.True(t, app.fileList.Files[0].Modified)
 
 	updated, _ := app.Update(tea.KeyPressMsg{Text: "w"})
@@ -157,7 +157,7 @@ func TestSavePreservesNoTrailingNewline(t *testing.T) {
 		"re-parsed file must still have TrailingNewline=false")
 
 	// Second cycle: modify again and save, confirm round-trip is stable.
-	app.fileList.Files[0].UpdateVar(0, "second")
+	app.fileList.Files[0].UpdateVar(0, "second", false)
 	updated, _ = app.Update(tea.KeyPressMsg{Text: "w"})
 	app = updated.(App)
 
@@ -173,7 +173,7 @@ func TestSavePreservesTrailingNewline(t *testing.T) {
 	app, envPath := newTestAppWithDiskFile(t, "FOO=bar\n")
 	require.True(t, app.fileList.Files[0].TrailingNewline)
 
-	app.fileList.Files[0].UpdateVar(0, "first")
+	app.fileList.Files[0].UpdateVar(0, "first", false)
 	updated, _ := app.Update(tea.KeyPressMsg{Text: "w"})
 	app = updated.(App)
 

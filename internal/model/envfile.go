@@ -62,23 +62,28 @@ type RawLine struct {
 	VarIdx  int    // index into Vars if Type == LineVariable, else -1
 }
 
-// UpdateVar updates the value of a variable by index.
-func (ef *EnvFile) UpdateVar(idx int, newValue string) {
+// UpdateVar updates the value of a variable by index. isSecret is whether the
+// variable is a secret with its new value: the caller runs the detection,
+// which needs the secrets config.
+func (ef *EnvFile) UpdateVar(idx int, newValue string, isSecret bool) {
 	if idx < 0 || idx >= len(ef.Vars) {
 		return
 	}
 	ef.markModified(idx)
 	ef.Vars[idx].Value = newValue
 	ef.Vars[idx].IsEmpty = newValue == ""
+	ef.Vars[idx].IsSecret = isSecret
 }
 
-// RenameVar updates the key of a variable by index.
-func (ef *EnvFile) RenameVar(idx int, newKey string) {
+// RenameVar updates the key of a variable by index. isSecret is whether the
+// variable is a secret with its new key, as for UpdateVar.
+func (ef *EnvFile) RenameVar(idx int, newKey string, isSecret bool) {
 	if idx < 0 || idx >= len(ef.Vars) {
 		return
 	}
 	ef.markModified(idx)
 	ef.Vars[idx].Key = newKey
+	ef.Vars[idx].IsSecret = isSecret
 }
 
 // markModified flags the variable at idx and the file as changed, saving the

@@ -152,14 +152,14 @@ func TestRoundTripFidelity(t *testing.T) {
 
 func TestModifiedVarWriteBack(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO=old\nBAR=keep\n"), config.SecretsConfig{})
-	ef.UpdateVar(0, "new")
+	ef.UpdateVar(0, "new", false)
 
 	assert.Equal(t, "FOO=new\nBAR=keep\n", string(Marshal(ef)))
 }
 
 func TestModifiedQuotedVarWriteBack(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO=\"old value\"\n"), config.SecretsConfig{})
-	ef.UpdateVar(0, "new value")
+	ef.UpdateVar(0, "new value", false)
 
 	assert.Equal(t, "FOO=\"new value\"\n", string(Marshal(ef)))
 }
@@ -206,7 +206,7 @@ func TestWriteFileAtomic(t *testing.T) {
 	ef, err := ParseFile(path, config.SecretsConfig{})
 	require.NoError(t, err)
 
-	ef.UpdateVar(0, "baz")
+	ef.UpdateVar(0, "baz", false)
 	require.NoError(t, WriteFile(ef))
 
 	data, err := os.ReadFile(path)
@@ -216,14 +216,14 @@ func TestWriteFileAtomic(t *testing.T) {
 
 func TestExportPrefixWriteBack(t *testing.T) {
 	ef := ParseBytes(".env", []byte("export FOO=bar\n"), config.SecretsConfig{})
-	ef.UpdateVar(0, "baz")
+	ef.UpdateVar(0, "baz", false)
 
 	assert.Equal(t, "export FOO=baz\n", string(Marshal(ef)))
 }
 
 func TestInlineCommentWriteBack(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO=bar # comment\n"), config.SecretsConfig{})
-	ef.UpdateVar(0, "baz")
+	ef.UpdateVar(0, "baz", false)
 
 	assert.Equal(t, "FOO=baz # comment\n", string(Marshal(ef)))
 }
@@ -380,7 +380,7 @@ func TestMultilineSingleQuotedWithInlineComment(t *testing.T) {
 
 func TestModifiedMultilineSingleQuotedWriteBack(t *testing.T) {
 	ef := ParseBytes(".env", []byte("MULTI='line1\nline2'\n"), config.SecretsConfig{})
-	ef.UpdateVar(0, "newline1\nnewline2\nnewline3")
+	ef.UpdateVar(0, "newline1\nnewline2\nnewline3", false)
 
 	assert.Equal(t, "MULTI='newline1\nnewline2\nnewline3'\n", string(Marshal(ef)))
 }

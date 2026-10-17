@@ -53,7 +53,7 @@ func TestPeekShowsOriginalForModifiedVar(t *testing.T) {
 	app.varList.Height = 20
 
 	// Edit the variable.
-	f.UpdateVar(0, "new_value")
+	f.UpdateVar(0, "new_value", false)
 	assert.Equal(t, "val_FOO", f.Vars[0].OriginalValue)
 
 	// Enable peek.
@@ -113,7 +113,7 @@ func TestPeekHiddenWhenNotFocused(t *testing.T) {
 	app.varList.Width = 80
 	app.varList.Height = 20
 
-	f.UpdateVar(0, "new_value")
+	f.UpdateVar(0, "new_value", false)
 
 	app.varList.Peeking = true
 	app.varList.Focused = false // not focused
@@ -186,7 +186,7 @@ func TestPeekMasksOriginalOfMaskedSecret(t *testing.T) {
 	vlm.Width = 80
 	vlm.Height = 20
 
-	f.UpdateVar(0, "hunter3")
+	f.UpdateVar(0, "hunter3", true)
 
 	theme := BuildTheme(true, config.ColorConfig{})
 	view := vlm.View(theme)
@@ -206,7 +206,7 @@ func TestPeekShowsOriginalOfRevealedSecret(t *testing.T) {
 	vlm.Width = 80
 	vlm.Height = 20
 
-	f.UpdateVar(0, "hunter3")
+	f.UpdateVar(0, "hunter3", true)
 
 	theme := BuildTheme(true, config.ColorConfig{})
 	view := vlm.View(theme)
@@ -224,7 +224,7 @@ func TestPeekFlattensOriginalControlChars(t *testing.T) {
 	vlm.Width = 80
 	vlm.Height = 20
 
-	f.UpdateVar(0, "new_value")
+	f.UpdateVar(0, "new_value", false)
 
 	theme := BuildTheme(true, config.ColorConfig{})
 	view := vlm.View(theme)
@@ -259,7 +259,7 @@ func TestPeekMasksOriginalOfSecretRenamedToPlainKey(t *testing.T) {
 	f.Vars[0].Value, f.Vars[0].IsSecret = "hunter2", true // secret by key only
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
-	f.UpdateVar(0, "x")
+	f.UpdateVar(0, "x", true)
 
 	app.mode = ModeEditing
 	app.editor.StartEditKey(&f.Vars[0], 0)
@@ -288,7 +288,7 @@ func TestPeekShowsUnchangedValueOfRenamedVar(t *testing.T) {
 	vlm.Width = 80
 	vlm.Height = 20
 
-	f.RenameVar(0, "BAR")
+	f.RenameVar(0, "BAR", false)
 	vlm.Refresh()
 
 	theme := BuildTheme(true, config.ColorConfig{})
@@ -306,8 +306,8 @@ func TestPeekShowsOriginalOfRenamedThenEditedVar(t *testing.T) {
 	vlm.Width = 80
 	vlm.Height = 20
 
-	f.RenameVar(0, "BAR")
-	f.UpdateVar(0, "new_value")
+	f.RenameVar(0, "BAR", false)
+	f.UpdateVar(0, "new_value", false)
 	vlm.Refresh()
 
 	theme := BuildTheme(true, config.ColorConfig{})
@@ -325,7 +325,7 @@ func TestPeekShowsOnDiskOriginalOfEditedThenReAddedVar(t *testing.T) {
 	vlm.Width = 80
 	vlm.Height = 20
 
-	f.UpdateVar(0, "edited")
+	f.UpdateVar(0, "edited", false)
 	f.DeleteVar(0)
 	f.AddVar("FOO", "new_value", false)
 	vlm.Refresh()
@@ -365,7 +365,7 @@ func TestPeekKeepsCursorRowVisibleAtTheBottom(t *testing.T) {
 
 	t.Run("turning peek on", func(t *testing.T) {
 		f := makeTestFile(".env", "A", "B", "C", "D", "E")
-		f.UpdateVar(2, "edited")
+		f.UpdateVar(2, "edited", false)
 		vlm := peekBottomRowList(f)
 		vlm.SetCursor(2) // bottom row
 		vlm.TogglePeek()
@@ -379,7 +379,7 @@ func TestPeekKeepsCursorRowVisibleAtTheBottom(t *testing.T) {
 		vlm := peekBottomRowList(f)
 		vlm.Peeking = true
 		vlm.SetCursor(2) // bottom row
-		f.UpdateVar(2, "edited")
+		f.UpdateVar(2, "edited", false)
 		vlm.Refresh()
 		view := vlm.View(theme)
 		assert.Contains(t, view, "edited")
@@ -389,7 +389,7 @@ func TestPeekKeepsCursorRowVisibleAtTheBottom(t *testing.T) {
 
 func TestPeekReservesNoRowWhenUnfocused(t *testing.T) {
 	f := makeTestFile(".env", "A", "B", "C", "D", "E")
-	f.UpdateVar(0, "edited")
+	f.UpdateVar(0, "edited", false)
 	vlm := peekBottomRowList(f)
 	vlm.Peeking = true
 	vlm.Focused = false
@@ -414,7 +414,7 @@ func TestFocusingTheVarListKeepsThePeekedCursorRowVisible(t *testing.T) {
 	for name, focus := range focusVars {
 		t.Run(name, func(t *testing.T) {
 			f := makeTestFile(".env", "A", "B", "C", "D", "E", "F")
-			f.UpdateVar(5, "edited")
+			f.UpdateVar(5, "edited", false)
 			updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: height})
 			app := press(updated.(App), "right", "p", "left")
 			for range len(f.Vars) - 1 {

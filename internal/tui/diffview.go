@@ -165,7 +165,7 @@ func (m *DiffViewModel) CopyToRight() string {
 	case model.DiffChanged:
 		// Update existing key in B with A's value
 		if i := m.FileB.LastIndexOfKey(e.Key); i >= 0 {
-			m.FileB.UpdateVar(i, e.ValueA)
+			m.FileB.UpdateVar(i, e.ValueA, util.IsSecret(e.Key, e.ValueA, m.secrets))
 		}
 	case model.DiffAdded:
 		// Key only in A, add to B
@@ -198,7 +198,7 @@ func (m *DiffViewModel) CopyToLeft() string {
 	case model.DiffChanged:
 		// Update existing key in A with B's value
 		if i := m.FileA.LastIndexOfKey(e.Key); i >= 0 {
-			m.FileA.UpdateVar(i, e.ValueB)
+			m.FileA.UpdateVar(i, e.ValueB, util.IsSecret(e.Key, e.ValueB, m.secrets))
 		}
 	case model.DiffRemoved:
 		// Key only in B, add to A

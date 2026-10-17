@@ -30,7 +30,7 @@ func TestWriteRoundTripPreservesUnsafeUnquotedValues(t *testing.T) {
 			ef := ParseBytes(".env", []byte("KEY=initial\nOTHER=keep\n"), config.SecretsConfig{})
 			require.Len(t, ef.Vars, 2)
 
-			ef.UpdateVar(0, tt.value)
+			ef.UpdateVar(0, tt.value, false)
 			NormalizeForWrite(ef)
 			data := Marshal(ef)
 

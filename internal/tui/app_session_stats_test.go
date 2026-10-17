@@ -157,7 +157,7 @@ func TestApp_SessionStats_EndToEnd(t *testing.T) {
 	app = out.(App)
 
 	// 1. Edit .env.local (change FOO 1 → 99) and save.
-	app.varList.File.UpdateVar(0, "99")
+	app.varList.File.UpdateVar(0, "99", false)
 	app, _ = app.handleSave()
 
 	// 2. Duplicate .env.staging → .env.backup.
@@ -223,7 +223,7 @@ func TestApp_SessionStats_Delete(t *testing.T) {
 func TestApp_SessionStats_HandleSave(t *testing.T) {
 	app, _, _, path := setupStatsFixture(t, ".env", "FOO=1\n")
 
-	app.varList.File.UpdateVar(0, "99")
+	app.varList.File.UpdateVar(0, "99", false)
 	app, _ = app.handleSave()
 
 	assert.Equal(t, []string{path + " — 0 added, 1 changed, 0 deleted"}, app.sessionStats.Summary())

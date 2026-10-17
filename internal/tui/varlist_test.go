@@ -808,7 +808,7 @@ func TestVarListNarrowWidthKeepsPeekLineOnOneRow(t *testing.T) {
 	keys := []string{"UPSTREAM_SERVICE_CIRCUIT_BREAKER_THRESHOLD", "DATABASE_URL", "REDIS_URL", "SENTRY_DSN"}
 	f := makeTestFile(".env", keys...)
 	f.Vars[0].Value = strings.Repeat("x", 200)
-	f.UpdateVar(0, "new_value")         // "↳ was:" line
+	f.UpdateVar(0, "new_value", false)  // "↳ was:" line
 	f.AddVar("NEW_VAR", "value", false) // "↳ new variable" line
 	theme := BuildTheme(true, config.ColorConfig{})
 	layout := config.DefaultConfig().Layout

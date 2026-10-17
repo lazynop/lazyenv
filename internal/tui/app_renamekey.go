@@ -33,8 +33,7 @@ func (a App) confirmRenameKey(result EditorResult) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	f.RenameVar(idx, newKey)
-	f.Vars[idx].IsSecret = util.IsSecret(newKey, f.Vars[idx].Value, a.config.Secrets)
+	f.RenameVar(idx, newKey, util.IsSecret(newKey, f.Vars[idx].Value, a.config.Secrets))
 	a.varList.Refresh()
 	return a, a.flashMessage("Renamed " + oldKey + " → " + newKey)
 }

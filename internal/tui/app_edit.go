@@ -31,9 +31,10 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			a.varList.Refresh()
 			return a, a.flashMessage("Added " + a.editor.addKey)
 		}
-		a.varList.File.UpdateVar(result.VarIndex, result.Value)
+		varKey := a.varList.File.Vars[result.VarIndex].Key
+		a.varList.File.UpdateVar(result.VarIndex, result.Value, util.IsSecret(varKey, result.Value, a.config.Secrets))
 		a.varList.Refresh()
-		return a, a.flashMessage("Modified " + a.varList.File.Vars[result.VarIndex].Key)
+		return a, a.flashMessage("Modified " + varKey)
 	default:
 		var cmd tea.Cmd
 		a.editor.input, cmd = a.editor.input.Update(msg)

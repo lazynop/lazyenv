@@ -28,7 +28,7 @@ func TestUpdateVar(t *testing.T) {
 		EnvVar{Key: "BAR", Value: "keep"},
 	)
 
-	ef.UpdateVar(0, "new")
+	ef.UpdateVar(0, "new", false)
 
 	assert.Equal(t, "new", ef.Vars[0].Value)
 	assert.True(t, ef.Vars[0].Modified)
@@ -41,8 +41,8 @@ func TestUpdateVar(t *testing.T) {
 func TestUpdateVarPreservesOriginalOnSecondEdit(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "original"})
 
-	ef.UpdateVar(0, "first_edit")
-	ef.UpdateVar(0, "second_edit")
+	ef.UpdateVar(0, "first_edit", false)
+	ef.UpdateVar(0, "second_edit", false)
 
 	assert.Equal(t, "second_edit", ef.Vars[0].Value)
 	assert.Equal(t, "original", ef.Vars[0].OriginalValue, "OriginalValue should not change on subsequent edits")
@@ -51,16 +51,26 @@ func TestUpdateVarPreservesOriginalOnSecondEdit(t *testing.T) {
 func TestUpdateVarSetsIsEmpty(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "val"})
 
-	ef.UpdateVar(0, "")
+	ef.UpdateVar(0, "", false)
 
 	assert.True(t, ef.Vars[0].IsEmpty)
+}
+
+func TestUpdateVarSetsIsSecret(t *testing.T) {
+	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
+
+	ef.UpdateVar(0, "ghp_abc123", true)
+	assert.True(t, ef.Vars[0].IsSecret, "IsSecret should be set from parameter")
+
+	ef.UpdateVar(0, "plain", false)
+	assert.False(t, ef.Vars[0].IsSecret)
 }
 
 func TestUpdateVarOutOfBounds(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
 
-	ef.UpdateVar(-1, "nope")
-	ef.UpdateVar(99, "nope")
+	ef.UpdateVar(-1, "nope", false)
+	ef.UpdateVar(99, "nope", false)
 
 	assert.Equal(t, "bar", ef.Vars[0].Value)
 	assert.False(t, ef.Modified)
@@ -188,18 +198,28 @@ func TestDeleteVarOutOfBounds(t *testing.T) {
 func TestRenameVar(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
 
-	ef.RenameVar(0, "BAZ")
+	ef.RenameVar(0, "BAZ", false)
 
 	assert.Equal(t, "BAZ", ef.Vars[0].Key)
 	assert.True(t, ef.Vars[0].Modified, "renamed var must be marked modified")
 	assert.True(t, ef.Modified, "file must be marked modified")
 }
 
+func TestRenameVarSetsIsSecret(t *testing.T) {
+	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
+
+	ef.RenameVar(0, "API_TOKEN", true)
+	assert.True(t, ef.Vars[0].IsSecret, "IsSecret should be set from parameter")
+
+	ef.RenameVar(0, "PLAIN", false)
+	assert.False(t, ef.Vars[0].IsSecret)
+}
+
 func TestRenameVarOutOfBounds(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
 
-	ef.RenameVar(-1, "X")
-	ef.RenameVar(99, "X")
+	ef.RenameVar(-1, "X", false)
+	ef.RenameVar(99, "X", false)
 
 	assert.Equal(t, "FOO", ef.Vars[0].Key, "out-of-range index must be a no-op")
 	assert.False(t, ef.Modified, "no-op rename must not mark the file modified")
