@@ -55,13 +55,21 @@ func (m *FileListModel) MoveDown() {
 	}
 }
 
-// SetCursor positions the cursor at the given index with bounds checking.
+// SetCursor positions the cursor at the given index with bounds checking and
+// selects the file there.
 func (m *FileListModel) SetCursor(index int) {
 	if len(m.Files) == 0 {
 		return
 	}
-	m.Cursor = max(0, min(index, len(m.Files)-1))
+	m.MoveCursorTo(index)
 	m.Select()
+}
+
+// MoveCursorTo positions the cursor at the given index with bounds checking,
+// keeping the selected file: compare-select points at a file without making it
+// the active one.
+func (m *FileListModel) MoveCursorTo(index int) {
+	m.Cursor = max(0, min(index, len(m.Files)-1))
 	m.ensureCursorVisible()
 }
 

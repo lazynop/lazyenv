@@ -106,9 +106,8 @@ type App struct {
 	backedUpPaths map[string]bool
 
 	// Compare mode state
-	compareFirstFile  *model.EnvFile
-	compareEditFile   *model.EnvFile // which file is being edited in compare mode
-	compareEditVarIdx int            // var index in that file
+	compareFirstFile *model.EnvFile
+	compareEditFile  *model.EnvFile // which file is being edited in compare mode
 
 	// File-operation state (create/duplicate/rename/template). The active
 	// AppMode distinguishes the operation; the input and source are shared.

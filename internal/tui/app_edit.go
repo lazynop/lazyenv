@@ -4,6 +4,7 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/lazynop/lazyenv/internal/util"
 )
 
@@ -31,16 +32,22 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			a.varList.Refresh()
 			return a, a.flashMessage("Added " + a.editor.addKey)
 		}
-		if result.Untouched {
-			return a, nil
-		}
-		varKey := a.varList.File.Vars[result.VarIndex].Key
-		a.varList.File.UpdateVar(result.VarIndex, result.Value, util.IsSecret(varKey, result.Value, a.config.Secrets))
-		a.varList.Refresh()
-		return a, a.flashMessage("Modified " + varKey)
+		return a, a.commitValueEdit(a.varList.File, result)
 	default:
 		var cmd tea.Cmd
 		a.editor.input, cmd = a.editor.input.Update(msg)
 		return a, cmd
 	}
+}
+
+// commitValueEdit writes the value confirmed in the edit bar to its var in f,
+// unless the edit was untouched, and reports the change.
+func (a *App) commitValueEdit(f *model.EnvFile, result EditorResult) tea.Cmd {
+	if result.Untouched {
+		return nil
+	}
+	varKey := f.Vars[result.VarIndex].Key
+	f.UpdateVar(result.VarIndex, result.Value, util.IsSecret(varKey, result.Value, a.config.Secrets))
+	a.refreshIfShown(f)
+	return a.flashMessage("Modified " + varKey)
 }

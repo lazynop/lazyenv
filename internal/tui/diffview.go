@@ -79,6 +79,12 @@ func (m *DiffViewModel) recompute() {
 	m.ensureVisible()
 }
 
+// Rediff recomputes the diff after FileA or FileB changed.
+func (m *DiffViewModel) Rediff() {
+	m.allEntries = model.ComputeDiff(m.FileA, m.FileB)
+	m.recompute()
+}
+
 // ToggleFilter toggles hiding of equal entries.
 func (m *DiffViewModel) ToggleFilter() {
 	m.HideEqual = !m.HideEqual
@@ -170,8 +176,7 @@ func (m *DiffViewModel) CopyToRight() string {
 		}
 	}
 
-	m.allEntries = model.ComputeDiff(m.FileA, m.FileB)
-	m.recompute()
+	m.Rediff()
 	return e.Key
 }
 
@@ -202,8 +207,7 @@ func (m *DiffViewModel) CopyToLeft() string {
 		}
 	}
 
-	m.allEntries = model.ComputeDiff(m.FileA, m.FileB)
-	m.recompute()
+	m.Rediff()
 	return e.Key
 }
 
@@ -220,8 +224,7 @@ func (m *DiffViewModel) Reset() string {
 	}
 	m.FileA = newA
 	m.FileB = newB
-	m.allEntries = model.ComputeDiff(m.FileA, m.FileB)
-	m.recompute()
+	m.Rediff()
 	return ""
 }
 

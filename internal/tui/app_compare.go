@@ -8,7 +8,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 
 	"github.com/lazynop/lazyenv/internal/model"
-	"github.com/lazynop/lazyenv/internal/util"
 )
 
 func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
@@ -22,7 +21,7 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.mode = ModeNormal
 		a.compareFirstFile = nil
 		// Restore cursor to the selected file so file list and var panel stay in sync.
-		a.fileList.Cursor = a.fileList.Selected
+		a.fileList.MoveCursorTo(a.fileList.Selected)
 	case key.Matches(msg, a.keys.Up):
 		a.diffView.MoveUp()
 	case key.Matches(msg, a.keys.Down):
@@ -124,9 +123,7 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 			saved = append(saved, f.Name)
 		}
 	}
-	// Recompute diff after save
-	a.diffView.allEntries = model.ComputeDiff(a.diffView.FileA, a.diffView.FileB)
-	a.diffView.recompute()
+	a.diffView.Rediff()
 	if len(saved) == 0 {
 		return a, a.flashMessage("No changes to save")
 	}
@@ -147,7 +144,6 @@ func (a App) startCompareEdit(file *model.EnvFile) (tea.Model, tea.Cmd) {
 	}
 
 	a.compareEditFile = file
-	a.compareEditVarIdx = varIdx
 	a.editor.StartEdit(&file.Vars[varIdx], varIdx)
 	a.editor.label = fmt.Sprintf("Edit %s in %s: ", e.Key, file.Name)
 	a.mode = ModeEditingCompare
@@ -160,18 +156,10 @@ func (a App) handleEditingCompareKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.mode = ModeComparing
 		return a, nil
 	case key.Matches(msg, a.keys.Enter):
-		result := a.editor.Finish()
 		a.mode = ModeComparing
-		if result.Untouched {
-			return a, nil
-		}
-		varKey := a.compareEditFile.Vars[a.compareEditVarIdx].Key
-		a.compareEditFile.UpdateVar(a.compareEditVarIdx, result.Value, util.IsSecret(varKey, result.Value, a.config.Secrets))
-		a.refreshIfShown(a.compareEditFile)
-		// Recompute diff
-		a.diffView.allEntries = model.ComputeDiff(a.diffView.FileA, a.diffView.FileB)
-		a.diffView.recompute()
-		return a, a.flashMessage("Modified " + varKey)
+		cmd := a.commitValueEdit(a.compareEditFile, a.editor.Finish())
+		a.diffView.Rediff()
+		return a, cmd
 	default:
 		var cmd tea.Cmd
 		a.editor.input, cmd = a.editor.input.Update(msg)
@@ -186,7 +174,7 @@ func (a App) handleCompareSelectKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.compareFirstFile = nil
 		a.statusBar.ClearMessage()
 		// Restore cursor to the selected file so file list and var panel stay in sync.
-		a.fileList.Cursor = a.fileList.Selected
+		a.fileList.MoveCursorTo(a.fileList.Selected)
 	case key.Matches(msg, a.keys.Up):
 		a.fileList.MoveUp()
 	case key.Matches(msg, a.keys.Down):

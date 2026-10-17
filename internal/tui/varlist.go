@@ -238,7 +238,7 @@ func (m *VarListModel) SetCursor(index int) {
 // list's rows counted from the first one shown, or -1 for a row that draws no
 // item. The peek line maps to the item at the cursor, which it belongs to.
 func (m *VarListModel) IndexAtRow(row int) int {
-	rows := m.drawnRows(m.visibleLines())
+	rows := m.drawnRows()
 	if row < 0 || row >= len(rows) {
 		return -1
 	}
@@ -252,12 +252,13 @@ type drawnRow struct {
 	peek bool
 }
 
-// drawnRows returns the rows the list draws from Offset down: visible items,
-// and the peek line under the cursor's when one is drawn. renderRows draws
-// them and IndexAtRow maps clicks through them, so both follow one layout.
-func (m *VarListModel) drawnRows(visible int) []drawnRow {
+// drawnRows returns the rows the list draws from Offset down: the items that
+// fit (visibleLines), and the peek line under the cursor's when one is drawn.
+// renderRows draws them and IndexAtRow maps clicks through them, so both follow
+// one layout.
+func (m *VarListModel) drawnRows() []drawnRow {
 	var rows []drawnRow
-	for i := m.Offset; i < min(m.Offset+visible, len(m.displayItems)); i++ {
+	for i := m.Offset; i < min(m.Offset+m.visibleLines(), len(m.displayItems)); i++ {
 		rows = append(rows, drawnRow{item: i})
 		if i == m.Cursor && m.drawsPeekLine() {
 			rows = append(rows, drawnRow{item: i, peek: true})
@@ -570,9 +571,9 @@ func (m *VarListModel) calcColumnWidths() (int, int) {
 }
 
 // renderRows renders all visible rows (vars + headers) plus peek lines.
-func (m *VarListModel) renderRows(visible, keyWidth, maxValWidth int, theme Theme) []string {
+func (m *VarListModel) renderRows(keyWidth, maxValWidth int, theme Theme) []string {
 	var lines []string
-	for _, row := range m.drawnRows(visible) {
+	for _, row := range m.drawnRows() {
 		item := m.displayItems[row.item]
 		switch {
 		case item.Kind == displayItemHeader:
@@ -622,10 +623,9 @@ func (m *VarListModel) View(theme Theme) string {
 		return m.renderPanel(title, theme.MutedItem.Render(msg), theme)
 	}
 
-	visible := m.visibleLines()
 	keyWidth, maxValWidth := m.calcColumnWidths()
 
-	lines := m.renderRows(visible, keyWidth, maxValWidth, theme)
+	lines := m.renderRows(keyWidth, maxValWidth, theme)
 	lines = append(lines, m.renderDeletedVars(keyWidth, maxValWidth, len(lines), theme)...)
 
 	return m.renderPanel(title, strings.Join(lines, "\n"), theme)
