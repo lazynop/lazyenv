@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 )
 
@@ -64,8 +65,8 @@ func (m *StatusBarModel) ClearMessage() {
 	m.kind = messageInfo
 }
 
-// View renders the status bar.
-func (m *StatusBarModel) View(theme Theme, mode AppMode, focus Focus, fileName string, varCount int, stats ...DiffStats) string {
+// View renders the status bar, its hints naming the keys that keys binds.
+func (m *StatusBarModel) View(theme Theme, keys KeyMap, mode AppMode, focus Focus, fileName string, varCount int, stats ...DiffStats) string {
 	// Build diff stats string if provided
 	diffStats := ""
 	if len(stats) > 0 {
@@ -73,7 +74,7 @@ func (m *StatusBarModel) View(theme Theme, mode AppMode, focus Focus, fileName s
 	}
 
 	// Left side: keybinding hints based on mode and focus
-	hints := modeHints(theme, mode, focus, diffStats)
+	hints := modeHints(theme, keys, mode, focus, diffStats)
 
 	// Right side: file info + read-only badge
 	right := ""
@@ -136,58 +137,58 @@ func formatDiffStats(s DiffStats, theme Theme) string {
 	return strings.Join(parts, " ")
 }
 
-func modeHints(theme Theme, mode AppMode, focus Focus, diffStats string) string {
+// modeHints is the status-bar hint of mode and focus, naming the keys that
+// keys binds; diffStats ends the compare view's hint.
+func modeHints(theme Theme, keys KeyMap, mode AppMode, focus Focus, diffStats string) string {
 	switch mode {
 	case ModeNormal:
 		if focus == FocusVars {
-			return fmt.Sprintf(
-				"%s %s %s %s %s %s %s %s %s %s %s %s",
-				formatHint(theme, "e", "edit"),
-				formatHint(theme, "E", "rename"),
-				formatHint(theme, "a", "add"),
-				formatHint(theme, "d", "del"),
-				formatHint(theme, "y", "yank"),
-				formatHint(theme, "p", "peek"),
-				formatHint(theme, "/", "search"),
-				formatHint(theme, "o", "sort"),
-				formatHint(theme, "g", "group"),
-				formatHint(theme, "w", "save"),
-				formatHint(theme, "r", "reset"),
-				formatHint(theme, "q", "quit"),
-			)
+			return strings.Join([]string{
+				formatHint(theme, "edit", keys.Edit),
+				formatHint(theme, "rename", keys.EditKey),
+				formatHint(theme, "add", keys.Add),
+				formatHint(theme, "del", keys.Delete),
+				formatHint(theme, "yank", keys.YankValue),
+				formatHint(theme, "peek", keys.Peek),
+				formatHint(theme, "search", keys.Search),
+				formatHint(theme, "sort", keys.ToggleSort),
+				formatHint(theme, "group", keys.ToggleGroup),
+				formatHint(theme, "save", keys.Save),
+				formatHint(theme, "reset", keys.Reset),
+				formatHint(theme, "quit", keys.Quit),
+			}, " ")
 		}
-		return fmt.Sprintf(
-			"%s %s %s %s %s %s %s %s %s",
-			formatHint(theme, "enter", "select"),
-			formatHint(theme, "c", "compare"),
-			formatHint(theme, "m", "matrix"),
-			formatHint(theme, "o", "sort"),
-			formatHint(theme, "g", "group"),
-			formatHint(theme, "w", "save"),
-			formatHint(theme, "r", "reset"),
-			formatHint(theme, "?", "help"),
-			formatHint(theme, "q", "quit"),
-		)
+		return strings.Join([]string{
+			formatHint(theme, "select", keys.Enter),
+			formatHint(theme, "compare", keys.Compare),
+			formatHint(theme, "matrix", keys.Matrix),
+			formatHint(theme, "sort", keys.ToggleSort),
+			formatHint(theme, "group", keys.ToggleGroup),
+			formatHint(theme, "save", keys.Save),
+			formatHint(theme, "reset", keys.Reset),
+			formatHint(theme, "help", keys.Help),
+			formatHint(theme, "quit", keys.Quit),
+		}, " ")
 	case ModeCompareSelect:
-		return theme.EmptyWarning.Render("Select second file to compare (Enter to pick, Esc/q to cancel)")
+		return theme.EmptyWarning.Render(fmt.Sprintf("Select second file to compare (%s to pick, %s to cancel)",
+			shortKeys(keys.Enter), shortKeys(keys.Escape, keys.Quit)))
 	case ModeComparing:
-		return fmt.Sprintf(
-			"%s %s %s %s %s %s %s %s %s %s",
-			formatHint(theme, "←/→", "copy"),
-			formatHint(theme, "e/E", "edit L/R"),
-			formatHint(theme, "n/N", "next/prev diff"),
-			formatHint(theme, "f", "filter"),
-			formatHint(theme, "^S", "secrets"),
-			formatHint(theme, "w", "save"),
-			formatHint(theme, "r", "reset"),
-			formatHint(theme, "q", "back"),
+		return strings.Join([]string{
+			formatHint(theme, "copy", keys.Left, keys.Right),
+			formatHint(theme, "edit L/R", keys.Edit, keys.EditRight),
+			formatHint(theme, "next/prev diff", keys.NextDiff, keys.PrevDiff),
+			formatHint(theme, "filter", keys.Filter),
+			formatHint(theme, "secrets", keys.ToggleSecret),
+			formatHint(theme, "save", keys.Save),
+			formatHint(theme, "reset", keys.Reset),
+			formatHint(theme, "back", keys.Quit),
 			theme.MutedItem.Render("│"),
 			diffStats,
-		)
+		}, " ")
 	case ModeEditing:
-		return theme.MutedItem.Render("Enter to confirm, Esc to cancel")
+		return inputHint(theme, keys, "confirm")
 	case ModeConfirmDelete:
-		return theme.DuplicateWarn.Render("Delete variable? (y/n)")
+		return theme.DuplicateWarn.Render(fmt.Sprintf("Delete variable? (%s)", shortKeys(keys.Confirm, keys.Deny)))
 	case ModeConfirmDeleteFile, ModeConfirmMatrixDelete:
 		// The prompt set on entering the mode names what gets deleted and
 		// stays until the mode ends, so a hint here would never show.
@@ -197,29 +198,36 @@ func modeHints(theme Theme, mode AppMode, focus Focus, diffStats string) string 
 		// footer names the keys.
 		return ""
 	case ModeSearching:
-		return theme.MutedItem.Render("Type to search, Enter to keep the filter, Esc to clear it")
+		return theme.MutedItem.Render(fmt.Sprintf("Type to search, %s to keep the filter, %s to clear it",
+			shortKeys(keys.Enter), shortKeys(keys.Escape)))
 	case ModeCreateFile:
-		return theme.MutedItem.Render("Enter to create, Esc to cancel")
+		return inputHint(theme, keys, "create")
 	case ModeDuplicateFile:
-		return theme.MutedItem.Render("Enter to duplicate, Esc to cancel")
+		return inputHint(theme, keys, "duplicate")
 	case ModeRenameFile:
-		return theme.MutedItem.Render("Enter to rename, Esc to cancel")
+		return inputHint(theme, keys, "rename")
 	case ModeTemplateFile:
-		return theme.MutedItem.Render("Enter to create template, Esc to cancel")
+		return inputHint(theme, keys, "create template")
 	case ModeMatrix:
-		return fmt.Sprintf(
-			"%s %s %s %s %s",
-			formatHint(theme, "↑↓←→", "navigate"),
-			formatHint(theme, "a", "add missing"),
-			formatHint(theme, "d", "delete"),
-			formatHint(theme, "o", "sort"),
-			formatHint(theme, "q", "back"),
-		)
+		return strings.Join([]string{
+			formatHint(theme, "navigate", keys.Up, keys.Down, keys.Left, keys.Right),
+			formatHint(theme, "add missing", keys.Add),
+			formatHint(theme, "delete", keys.Delete),
+			formatHint(theme, "sort", keys.ToggleSort),
+			formatHint(theme, "back", keys.Quit),
+		}, " ")
 	default:
 		return ""
 	}
 }
 
-func formatHint(theme Theme, key, desc string) string {
-	return fmt.Sprintf("[%s]%s", theme.StatusBarKey.Render(key), theme.MutedItem.Render(desc))
+// formatHint is the hint "[key]desc" naming the short keys of bindings.
+func formatHint(theme Theme, desc string, bindings ...key.Binding) string {
+	return fmt.Sprintf("[%s]%s", theme.StatusBarKey.Render(shortKeys(bindings...)), theme.MutedItem.Render(desc))
+}
+
+// inputHint is the hint of an input bar: the key that confirms it, to do
+// action, and the one that cancels it.
+func inputHint(theme Theme, keys KeyMap, action string) string {
+	return theme.MutedItem.Render(fmt.Sprintf("%s to %s, %s to cancel", shortKeys(keys.Enter), action, shortKeys(keys.Escape)))
 }

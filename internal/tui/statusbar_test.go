@@ -3,6 +3,7 @@ package tui
 import (
 	"testing"
 
+	"charm.land/bubbles/v2/key"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lazynop/lazyenv/internal/config"
@@ -25,7 +26,7 @@ func TestStatusBarViewNormal(t *testing.T) {
 	theme := BuildTheme(true, config.ColorConfig{})
 
 	// Normal mode, file panel
-	view := sb.View(theme, ModeNormal, FocusFiles, ".env", 5)
+	view := sb.View(theme, DefaultKeyMap(), ModeNormal, FocusFiles, ".env", 5)
 	assert.Contains(t, view, "compare")
 	assert.Contains(t, view, "help")
 	assert.Contains(t, view, ".env")
@@ -37,7 +38,7 @@ func TestStatusBarViewNormalVarFocus(t *testing.T) {
 	sb.Width = 120
 	theme := BuildTheme(true, config.ColorConfig{})
 
-	view := sb.View(theme, ModeNormal, FocusVars, ".env", 3)
+	view := sb.View(theme, DefaultKeyMap(), ModeNormal, FocusVars, ".env", 3)
 	assert.Contains(t, view, "edit")
 	assert.Contains(t, view, "add")
 	assert.Contains(t, view, "del")
@@ -50,7 +51,7 @@ func TestStatusBarViewComparing(t *testing.T) {
 	theme := BuildTheme(true, config.ColorConfig{})
 
 	stats := DiffStats{Changed: 2, Added: 1, Removed: 0, Equal: 3}
-	view := sb.View(theme, ModeComparing, FocusVars, "", 0, stats)
+	view := sb.View(theme, DefaultKeyMap(), ModeComparing, FocusVars, "", 0, stats)
 	assert.Contains(t, view, "copy")
 	assert.Contains(t, view, "filter")
 }
@@ -61,7 +62,7 @@ func TestStatusBarViewComparingAllEqual(t *testing.T) {
 	theme := BuildTheme(true, config.ColorConfig{})
 
 	stats := DiffStats{Equal: 5}
-	view := sb.View(theme, ModeComparing, FocusVars, "", 0, stats)
+	view := sb.View(theme, DefaultKeyMap(), ModeComparing, FocusVars, "", 0, stats)
 	assert.Contains(t, view, "all equal")
 }
 
@@ -70,7 +71,7 @@ func TestStatusBarViewEditing(t *testing.T) {
 	sb.Width = 120
 	theme := BuildTheme(true, config.ColorConfig{})
 
-	view := sb.View(theme, ModeEditing, FocusVars, "", 0)
+	view := sb.View(theme, DefaultKeyMap(), ModeEditing, FocusVars, "", 0)
 	assert.Contains(t, view, "Enter to confirm")
 }
 
@@ -79,7 +80,7 @@ func TestStatusBarViewConfirmDelete(t *testing.T) {
 	sb.Width = 120
 	theme := BuildTheme(true, config.ColorConfig{})
 
-	view := sb.View(theme, ModeConfirmDelete, FocusVars, "", 0)
+	view := sb.View(theme, DefaultKeyMap(), ModeConfirmDelete, FocusVars, "", 0)
 	assert.Contains(t, view, "Delete variable")
 }
 
@@ -88,7 +89,7 @@ func TestStatusBarViewSearching(t *testing.T) {
 	sb.Width = 120
 	theme := BuildTheme(true, config.ColorConfig{})
 
-	view := sb.View(theme, ModeSearching, FocusVars, "", 0)
+	view := sb.View(theme, DefaultKeyMap(), ModeSearching, FocusVars, "", 0)
 	assert.Contains(t, view, "Type to search")
 }
 
@@ -97,7 +98,7 @@ func TestStatusBarViewMatrix(t *testing.T) {
 	sb.Width = 120
 	theme := BuildTheme(true, config.ColorConfig{})
 
-	view := sb.View(theme, ModeMatrix, FocusVars, "", 0)
+	view := sb.View(theme, DefaultKeyMap(), ModeMatrix, FocusVars, "", 0)
 	assert.Contains(t, view, "navigate")
 	assert.Contains(t, view, "add missing")
 }
@@ -107,7 +108,7 @@ func TestStatusBarViewCompareSelect(t *testing.T) {
 	sb.Width = 120
 	theme := BuildTheme(true, config.ColorConfig{})
 
-	view := sb.View(theme, ModeCompareSelect, FocusFiles, "", 0)
+	view := sb.View(theme, DefaultKeyMap(), ModeCompareSelect, FocusFiles, "", 0)
 	assert.Contains(t, view, "Select second file")
 }
 
@@ -117,7 +118,7 @@ func TestStatusBarReadOnlyBadge(t *testing.T) {
 	sb.ReadOnly = true
 	theme := BuildTheme(true, config.ColorConfig{})
 
-	view := sb.View(theme, ModeNormal, FocusFiles, ".env", 5)
+	view := sb.View(theme, DefaultKeyMap(), ModeNormal, FocusFiles, ".env", 5)
 	assert.Contains(t, view, "READ-ONLY")
 	assert.Contains(t, view, ".env")
 }
@@ -127,7 +128,7 @@ func TestStatusBarNoReadOnlyBadge(t *testing.T) {
 	sb.Width = 120
 	theme := BuildTheme(true, config.ColorConfig{})
 
-	view := sb.View(theme, ModeNormal, FocusFiles, ".env", 5)
+	view := sb.View(theme, DefaultKeyMap(), ModeNormal, FocusFiles, ".env", 5)
 	assert.NotContains(t, view, "READ-ONLY")
 }
 
@@ -137,7 +138,7 @@ func TestStatusBarMessageOverridesHints(t *testing.T) {
 	sb.SetMessage("File saved successfully")
 	theme := BuildTheme(true, config.ColorConfig{})
 
-	view := sb.View(theme, ModeNormal, FocusVars, ".env", 5)
+	view := sb.View(theme, DefaultKeyMap(), ModeNormal, FocusVars, ".env", 5)
 	assert.Contains(t, view, "File saved successfully")
 }
 
@@ -168,7 +169,7 @@ func assertStatusColor(t *testing.T, view, want string) {
 
 // statusView renders app's status bar with statusColorTheme.
 func statusView(app App) string {
-	return app.statusBar.View(statusColorTheme(), app.mode, app.focus, "", 0)
+	return app.statusBar.View(statusColorTheme(), app.keys, app.mode, app.focus, "", 0)
 }
 
 func TestStatusBarWarningRendersInWarningColor(t *testing.T) {
@@ -176,7 +177,7 @@ func TestStatusBarWarningRendersInWarningColor(t *testing.T) {
 	sb.Width = 120
 	sb.SetWarning("File already exists: .env")
 
-	view := sb.View(statusColorTheme(), ModeNormal, FocusVars, "", 0)
+	view := sb.View(statusColorTheme(), DefaultKeyMap(), ModeNormal, FocusVars, "", 0)
 	assert.Contains(t, view, "File already exists: .env")
 	assertStatusColor(t, view, statusWarningSGR)
 }
@@ -186,7 +187,7 @@ func TestStatusBarAlertRendersInErrorColor(t *testing.T) {
 	sb.Width = 120
 	sb.SetAlert("Error saving: disk full")
 
-	view := sb.View(statusColorTheme(), ModeNormal, FocusVars, "", 0)
+	view := sb.View(statusColorTheme(), DefaultKeyMap(), ModeNormal, FocusVars, "", 0)
 	assert.Contains(t, view, "Error saving: disk full")
 	assertStatusColor(t, view, statusErrorSGR)
 }
@@ -197,7 +198,31 @@ func TestStatusBarMessageAfterAlertRendersInPrimaryColor(t *testing.T) {
 	sb.SetAlert("Error saving: disk full")
 	sb.SetMessage("Saved .env")
 
-	view := sb.View(statusColorTheme(), ModeNormal, FocusVars, "", 0)
+	view := sb.View(statusColorTheme(), DefaultKeyMap(), ModeNormal, FocusVars, "", 0)
 	assert.Contains(t, view, "Saved .env")
 	assertStatusColor(t, view, statusPrimarySGR)
+}
+
+func TestStatusBarHintsNameTheKeysTheKeyMapBinds(t *testing.T) {
+	keys := DefaultKeyMap()
+	keys.Save = key.NewBinding(key.WithKeys("s"))
+	keys.Enter = key.NewBinding(key.WithKeys("ctrl+j"))
+	keys.Quit = key.NewBinding(key.WithKeys("x", "ctrl+c"))
+	keys.Deny = key.NewBinding(key.WithKeys("z"))
+	sb := NewStatusBarModel()
+	sb.Width = 200
+	theme := BuildTheme(true, config.ColorConfig{})
+	hint := func(mode AppMode, focus Focus) string {
+		return stripAnsi(sb.View(theme, keys, mode, focus, ".env", 5, DiffStats{}))
+	}
+
+	for _, focus := range []Focus{FocusFiles, FocusVars} {
+		assert.Contains(t, hint(ModeNormal, focus), "[s]save")
+		assert.NotContains(t, hint(ModeNormal, focus), "[w]", "the old key is gone")
+	}
+	assert.Contains(t, hint(ModeComparing, FocusVars), "[s]save")
+	assert.Contains(t, hint(ModeMatrix, FocusVars), "[x]back")
+	assert.Contains(t, hint(ModeCompareSelect, FocusFiles), "Ctrl+J to pick, Esc/x to cancel")
+	assert.Contains(t, hint(ModeEditing, FocusVars), "Ctrl+J to confirm")
+	assert.Contains(t, hint(ModeConfirmDelete, FocusVars), "(y/z)")
 }

@@ -113,7 +113,7 @@ Caught by `TestUsageDocumentsEveryFlag` and `TestKeybindingsDocumentsEveryKey`: 
 | `CODING_STANDARDS.md` | This file | A convention, pitfall or checklist changes |
 | `examples/config/full.toml` | Reference config users copy; its comments state defaults and limits | An option, default or limit changes |
 | The help sections listed in `helpContents` (`internal/tui/help.go`), each next to its screen's key handler (the prompts', which span several handlers, in `help.go`) | In-app help screen; the key column comes from the `KeyMap`, the descriptions from the section | A key's action, or the screens it works in, changes |
-| `modeHints` in `internal/tui/statusbar.go` | Status-bar key hints per mode | A key or a mode changes |
+| `modeHints` in `internal/tui/statusbar.go` | Status-bar key hints per mode; the keys come from the `KeyMap`, the descriptions from `modeHints` | A mode, or the action a hint names, changes |
 | `help:` tags of the `cli` struct in `main.go` | `--help` output | A flag changes |
 
 - **A behaviour change updates every surface above that describes the old behaviour, in the same change.** Find them by searching the surfaces for the terms the change touches (the key, flag, option, message, default), not only through the "Update when" column: a description of the old behaviour can sit anywhere.

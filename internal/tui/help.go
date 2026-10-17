@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"slices"
 	"strings"
 
 	"charm.land/bubbles/v2/key"
@@ -41,6 +42,12 @@ func alternatives(desc string, bindings ...key.Binding) helpRow {
 // pair is the row of two bindings that do the two halves of desc (up and
 // down, left and right file), their keys paired by position: "↑/↓  k/j".
 func pair(desc string, first, second key.Binding) helpRow {
+	return helpRow{strings.Join(pairColumns(first, second), "  "), desc}
+}
+
+// pairColumns are the keys of first and second paired by position, one
+// column for each: "↑/↓", "k/j".
+func pairColumns(first, second key.Binding) []string {
 	var columns []string
 	for i := range max(len(first.Keys()), len(second.Keys())) {
 		var labels []string
@@ -51,7 +58,18 @@ func pair(desc string, first, second key.Binding) helpRow {
 		}
 		columns = append(columns, strings.Join(labels, "/"))
 	}
-	return helpRow{strings.Join(columns, "  "), desc}
+	return columns
+}
+
+// shortKeys is the short form of bindings that the status-bar hints, the
+// prompts and the help's footer name: the first key of each, joined by "/":
+// "q", "←/→".
+func shortKeys(bindings ...key.Binding) string {
+	labels := make([]string, len(bindings))
+	for i, b := range bindings {
+		labels[i] = KeyLabel(b.Keys()[0])
+	}
+	return strings.Join(labels, "/")
 }
 
 // glyph is the row of an indicator, a glyph the panels draw rather than a key.
@@ -147,6 +165,8 @@ func helpText(sections []helpSection) string {
 // is taller than the terminal.
 type HelpViewModel struct {
 	text   string // the help text, one row per line
+	scroll string // the scroll keys the footer names: "↑/↓ k/j PgUp/PgDn"
+	close  string // the close keys the footer names: "Esc ? q"
 	offset int
 	width  int
 	height int
@@ -157,7 +177,11 @@ type HelpViewModel struct {
 // NewHelpViewModel creates the help screen for keys; wheel says whether the
 // mouse wheel scrolls it, so the help names the wheel only then.
 func NewHelpViewModel(keys KeyMap, wheel bool) HelpViewModel {
-	return HelpViewModel{text: helpText(helpContents(keys, wheel))}
+	return HelpViewModel{
+		text:   helpText(helpContents(keys, wheel)),
+		scroll: strings.Join(slices.Concat(pairColumns(keys.Up, keys.Down), pairColumns(keys.PageUp, keys.PageDown)), " "),
+		close:  strings.Join([]string{shortKeys(keys.Escape), shortKeys(keys.Help), shortKeys(keys.Quit)}, " "),
+	}
 }
 
 // SetSize lays the text out for a screen of the given size, pulling the
@@ -260,9 +284,9 @@ func (m *HelpViewModel) View(theme Theme) string {
 	end := min(m.offset+visible, len(m.lines))
 	text := lipgloss.NewStyle().Foreground(theme.ColorFg).Render(strings.Join(m.lines[m.offset:end], "\n"))
 
-	hint := "  Press Esc ? q to close"
+	hint := "  Press " + m.close + " to close"
 	if len(m.lines) > visible {
-		hint = "  Press ↑/↓ k/j PgUp/PgDn to scroll, Esc ? q to close"
+		hint = "  Press " + m.scroll + " to scroll, " + m.close + " to close"
 	}
 	footer := theme.MutedItem.Render(hint)
 

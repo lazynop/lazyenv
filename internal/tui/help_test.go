@@ -144,6 +144,17 @@ func TestHelpFooterNamesEveryCloseAndScrollKeyOnOneRowAtTheMinimumWidth(t *testi
 	assert.Contains(t, fitting, "Press Esc ? q to close")
 }
 
+func TestHelpFooterNamesTheKeysTheKeyMapBinds(t *testing.T) {
+	keys := DefaultKeyMap()
+	keys.Up = key.NewBinding(key.WithKeys("up", "i"))
+	keys.Quit = key.NewBinding(key.WithKeys("x", "ctrl+c"))
+	help := NewHelpViewModel(keys, false)
+	help.SetSize(MinTerminalWidth, MinTerminalHeight)
+
+	assert.Contains(t, stripAnsi(help.View(BuildTheme(true, config.ColorConfig{}))),
+		"Press ↑/↓ i/j PgUp/PgDn to scroll, Esc ? x to close")
+}
+
 // continuationIndent finds the screen row holding description and returns the
 // column the description starts at and the column the text of the row below
 // starts at.
@@ -223,6 +234,13 @@ func TestHelpJoinsAlternativeKeys(t *testing.T) {
 	keys := DefaultKeyMap()
 	assert.Equal(t, "q / Ctrl+C", alternatives("", keys.Quit).keys)
 	assert.Equal(t, "Esc / ?", alternatives("", keys.Escape, keys.Help).keys)
+}
+
+func TestShortKeysNameTheFirstKeyOfEachBinding(t *testing.T) {
+	keys := DefaultKeyMap()
+	assert.Equal(t, "q", shortKeys(keys.Quit))
+	assert.Equal(t, "Enter", shortKeys(keys.Enter))
+	assert.Equal(t, "←/→", shortKeys(keys.Left, keys.Right))
 }
 
 func TestHelpNamesTheKeysTheKeyMapBinds(t *testing.T) {

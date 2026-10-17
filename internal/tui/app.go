@@ -754,13 +754,13 @@ func (a App) screen() string {
 	case ModeHelp:
 		return a.helpView.View(a.theme)
 	case ModeComparing:
-		return a.withBottom(a.diffView.View(a.theme), a.statusBar.View(a.theme, a.mode, a.focus, "", 0, a.diffView.Stats))
+		return a.withBottom(a.diffView.View(a.theme), a.statusBar.View(a.theme, a.keys, a.mode, a.focus, "", 0, a.diffView.Stats))
 	case ModeEditingCompare:
-		return a.withBottom(a.diffView.View(a.theme), a.statusBar.View(a.theme, ModeEditing, a.focus, "", 0))
+		return a.withBottom(a.diffView.View(a.theme), a.statusBar.View(a.theme, a.keys, ModeEditing, a.focus, "", 0))
 	case ModeMatrix, ModeConfirmMatrixDelete:
-		return a.withBottom(a.matrixView.View(a.theme), a.statusBar.View(a.theme, a.mode, a.focus, "", 0))
+		return a.withBottom(a.matrixView.View(a.theme), a.statusBar.View(a.theme, a.keys, a.mode, a.focus, "", 0))
 	case ModeMatrixEditing:
-		return a.withBottom(a.matrixView.View(a.theme), a.statusBar.View(a.theme, ModeEditing, a.focus, "", 0))
+		return a.withBottom(a.matrixView.View(a.theme), a.statusBar.View(a.theme, a.keys, ModeEditing, a.focus, "", 0))
 	default:
 		// Two-panel layout
 		filePanel := a.fileList.View(a.theme)
@@ -776,7 +776,7 @@ func (a App) screen() string {
 			varCount = len(f.Vars)
 		}
 
-		return a.withBottom(panels, a.statusBar.View(a.theme, a.mode, a.focus, fileName, varCount))
+		return a.withBottom(panels, a.statusBar.View(a.theme, a.keys, a.mode, a.focus, fileName, varCount))
 	}
 }
 

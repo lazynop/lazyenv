@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -131,6 +132,15 @@ func TestReorderMenuSurvivesStaleClear(t *testing.T) {
 	assert.NotEmpty(t, app.statusBar.Message,
 		"reorder menu prompt must persist despite a stale clear timer")
 	assert.Equal(t, ModeReorderMenu, app.mode)
+}
+
+func TestReorderMenuNamesTheKeysTheKeyMapBinds(t *testing.T) {
+	app, _ := newTestAppWithDiskFile(t, "B=2\nA=1\n")
+	app.keys.ReorderAlpha = key.NewBinding(key.WithKeys("x"))
+
+	app = sendKey(app, tea.KeyPressMsg{Text: "O"})
+
+	assert.Equal(t, "Reorder on disk: [x]alphabetical  [g]grouped  [Esc]cancel", app.statusBar.Message)
 }
 
 // sendKey feeds one key press to the app and returns the updated model.

@@ -20,7 +20,7 @@
 │                  ││  VAR_12     value_12                                     │
 │                  ││  VAR_13     value_13                                     │
 ╰──────────────────╯╰──────────────────────────────────────────────────────────╯
-   [enter]select [c]compare [m]matrix [o]sort [g]group [w]save [r]reset [?]help
+   [Enter]select [c]compare [m]matrix [o]sort [g]group [w]save [r]reset [?]help
  [q]quit .env  34 vars
 === vars
 ╭──────────────────╮╭──────────────────────────────────────────────────────────╮
@@ -257,7 +257,7 @@
 │                  ││  VAR_12     value_12                                     │
 │                  ││  VAR_13     value_13                                     │
 ╰──────────────────╯╰──────────────────────────────────────────────────────────╯
-   Reorder on disk: [a]lphabetical  [g]rouped  [esc]cancel        .env  34 vars
+   Reorder on disk: [a]alphabetical  [g]grouped  [Esc]cancel      .env  34 vars
 === reorder confirm
 ╭──────────────────╮╭──────────────────────────────────────────────────────────╮
 │ Files  (2)       ││ .env  (34 vars)                                          │
@@ -496,8 +496,8 @@
 │  VAR_12      value_12               ││  VAR_12      (missing)            + │
 │  VAR_13      value_13               ││  VAR_13      (missing)            + │
 ╰─────────────────────────────────────╯╰─────────────────────────────────────╯
-   [←/→]copy [e/E]edit L/R [n/N]next/prev diff [f]filter [^S]secrets [w]save
- [r]reset [q]back │ 2≠ 31+ 1-
+   [←/→]copy [e/E]edit L/R [n/N]next/prev diff [f]filter [Ctrl+S]secrets
+ [w]save [r]reset [q]back │ 2≠ 31+ 1-
 === compare edit
 ╭─────────────────────────────────────╮╭─────────────────────────────────────╮
 │ .env                                ││ .env.local                          │
@@ -544,7 +544,7 @@
  VAR_11               ✓             ✗             1/2
  VAR_12               ✓             ✗             1/2
    35 keys  32/70 cells missing  sort:alpha
-   [↑↓←→]navigate [a]add missing [d]delete [o]sort [q]back
+   [↑/↓/←/→]navigate [a]add missing [d]delete [o]sort [q]back
 === matrix add
  KEY                 .env          .env.local
  ──────────────────────────────────────────────────────────────────────────────

@@ -19,7 +19,8 @@ func (a App) startReorder() (tea.Model, tea.Cmd) {
 		return a, a.flashWarning("Need at least 2 variables to reorder")
 	}
 	a.mode = ModeReorderMenu
-	a.statusBar.SetMessage("Reorder on disk: [a]lphabetical  [g]rouped  [esc]cancel")
+	a.statusBar.SetMessage(fmt.Sprintf("Reorder on disk: [%s]alphabetical  [%s]grouped  [%s]cancel",
+		shortKeys(a.keys.ReorderAlpha), shortKeys(a.keys.ReorderGrouped), shortKeys(a.keys.Escape)))
 	return a, nil
 }
 

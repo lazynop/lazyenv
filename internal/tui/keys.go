@@ -242,9 +242,10 @@ var keyLabels = map[string]string{
 	"end":    "End",
 }
 
-// KeyLabel returns how the help screen and docs/keybindings.md write the key
-// named k: a single character as it is, ctrl+<x> as Ctrl+<X>, any other name
-// from keyLabels, or as it is when keyLabels has no entry for it.
+// KeyLabel returns how the help screen, the status-bar hints, the prompts and
+// docs/keybindings.md write the key named k: a single character as it is,
+// ctrl+<x> as Ctrl+<X>, any other name from keyLabels, or as it is when
+// keyLabels has no entry for it.
 func KeyLabel(k string) string {
 	label, _ := keyLabel(k)
 	return label
