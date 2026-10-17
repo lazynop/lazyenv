@@ -286,12 +286,10 @@
 
     lazyenv — TUI for managing .env files
 
-    Navigation
-      ↑/↓  j/k      Navigate items
-      ←/→  h/l      Switch panels (files / variables)
-      Enter          Select file
-
-    Actions
+    Main view
+      ↑/↓  j/k       Navigate items
+      ←/→  h/l       Switch panels (files / variables)
+      Enter          Select file, or collapse/expand a group header
       e              Edit variable value
       E              Rename variable key
       a              Add new variable
@@ -304,13 +302,15 @@
       D              Delete file from disk
       R              Rename file
       T              Create template (keys only, no values)
+      w              Save changes
+      r              Reset file (discard changes)
 
     Press ↑/↓ or j/k to scroll, Esc, ? or q to close
 
 === help scrolled to the end
 
-      Space/Enter    Collapse/expand group (on header)
-      Ctrl+S         Toggle secret masking
+      y              Confirm a yes/no prompt
+      Esc            Cancel
 
     File Indicators
       ●              Selected file
@@ -325,10 +325,10 @@
       ○              Empty value
       …              Placeholder value
 
-    General
-      ?              Show/hide this help
-      q / Ctrl+C     Quit (in compare and matrix: back to main view)
-      Esc            Back / cancel
+    This help
+      Esc / ?        Close
+      q / Ctrl+C     Close
+      ↑/↓  j/k       Scroll (or the mouse wheel)
 
     Press ↑/↓ or j/k to scroll, Esc, ? or q to close
 

@@ -248,8 +248,8 @@ func TestDocsStateCurrentCounts(t *testing.T) {
 }
 
 // TestHelpScreenNamesBoundKeys checks the in-app help screen (?): every key
-// it names in the Navigation, Actions and General sections is bound in the
-// KeyMap. The indicator sections list glyphs, not keys.
+// it names is bound in the KeyMap. The indicator sections list glyphs, not
+// keys. The terminal is tall enough to show the whole help unscrolled.
 func TestHelpScreenNamesBoundKeys(t *testing.T) {
 	bound := map[string]bool{}
 	keyMap := reflect.ValueOf(tui.DefaultKeyMap())
@@ -260,7 +260,7 @@ func TestHelpScreenNamesBoundKeys(t *testing.T) {
 	}
 
 	var app tea.Model = tui.NewApp(config.DefaultConfig(), tui.StartupMessages{})
-	app, _ = app.Update(tea.WindowSizeMsg{Width: 120, Height: 80})
+	app, _ = app.Update(tea.WindowSizeMsg{Width: 120, Height: 200})
 	app, _ = app.Update(tea.KeyPressMsg{Text: "?"})
 	screen := ansiRe.ReplaceAllString(app.View().Content, "")
 

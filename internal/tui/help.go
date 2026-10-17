@@ -10,12 +10,10 @@ import (
 // helpText is the help screen's text, one row per line.
 const helpText = `  lazyenv — TUI for managing .env files
 
-  Navigation
-    ↑/↓  j/k      Navigate items
-    ←/→  h/l      Switch panels (files / variables)
-    Enter          Select file
-
-  Actions
+  Main view
+    ↑/↓  j/k       Navigate items
+    ←/→  h/l       Switch panels (files / variables)
+    Enter          Select file, or collapse/expand a group header
     e              Edit variable value
     E              Rename variable key
     a              Add new variable
@@ -31,14 +29,41 @@ const helpText = `  lazyenv — TUI for managing .env files
     w              Save changes
     r              Reset file (discard changes)
     c              Compare two files (diff view)
-    n/N            Jump to next/prev diff (compare mode)
     m              Completeness matrix (multi-file)
     /              Search variables
     o              Toggle sort (position / alphabetical)
     O              Reorder variables on disk (alphabetical / grouped)
     g              Toggle variable grouping by prefix
-    Space/Enter    Collapse/expand group (on header)
+    Space          Collapse/expand group (on header)
     Ctrl+S         Toggle secret masking
+    ?              Show this help
+    q / Ctrl+C     Quit
+
+  Compare view
+    ↑/↓  j/k       Navigate entries
+    n/N            Jump to next/prev difference
+    ←/→  h/l       Copy value to the left/right file
+    e/E            Edit value in the left/right file
+    f              Toggle filter: differences only
+    w              Save both files
+    r              Reset both files
+    Ctrl+S         Toggle secret masking
+    Esc            Back to main view
+    q / Ctrl+C     Back to main view
+
+  Matrix
+    ↑/↓  j/k       Move between variables
+    ←/→  h/l       Move between files
+    a              Add missing variable to the file
+    d              Delete variable from the file
+    o              Toggle sort (alphabetical / completeness)
+    Esc            Back to main view
+    q / Ctrl+C     Back to main view
+
+  Prompts
+    Enter          Confirm a text input or a search
+    y              Confirm a yes/no prompt
+    Esc            Cancel
 
   File Indicators
     ●              Selected file
@@ -53,10 +78,10 @@ const helpText = `  lazyenv — TUI for managing .env files
     ○              Empty value
     …              Placeholder value
 
-  General
-    ?              Show/hide this help
-    q / Ctrl+C     Quit (in compare and matrix: back to main view)
-    Esc            Back / cancel`
+  This help
+    Esc / ?        Close
+    q / Ctrl+C     Close
+    ↑/↓  j/k       Scroll (or the mouse wheel)`
 
 // HelpViewModel manages the help screen (?): helpText, scrolled when it is
 // taller than the terminal.

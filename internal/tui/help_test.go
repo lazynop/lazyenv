@@ -19,7 +19,10 @@ func openHelp(width, height int) App {
 
 // scrollPastTheEnd is more down presses than the help has rows to scroll at
 // any size the layout tests render, the 60x10 minimum included.
-const scrollPastTheEnd = 80
+const scrollPastTheEnd = 120
+
+// helpLastRow is the description on the last row of the help.
+const helpLastRow = "Scroll (or the mouse wheel)"
 
 // helpScreen is the help screen as plain text.
 func helpScreen(app App) string {
@@ -29,15 +32,15 @@ func helpScreen(app App) string {
 func TestViewHelp(t *testing.T) {
 	help := helpScreen(openHelp(100, 40))
 	assert.Contains(t, help, "lazyenv")
-	assert.Contains(t, help, "Navigation")
-	assert.Contains(t, help, "Actions")
+	assert.Contains(t, help, "Main view")
+	assert.Contains(t, help, "Compare view")
 	assert.Contains(t, help, "Esc, ? or q to close")
 }
 
 func TestHelpScrollsDownToItsLastRow(t *testing.T) {
 	app := openHelp(80, 24)
 	assert.Contains(t, helpScreen(app), "lazyenv — TUI for managing .env files")
-	assert.NotContains(t, helpScreen(app), "Back / cancel")
+	assert.NotContains(t, helpScreen(app), helpLastRow)
 
 	for range scrollPastTheEnd {
 		app = press(app, "down")
@@ -45,7 +48,7 @@ func TestHelpScrollsDownToItsLastRow(t *testing.T) {
 
 	screen := helpScreen(app)
 	assert.Equal(t, 24, lipgloss.Height(screen))
-	assert.Contains(t, screen, "Back / cancel", "the last row is reachable")
+	assert.Contains(t, screen, helpLastRow, "the last row is reachable")
 	assert.NotContains(t, screen, "lazyenv — TUI for managing .env files")
 	assert.Contains(t, screen, "Esc, ? or q to close", "the footer stays on screen")
 }
@@ -88,10 +91,10 @@ func TestHelpScrollsWithTheMouseWheel(t *testing.T) {
 func TestHelpHintsAtScrollingOnlyWhenItOverflows(t *testing.T) {
 	assert.Contains(t, helpScreen(openHelp(80, 24)), "↑/↓ or j/k to scroll")
 
-	tall := helpScreen(openHelp(120, 80))
+	tall := helpScreen(openHelp(120, 200))
 	assert.NotContains(t, tall, "to scroll")
 	assert.Contains(t, tall, "lazyenv — TUI", "a terminal tall enough shows the whole help")
-	assert.Contains(t, tall, "Back / cancel", "a terminal tall enough shows the whole help")
+	assert.Contains(t, tall, helpLastRow, "a terminal tall enough shows the whole help")
 }
 
 func TestHelpGrowingTheTerminalScrollsBackToFit(t *testing.T) {
@@ -121,8 +124,8 @@ func TestHelpFooterNamesEveryCloseAndScrollKeyOnOneRowAtTheMinimumWidth(t *testi
 	overflowing := helpScreen(openHelp(MinTerminalWidth, MinTerminalHeight))
 	assert.Contains(t, overflowing, "Press ↑/↓ or j/k to scroll, Esc, ? or q to close")
 
-	fitting := helpScreen(openHelp(MinTerminalWidth, 80))
-	assert.Contains(t, fitting, "Back / cancel", "a terminal tall enough shows the whole help")
+	fitting := helpScreen(openHelp(MinTerminalWidth, 200))
+	assert.Contains(t, fitting, helpLastRow, "a terminal tall enough shows the whole help")
 	assert.Contains(t, fitting, "Press Esc, ? or q to close")
 }
 
@@ -146,8 +149,8 @@ func continuationIndent(t *testing.T, screen, description string) (descCol, next
 }
 
 func TestHelpIndentsWrappedRowsUnderTheirDescription(t *testing.T) {
-	tall := helpScreen(openHelp(MinTerminalWidth, 80))
-	for _, description := range []string{"Quit (in compare", "Reorder variables on disk"} {
+	tall := helpScreen(openHelp(MinTerminalWidth, 200))
+	for _, description := range []string{"Create template (keys only", "Reorder variables on disk"} {
 		descCol, nextCol := continuationIndent(t, tall, description)
 		assert.Equal(t, descCol, nextCol, "the continuation of %q starts under its description", description)
 	}
@@ -157,7 +160,85 @@ func TestHelpIndentsWrappedRowsUnderTheirDescription(t *testing.T) {
 		app = press(app, "down")
 	}
 	screen := helpScreen(app)
-	assert.Contains(t, screen, "Back / cancel", "scrolling counts the wrapped rows")
-	descCol, nextCol := continuationIndent(t, screen, "Quit (in compare")
-	assert.Equal(t, descCol, nextCol, "the wrapped row scrolls as a whole")
+	assert.Contains(t, screen, helpLastRow, "scrolling counts the wrapped rows")
+}
+
+// helpSections splits a help screen tall enough for the whole text into its
+// sections: each title, at the text's left margin, maps to its rows, trimmed.
+func helpSections(screen string) map[string][]string {
+	sections := map[string][]string{}
+	title := ""
+	for _, row := range strings.Split(screen, "\n") {
+		text := strings.TrimSpace(row)
+		switch {
+		case text == "":
+		case strings.HasPrefix(row, strings.Repeat(" ", helpPaddingWidth+4)):
+			sections[title] = append(sections[title], text)
+		default:
+			title = text
+		}
+	}
+	return sections
+}
+
+// helpRow returns the row of section whose key column is keys, or "".
+func helpRow(sections map[string][]string, section, keys string) string {
+	for _, row := range sections[section] {
+		if column, _, _ := strings.Cut(row, "   "); strings.TrimSpace(column) == keys {
+			return row
+		}
+	}
+	return ""
+}
+
+func TestHelpGroupsTheKeysByScreen(t *testing.T) {
+	sections := helpSections(helpScreen(openHelp(120, 200)))
+
+	assert.Contains(t, helpRow(sections, "Main view", "N"), "Create new .env file")
+	assert.Contains(t, helpRow(sections, "Main view", "q / Ctrl+C"), "Quit")
+	assert.Contains(t, helpRow(sections, "Compare view", "n/N"), "next/prev difference")
+	assert.Contains(t, helpRow(sections, "Compare view", "←/→  h/l"), "Copy value")
+	assert.Contains(t, helpRow(sections, "Compare view", "e/E"), "left/right file")
+	assert.Contains(t, helpRow(sections, "Compare view", "f"), "differences only")
+	assert.Contains(t, helpRow(sections, "Compare view", "q / Ctrl+C"), "Back to main view")
+	assert.Contains(t, helpRow(sections, "Matrix", "a"), "Add missing variable")
+	assert.Contains(t, helpRow(sections, "Matrix", "o"), "completeness")
+	assert.Contains(t, helpRow(sections, "This help", "↑/↓  j/k"), "mouse wheel")
+	assert.Contains(t, helpRow(sections, "This help", "q / Ctrl+C"), "Close")
+	assert.Contains(t, helpRow(sections, "This help", "Esc / ?"), "Close")
+}
+
+func TestHelpNamesEachKeyOnceASection(t *testing.T) {
+	for title, rows := range helpSections(helpScreen(openHelp(120, 200))) {
+		if strings.Contains(title, "Indicators") {
+			continue // glyphs, not keys
+		}
+		seen := map[string]bool{}
+		for _, row := range rows {
+			column, _, _ := strings.Cut(row, "   ")
+			for _, k := range strings.FieldsFunc(column, func(r rune) bool { return r == ' ' || r == '/' }) {
+				assert.False(t, seen[k], "%s names %s twice", title, k)
+				seen[k] = true
+			}
+		}
+	}
+}
+
+func TestHelpAlignsItsDescriptions(t *testing.T) {
+	sections := helpSections(helpScreen(openHelp(120, 200)))
+	var columns []int
+	for title, rows := range sections {
+		if title == "" {
+			continue
+		}
+		for _, row := range rows {
+			column, _, _ := strings.Cut(row, "   ")
+			description := strings.TrimLeft(row[len(column):], " ")
+			columns = append(columns, lipgloss.Width(row)-lipgloss.Width(description))
+		}
+	}
+	require.NotEmpty(t, columns)
+	for _, c := range columns {
+		assert.Equal(t, columns[0], c, "every description starts at the same column")
+	}
 }
