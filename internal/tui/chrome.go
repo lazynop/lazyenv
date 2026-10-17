@@ -48,4 +48,8 @@ const (
 	// matrixChromeHeight is the rows the matrix view draws around its body
 	// rows: header + separator row + stats footer.
 	matrixChromeHeight = matrixContentOffsetY + 1
+
+	// matrixPaddingWidth is the left + right padding of the matrix view,
+	// which has no border.
+	matrixPaddingWidth = 2
 )

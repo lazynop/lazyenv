@@ -140,7 +140,7 @@ func (m *MatrixModel) counterWidth() int {
 }
 
 func (m *MatrixModel) visibleCols() int {
-	available := m.Width - m.layout.MatrixKeyWidth - m.counterWidth() - 2
+	available := m.Width - matrixPaddingWidth - m.layout.MatrixKeyWidth - m.counterWidth()
 	if available < m.layout.MatrixColWidth {
 		return 1
 	}
@@ -294,7 +294,7 @@ func (m *MatrixModel) View(theme Theme) string {
 	b.WriteString("\n")
 
 	// Separator
-	b.WriteString(theme.MutedItem.Render(strings.Repeat("─", m.Width-panelBorderWidth)))
+	b.WriteString(theme.MutedItem.Render(strings.Repeat("─", m.Width-matrixPaddingWidth)))
 	b.WriteString("\n")
 
 	// Body rows
@@ -322,7 +322,7 @@ func (m *MatrixModel) View(theme Theme) string {
 	stats := theme.MutedItem.Render(truncate(
 		fmt.Sprintf("  %d keys  %d/%d cells missing  sort:%s",
 			len(m.entries), missing, total, m.sortLabel()),
-		m.Width-panelBorderWidth))
+		m.Width-matrixPaddingWidth))
 
 	content := b.String()
 
@@ -332,7 +332,7 @@ func (m *MatrixModel) View(theme Theme) string {
 
 	style := lipgloss.NewStyle().
 		Width(m.Width).
-		Padding(0, 1)
+		Padding(0, matrixPaddingWidth/2)
 
 	return style.Render(content + stats)
 }
