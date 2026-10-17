@@ -104,8 +104,11 @@ func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 	case ModeComparing:
 		wheelScroll(lines, up, a.diffView.MoveUp, a.diffView.MoveDown)
 	case ModeCompareSelect:
-		// The cursor picks the compare target, not the active file.
-		wheelScroll(lines, up, a.fileList.MoveUp, a.fileList.MoveDown)
+		// Only the file list picks the compare target, and its cursor picks
+		// it, not the active file.
+		if msg.X < a.fileWidth {
+			wheelScroll(lines, up, a.fileList.MoveUp, a.fileList.MoveDown)
+		}
 	case ModeMatrix:
 		wheelScroll(lines, up, a.matrixView.MoveUp, a.matrixView.MoveDown)
 	case ModeHelp:

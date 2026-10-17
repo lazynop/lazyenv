@@ -374,6 +374,19 @@ func TestMouseWheelCompareSelectMode_MovesCursorOnly(t *testing.T) {
 	assert.Same(t, f1, app.varList.File, "the var list keeps the active file")
 }
 
+// TestMouseWheelCompareSelectMode_IgnoresTheVarPanel scrolls the wheel over
+// the var panel while picking the second file to compare: like a click there,
+// it leaves the compare target alone.
+func TestMouseWheelCompareSelectMode_IgnoresTheVarPanel(t *testing.T) {
+	f1, f2 := makeTestFile(".env", "A"), makeTestFile(".env.prod", "B")
+	updated, _ := newTestApp([]*model.EnvFile{f1, f2}).Update(tea.WindowSizeMsg{Width: 120, Height: 40})
+	app := press(updated.(App), "c")
+
+	updated, _ = app.Update(tea.MouseWheelMsg{X: app.fileWidth + 5, Y: 4, Button: tea.MouseWheelDown})
+
+	assert.Equal(t, 0, updated.(App).fileList.Cursor, "the wheel over the var panel moves nothing")
+}
+
 // TestMouseClickEditingCompareMode_KeepsTheEditedEntry clicks another row of
 // the diff while its edit bar is open: the bar edits the entry it was opened
 // on, so the cursor stays there.
