@@ -184,15 +184,16 @@ func (a App) handleCompareSelectKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.fileList.MoveDown()
 	case key.Matches(msg, a.keys.Enter):
 		second := a.fileList.CursorFile()
-		if second != nil && second == a.compareFirstFile {
+		if second == nil {
+			break
+		}
+		if second == a.compareFirstFile {
 			return a, a.flashWarning("Pick a different file to compare with")
 		}
-		if second != nil && a.compareFirstFile != nil {
-			a.diffView.SetFiles(a.compareFirstFile, second)
-			a.diffView.ShowSecrets = a.varList.ShowSecrets
-			a.mode = ModeComparing
-			a.statusBar.ClearMessage()
-		}
+		a.diffView.SetFiles(a.compareFirstFile, second)
+		a.diffView.ShowSecrets = a.varList.ShowSecrets
+		a.mode = ModeComparing
+		a.statusBar.ClearMessage()
 	}
 	return a, nil
 }
