@@ -24,10 +24,12 @@ const (
 	// statusBarHeight is the status bar row at the bottom of the screen.
 	statusBarHeight = 1
 
-	// bottomChromeHeight is the vertical space reserved below the panels of
-	// the normal, compare and matrix views: input bar (the editor bar in
-	// compare and matrix mode) + status bar + one spare row (the status bar
-	// or the editor bar wraps to two rows on narrow terminals).
+	// bottomChromeHeight is the rows reserved below the body of the normal,
+	// compare and matrix views in every mode, drawn or not, so the body keeps
+	// its height when an input bar opens or the status bar wraps: one for the
+	// input bar, which never wraps, and two for the status bar, which wraps
+	// on narrow terminals and takes the input bar's row too while no input
+	// bar is open. App.withBottom cuts a status bar taller than its rows.
 	bottomChromeHeight = 3
 
 	// compareMarginWidth is the horizontal margin around the side-by-side

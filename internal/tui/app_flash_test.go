@@ -3,9 +3,11 @@ package tui
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -18,6 +20,22 @@ import (
 // a transient status message, statusBar.Message is set and a non-nil cmd
 // (the clear timer) is returned. They must pass both before and after
 // extracting a flashMessage/flashError helper.
+
+// TestLongMessageKeepsTheScreenInTheTerminal shows a message that wraps the
+// status bar onto many rows, in a view without an input bar and in one that
+// opens it while the message is still up: the screen stays within the
+// terminal.
+func TestLongMessageKeepsTheScreenInTheTerminal(t *testing.T) {
+	for _, keys := range [][]string{{"right"}, {"right", "e"}} {
+		updated, _ := newTestApp(layoutFiles()).Update(tea.WindowSizeMsg{Width: 60, Height: 16})
+		app := updated.(App)
+		app.flashError("Error saving: " + strings.Repeat("permission denied ", 12))
+
+		app = press(app, keys...)
+
+		assert.LessOrEqual(t, lipgloss.Height(app.View().Content), 16, "after %v: taller than the terminal", keys)
+	}
+}
 
 func TestFlash_CreateFileInvalidPattern(t *testing.T) {
 	app := newTestApp(nil)

@@ -649,21 +649,13 @@ func (a App) View() tea.View {
 	case ModeHelp:
 		content = a.viewHelp()
 	case ModeComparing:
-		diffContent := a.diffView.View(a.theme)
-		statusBarContent := a.statusBar.View(a.theme, a.mode, a.focus, "", 0, a.diffView.Stats)
-		content = lipgloss.JoinVertical(lipgloss.Left, diffContent, statusBarContent)
+		content = a.withBottom(a.diffView.View(a.theme), a.statusBar.View(a.theme, a.mode, a.focus, "", 0, a.diffView.Stats))
 	case ModeEditingCompare:
-		diffContent := a.diffView.View(a.theme)
-		statusBarContent := a.statusBar.View(a.theme, ModeEditing, a.focus, "", 0)
-		content = lipgloss.JoinVertical(lipgloss.Left, diffContent, a.inputBarView(), statusBarContent)
+		content = a.withBottom(a.diffView.View(a.theme), a.statusBar.View(a.theme, ModeEditing, a.focus, "", 0))
 	case ModeMatrix, ModeConfirmMatrixDelete:
-		matrixContent := a.matrixView.View(a.theme)
-		statusBarContent := a.statusBar.View(a.theme, a.mode, a.focus, "", 0)
-		content = lipgloss.JoinVertical(lipgloss.Left, matrixContent, statusBarContent)
+		content = a.withBottom(a.matrixView.View(a.theme), a.statusBar.View(a.theme, a.mode, a.focus, "", 0))
 	case ModeMatrixEditing:
-		matrixContent := a.matrixView.View(a.theme)
-		statusBarContent := a.statusBar.View(a.theme, ModeEditing, a.focus, "", 0)
-		content = lipgloss.JoinVertical(lipgloss.Left, matrixContent, a.inputBarView(), statusBarContent)
+		content = a.withBottom(a.matrixView.View(a.theme), a.statusBar.View(a.theme, ModeEditing, a.focus, "", 0))
 	default:
 		a.updateLayout()
 
@@ -681,13 +673,7 @@ func (a App) View() tea.View {
 			varCount = len(f.Vars)
 		}
 
-		statusBarContent := a.statusBar.View(a.theme, a.mode, a.focus, fileName, varCount)
-
-		if inputBar := a.inputBarView(); inputBar != "" {
-			content = lipgloss.JoinVertical(lipgloss.Left, panels, inputBar, statusBarContent)
-		} else {
-			content = lipgloss.JoinVertical(lipgloss.Left, panels, statusBarContent)
-		}
+		content = a.withBottom(panels, a.statusBar.View(a.theme, a.mode, a.focus, fileName, varCount))
 	}
 
 	view := tea.NewView(content)
@@ -697,6 +683,22 @@ func (a App) View() tea.View {
 		view.MouseMode = tea.MouseModeCellMotion
 	}
 	return view
+}
+
+// withBottom stacks body over the current mode's input bar, if any, and
+// status, the status bar, in the bottomChromeHeight rows every view reserves
+// below its body: status is cut to the rows the input bar leaves.
+func (a App) withBottom(body, status string) string {
+	parts := []string{body}
+	statusRows := bottomChromeHeight
+	if bar := a.inputBarView(); bar != "" {
+		parts = append(parts, bar)
+		statusRows -= lipgloss.Height(bar)
+	}
+	if rows := strings.Split(status, "\n"); len(rows) > statusRows {
+		status = strings.Join(rows[:statusRows], "\n")
+	}
+	return lipgloss.JoinVertical(lipgloss.Left, append(parts, status)...)
 }
 
 // inputBar returns the label and the text input of the current mode's input
