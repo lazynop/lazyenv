@@ -79,8 +79,9 @@ func (a App) handleMatrixMouseClick(msg tea.MouseClickMsg) App {
 	}
 	keyWidth := a.matrixView.layout.MatrixKeyWidth
 	colWidth := a.matrixView.layout.MatrixColWidth
-	if msg.X >= keyWidth {
-		col := (msg.X-keyWidth)/colWidth + a.matrixView.offsetCol
+	x := msg.X - matrixPaddingWidth/2 // the matrix is drawn after its left padding
+	if x >= keyWidth {
+		col := (x-keyWidth)/colWidth + a.matrixView.offsetCol
 		a.matrixView.SetCursor(row, col)
 	} else {
 		a.matrixView.SetCursor(row, a.matrixView.cursorCol)

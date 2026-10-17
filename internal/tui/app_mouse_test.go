@@ -367,7 +367,7 @@ func TestMouseClickMatrixMode_SetsCell(t *testing.T) {
 	cw := app.matrixView.layout.MatrixColWidth
 
 	// Data cell: row 2 (Y=4), column 1 (X one column band past the key column)
-	updated, _ := app.Update(tea.MouseClickMsg{X: kw + cw, Y: 4, Button: tea.MouseLeft})
+	updated, _ := app.Update(tea.MouseClickMsg{X: matrixPaddingWidth/2 + kw + cw, Y: 4, Button: tea.MouseLeft})
 	app = updated.(App)
 	assert.Equal(t, 2, app.matrixView.cursorRow)
 	assert.Equal(t, 1, app.matrixView.cursorCol)
@@ -377,6 +377,22 @@ func TestMouseClickMatrixMode_SetsCell(t *testing.T) {
 	app = updated.(App)
 	assert.Equal(t, 1, app.matrixView.cursorRow)
 	assert.Equal(t, 1, app.matrixView.cursorCol, "key-column click keeps the current column")
+}
+
+// TestMouseClickMatrixMode_SelectsTheColumnDrawnAtX clicks the first cell of a
+// file's column, as drawn under its name in the header, and the cell just
+// before it, the last of the previous column.
+func TestMouseClickMatrixMode_SelectsTheColumnDrawnAtX(t *testing.T) {
+	updated, _ := newTestApp([]*model.EnvFile{makeTestFile(".env.a", "K"), makeTestFile(".env.b", "K")}).Update(tea.WindowSizeMsg{Width: 120, Height: 24})
+	app := press(updated.(App), "m")
+	header := strings.Split(stripAnsi(app.View().Content), "\n")[0]
+	x := strings.Index(header, ".env.b")
+	require.Positive(t, x, "the header should name .env.b")
+
+	for _, tt := range []struct{ x, col int }{{x, 1}, {x - 1, 0}} {
+		updated, _ = app.Update(tea.MouseClickMsg{X: tt.x, Y: matrixContentOffsetY, Button: tea.MouseLeft})
+		assert.Equal(t, tt.col, updated.(App).matrixView.cursorCol, "click at X=%d", tt.x)
+	}
 }
 
 func TestMouseWheelMatrixMode_Scrolls(t *testing.T) {
