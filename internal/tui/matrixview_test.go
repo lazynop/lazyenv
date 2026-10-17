@@ -314,8 +314,8 @@ func TestMatrixViewNarrowWidthKeepsEachRowOnOneRow(t *testing.T) {
 
 // TestMatrixViewAlignsColumnsAfterANonASCIIFileName checks that a file name
 // whose display width differs from its rune count (wide characters, a
-// combining accent) fills exactly one column, so the next file's name and its
-// check mark start where the column layout puts them.
+// combining accent) fills exactly one column, so the next file's name starts
+// where the column layout puts it, right above that file's check mark.
 func TestMatrixViewAlignsColumnsAfterANonASCIIFileName(t *testing.T) {
 	layout := config.DefaultConfig().Layout
 	theme := BuildTheme(true, config.ColorConfig{})
@@ -326,7 +326,7 @@ func TestMatrixViewAlignsColumnsAfterANonASCIIFileName(t *testing.T) {
 	}
 
 	for _, name := range []string{".env.日本", ".env.cafe\u0301"} {
-		// KEY is only in the second file: its row reads ✗ then ✓.
+		// KEY_A is only in the second file: its row reads ✗ then ✓.
 		files := []*model.EnvFile{makeTestFile(name), makeTestFile(".env", "KEY_A")}
 		m := NewMatrixModel(files, layout, config.SecretsConfig{})
 		m.Width, m.Height = 80, 10
@@ -335,7 +335,7 @@ func TestMatrixViewAlignsColumnsAfterANonASCIIFileName(t *testing.T) {
 		header, row := lines[0], lines[2]
 		secondCol := colOf(header, "KEY") + layout.MatrixKeyWidth + layout.MatrixColWidth
 		assert.Equal(t, secondCol, colOf(header, ".env"), "second file name after %q", name)
-		assert.Equal(t, secondCol+1, colOf(row, "✓"), "check mark after %q", name)
+		assert.Equal(t, colOf(header, ".env")+1, colOf(row, "✓"), "check mark under the second file after %q", name)
 	}
 }
 
