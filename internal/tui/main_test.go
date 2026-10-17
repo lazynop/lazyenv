@@ -18,10 +18,11 @@ const eastAsianEnv = "RUNEWIDTH_EASTASIAN"
 
 // TestMain counts East Asian ambiguous runes as one column whatever the
 // machine running the tests says, so every rendered screen, and the tests that
-// measure one, come out the same everywhere. go-runewidth also reads the
-// setting from the locale, into DefaultCondition, which is pinned here; x/ansi
-// reads eastAsianEnv at init into unexported state, so with the variable set
-// the tests rerun in a process without it.
+// measure one, come out the same everywhere. go-runewidth, which the bubbles
+// text inputs measure with, also reads the setting from the locale, into
+// DefaultCondition, which is pinned here; x/ansi reads eastAsianEnv at init
+// into unexported state, so with the variable set the tests rerun in a process
+// without it.
 func TestMain(m *testing.M) {
 	if _, set := os.LookupEnv(eastAsianEnv); set {
 		os.Exit(rerunWithout(eastAsianEnv))

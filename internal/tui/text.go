@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
-	"github.com/mattn/go-runewidth"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/lazynop/lazyenv/internal/util"
 )
@@ -32,21 +32,22 @@ var controlCharReplacer = strings.NewReplacer(
 func flattenValue(s string) string { return controlCharReplacer.Replace(s) }
 
 // truncate fits s into maxCols display columns, appending ".." when the
-// string is actually shortened. It operates on Unicode display width (via
-// go-runewidth, the same oracle lipgloss.Width uses), so multi-byte runes
-// like secret bullets or flatten glyphs are never sliced mid-sequence.
+// string is actually shortened. It measures s by grapheme cluster with x/ansi,
+// as lipgloss.Width does, so a row it fits is a row lipgloss draws in that
+// width, and multi-byte runes like secret bullets or flatten glyphs are never
+// sliced mid-sequence.
 func truncate(s string, maxCols int) string {
 	if maxCols <= 0 {
 		return ""
 	}
-	if runewidth.StringWidth(s) <= maxCols {
+	if ansi.StringWidth(s) <= maxCols {
 		return s
 	}
 	if maxCols <= 2 {
 		// Not enough room for the ".." ellipsis — hard-truncate with no tail.
-		return runewidth.Truncate(s, maxCols, "")
+		return ansi.Truncate(s, maxCols, "")
 	}
-	return runewidth.Truncate(s, maxCols, "..")
+	return ansi.Truncate(s, maxCols, "..")
 }
 
 func padRight(s string, width int) string {

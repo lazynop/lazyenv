@@ -1,8 +1,10 @@
 package tui
 
 import (
+	"strings"
 	"testing"
 
+	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -85,5 +87,19 @@ func TestTruncate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.want, truncate(tt.in, tt.maxCols))
 		})
+	}
+}
+
+// TestTruncateMeasuresLikeLipgloss fits strings whose width go-runewidth and
+// lipgloss disagree on. truncate must measure them as lipgloss draws them, or
+// a row it fits wraps (an emoji with VS16 takes two columns, not one) or loses
+// text that fits (a ZWJ sequence is one two-column cluster).
+func TestTruncateMeasuresLikeLipgloss(t *testing.T) {
+	for _, s := range []string{strings.Repeat("\u2764\uFE0F", 10), "\U0001F468\u200D\U0001F469\u200D\U0001F467 family"} {
+		width := lipgloss.Width(s)
+		for cols := 1; cols < width; cols++ {
+			assert.LessOrEqual(t, lipgloss.Width(truncate(s, cols)), cols, "%q in %d columns", s, cols)
+		}
+		assert.Equal(t, s, truncate(s, width), "%q fits in its own width", s)
 	}
 }
