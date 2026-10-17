@@ -76,9 +76,7 @@ func (m *DiffViewModel) recompute() {
 	if m.Cursor >= len(m.Entries) {
 		m.Cursor = max(0, len(m.Entries)-1)
 	}
-	if m.Offset > m.Cursor {
-		m.Offset = m.Cursor
-	}
+	m.ensureVisible()
 }
 
 // ToggleFilter toggles hiding of equal entries.
@@ -141,15 +139,7 @@ func (m *DiffViewModel) visibleLines() int {
 
 // ensureVisible scrolls just enough to keep the cursor on screen.
 func (m *DiffViewModel) ensureVisible() {
-	if m.Cursor < m.Offset {
-		m.Offset = m.Cursor
-	}
-	visible := m.visibleLines()
-	if m.Cursor >= m.Offset+visible {
-		m.Offset = m.Cursor - visible + 1
-	}
-	// No blank rows below while rows above are scrolled off.
-	m.Offset = min(m.Offset, max(len(m.Entries)-visible, 0))
+	m.Offset = scrollOffset(m.Cursor, m.Offset, m.visibleLines(), len(m.Entries))
 }
 
 // CopyToRight copies the value of the selected entry from file A to file B.

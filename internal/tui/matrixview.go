@@ -111,15 +111,7 @@ func (m *MatrixModel) viewRows() int {
 }
 
 func (m *MatrixModel) ensureVisible() {
-	viewRows := m.viewRows()
-	if m.cursorRow < m.offsetRow {
-		m.offsetRow = m.cursorRow
-	}
-	if m.cursorRow >= m.offsetRow+viewRows {
-		m.offsetRow = m.cursorRow - viewRows + 1
-	}
-	// No blank rows below while rows above are scrolled off.
-	m.offsetRow = min(m.offsetRow, max(len(m.entries)-viewRows, 0))
+	m.offsetRow = scrollOffset(m.cursorRow, m.offsetRow, m.viewRows(), len(m.entries))
 }
 
 func (m *MatrixModel) ensureHorizontalVisible() {
@@ -127,13 +119,7 @@ func (m *MatrixModel) ensureHorizontalVisible() {
 	if visibleCols < 1 {
 		return
 	}
-	if m.cursorCol < m.offsetCol {
-		m.offsetCol = m.cursorCol
-	}
-	if m.cursorCol >= m.offsetCol+visibleCols {
-		m.offsetCol = m.cursorCol - visibleCols + 1
-	}
-	m.offsetCol = min(m.offsetCol, max(len(m.fileNames)-visibleCols, 0))
+	m.offsetCol = scrollOffset(m.cursorCol, m.offsetCol, visibleCols, len(m.fileNames))
 }
 
 func (m *MatrixModel) counterWidth() int {
