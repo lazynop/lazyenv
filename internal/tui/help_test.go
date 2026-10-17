@@ -237,6 +237,7 @@ func TestHelpGroupsTheKeysByScreen(t *testing.T) {
 	assert.Contains(t, helpRow(sections, "Matrix Indicators", "✗"), "lacks")
 	assert.Contains(t, helpRow(sections, "Value Indicators", "↵"), "Line break")
 	assert.Contains(t, helpRow(sections, "Value Indicators", "␀ … ␟"), "control character")
+	assert.Contains(t, helpRow(sections, "Value Indicators", "�"), "Invalid byte")
 	assert.Contains(t, helpRow(sections, "This help", "↑/↓  j/k"), "mouse wheel")
 	assert.Contains(t, helpRow(sections, "This help", "q / Ctrl+C"), "Close")
 	assert.Contains(t, helpRow(sections, "This help", "Esc / ?"), "Close")

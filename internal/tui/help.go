@@ -99,6 +99,7 @@ const helpText = `  lazyenv — TUI for managing .env files
     ↩              Carriage return
     ␀ … ␟          Other control character (␛ for Escape)
     ␡              Delete character
+    �              Invalid byte or C1 control character
 
   Compare Indicators
     =              Same value in both files

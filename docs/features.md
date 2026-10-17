@@ -2,7 +2,7 @@
 
 ## Browse and edit
 
-Two-panel layout: file list on the left, variables on the right. Navigate with arrow keys or vim bindings (`hjkl`). Edit values inline, rename keys, add new variables, delete existing ones. A value with line breaks or other control characters is drawn on one row, with a visible stand-in for each: `↵` for a newline, `⇥` for a tab, `↩` for a carriage return, `␡` for DEL and the Unicode control pictures (`␀` … `␟`, `␛` for Escape) for the rest. The file keeps the original characters.
+Two-panel layout: file list on the left, variables on the right. Navigate with arrow keys or vim bindings (`hjkl`). Edit values inline, rename keys, add new variables, delete existing ones. A value with line breaks or other control characters is drawn on one row, with a visible stand-in for each: `↵` for a newline, `⇥` for a tab, `↩` for a carriage return, `␡` for DEL, the Unicode control pictures (`␀` … `␟`, `␛` for Escape) for the other C0 controls, and `�` for C1 controls and bytes that are not valid UTF-8. The file keeps the original characters.
 
 ## File management
 
