@@ -322,4 +322,3 @@ func TestZeroMatrixModelSurvivesALayout(t *testing.T) {
 		m.ensureHorizontalVisible()
 	})
 }
-
