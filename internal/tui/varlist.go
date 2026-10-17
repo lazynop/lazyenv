@@ -188,10 +188,21 @@ func (m *VarListModel) clampCursor() {
 
 // ensureCursorVisible scrolls so the cursor row, and its peek line when one
 // is drawn, sit inside the viewport, and the viewport shows no blank rows
-// while rows above it are scrolled off.
+// while rows above it are scrolled off. The deleted vars, drawn below the
+// last item, count as rows too: on the last item the list scrolls on to show
+// as many of them as fit.
 func (m *VarListModel) ensureCursorVisible() {
-	if m.Height > panelChromeHeight { // not before the first layout
-		m.Offset = scrollOffset(m.Cursor, m.Offset, m.visibleLines(), len(m.displayItems))
+	if m.Height <= panelChromeHeight {
+		return // not laid out yet
+	}
+	visible := m.visibleLines()
+	rows := len(m.displayItems)
+	if m.File != nil {
+		rows += len(m.File.DeletedVars)
+	}
+	m.Offset = scrollOffset(m.Cursor, m.Offset, visible, rows)
+	if m.Cursor == len(m.displayItems)-1 {
+		m.Offset = max(m.Offset, min(m.Cursor, rows-visible))
 	}
 }
 

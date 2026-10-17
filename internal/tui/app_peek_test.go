@@ -464,3 +464,20 @@ func TestPeekLineLeavesRoomForDeletedVars(t *testing.T) {
 	}
 	assert.Equal(t, 4, drawn, "the rows left under five vars and the peek line should hold four deleted vars")
 }
+
+// TestDeletedVarsShowAtTheEndOfALongList moves the cursor to the last var of a
+// list longer than its panel: the list scrolls on to show the deleted vars
+// below it, keeping the cursor row in view.
+func TestDeletedVarsShowAtTheEndOfALongList(t *testing.T) {
+	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F", "G", "H", "GONE1", "GONE2")
+	f.DeleteVar(9)
+	f.DeleteVar(8)
+	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: bottomChromeHeight + panelChromeHeight + 4})
+	app := press(updated.(App), "right", "j", "j", "j", "j", "j", "j", "j") // H, the last var
+
+	view := stripAnsi(app.View().Content)
+
+	assert.Contains(t, view, "val_H", "the cursor row should stay in view")
+	assert.Contains(t, view, "GONE1")
+	assert.Contains(t, view, "GONE2")
+}
