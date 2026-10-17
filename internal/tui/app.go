@@ -404,16 +404,17 @@ func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bo
 func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Compare):
-		if len(a.fileList.Files) >= 2 {
-			f := a.fileList.SelectedFile()
-			if f == nil && a.fileList.CursorFile() != nil {
-				f = a.fileList.CursorFile()
-			}
-			a.compareFirstFile = f
-			a.mode = ModeCompareSelect
-			a.setFocus(FocusFiles)
-			a.statusBar.SetMessage("Select second file to compare...")
+		if len(a.fileList.Files) < 2 {
+			return a, a.flashWarning("Need at least 2 files to compare")
 		}
+		f := a.fileList.SelectedFile()
+		if f == nil && a.fileList.CursorFile() != nil {
+			f = a.fileList.CursorFile()
+		}
+		a.compareFirstFile = f
+		a.mode = ModeCompareSelect
+		a.setFocus(FocusFiles)
+		a.statusBar.SetMessage("Select second file to compare...")
 
 	case key.Matches(msg, a.keys.Save):
 		if cmd := a.readOnlyFlash(); cmd != nil {

@@ -533,3 +533,12 @@ func TestCompareSelectQuitKeysCancel(t *testing.T) {
 		})
 	}
 }
+
+// TestCompareKeyNeedsAtLeast2Files presses c with a single file: like m, it
+// stays in the main view and says why.
+func TestCompareKeyNeedsAtLeast2Files(t *testing.T) {
+	app := press(newTestApp([]*model.EnvFile{makeTestFile(".env", "A")}), "c")
+
+	assert.Equal(t, ModeNormal, app.mode)
+	assert.Contains(t, app.statusBar.Message, "at least 2 files")
+}

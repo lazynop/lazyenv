@@ -15,7 +15,7 @@ Keybindings are context-sensitive: each screen only responds to the keys listed 
 | `D`            | Delete file from disk (with confirmation)         |
 | `R`            | Rename selected file                              |
 | `T`            | Create template from selected file (keys only)    |
-| `c`            | Start compare: select a second file for diff view |
+| `c`            | Start compare: pick a second file (requires 2+ files) |
 | `m`            | Open completeness matrix (requires 2+ files)      |
 | `w`            | Save current file                                 |
 | `r`            | Reset current file (discard unsaved changes)      |
@@ -42,7 +42,7 @@ Keybindings are context-sensitive: each screen only responds to the keys listed 
 | `Y`            | Copy `KEY=value` to clipboard (OSC 52)       |
 | `p`            | Toggle peek: show original value before edit |
 | `/`            | Search variables by name or value            |
-| `c`            | Start compare: select a second file for diff |
+| `c`            | Start compare: pick a second file (requires 2+ files) |
 | `m`            | Open completeness matrix (requires 2+ files) |
 | `w`            | Save current file                            |
 | `r`            | Reset current file (discard unsaved changes) |
