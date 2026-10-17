@@ -99,8 +99,3 @@ func (m *EditorModel) Finish() EditorResult {
 		AddStep:     m.addStep,
 	}
 }
-
-// View renders the editor.
-func (m *EditorModel) View() string {
-	return m.label + m.input.View()
-}

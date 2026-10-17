@@ -197,7 +197,18 @@ func (a App) Init() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+// Update handles msg, then fits the text input of the current mode's input bar
+// to the terminal width.
 func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	updated, cmd := a.update(msg)
+	if app, ok := updated.(App); ok {
+		app.fitInputBar()
+		return app, cmd
+	}
+	return updated, cmd
+}
+
+func (a App) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		a.width = msg.Width
@@ -643,19 +654,16 @@ func (a App) View() tea.View {
 		content = lipgloss.JoinVertical(lipgloss.Left, diffContent, statusBarContent)
 	case ModeEditingCompare:
 		diffContent := a.diffView.View(a.theme)
-		editorBar := a.theme.StatusBar.Width(a.width).Render("  " + a.editor.View())
 		statusBarContent := a.statusBar.View(a.theme, ModeEditing, a.focus, "", 0)
-		content = lipgloss.JoinVertical(lipgloss.Left, diffContent, editorBar, statusBarContent)
+		content = lipgloss.JoinVertical(lipgloss.Left, diffContent, a.inputBarView(), statusBarContent)
 	case ModeMatrix, ModeConfirmMatrixDelete:
 		matrixContent := a.matrixView.View(a.theme)
 		statusBarContent := a.statusBar.View(a.theme, a.mode, a.focus, "", 0)
 		content = lipgloss.JoinVertical(lipgloss.Left, matrixContent, statusBarContent)
 	case ModeMatrixEditing:
 		matrixContent := a.matrixView.View(a.theme)
-		prompt := fmt.Sprintf("  Add %s to %s: ", a.matrixView.editKey, a.matrixView.fileNames[a.matrixView.editFile])
-		editorBar := a.theme.StatusBar.Width(a.width).Render(prompt + a.matrixView.editor.View())
 		statusBarContent := a.statusBar.View(a.theme, ModeEditing, a.focus, "", 0)
-		content = lipgloss.JoinVertical(lipgloss.Left, matrixContent, editorBar, statusBarContent)
+		content = lipgloss.JoinVertical(lipgloss.Left, matrixContent, a.inputBarView(), statusBarContent)
 	default:
 		a.updateLayout()
 
@@ -691,23 +699,72 @@ func (a App) View() tea.View {
 	return view
 }
 
-func (a App) inputBarView() string {
-	bar := a.theme.StatusBar.Width(a.width)
+// inputBar returns the label and the text input of the current mode's input
+// bar, or a nil input in a mode without one.
+func (a *App) inputBar() (string, *textinput.Model) {
 	switch a.mode {
 	case ModeSearching:
-		return bar.Render("  / " + a.searchInput.View())
-	case ModeEditing:
-		return bar.Render("  " + a.editor.View())
+		return "  / ", &a.searchInput
+	case ModeEditing, ModeEditingCompare:
+		return "  " + a.editor.label, &a.editor.input
+	case ModeMatrixEditing:
+		m := &a.matrixView
+		return fmt.Sprintf("  Add %s to %s: ", m.editKey, m.fileNames[m.editFile]), &m.editor
 	case ModeCreateFile:
-		return bar.Render("  New file: " + a.fileInput.View())
+		return "  New file: ", &a.fileInput
 	case ModeDuplicateFile:
-		return bar.Render("  Duplicate as: " + a.fileInput.View())
+		return "  Duplicate as: ", &a.fileInput
 	case ModeRenameFile:
-		return bar.Render("  Rename: " + a.fileInput.View())
+		return "  Rename: ", &a.fileInput
 	case ModeTemplateFile:
-		return bar.Render("  Template as: " + a.fileInput.View())
+		return "  Template as: ", &a.fileInput
 	}
-	return ""
+	return "", nil
+}
+
+// minInputWidth is the fewest columns an input bar keeps for the value of its
+// text input: a longer label is cut to leave them.
+const minInputWidth = 10
+
+// layoutInputBar returns label as an input bar one terminal row wide draws it,
+// cut when it would leave in fewer than minInputWidth columns, and the width
+// left for in's value.
+func (a App) layoutInputBar(label string, in *textinput.Model) (string, int) {
+	room := a.width - a.theme.StatusBar.GetHorizontalFrameSize()
+	inputChrome := lipgloss.Width(in.Prompt) + 1 // the prompt, and the cursor after the value
+	label = truncate(label, max(room-inputChrome-minInputWidth, 0))
+	return label, max(room-lipgloss.Width(label)-inputChrome, 1)
+}
+
+// fitInputBar gives the current mode's text input the width its bar leaves
+// it, so the input scrolls its value horizontally, keeping the cursor in view,
+// instead of wrapping the bar.
+func (a *App) fitInputBar() {
+	label, in := a.inputBar()
+	if in == nil {
+		return
+	}
+	_, width := a.layoutInputBar(label, in)
+	if in.Width() == width {
+		return
+	}
+	in.SetWidth(width)
+	// textinput fits the scrolled part of its value to its width only when
+	// the value or the cursor moves: moving to the end and back does it.
+	pos := in.Position()
+	in.CursorEnd()
+	in.SetCursor(pos)
+}
+
+// inputBarView returns the current mode's input bar, or "" in a mode without
+// one.
+func (a App) inputBarView() string {
+	label, in := a.inputBar()
+	if in == nil {
+		return ""
+	}
+	label, _ = a.layoutInputBar(label, in)
+	return a.theme.StatusBar.Width(a.width).Render(label + in.View())
 }
 
 func (a *App) updateLayout() {

@@ -188,6 +188,30 @@
 ╰──────────────────╯╰──────────────────────────────────────────────────────────╯
    Edit HOST: > localhost
    Enter to confirm, Esc to cancel                                .env  34 vars
+=== edit long value
+╭──────────────────╮╭──────────────────────────────────────────────────────────╮
+│ Files  (2)       ││ .env  (34 vars)                                          │
+│● .env        34  ││  API_TOKEN  ••••••••                                     │
+│  .env.local   4  ││  GREETING   ••••••••                                     │
+│                  ││  HOST       localhost                                    │
+│                  ││  EMPTY                                              ○    │
+│                  ││  VAR_00     value_00                                     │
+│                  ││  VAR_01     value_01                                     │
+│                  ││  VAR_02     value_02                                     │
+│                  ││  VAR_03     value_03                                     │
+│                  ││  VAR_04     value_04                                     │
+│                  ││  VAR_05     value_05                                     │
+│                  ││  VAR_06     value_06                                     │
+│                  ││  VAR_07     value_07                                     │
+│                  ││  VAR_08     value_08                                     │
+│                  ││  VAR_09     value_09                                     │
+│                  ││  VAR_10     value_10                                     │
+│                  ││  VAR_11     value_11                                     │
+│                  ││  VAR_12     value_12                                     │
+│                  ││  VAR_13     value_13                                     │
+╰──────────────────╯╰──────────────────────────────────────────────────────────╯
+   Edit HOST: > ong-long-long-long-long-long-long-long-long-long-long-long-end
+   Enter to confirm, Esc to cancel                                .env  34 vars
 === confirm delete var
 ╭──────────────────╮╭──────────────────────────────────────────────────────────╮
 │ Files  (2)       ││ .env  (34 vars)                                          │
@@ -335,7 +359,7 @@
 │                  ││  VAR_12     value_12                                     │
 │                  ││  VAR_13     value_13                                     │
 ╰──────────────────╯╰──────────────────────────────────────────────────────────╯
-   New file: > .
+   New file: > .env.example
    Enter to create, Esc to cancel                                 .env  34 vars
 === duplicate file
 ╭──────────────────╮╭──────────────────────────────────────────────────────────╮
@@ -548,7 +572,7 @@
  VAR_11               ✓             ✗             1/2
  VAR_12               ✓             ✗             1/2
    35 keys  32/70 cells missing  sort:alpha
-   Add EMPTY to .env.local: > v
+   Add EMPTY to .env.local: > value
    Enter to confirm, Esc to cancel
 === matrix confirm delete
  KEY                 .env          .env.local

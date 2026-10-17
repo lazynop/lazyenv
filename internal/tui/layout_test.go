@@ -122,6 +122,12 @@ var viewScenarios = []viewScenario{
 	}),
 	appScenario("search", ModeSearching, func(app App) App { return press(onVars(app), "/", "h", "u", "n") }),
 	appScenario("edit value", ModeEditing, func(app App) App { return press(onVars(app), "j", "j", "e") }),
+	appScenario("edit long value", ModeEditing, func(app App) App {
+		app = press(onVars(app), "j", "j", "e")
+		app.editor.input.SetValue(strings.Repeat("long-", 40) + "end")
+		app.editor.input.CursorEnd()
+		return app
+	}),
 	appScenario("confirm delete var", ModeConfirmDelete, func(app App) App { return press(onVars(app), "d") }),
 	appScenario("reorder menu", ModeReorderMenu, func(app App) App { return press(onVars(app), "O") }),
 	appScenario("reorder confirm", ModeReorderConfirm, func(app App) App { return press(onVars(app), "O", "a") }),

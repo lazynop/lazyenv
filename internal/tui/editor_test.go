@@ -77,11 +77,10 @@ func TestEditorFinishAddValueStep(t *testing.T) {
 	assert.Equal(t, "some_value", result.Value)
 }
 
-func TestEditorView(t *testing.T) {
+func TestEditorLabel(t *testing.T) {
 	e := NewEditorModel()
 	v := &model.EnvVar{Key: "FOO", Value: "bar"}
 	e.StartEdit(v, 0)
 
-	view := e.View()
-	assert.Contains(t, view, "Edit FOO: ")
+	assert.Equal(t, "Edit FOO: ", e.label, "the input bar shows the label before the input")
 }
