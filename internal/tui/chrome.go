@@ -69,9 +69,13 @@ const (
 	helpPaddingHeight = 1
 	helpPaddingWidth  = 2
 
-	// helpFooterHeight is the rows below the help text: a blank row + the
+	// helpFooterGapHeight is the blank rows between the help text and its
 	// footer hint.
-	helpFooterHeight = 2
+	helpFooterGapHeight = 1
+
+	// helpFooterHeight is the rows below the help text: the gap + the footer
+	// hint.
+	helpFooterHeight = helpFooterGapHeight + 1
 
 	// helpChromeHeight is the rows the help screen draws around its text:
 	// padding above and below + the footer.

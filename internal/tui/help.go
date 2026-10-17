@@ -78,19 +78,18 @@ func (m *HelpViewModel) SetSize(width, height int) {
 	m.width = width
 	m.height = height
 	textWidth := max(width-2*helpPaddingWidth, 1)
-	var rows []string
+	m.lines = nil
 	for _, row := range strings.Split(helpText, "\n") {
-		rows = append(rows, wrapHelpRow(row, textWidth)...)
+		m.lines = append(m.lines, wrapHelpRow(row, textWidth)...)
 	}
-	wrapped := lipgloss.NewStyle().Width(textWidth).Render(strings.Join(rows, "\n"))
-	m.lines = strings.Split(wrapped, "\n")
-	m.offset = min(m.offset, m.maxOffset())
+	m.scrollTo(m.offset)
 }
 
 // wrapHelpRow word-wraps one row of helpText to width with a hanging indent:
 // the continuation lines start under the row's description, the text after
 // its last run of two or more spaces (a heading has none and continues under
-// its first word). A row that fits is returned unchanged.
+// its first word). A row that fits is returned unchanged, and one whose
+// indent leaves no room is wrapped without it.
 func wrapHelpRow(row string, width int) []string {
 	if lipgloss.Width(row) <= width {
 		return []string{row}
@@ -101,7 +100,7 @@ func wrapHelpRow(row string, width int) []string {
 	}
 	indent := lipgloss.Width(row[:start])
 	if indent >= width {
-		return []string{row}
+		return strings.Split(ansi.Wrap(row, width, ""), "\n")
 	}
 	lines := strings.Split(ansi.Wrap(row[start:], width-indent, ""), "\n")
 	lines[0] = row[:start] + lines[0]
@@ -116,25 +115,25 @@ func (m *HelpViewModel) visibleLines() int {
 	return max(m.height-helpChromeHeight, 1)
 }
 
-// maxOffset returns the offset that shows the last row of helpText at the
-// bottom of the screen.
-func (m *HelpViewModel) maxOffset() int {
-	return max(len(m.lines)-m.visibleLines(), 0)
+// scrollTo shows the text from row offset, held between the first row and
+// the offset that shows the last row at the bottom of the screen.
+func (m *HelpViewModel) scrollTo(offset int) {
+	m.offset = scrollOffset(offset, offset, m.visibleLines(), len(m.lines))
 }
 
 // ScrollToTop shows the text from its first row.
 func (m *HelpViewModel) ScrollToTop() {
-	m.offset = 0
+	m.scrollTo(0)
 }
 
 // ScrollUp scrolls the text up one row.
 func (m *HelpViewModel) ScrollUp() {
-	m.offset = max(m.offset-1, 0)
+	m.scrollTo(m.offset - 1)
 }
 
 // ScrollDown scrolls the text down one row.
 func (m *HelpViewModel) ScrollDown() {
-	m.offset = min(m.offset+1, m.maxOffset())
+	m.scrollTo(m.offset + 1)
 }
 
 // View renders the rows of helpText that fit, then the footer, which names
@@ -150,9 +149,12 @@ func (m *HelpViewModel) View(theme Theme) string {
 	}
 	footer := theme.MutedItem.Render(hint)
 
+	// The newline that ends the text, then the gap rows. The outer style only
+	// pads and sizes text already styled, so it must set no colors of its own
+	// (CODING_STANDARDS.md § Pitfalls, nested ANSI).
 	return lipgloss.NewStyle().
 		Width(m.width).
 		Height(m.height).
 		Padding(helpPaddingHeight, helpPaddingWidth).
-		Render(text + "\n\n" + footer)
+		Render(text + strings.Repeat("\n", helpFooterGapHeight+1) + footer)
 }
