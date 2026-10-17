@@ -711,16 +711,19 @@ func (a *App) inputBar() (string, *textinput.Model) {
 	case ModeMatrixEditing:
 		m := &a.matrixView
 		return fmt.Sprintf("  Add %s to %s: ", m.editKey, m.fileNames[m.editFile]), &m.editor
-	case ModeCreateFile:
-		return "  New file: ", &a.fileInput
-	case ModeDuplicateFile:
-		return "  Duplicate as: ", &a.fileInput
-	case ModeRenameFile:
-		return "  Rename: ", &a.fileInput
-	case ModeTemplateFile:
-		return "  Template as: ", &a.fileInput
+	}
+	if in := a.activeFileInput(); in != nil {
+		return fileInputLabels[a.mode], in
 	}
 	return "", nil
+}
+
+// fileInputLabels labels the input bar of each mode activeFileInput serves.
+var fileInputLabels = map[AppMode]string{
+	ModeCreateFile:    "  New file: ",
+	ModeDuplicateFile: "  Duplicate as: ",
+	ModeRenameFile:    "  Rename: ",
+	ModeTemplateFile:  "  Template as: ",
 }
 
 // minInputWidth is the fewest columns an input bar keeps for the value of its
@@ -784,7 +787,7 @@ func (a *App) updateLayout() {
 
 	a.varList.Width = varWidth
 	a.varList.Height = panelHeight
-	a.setFocus(a.focus) // also scrolls the var cursor, and the peek line under it, into view
+	a.varList.ensureCursorVisible()
 
 	a.diffView.Width = a.width - compareMarginWidth
 	a.diffView.Height = panelHeight
