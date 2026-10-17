@@ -155,7 +155,7 @@ func NewApp(cfg config.Config, startup StartupMessages) App {
 		varList:       varList,
 		statusBar:     sb,
 		diffView:      NewDiffViewModel(cfg.Layout, cfg.Secrets),
-		helpView:      NewHelpViewModel(!cfg.NoMouse),
+		helpView:      NewHelpViewModel(!cfg.NoMouse && cfg.Layout.MouseScrollLines > 0),
 		matrixView:    NewMatrixModel(nil, cfg.Layout, cfg.Secrets),
 		editor:        NewEditorModel(),
 		searchInput:   ti,

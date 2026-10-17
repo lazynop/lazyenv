@@ -1,15 +1,14 @@
 package tui
 
 import (
-	"fmt"
 	"strings"
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 )
 
-// helpText is the help screen's text, one row per line. Its %s is
-// helpWheelNote with the mouse on, empty with it off.
+// helpText is the help screen's text, one row per line. Its helpWheelSlot
+// becomes helpWheelNote while the wheel scrolls, and goes away otherwise.
 const helpText = `  lazyenv — TUI for managing .env files
 
   Files panel
@@ -108,9 +107,12 @@ const helpText = `  lazyenv — TUI for managing .env files
   This help
     Esc / ?        Close
     q / Ctrl+C     Close
-    ↑/↓  j/k       Scroll%s
+    ↑/↓  j/k       Scroll{wheel}
     PgUp/PgDn      Scroll a page
     Home/End       Jump to the top/bottom`
+
+// helpWheelSlot marks where helpWheelNote goes in helpText.
+const helpWheelSlot = "{wheel}"
 
 // helpWheelNote names the mouse wheel on the scroll row of helpText.
 const helpWheelNote = " (or the mouse wheel)"
@@ -126,14 +128,14 @@ type HelpViewModel struct {
 	rows   []int    // for each of lines, the row of text it wraps
 }
 
-// NewHelpViewModel creates the help screen; mouse says whether the mouse is
-// on, so the help names the wheel only when it scrolls.
-func NewHelpViewModel(mouse bool) HelpViewModel {
+// NewHelpViewModel creates the help screen; wheel says whether the mouse
+// wheel scrolls it, so the help names the wheel only then.
+func NewHelpViewModel(wheel bool) HelpViewModel {
 	note := ""
-	if mouse {
+	if wheel {
 		note = helpWheelNote
 	}
-	return HelpViewModel{text: fmt.Sprintf(helpText, note)}
+	return HelpViewModel{text: strings.Replace(helpText, helpWheelSlot, note, 1)}
 }
 
 // SetSize lays the text out for a screen of the given size, pulling the

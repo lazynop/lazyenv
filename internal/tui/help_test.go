@@ -303,6 +303,10 @@ func TestHelpNamesTheMouseWheelOnlyWithTheMouseOn(t *testing.T) {
 	cfg := config.DefaultConfig()
 	cfg.NoMouse = true
 	assert.NotContains(t, helpScreen(openHelpWith(cfg, 120, 200)), "mouse wheel")
+
+	cfg = config.DefaultConfig()
+	cfg.Layout.MouseScrollLines = 0 // the wheel scrolls nothing
+	assert.NotContains(t, helpScreen(openHelpWith(cfg, 120, 200)), "mouse wheel")
 }
 
 // helpTopRow is the first row of help text on screen, below the padding.
