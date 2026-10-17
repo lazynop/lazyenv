@@ -158,7 +158,7 @@ func TestFlash_DeleteFileConfirm(t *testing.T) {
 	app.focus = FocusFiles
 	app.mode = ModeConfirmDeleteFile
 
-	updated, cmd := app.Update(tea.KeyPressMsg{Text: "y"})
+	updated, cmd := app.Update(keyMsg("y"))
 	app = updated.(App)
 
 	assert.Contains(t, app.statusBar.Message, "Deleted")
@@ -170,7 +170,7 @@ func TestFlash_ToggleSort(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	updated, cmd := app.Update(tea.KeyPressMsg{Text: "o"})
+	updated, cmd := app.Update(keyMsg("o"))
 	app = updated.(App)
 
 	assert.Contains(t, app.statusBar.Message, "Sorted")
@@ -181,7 +181,7 @@ func TestFlash_ToggleSecrets(t *testing.T) {
 	f := makeTestFile(".env", "FOO")
 	app := newTestApp([]*model.EnvFile{f})
 
-	updated, cmd := app.Update(tea.KeyPressMsg{Text: "ctrl+s"})
+	updated, cmd := app.Update(keyMsg("ctrl+s"))
 	app = updated.(App)
 
 	assert.Contains(t, app.statusBar.Message, "Secrets")
@@ -193,7 +193,7 @@ func TestFlash_SaveSilentlyDowngradesSingleQuoteWithApostrophe(t *testing.T) {
 	app.fileList.Files[0].UpdateVar(0, "it's a trap", false)
 	require.True(t, app.fileList.Files[0].Modified)
 
-	updated, cmd := app.Update(tea.KeyPressMsg{Text: "w"})
+	updated, cmd := app.Update(keyMsg("w"))
 	app = updated.(App)
 
 	assert.Contains(t, app.statusBar.Message, "Saved")
@@ -215,7 +215,7 @@ func TestFlash_SaveSingleQuoteSafeNoDowngradeMessage(t *testing.T) {
 	app.fileList.Files[0].UpdateVar(0, "plain update", false)
 	require.True(t, app.fileList.Files[0].Modified)
 
-	updated, _ := app.Update(tea.KeyPressMsg{Text: "w"})
+	updated, _ := app.Update(keyMsg("w"))
 	app = updated.(App)
 
 	assert.Contains(t, app.statusBar.Message, "Saved")
@@ -270,7 +270,7 @@ func TestFlash_CompareResetReloadFailureRendersInErrorColor(t *testing.T) {
 	app := enterCompareMode(t, fA, fB)
 	require.NoError(t, os.Remove(pathB))
 
-	app = pressKeys(app, "r")
+	app = press(app, "r")
 
 	view := statusView(app)
 	assert.Contains(t, view, "Failed to reload .env.prod")
@@ -294,14 +294,6 @@ func TestClearMessageAfterOnlyInFlashHelpers(t *testing.T) {
 	assertRefsAllowed(t, sourceRefs(t, "", "clearMessageAfter"),
 		map[string]string{"app_flash.go": "the flash helpers"},
 		"call a.flashMessage, a.flashWarning or a.flashError instead of clearMessageAfter")
-}
-
-// pressKeys sends each key to app in turn and returns the updated app.
-func pressKeys(app App, keys ...string) App {
-	for _, k := range keys {
-		app = sendKey(app, tea.KeyPressMsg{Text: k})
-	}
-	return app
 }
 
 // TestRefusedActionsFlashWarning walks every action refused because of the
@@ -336,7 +328,7 @@ func TestRefusedActionsFlashWarning(t *testing.T) {
 			app := newTestApp([]*model.EnvFile{makeTestFile(".env", "FOO")})
 			app.config.ReadOnly = true
 			app.focus = FocusVars
-			return pressKeys(app, "e")
+			return press(app, "e")
 		}, "Read-only mode"},
 		{"create a file outside the patterns", func(t *testing.T) App {
 			app := newTestApp(nil)
@@ -370,53 +362,53 @@ func TestRefusedActionsFlashWarning(t *testing.T) {
 			return result.(App)
 		}, "Key already exists"},
 		{"delete a modified file", func(t *testing.T) App {
-			return pressKeys(modifiedFileFocused(), "D")
+			return press(modifiedFileFocused(), "D")
 		}, "before deleting"},
 		{"rename a modified file", func(t *testing.T) App {
-			return pressKeys(modifiedFileFocused(), "R")
+			return press(modifiedFileFocused(), "R")
 		}, "before renaming"},
 		{"open the matrix with one file", func(t *testing.T) App {
-			return pressKeys(newTestApp([]*model.EnvFile{makeTestFile(".env", "FOO")}), "m")
+			return press(newTestApp([]*model.EnvFile{makeTestFile(".env", "FOO")}), "m")
 		}, "at least 2 files"},
 		{"edit a group header", func(t *testing.T) App {
 			app, _ := newGroupingApp(t)
 			app.varList.Grouping = true
 			app.varList.Refresh()
 			app.varList.SetCursor(0)
-			return pressKeys(app, "e")
+			return press(app, "e")
 		}, "No variable selected"},
 		{"edit a key missing on the compare side", func(t *testing.T) App {
 			app := enterCompareMode(t, makeTestFile(".env", "FOO"), makeTestFile(".env.prod"))
-			return pressKeys(app, "E")
+			return press(app, "E")
 		}, "FOO not in .env.prod"},
 		{"reorder a single variable", func(t *testing.T) App {
 			app := newTestApp([]*model.EnvFile{makeTestFile(".env", "FOO")})
 			app.focus = FocusVars
-			return pressKeys(app, "O")
+			return press(app, "O")
 		}, "at least 2 variables"},
 		{"save with no file", func(t *testing.T) App {
-			return pressKeys(newTestApp(nil), "w")
+			return press(newTestApp(nil), "w")
 		}, "No file selected"},
 		{"reset with no file", func(t *testing.T) App {
-			return pressKeys(newTestApp(nil), "r")
+			return press(newTestApp(nil), "r")
 		}, "No file selected"},
 		{"pick a reorder with no file", func(t *testing.T) App {
 			app := newTestApp(nil)
 			app.mode = ModeReorderMenu
-			return pressKeys(app, "a")
+			return press(app, "a")
 		}, "No file selected"},
 		{"confirm a reorder with no file", func(t *testing.T) App {
 			app := newTestApp(nil)
 			app.mode = ModeReorderConfirm
-			return pressKeys(app, "y")
+			return press(app, "y")
 		}, "No file selected"},
 		{"add a variable present in the matrix cell", func(t *testing.T) App {
 			app := newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.local", "A")})
-			return pressKeys(app, "m", "a")
+			return press(app, "m", "a")
 		}, "Variable already exists"},
 		{"delete a variable missing from the matrix cell", func(t *testing.T) App {
 			app := newTestApp([]*model.EnvFile{makeTestFile(".env", "A", "B"), makeTestFile(".env.local", "A")})
-			return pressKeys(app, "m", "j", "l", "d")
+			return press(app, "m", "j", "l", "d")
 		}, "not present in this file"},
 	}
 
@@ -435,7 +427,7 @@ func TestDeletePromptsRenderInErrorColor(t *testing.T) {
 		app := newTestApp([]*model.EnvFile{makeTestFile(".env", "FOO")})
 		app.focus = FocusFiles
 
-		app = pressKeys(app, "D")
+		app = press(app, "D")
 
 		require.Equal(t, ModeConfirmDeleteFile, app.mode)
 		assert.Equal(t, "Delete .env? (y/n)", app.statusBar.Message)
@@ -445,7 +437,7 @@ func TestDeletePromptsRenderInErrorColor(t *testing.T) {
 	t.Run("matrix variable", func(t *testing.T) {
 		app := newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.local", "A")})
 
-		app = pressKeys(app, "m", "d")
+		app = press(app, "m", "d")
 
 		require.Equal(t, ModeConfirmMatrixDelete, app.mode)
 		assert.Equal(t, "Delete A from .env? (y/n)", app.statusBar.Message)
@@ -463,13 +455,13 @@ func TestYesNoPromptsNameTheKeysTheKeyMapBinds(t *testing.T) {
 	t.Run("delete file", func(t *testing.T) {
 		app := rebind(newTestApp([]*model.EnvFile{makeTestFile(".env", "FOO")}))
 		app.focus = FocusFiles
-		app = pressKeys(app, "D")
+		app = press(app, "D")
 		assert.Equal(t, "Delete .env? (j/x)", app.statusBar.Message)
 	})
 
 	t.Run("delete matrix variable", func(t *testing.T) {
 		app := rebind(newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.local", "A")}))
-		app = pressKeys(app, "m", "d")
+		app = press(app, "m", "d")
 		assert.Equal(t, "Delete A from .env? (j/x)", app.statusBar.Message)
 	})
 }
