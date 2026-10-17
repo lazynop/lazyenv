@@ -166,6 +166,10 @@ func (a App) handleEditingCompareKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a, nil
 	case key.Matches(msg, a.keys.Enter):
 		result := a.editor.Finish()
+		a.mode = ModeComparing
+		if result.Untouched {
+			return a, nil
+		}
 		varKey := a.compareEditFile.Vars[a.compareEditVarIdx].Key
 		a.compareEditFile.UpdateVar(a.compareEditVarIdx, result.Value, util.IsSecret(varKey, result.Value, a.config.Secrets))
 		if a.varList.File == a.compareEditFile {
@@ -174,7 +178,6 @@ func (a App) handleEditingCompareKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		// Recompute diff
 		a.diffView.allEntries = model.ComputeDiff(a.diffView.FileA, a.diffView.FileB)
 		a.diffView.recompute()
-		a.mode = ModeComparing
 		return a, a.flashMessage("Modified " + varKey)
 	default:
 		var cmd tea.Cmd

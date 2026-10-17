@@ -75,6 +75,27 @@ func assertMaskedInView(t *testing.T, view, value string, masked bool) {
 	}
 }
 
+// TestConfirmingAnUntouchedEditKeepsTheValue opens the edit bar on a value the
+// bar can't show as is (a line break, a control character) and confirms it
+// without typing: the value and the file stay unchanged.
+func TestConfirmingAnUntouchedEditKeepsTheValue(t *testing.T) {
+	for name, open := range map[string][]string{
+		"var list": {"right", "e"},
+		"compare":  {"c", "j", "enter", "e"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			f := parser.ParseBytes(".env", []byte("CERT=\"line1\\nline2\"\nTAB=\"a\\tb\"\n"), config.SecretsConfig{})
+			other := parser.ParseBytes(".env.prod", []byte("CERT=x\n"), config.SecretsConfig{})
+			updated, _ := newTestApp([]*model.EnvFile{f, other}).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+
+			press(updated.(App), append(open, "enter")...)
+
+			assert.Equal(t, "line1\nline2", f.Vars[0].Value)
+			assert.False(t, f.Modified, "an untouched edit must not modify the file")
+		})
+	}
+}
+
 func TestEditExistingVarCancel(t *testing.T) {
 	f := makeTestFile(".env", "FOO", "BAR")
 	app := newTestApp([]*model.EnvFile{f})

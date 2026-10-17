@@ -31,6 +31,9 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			a.varList.Refresh()
 			return a, a.flashMessage("Added " + a.editor.addKey)
 		}
+		if result.Untouched {
+			return a, nil
+		}
 		varKey := a.varList.File.Vars[result.VarIndex].Key
 		a.varList.File.UpdateVar(result.VarIndex, result.Value, util.IsSecret(varKey, result.Value, a.config.Secrets))
 		a.varList.Refresh()

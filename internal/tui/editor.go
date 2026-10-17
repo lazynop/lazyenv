@@ -24,6 +24,10 @@ type EditorResult struct {
 	IsRenameKey bool
 	AddStep     addStep
 	Cancelled   bool
+	// Untouched is set for a value edit confirmed as the bar showed it. The
+	// bar can't show every value as is (it turns line breaks into spaces and
+	// drops control characters), so writing it back could change the value.
+	Untouched bool
 }
 
 // EditorModel manages inline editing of variable values.
@@ -35,6 +39,7 @@ type EditorModel struct {
 	addStep     addStep
 	addKey      string // stored key name during add flow
 	label       string
+	shown       string // the value as the bar showed it when the edit started
 }
 
 // NewEditorModel creates a new editor model.
@@ -50,6 +55,7 @@ func NewEditorModel() EditorModel {
 // StartEdit begins editing an existing variable's value.
 func (m *EditorModel) StartEdit(v *model.EnvVar, idx int) {
 	m.input.SetValue(v.Value)
+	m.shown = m.input.Value()
 	m.input.CursorEnd()
 	m.varIndex = idx
 	m.isAdd = false
@@ -97,5 +103,6 @@ func (m *EditorModel) Finish() EditorResult {
 		IsAdd:       m.isAdd,
 		IsRenameKey: m.isRenameKey,
 		AddStep:     m.addStep,
+		Untouched:   !m.isAdd && !m.isRenameKey && m.input.Value() == m.shown,
 	}
 }
