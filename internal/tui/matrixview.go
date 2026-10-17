@@ -41,8 +41,7 @@ type MatrixModel struct {
 // NewMatrixModel creates a matrix model from the loaded files.
 func NewMatrixModel(files []*model.EnvFile, layout config.LayoutConfig, secrets config.SecretsConfig) MatrixModel {
 	entries, names := model.ComputeMatrix(files)
-	ti := textinput.New()
-	ti.CharLimit = 256
+	ti := textinput.New() // no CharLimit, like the value editor
 	return MatrixModel{
 		files:     files,
 		entries:   entries,

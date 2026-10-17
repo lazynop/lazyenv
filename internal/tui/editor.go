@@ -44,8 +44,7 @@ type EditorModel struct {
 
 // NewEditorModel creates a new editor model.
 func NewEditorModel() EditorModel {
-	ti := textinput.New()
-	ti.CharLimit = 1000
+	ti := textinput.New() // no CharLimit: a value of any length must load whole
 	return EditorModel{
 		input:    ti,
 		varIndex: -1,

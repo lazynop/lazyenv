@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -94,6 +95,18 @@ func TestConfirmingAnUntouchedEditKeepsTheValue(t *testing.T) {
 			assert.False(t, f.Modified, "an untouched edit must not modify the file")
 		})
 	}
+}
+
+// TestEditingALongValueKeepsAllOfIt edits a value longer than any input limit
+// would allow, appending one character: the rest of the value survives.
+func TestEditingALongValueKeepsAllOfIt(t *testing.T) {
+	long := strings.Repeat("a", 1500)
+	f := parser.ParseBytes(".env", []byte("CERT="+long+"\n"), config.SecretsConfig{})
+	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+
+	press(updated.(App), "right", "e", "z", "enter")
+
+	assert.Equal(t, long+"z", f.Vars[0].Value)
 }
 
 func TestEditExistingVarCancel(t *testing.T) {
