@@ -169,7 +169,9 @@ func modeHints(theme Theme, mode AppMode, focus Focus, diffStats string) string 
 			formatHint(theme, "q", "quit"),
 		)
 	case ModeCompareSelect:
-		return theme.EmptyWarning.Render("Select second file to compare (Enter to select, Esc to cancel)")
+		// The prompt set on entering the mode stays until the mode ends, so a
+		// hint here would never show.
+		return ""
 	case ModeComparing:
 		return fmt.Sprintf(
 			"%s %s %s %s %s %s %s %s %s %s",
