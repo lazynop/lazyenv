@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 )
 
 // helpText is the help screen's text, one row per line.
@@ -76,9 +77,38 @@ func (m *HelpViewModel) SetSize(width, height int) {
 	}
 	m.width = width
 	m.height = height
-	wrapped := lipgloss.NewStyle().Width(max(width-2*helpPaddingWidth, 1)).Render(helpText)
+	textWidth := max(width-2*helpPaddingWidth, 1)
+	var rows []string
+	for _, row := range strings.Split(helpText, "\n") {
+		rows = append(rows, wrapHelpRow(row, textWidth)...)
+	}
+	wrapped := lipgloss.NewStyle().Width(textWidth).Render(strings.Join(rows, "\n"))
 	m.lines = strings.Split(wrapped, "\n")
 	m.offset = min(m.offset, m.maxOffset())
+}
+
+// wrapHelpRow word-wraps one row of helpText to width with a hanging indent:
+// the continuation lines start under the row's description, the text after
+// its last run of two or more spaces (a heading has none and continues under
+// its first word). A row that fits is returned unchanged.
+func wrapHelpRow(row string, width int) []string {
+	if lipgloss.Width(row) <= width {
+		return []string{row}
+	}
+	start := len(row) - len(strings.TrimLeft(row, " "))
+	if gap := strings.LastIndex(row, "  "); gap+2 > start {
+		start = gap + 2
+	}
+	indent := lipgloss.Width(row[:start])
+	if indent >= width {
+		return []string{row}
+	}
+	lines := strings.Split(ansi.Wrap(row[start:], width-indent, ""), "\n")
+	lines[0] = row[:start] + lines[0]
+	for i := 1; i < len(lines); i++ {
+		lines[i] = strings.Repeat(" ", indent) + lines[i]
+	}
+	return lines
 }
 
 // visibleLines returns how many rows of helpText fit on the screen.
