@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/charmbracelet/x/ansi"
+
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
 )
@@ -629,22 +631,5 @@ func (m *VarListModel) renderPanel(title, content string, theme Theme) string {
 	return style.Render(inner)
 }
 
-// stripAnsi is a simple helper to remove ANSI escape codes for width calculation.
-func stripAnsi(s string) string {
-	var b strings.Builder
-	inEsc := false
-	for _, r := range s {
-		if r == '\x1b' {
-			inEsc = true
-			continue
-		}
-		if inEsc {
-			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
-				inEsc = false
-			}
-			continue
-		}
-		b.WriteRune(r)
-	}
-	return b.String()
-}
+// stripAnsi removes ANSI escape sequences from s.
+func stripAnsi(s string) string { return ansi.Strip(s) }

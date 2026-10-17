@@ -713,8 +713,8 @@ func (a *App) inputBar() (string, *textinput.Model) {
 		m := &a.matrixView
 		return fmt.Sprintf("  Add %s to %s: ", m.editKey, m.fileNames[m.editFile]), &m.editor
 	}
-	if in := a.activeFileInput(); in != nil {
-		return fileInputLabels[a.mode], in
+	if label, ok := fileInputLabels[a.mode]; ok {
+		return label, a.activeFileInput()
 	}
 	return "", nil
 }
@@ -804,7 +804,7 @@ func (a *App) updateLayout() {
 	a.diffView.ensureVisible()
 
 	a.matrixView.Width = a.width
-	a.matrixView.Height = a.height - bottomChromeHeight
+	a.matrixView.Height = panelHeight
 	a.matrixView.ensureVisible()
 	a.matrixView.ensureHorizontalVisible()
 
