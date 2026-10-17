@@ -129,7 +129,7 @@ func (m *MatrixModel) counterWidth() int {
 
 func (m *MatrixModel) visibleCols() int {
 	available := m.Width - matrixPaddingWidth - m.layout.MatrixKeyWidth - m.counterWidth()
-	if available < m.layout.MatrixColWidth {
+	if m.layout.MatrixColWidth <= 0 || available < m.layout.MatrixColWidth { // no layout: a zero MatrixModel
 		return 1
 	}
 	return min(available/m.layout.MatrixColWidth, len(m.fileNames))

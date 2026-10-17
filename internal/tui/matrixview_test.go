@@ -310,3 +310,16 @@ func TestMatrixViewNarrowWidthKeepsEachRowOnOneRow(t *testing.T) {
 		return m.View(theme)
 	})
 }
+
+// TestZeroMatrixModelSurvivesALayout sizes a MatrixModel that was never built
+// with a layout, as App.updateLayout does before the matrix is opened: it
+// scrolls without dividing by its zero column width.
+func TestZeroMatrixModelSurvivesALayout(t *testing.T) {
+	m := MatrixModel{Width: 80, Height: 20}
+
+	assert.NotPanics(t, func() {
+		m.ensureVisible()
+		m.ensureHorizontalVisible()
+	})
+}
+
