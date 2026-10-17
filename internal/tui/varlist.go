@@ -185,7 +185,8 @@ func (m *VarListModel) clampCursor() {
 }
 
 // ensureCursorVisible scrolls so the cursor row, and its peek line when one
-// is drawn, sit inside the viewport.
+// is drawn, sit inside the viewport, and the viewport shows no blank rows
+// while rows above it are scrolled off.
 func (m *VarListModel) ensureCursorVisible() {
 	if m.Cursor < m.Offset {
 		m.Offset = m.Cursor
@@ -193,9 +194,11 @@ func (m *VarListModel) ensureCursorVisible() {
 	if m.Height <= panelChromeHeight {
 		return // not laid out yet
 	}
-	if visible := m.visibleLines(); m.Cursor >= m.Offset+visible {
+	visible := m.visibleLines()
+	if m.Cursor >= m.Offset+visible {
 		m.Offset = m.Cursor - visible + 1
 	}
+	m.Offset = min(m.Offset, max(len(m.displayItems)-visible, 0))
 }
 
 // MoveUp moves the cursor up.

@@ -65,14 +65,20 @@ func (m *FileListModel) SetCursor(index int) {
 	m.ensureCursorVisible()
 }
 
-// ensureCursorVisible scrolls so the cursor row sits inside the viewport.
+// ensureCursorVisible scrolls so the cursor row sits inside the viewport, and
+// the viewport shows no blank rows while rows above it are scrolled off.
 func (m *FileListModel) ensureCursorVisible() {
 	if m.Cursor < m.Offset {
 		m.Offset = m.Cursor
 	}
-	if visible := m.Height - panelChromeHeight; visible > 0 && m.Cursor >= m.Offset+visible {
+	visible := m.Height - panelChromeHeight
+	if visible <= 0 {
+		return // not laid out yet
+	}
+	if m.Cursor >= m.Offset+visible {
 		m.Offset = m.Cursor - visible + 1
 	}
+	m.Offset = min(m.Offset, max(len(m.Files)-visible, 0))
 }
 
 // Select selects the current cursor position.

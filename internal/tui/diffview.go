@@ -144,9 +144,12 @@ func (m *DiffViewModel) ensureVisible() {
 	if m.Cursor < m.Offset {
 		m.Offset = m.Cursor
 	}
-	if visible := m.visibleLines(); m.Cursor >= m.Offset+visible {
+	visible := m.visibleLines()
+	if m.Cursor >= m.Offset+visible {
 		m.Offset = m.Cursor - visible + 1
 	}
+	// No blank rows below while rows above are scrolled off.
+	m.Offset = min(m.Offset, max(len(m.Entries)-visible, 0))
 }
 
 // CopyToRight copies the value of the selected entry from file A to file B.

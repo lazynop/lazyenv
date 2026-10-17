@@ -47,3 +47,38 @@ func TestResizeKeepsTheCursorRowInView(t *testing.T) {
 		})
 	}
 }
+
+// TestGrowingTheTerminalScrollsBackToFillTheView scrolls every scrollable view
+// to its last row in a small terminal, then grows the terminal: the view
+// scrolls back to show the rows above instead of leaving blank rows below.
+func TestGrowingTheTerminalScrollsBackToFillTheView(t *testing.T) {
+	keys := make([]string, 30)
+	for i := range keys {
+		keys[i] = fmt.Sprintf("K%02d", i)
+	}
+	files := make([]*model.EnvFile, 30)
+	for i := range files {
+		files[i] = makeTestFile(fmt.Sprintf(".env.%02d", i), keys...)
+	}
+	end := strings.Split(strings.Repeat("j", 29), "")
+	tests := []struct {
+		name, firstRow string
+		keys           []string
+	}{
+		{"var list", "K00", append([]string{"right"}, end...)},
+		{"file list", ".env.00", end},
+		{"compare", "K00", append([]string{"c", "j", "enter"}, end...)},
+		{"matrix", "K00", append([]string{"m"}, end...)},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			updated, _ := newTestApp(files).Update(tea.WindowSizeMsg{Width: 120, Height: 12})
+			app := press(updated.(App), tt.keys...)
+			assert.NotContains(t, stripAnsi(app.View().Content), tt.firstRow, "the first row should be scrolled off before the resize")
+
+			updated, _ = app.Update(tea.WindowSizeMsg{Width: 120, Height: 60})
+
+			assert.Contains(t, stripAnsi(updated.(App).View().Content), tt.firstRow, "a view tall enough for every row should show the first")
+		})
+	}
+}
