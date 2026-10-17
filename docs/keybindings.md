@@ -125,4 +125,4 @@ Mouse is enabled by default. Disable with `--no-mouse` or `no-mouse = true` in c
 | Click on matrix cell  | Move cursor to that cell                 |
 | Scroll wheel          | Scroll the panel under the mouse cursor  |
 
-While an input bar, a prompt or a confirmation is open, clicks and the wheel are ignored: it acts on the entry it was opened on.
+While an input bar, a prompt or a confirmation is open, clicks and the wheel are ignored: it acts on the entry it was opened on. On the help screen the wheel scrolls it and clicks are ignored.

@@ -103,3 +103,14 @@ func TestHelpGrowingTheTerminalScrollsBackToFit(t *testing.T) {
 	assert.Contains(t, helpScreen(updated.(App)), "lazyenv — TUI for managing .env files",
 		"a terminal tall enough for the whole help shows it from the top")
 }
+
+func TestHelpIgnoresClicks(t *testing.T) {
+	app := press(openHelp(80, 24), "down", "down")
+	before := helpScreen(app)
+
+	updated, _ := app.Update(tea.MouseClickMsg{X: 10, Y: 5, Button: tea.MouseLeft})
+	app = updated.(App)
+
+	assert.Equal(t, ModeHelp, app.mode, "a click keeps the help open")
+	assert.Equal(t, before, helpScreen(app), "and where it was scrolled to")
+}

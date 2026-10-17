@@ -16,13 +16,12 @@ func (a App) handleMouseClick(msg tea.MouseClickMsg) (tea.Model, tea.Cmd) {
 		return a.handleCompareSelectMouseClick(msg), nil
 	case ModeMatrix:
 		return a.handleMatrixMouseClick(msg), nil
-	case ModeHelp:
-		a.mode = ModeNormal
-		return a, nil
 	case ModeEditing, ModeEditingCompare, ModeMatrixEditing, ModeConfirmDelete, ModeConfirmDeleteFile,
 		ModeConfirmMatrixDelete, ModeCreateFile, ModeDuplicateFile, ModeRenameFile,
-		ModeTemplateFile, ModeReorderMenu, ModeReorderConfirm, ModeConfigError:
-		// Keyboard-only modes (text input, prompts, menus): clicks are ignored.
+		ModeTemplateFile, ModeReorderMenu, ModeReorderConfirm, ModeHelp, ModeConfigError:
+		// Keyboard-only modes (text input, prompts, menus) and static screens:
+		// clicks are ignored. The help screen has nothing to click, and a
+		// stray click while scrolling it with the wheel must not close it.
 	}
 	return a, nil
 }
