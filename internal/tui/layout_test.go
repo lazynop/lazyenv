@@ -129,7 +129,7 @@ var viewScenarios = []viewScenario{
 	appScenario("compare select", ModeCompareSelect, func(app App) App { return press(app, "c") }),
 	appScenario("compare", ModeComparing, func(app App) App { return press(app, "c", "j", "enter") }),
 	appScenario("compare edit", ModeEditingCompare, func(app App) App {
-		return press(app, "c", "j", "enter", "j", "j", "j", "e") // HOST
+		return press(app, "c", "j", "enter", "j", "j", "e") // HOST, third in both files
 	}),
 	appScenario("matrix", ModeMatrix, func(app App) App { return press(app, "m") }),
 	appScenario("matrix add", ModeMatrixEditing, func(app App) App {

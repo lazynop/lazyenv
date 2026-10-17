@@ -478,7 +478,7 @@
 │  VAR_12      value_12               ││  VAR_12      (missing)            + │
 │  VAR_13      value_13               ││  VAR_13      (missing)            + │
 ╰─────────────────────────────────────╯╰─────────────────────────────────────╯
-   Edit EMPTY in .env: > n
+   Edit HOST in .env: > localhost
    Enter to confirm, Esc to cancel
 === matrix
  KEY                 .env          .env.local
