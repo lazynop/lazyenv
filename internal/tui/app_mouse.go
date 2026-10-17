@@ -66,13 +66,7 @@ func (a App) handleCompareSelectMouseClick(msg tea.MouseClickMsg) App {
 	if index >= 0 {
 		// Only move cursor, don't update Selected (compare target, not active file)
 		a.fileList.Cursor = max(0, min(index, len(a.fileList.Files)-1))
-		visible := a.fileList.Height - panelChromeHeight
-		if visible > 0 && a.fileList.Cursor < a.fileList.Offset {
-			a.fileList.Offset = a.fileList.Cursor
-		}
-		if visible > 0 && a.fileList.Cursor >= a.fileList.Offset+visible {
-			a.fileList.Offset = a.fileList.Cursor - visible + 1
-		}
+		a.fileList.ensureCursorVisible()
 	}
 	return a
 }

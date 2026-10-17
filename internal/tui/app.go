@@ -155,6 +155,7 @@ func NewApp(cfg config.Config, startup StartupMessages) App {
 		varList:       varList,
 		statusBar:     sb,
 		diffView:      NewDiffViewModel(cfg.Layout, cfg.Secrets),
+		matrixView:    NewMatrixModel(nil, cfg.Layout, cfg.Secrets),
 		editor:        NewEditorModel(),
 		searchInput:   ti,
 		fileInput:     fi,
@@ -778,19 +779,24 @@ func (a *App) updateLayout() {
 
 	panelHeight := a.height - bottomChromeHeight
 
+	// Each view scrolls its cursor back into its new size.
 	a.fileList.Width = a.fileWidth
 	a.fileList.Height = panelHeight
 	a.fileList.Focused = a.focus == FocusFiles
+	a.fileList.ensureCursorVisible()
 
 	a.varList.Width = varWidth
 	a.varList.Height = panelHeight
-	a.varList.Focused = a.focus == FocusVars
+	a.varList.SetFocused(a.focus == FocusVars)
 
 	a.diffView.Width = a.width - compareMarginWidth
 	a.diffView.Height = panelHeight
+	a.diffView.ensureVisible()
 
 	a.matrixView.Width = a.width
 	a.matrixView.Height = a.height - bottomChromeHeight
+	a.matrixView.ensureVisible()
+	a.matrixView.ensureHorizontalVisible()
 
 	a.statusBar.Width = a.width
 }

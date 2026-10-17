@@ -43,9 +43,7 @@ func (m *FileListModel) SetFiles(files []*model.EnvFile) {
 func (m *FileListModel) MoveUp() {
 	if m.Cursor > 0 {
 		m.Cursor--
-		if m.Cursor < m.Offset {
-			m.Offset = m.Cursor
-		}
+		m.ensureCursorVisible()
 	}
 }
 
@@ -53,10 +51,7 @@ func (m *FileListModel) MoveUp() {
 func (m *FileListModel) MoveDown() {
 	if m.Cursor < len(m.Files)-1 {
 		m.Cursor++
-		visible := m.Height - panelChromeHeight
-		if visible > 0 && m.Cursor >= m.Offset+visible {
-			m.Offset = m.Cursor - visible + 1
-		}
+		m.ensureCursorVisible()
 	}
 }
 
@@ -67,14 +62,16 @@ func (m *FileListModel) SetCursor(index int) {
 	}
 	m.Cursor = max(0, min(index, len(m.Files)-1))
 	m.Select()
-	visible := m.Height - panelChromeHeight
-	if visible > 0 {
-		if m.Cursor < m.Offset {
-			m.Offset = m.Cursor
-		}
-		if m.Cursor >= m.Offset+visible {
-			m.Offset = m.Cursor - visible + 1
-		}
+	m.ensureCursorVisible()
+}
+
+// ensureCursorVisible scrolls so the cursor row sits inside the viewport.
+func (m *FileListModel) ensureCursorVisible() {
+	if m.Cursor < m.Offset {
+		m.Offset = m.Cursor
+	}
+	if visible := m.Height - panelChromeHeight; visible > 0 && m.Cursor >= m.Offset+visible {
+		m.Offset = m.Cursor - visible + 1
 	}
 }
 
