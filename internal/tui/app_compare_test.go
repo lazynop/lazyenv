@@ -112,7 +112,7 @@ func TestCompareToggleSecretsRefiltersKeptSearch(t *testing.T) {
 	app.varList.SetFile(f1)
 	app.focus = FocusVars
 	app.varList.SetSearch("hunter")
-	require.Equal(t, 1, app.varList.DisplayCount(), "the masked secret's value must not match")
+	require.Equal(t, 1, len(app.varList.displayItems), "the masked secret's value must not match")
 
 	// Compare the files, reveal secrets there, exit.
 	for _, k := range []string{"c", "j", "enter", "ctrl+s", "q"} {
@@ -122,7 +122,7 @@ func TestCompareToggleSecretsRefiltersKeptSearch(t *testing.T) {
 
 	require.Equal(t, ModeNormal, app.mode)
 	assert.True(t, app.varList.ShowSecrets, "the compare toggle carries over to the var list")
-	assert.Equal(t, 2, app.varList.DisplayCount(), "revealing secrets in compare must re-filter the kept search")
+	assert.Equal(t, 2, len(app.varList.displayItems), "revealing secrets in compare must re-filter the kept search")
 	require.NotNil(t, app.varList.SelectedVar())
 	assert.Equal(t, "HUNTER_NAME", app.varList.SelectedVar().Key, "cursor stays on the same var")
 }
@@ -459,7 +459,7 @@ func TestCompareCopyDeleteThenExitDoesNotPanic(t *testing.T) {
 	app = updated.(App)
 	require.Equal(t, ModeNormal, app.mode)
 
-	assert.Equal(t, 1, app.varList.DisplayCount(),
+	assert.Equal(t, 1, len(app.varList.displayItems),
 		"var list rows must be recomputed after compare mutated the active file")
 	assert.NotPanics(t, func() { app.View() },
 		"rendering after compare exit must not index removed vars")

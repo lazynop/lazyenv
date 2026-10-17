@@ -82,28 +82,6 @@ func TestVarListSetCursorEmpty(t *testing.T) {
 	assert.Equal(t, 0, m.Cursor)
 }
 
-// --- VarListModel.DisplayCount ---
-
-func TestVarListDisplayCount(t *testing.T) {
-	m := NewVarListModel(config.DefaultConfig().Layout)
-
-	assert.Equal(t, 0, m.DisplayCount(), "empty model should have 0 display items")
-
-	f := &model.EnvFile{Vars: []model.EnvVar{
-		{Key: "A"}, {Key: "B"}, {Key: "C"},
-	}}
-	m.SetFile(f)
-	assert.Equal(t, 3, m.DisplayCount(), "DisplayCount should match number of vars")
-
-	// With a search that matches 1
-	m.SetSearch("A")
-	assert.Equal(t, 1, m.DisplayCount(), "DisplayCount should reflect filtered results")
-
-	// Reset search
-	m.SetSearch("")
-	assert.Equal(t, len(f.Vars), m.DisplayCount(), "DisplayCount should return full count after clearing search")
-}
-
 // --- Click on group header toggles collapse (E009) ---
 
 func TestMouseClickOnHeader_TogglesCollapse(t *testing.T) {

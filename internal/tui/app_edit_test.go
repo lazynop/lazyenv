@@ -326,15 +326,15 @@ func TestToggleSecretsRefiltersKeptSearch(t *testing.T) {
 		app = updated.(App)
 	}
 	require.Equal(t, "hunter", app.varList.SearchQuery)
-	assert.Equal(t, 1, app.varList.DisplayCount(), "the masked secret's value must not match")
+	assert.Equal(t, 1, len(app.varList.displayItems), "the masked secret's value must not match")
 
 	updated, _ := app.Update(tea.KeyPressMsg{Text: "ctrl+s"})
 	app = updated.(App)
-	assert.Equal(t, 2, app.varList.DisplayCount(), "revealing secrets must re-filter the kept search")
+	assert.Equal(t, 2, len(app.varList.displayItems), "revealing secrets must re-filter the kept search")
 
 	updated, _ = app.Update(tea.KeyPressMsg{Text: "ctrl+s"})
 	app = updated.(App)
-	assert.Equal(t, 1, app.varList.DisplayCount(), "hiding secrets must re-filter the kept search")
+	assert.Equal(t, 1, len(app.varList.displayItems), "hiding secrets must re-filter the kept search")
 }
 
 func TestToggleSort(t *testing.T) {

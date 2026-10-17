@@ -64,19 +64,19 @@ func TestVarListSearchFilter(t *testing.T) {
 	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
 
-	assert.Equal(t, 3, vl.DisplayCount())
+	assert.Equal(t, 3, len(vl.displayItems))
 
 	vl.SetSearch("DB")
-	assert.Equal(t, 2, vl.DisplayCount(), "should match DB_HOST and DB_PORT")
+	assert.Equal(t, 2, len(vl.displayItems), "should match DB_HOST and DB_PORT")
 
 	vl.SetSearch("API")
-	assert.Equal(t, 1, vl.DisplayCount(), "should match API_KEY only")
+	assert.Equal(t, 1, len(vl.displayItems), "should match API_KEY only")
 
 	vl.SetSearch("NOMATCH")
-	assert.Equal(t, 0, vl.DisplayCount())
+	assert.Equal(t, 0, len(vl.displayItems))
 
 	vl.SetSearch("")
-	assert.Equal(t, 3, vl.DisplayCount(), "clear search should show all")
+	assert.Equal(t, 3, len(vl.displayItems), "clear search should show all")
 }
 
 func TestVarListSearchCaseInsensitive(t *testing.T) {
@@ -85,7 +85,7 @@ func TestVarListSearchCaseInsensitive(t *testing.T) {
 	vl.SetFile(f)
 
 	vl.SetSearch("my_key")
-	assert.Equal(t, 1, vl.DisplayCount(), "search should be case-insensitive")
+	assert.Equal(t, 1, len(vl.displayItems), "search should be case-insensitive")
 }
 
 func TestVarListSearchSkipsMaskedSecretValues(t *testing.T) {
@@ -95,10 +95,10 @@ func TestVarListSearchSkipsMaskedSecretValues(t *testing.T) {
 	vl.SetFile(f)
 
 	vl.SetSearch("hunter")
-	assert.Equal(t, 0, vl.DisplayCount(), "a masked secret's value must not match")
+	assert.Equal(t, 0, len(vl.displayItems), "a masked secret's value must not match")
 
 	vl.SetSearch("token")
-	assert.Equal(t, 1, vl.DisplayCount(), "a masked secret's key still matches")
+	assert.Equal(t, 1, len(vl.displayItems), "a masked secret's key still matches")
 }
 
 func TestVarListToggleSecretsRefiltersActiveSearch(t *testing.T) {
@@ -109,15 +109,15 @@ func TestVarListToggleSecretsRefiltersActiveSearch(t *testing.T) {
 	vl.SetFile(f)
 	vl.Height = 20
 	vl.SetSearch("hunter")
-	require.Equal(t, 1, vl.DisplayCount(), "only the key match while secrets are masked")
+	require.Equal(t, 1, len(vl.displayItems), "only the key match while secrets are masked")
 
 	vl.SetShowSecrets(true)
-	assert.Equal(t, 3, vl.DisplayCount(), "revealed secret values match")
+	assert.Equal(t, 3, len(vl.displayItems), "revealed secret values match")
 	require.NotNil(t, vl.SelectedVar())
 	assert.Equal(t, "HUNTER_NAME", vl.SelectedVar().Key, "cursor stays on the same var")
 
 	vl.SetShowSecrets(false)
-	assert.Equal(t, 1, vl.DisplayCount(), "masking again drops the value matches")
+	assert.Equal(t, 1, len(vl.displayItems), "masking again drops the value matches")
 	require.NotNil(t, vl.SelectedVar())
 	assert.Equal(t, "HUNTER_NAME", vl.SelectedVar().Key, "cursor stays on the same var")
 }
@@ -148,11 +148,11 @@ func TestVarListRefreshAfterAdd(t *testing.T) {
 	f := makeTestFile(".env", "FOO")
 	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
-	assert.Equal(t, 1, vl.DisplayCount())
+	assert.Equal(t, 1, len(vl.displayItems))
 
 	f.AddVar("BAR", "val", false)
 	vl.Refresh()
-	assert.Equal(t, 2, vl.DisplayCount())
+	assert.Equal(t, 2, len(vl.displayItems))
 }
 
 func TestVarListFormatValueFlattensControlChars(t *testing.T) {
@@ -297,13 +297,13 @@ func TestVarListGrouping_ToggleProducesHeaders(t *testing.T) {
 	vl.Height = 30
 
 	assert.Equal(t, 0, countHeaders(vl.displayItems), "no headers before toggle")
-	assert.Equal(t, 7, vl.DisplayCount())
+	assert.Equal(t, 7, len(vl.displayItems))
 
 	count := vl.ToggleGrouping()
 	assert.Equal(t, 2, count, "should report 2 named groups (DB, REDIS)")
 	assert.True(t, vl.Grouping)
 	// 3 headers (DB, REDIS, UNGROUPED) + 7 vars = 10 items
-	assert.Equal(t, 10, vl.DisplayCount())
+	assert.Equal(t, 10, len(vl.displayItems))
 	assert.Equal(t, 3, countHeaders(vl.displayItems))
 	// First item must be the DB header (lowest first-occurrence index).
 	assert.Equal(t, displayItemHeader, vl.displayItems[0].Kind)
@@ -325,7 +325,7 @@ func TestVarListGrouping_CollapseHidesVars(t *testing.T) {
 	assert.True(t, ok)
 	assert.True(t, vl.collapsed["DB"])
 	// 10 items - 3 DB vars = 7 items now (DB header still present).
-	assert.Equal(t, 7, vl.DisplayCount())
+	assert.Equal(t, 7, len(vl.displayItems))
 	// No DB_* var rows must remain.
 	for _, item := range vl.displayItems {
 		if item.Kind == displayItemVar {
@@ -346,7 +346,7 @@ func TestVarListGrouping_ToggleCollapseExpandsAgain(t *testing.T) {
 	assert.True(t, vl.collapsed["DB"])
 	vl.ToggleCollapseAtCursor() // expand DB
 	assert.False(t, vl.collapsed["DB"])
-	assert.Equal(t, 10, vl.DisplayCount())
+	assert.Equal(t, 10, len(vl.displayItems))
 }
 
 func TestVarListGrouping_ToggleCollapseNoOpOnVar(t *testing.T) {
@@ -411,7 +411,7 @@ func TestVarListGrouping_SearchDisablesHeaders(t *testing.T) {
 	vl.SetSearch("DB")
 	assert.Equal(t, 0, countHeaders(vl.displayItems),
 		"search must disable headers in rendering")
-	assert.Equal(t, 3, vl.DisplayCount(), "3 DB_* matches")
+	assert.Equal(t, 3, len(vl.displayItems), "3 DB_* matches")
 	assert.True(t, vl.Grouping, "Grouping flag is preserved across search")
 
 	vl.SetSearch("")
@@ -429,7 +429,7 @@ func TestVarListGrouping_SortAlphaWithinGroups(t *testing.T) {
 	vl.ToggleSort() // alpha on
 
 	// Layout: [DB header, DB_HOST, DB_PORT, DB_USER, UNGROUPED header, DEBUG, PORT]
-	require.Equal(t, 7, vl.DisplayCount())
+	require.Equal(t, 7, len(vl.displayItems))
 	assert.Equal(t, displayItemHeader, vl.displayItems[0].Kind)
 	assert.Equal(t, "DB_HOST", f.Vars[vl.displayItems[1].VarIdx].Key)
 	assert.Equal(t, "DB_PORT", f.Vars[vl.displayItems[2].VarIdx].Key)
@@ -455,7 +455,7 @@ func TestVarListGrouping_GroupsSortedAlphaUnderSort(t *testing.T) {
 	vl.ToggleGrouping()
 	vl.ToggleSort()
 
-	require.Equal(t, 6, vl.DisplayCount())
+	require.Equal(t, 6, len(vl.displayItems))
 	assert.Equal(t, "DB", vl.groups[vl.displayItems[0].GroupIdx].Prefix,
 		"DB group must come first by alpha order under sort")
 	assert.Equal(t, "REDIS", vl.groups[vl.displayItems[3].GroupIdx].Prefix,
@@ -474,7 +474,7 @@ func TestVarListGrouping_GroupsFileOrderWithoutSortAlpha(t *testing.T) {
 	vl.ToggleGrouping()
 	// SortAlpha intentionally left off.
 
-	require.Equal(t, 6, vl.DisplayCount())
+	require.Equal(t, 6, len(vl.displayItems))
 	assert.Equal(t, "REDIS", vl.groups[vl.displayItems[0].GroupIdx].Prefix,
 		"REDIS group must come first by file order when sort is off")
 	assert.Equal(t, "DB", vl.groups[vl.displayItems[3].GroupIdx].Prefix,
@@ -495,7 +495,7 @@ func TestVarListGrouping_UngroupedAlwaysLastWithSortAlpha(t *testing.T) {
 	vl.ToggleSort()
 
 	// Layout under sort: [ZZZ header, ZZZ_A, ZZZ_B, UNGROUPED header, AAA]
-	require.Equal(t, 5, vl.DisplayCount())
+	require.Equal(t, 5, len(vl.displayItems))
 	assert.Equal(t, "ZZZ", vl.groups[vl.displayItems[0].GroupIdx].Prefix)
 	assert.True(t, vl.groups[vl.displayItems[3].GroupIdx].IsUngrouped(),
 		"Ungrouped must remain last under alpha sort")
@@ -584,7 +584,7 @@ func TestVarListGrouping_UngroupedAloneNoHeader(t *testing.T) {
 
 	assert.Equal(t, 0, countHeaders(vl.displayItems),
 		"single-Ungrouped case must skip the header")
-	assert.Equal(t, 3, vl.DisplayCount())
+	assert.Equal(t, 3, len(vl.displayItems))
 }
 
 func TestVarListGrouping_UngroupedHeaderShownWithNamedGroups(t *testing.T) {
@@ -597,7 +597,7 @@ func TestVarListGrouping_UngroupedHeaderShownWithNamedGroups(t *testing.T) {
 	vl.ToggleGrouping()
 
 	// Layout: DB hdr, DB_HOST, DB_PORT, UNGROUPED hdr, PORT, DEBUG
-	require.Equal(t, 6, vl.DisplayCount())
+	require.Equal(t, 6, len(vl.displayItems))
 	require.Equal(t, 2, countHeaders(vl.displayItems))
 	last := vl.displayItems[3]
 	require.Equal(t, displayItemHeader, last.Kind, "last section starts with a header")
@@ -608,7 +608,7 @@ func TestVarListGrouping_UngroupedHeaderShownWithNamedGroups(t *testing.T) {
 	require.True(t, vl.IsHeaderAtCursor())
 	vl.ToggleCollapseAtCursor()
 	assert.True(t, vl.collapsed[""]) // empty prefix = Ungrouped
-	assert.Equal(t, 4, vl.DisplayCount(), "collapsed Ungrouped: DB hdr + 2 vars + UNGROUPED hdr")
+	assert.Equal(t, 4, len(vl.displayItems), "collapsed Ungrouped: DB hdr + 2 vars + UNGROUPED hdr")
 }
 
 func TestVarListGrouping_PreservesCollapsedAcrossDisable(t *testing.T) {
@@ -631,7 +631,7 @@ func TestVarListGrouping_PreservesCollapsedAcrossDisable(t *testing.T) {
 	assert.True(t, vl.Grouping)
 	assert.True(t, vl.collapsed["DB"], "DB stays collapsed after round-trip")
 	// 10 items - 3 DB vars = 7
-	assert.Equal(t, 7, vl.DisplayCount())
+	assert.Equal(t, 7, len(vl.displayItems))
 }
 
 func TestVarListGrouping_RefreshAfterAddRecomputesGroups(t *testing.T) {
@@ -668,7 +668,7 @@ func TestVarListGrouping_ToggleSortFollowsUngroupedHeaderCursor(t *testing.T) {
 
 	// Layout (file order): [hREDIS, REDIS_URL, REDIS_PORT, hDB, DB_HOST,
 	// DB_PORT, hUNGROUPED, PORT, DEBUG] — UNGROUPED header at index 6.
-	require.Equal(t, 9, vl.DisplayCount())
+	require.Equal(t, 9, len(vl.displayItems))
 	vl.SetCursor(6)
 	require.True(t, vl.IsHeaderAtCursor())
 	require.True(t, vl.groups[vl.displayItems[vl.Cursor].GroupIdx].IsUngrouped())
@@ -740,7 +740,7 @@ func TestVarListSearchFromBottomKeepsMatchVisible(t *testing.T) {
 	require.Greater(t, vl.Offset, 0, "list must be scrolled down before searching")
 
 	vl.SetSearch("TARGET")
-	require.Equal(t, 1, vl.DisplayCount())
+	require.Equal(t, 1, len(vl.displayItems))
 
 	theme := BuildTheme(true, config.ColorConfig{})
 	view := stripAnsi(vl.View(theme))

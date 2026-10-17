@@ -251,11 +251,6 @@ func (m *VarListModel) IndexAtRow(row int) int {
 	return index
 }
 
-// DisplayCount returns the number of displayed rows (vars + headers).
-func (m *VarListModel) DisplayCount() int {
-	return len(m.displayItems)
-}
-
 // SelectedVar returns the currently selected variable, or nil if the cursor
 // is on a header (or out of range).
 func (m *VarListModel) SelectedVar() *model.EnvVar {
