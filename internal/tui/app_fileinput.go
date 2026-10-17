@@ -16,8 +16,7 @@ import (
 // activeFileInput returns a pointer to the textinput.Model the user is
 // editing in the current file-operation mode, or nil for any other mode.
 func (a *App) activeFileInput() *textinput.Model {
-	switch a.mode {
-	case ModeCreateFile, ModeDuplicateFile, ModeRenameFile, ModeTemplateFile:
+	if _, ok := fileInputLabels[a.mode]; ok {
 		return &a.fileInput
 	}
 	return nil

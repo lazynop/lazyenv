@@ -718,7 +718,8 @@ func (a *App) inputBar() (string, *textinput.Model) {
 	return "", nil
 }
 
-// fileInputLabels labels the input bar of each mode activeFileInput serves.
+// fileInputLabels labels the input bar of each file-operation mode, the modes
+// activeFileInput serves.
 var fileInputLabels = map[AppMode]string{
 	ModeCreateFile:    "  New file: ",
 	ModeDuplicateFile: "  Duplicate as: ",
