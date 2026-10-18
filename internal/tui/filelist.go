@@ -79,9 +79,20 @@ func (m *FileListModel) MoveCursorTo(index int) {
 // ensureCursorVisible scrolls so the cursor row sits inside the viewport, and
 // the viewport shows no blank rows while rows above it are scrolled off.
 func (m *FileListModel) ensureCursorVisible() {
-	if visible := m.Height - panelChromeHeight; visible > 0 { // not before the first layout
-		m.Offset = scrollOffset(m.Cursor, m.Offset, visible, len(m.Files))
+	if m.Height > panelChromeHeight { // not before the first layout
+		m.Offset = scrollOffset(m.Cursor, m.Offset, m.visibleLines(), len(m.Files))
 	}
+}
+
+// visibleLines returns how many files fit in the panel.
+func (m *FileListModel) visibleLines() int {
+	return max(m.Height-panelChromeHeight, 1)
+}
+
+// IndexAtRow returns the index of the file drawn on row, the list's rows
+// counted from the first one shown, or -1 for a row that draws no file.
+func (m *FileListModel) IndexAtRow(row int) int {
+	return visibleIndex(row, m.Offset, m.visibleLines(), len(m.Files))
 }
 
 // Select selects the current cursor position.
@@ -114,10 +125,8 @@ func (m *FileListModel) View(theme Theme) string {
 		return m.renderPanel(title, content, theme)
 	}
 
-	visible := max(m.Height-panelChromeHeight, 1)
-
 	var lines []string
-	end := min(m.Offset+visible, len(m.Files))
+	end := min(m.Offset+m.visibleLines(), len(m.Files))
 	inner := m.Width - panelChromeWidth
 
 	for i := m.Offset; i < end; i++ {

@@ -294,6 +294,48 @@ func TestMouseClickVarList_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	}
 }
 
+// TestMouseClickFileList_OutsideTheDrawnRowsKeepsTheCursor scrolls a file list
+// four rows tall to its middle, then clicks its title row and its bottom
+// border, in the main view and while picking the file to compare: they draw
+// no file, though files sit just off screen on either side, so the cursor
+// stays put, and with it the active file in the main view.
+func TestMouseClickFileList_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
+	files := make([]*model.EnvFile, 10)
+	for i := range files {
+		files[i] = makeTestFile(fmt.Sprintf(".env.%d", i), "K")
+	}
+	updated, _ := newTestApp(files).Update(tea.WindowSizeMsg{Width: 80, Height: bottomChromeHeight + panelChromeHeight + 4})
+	app := press(updated.(App), "j", "j", "j", "j", "j") // .env.5, with .env.2 to .env.5 drawn
+	require.Equal(t, 2, app.fileList.Offset)
+
+	for _, mode := range []AppMode{ModeNormal, ModeCompareSelect} {
+		app.mode = mode
+		for _, y := range []int{panelContentOffsetY - 1, panelContentOffsetY + 4} {
+			updated, _ = app.Update(tea.MouseClickMsg{X: 5, Y: y, Button: tea.MouseLeft})
+			clicked := updated.(App).fileList
+			assert.Equal(t, 5, clicked.Cursor, "in mode %v a click at Y=%d draws no file", mode, y)
+			assert.Equal(t, 2, clicked.Offset, "in mode %v a click at Y=%d scrolls nothing", mode, y)
+		}
+	}
+}
+
+// TestMouseClickFileList_BelowTheLastFileKeepsTheCursor clicks the blank rows
+// under the last of three files, in the main view and while picking the file
+// to compare: they draw no file, so the cursor stays put, and with it the
+// active file in the main view.
+func TestMouseClickFileList_BelowTheLastFileKeepsTheCursor(t *testing.T) {
+	files := []*model.EnvFile{makeTestFile(".env", "K"), makeTestFile(".env.a", "K"), makeTestFile(".env.b", "K")}
+	updated, _ := newTestApp(files).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	app := updated.(App)
+
+	for _, mode := range []AppMode{ModeNormal, ModeCompareSelect} {
+		app.mode = mode
+		updated, _ = app.Update(tea.MouseClickMsg{X: 5, Y: panelContentOffsetY + len(files), Button: tea.MouseLeft})
+		clicked := updated.(App).fileList
+		assert.Equal(t, 0, clicked.Cursor, "in mode %v a blank row draws no file", mode)
+	}
+}
+
 // TestMouseClickVarList_FromTheFileListSelectsTheVarDrawnAtTheRow clicks a var
 // while the file list has the focus and the var cursor sits on the bottom row,
 // on a modified var: focusing the var list draws a peek line under it and
@@ -323,6 +365,25 @@ func TestMouseClickCompareMode_SelectsTheClickedEntry(t *testing.T) {
 	updated, _ := app.Update(tea.MouseClickMsg{X: 10, Y: row, Button: tea.MouseLeft})
 	app = updated.(App)
 	assert.Equal(t, "CHARLIE", app.diffView.Entries[app.diffView.Cursor].Key)
+}
+
+// TestMouseClickCompareMode_OutsideTheDrawnRowsKeepsTheCursor scrolls a diff
+// view four rows tall to its middle, then clicks its title row and its bottom
+// border: they draw no entry, though entries sit just off screen on either
+// side, so the cursor stays put.
+func TestMouseClickCompareMode_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
+	keys := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"}
+	app := enterCompareMode(t, makeTestFile(".env", keys...), makeTestFile(".env.prod", keys...))
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: 80, Height: bottomChromeHeight + panelChromeHeight + 4})
+	app = press(updated.(App), "j", "j", "j", "j", "j") // F, with C to F drawn
+	require.Equal(t, 2, app.diffView.Offset)
+
+	for _, y := range []int{panelContentOffsetY - 1, panelContentOffsetY + 4} {
+		updated, _ = app.Update(tea.MouseClickMsg{X: 10, Y: y, Button: tea.MouseLeft})
+		clicked := updated.(App).diffView
+		assert.Equal(t, 5, clicked.Cursor, "a click at Y=%d draws no entry", y)
+		assert.Equal(t, 2, clicked.Offset, "a click at Y=%d scrolls nothing", y)
+	}
 }
 
 func TestMouseWheelCompareMode_ScrollsDiff(t *testing.T) {
@@ -488,6 +549,53 @@ func TestMouseClickMatrixMode_SelectsTheColumnDrawnAtX(t *testing.T) {
 		updated, _ = app.Update(tea.MouseClickMsg{X: tt.x, Y: matrixContentOffsetY, Button: tea.MouseLeft})
 		assert.Equal(t, tt.col, updated.(App).matrixView.cursorCol, "click at X=%d", tt.x)
 	}
+}
+
+// TestMouseClickMatrixMode_OutsideTheDrawnCellsKeepsTheCursor scrolls a matrix
+// of 40 keys over two files to its middle, then clicks the header, the
+// separator and the stats footer, which draw no key though keys sit just off
+// screen on either side, and the row counter right of the last column, which
+// draws no file: the cursor stays on its cell.
+func TestMouseClickMatrixMode_OutsideTheDrawnCellsKeepsTheCursor(t *testing.T) {
+	keys := make([]string, 40)
+	for i := range keys {
+		keys[i] = fmt.Sprintf("K%02d", i)
+	}
+	updated, _ := newTestApp([]*model.EnvFile{makeTestFile(".env.a", keys...), makeTestFile(".env.b", keys...)}).Update(tea.WindowSizeMsg{Width: 80, Height: 20})
+	app := press(updated.(App), "m")
+	app = press(app, slices.Repeat([]string{"j"}, 20)...)
+	require.Positive(t, app.matrixView.offsetRow)
+	lines := strings.Split(stripAnsi(app.View().Content), "\n")
+	cursorRow := rowDrawing(t, app.View().Content, "K20")
+	counterX := strings.Index(lines[cursorRow], "2/2")
+	require.Positive(t, counterX, "the cursor row should draw its counter")
+
+	for _, click := range []struct {
+		name string
+		x, y int
+	}{
+		{"header", matrixPaddingWidth, 0},
+		{"separator", matrixPaddingWidth, matrixContentOffsetY - 1},
+		{"stats footer", matrixPaddingWidth, rowDrawing(t, app.View().Content, "40 keys")},
+		{"row counter", counterX, cursorRow},
+	} {
+		updated, _ = app.Update(tea.MouseClickMsg{X: click.x, Y: click.y, Button: tea.MouseLeft})
+		clicked := updated.(App).matrixView
+		assert.Equal(t, 20, clicked.cursorRow, "a click on the %s draws no key", click.name)
+		assert.Equal(t, 0, clicked.cursorCol, "a click on the %s draws no file", click.name)
+		assert.Equal(t, app.matrixView.offsetRow, clicked.offsetRow, "a click on the %s scrolls nothing", click.name)
+	}
+}
+
+// TestMouseClickMatrixMode_BelowTheLastKeyKeepsTheCursor clicks a padding row
+// under the last of five keys: it draws no key, so the cursor stays put.
+func TestMouseClickMatrixMode_BelowTheLastKeyKeepsTheCursor(t *testing.T) {
+	app := newMatrixTestApp(t)
+	require.Greater(t, app.matrixView.viewRows(), len(app.matrixView.entries), "the matrix needs padding rows")
+
+	updated, _ := app.Update(tea.MouseClickMsg{X: matrixPaddingWidth, Y: matrixContentOffsetY + len(app.matrixView.entries), Button: tea.MouseLeft})
+
+	assert.Equal(t, 0, updated.(App).matrixView.cursorRow)
 }
 
 func TestMouseWheelMatrixMode_Scrolls(t *testing.T) {

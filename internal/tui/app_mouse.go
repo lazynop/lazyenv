@@ -30,7 +30,7 @@ func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 	if msg.X < a.fileWidth {
 		// Click on file list panel
 		a.setFocus(FocusFiles)
-		index := msg.Y - panelContentOffsetY + a.fileList.Offset
+		index := a.fileList.IndexAtRow(msg.Y - panelContentOffsetY)
 		if index >= 0 {
 			prev := a.fileList.SelectedFile()
 			a.fileList.SetCursor(index)
@@ -54,7 +54,7 @@ func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 }
 
 func (a App) handleCompareMouseClick(msg tea.MouseClickMsg) App {
-	index := msg.Y - panelContentOffsetY + a.diffView.Offset
+	index := a.diffView.IndexAtRow(msg.Y - panelContentOffsetY)
 	if index >= 0 {
 		a.diffView.SetCursor(index)
 	}
@@ -65,7 +65,7 @@ func (a App) handleCompareSelectMouseClick(msg tea.MouseClickMsg) App {
 	if msg.X >= a.fileWidth {
 		return a // only the file list picks the file to compare with
 	}
-	index := msg.Y - panelContentOffsetY + a.fileList.Offset
+	index := a.fileList.IndexAtRow(msg.Y - panelContentOffsetY)
 	if index >= 0 {
 		a.fileList.MoveCursorTo(index) // the compare target, not the active file
 	}
@@ -73,18 +73,8 @@ func (a App) handleCompareSelectMouseClick(msg tea.MouseClickMsg) App {
 }
 
 func (a App) handleMatrixMouseClick(msg tea.MouseClickMsg) App {
-	row := msg.Y - matrixContentOffsetY + a.matrixView.offsetRow
-	if row < 0 {
-		return a
-	}
-	keyWidth := a.matrixView.layout.MatrixKeyWidth
-	colWidth := a.matrixView.layout.MatrixColWidth
-	x := msg.X - matrixPaddingWidth/2 // the matrix is drawn after its left padding
-	if x >= keyWidth {
-		col := (x-keyWidth)/colWidth + a.matrixView.offsetCol
+	if row, col := a.matrixView.CellAt(msg.X, msg.Y); row >= 0 {
 		a.matrixView.SetCursor(row, col)
-	} else {
-		a.matrixView.SetCursor(row, a.matrixView.cursorCol)
 	}
 	return a
 }

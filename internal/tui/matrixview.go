@@ -109,6 +109,23 @@ func (m *MatrixModel) viewRows() int {
 	return max(1, m.Height-matrixChromeHeight)
 }
 
+// CellAt returns the row and column of the cell drawn at screen position x, y,
+// the matrix being drawn from the top-left corner, or a row of -1 for a line
+// that draws no key.
+// A click on the key column or the row counter right of the last column keeps
+// the cursor's column.
+func (m *MatrixModel) CellAt(x, y int) (row, col int) {
+	row = visibleIndex(y-matrixContentOffsetY, m.offsetRow, m.viewRows(), len(m.entries))
+	col = m.cursorCol
+	// The matrix is drawn after its left padding.
+	if x -= matrixPaddingWidth/2 + m.layout.MatrixKeyWidth; x >= 0 {
+		if c := visibleIndex(x/m.layout.MatrixColWidth, m.offsetCol, m.visibleCols(), len(m.fileNames)); c >= 0 {
+			col = c
+		}
+	}
+	return row, col
+}
+
 func (m *MatrixModel) ensureVisible() {
 	m.offsetRow = scrollOffset(m.cursorRow, m.offsetRow, m.viewRows(), len(m.entries))
 }
