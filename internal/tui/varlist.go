@@ -265,15 +265,18 @@ func (m *VarListModel) SetCursor(index int) {
 
 // IndexAt returns the index in displayItems of the item drawn on screen row y,
 // the panel being drawn from the top of the screen, or -1 for a row that draws
-// no item: a deleted var, which no cursor reaches, draws none. The peek line
-// maps to the item at the cursor, which it belongs to.
+// no item: the note and the deleted vars, which no cursor reaches, draw none.
+// The peek line maps to the item at the cursor, which it belongs to.
 func (m *VarListModel) IndexAt(y int) int {
 	rows := m.drawnRows()
 	row := y - panelContentOffsetY
-	if row < 0 || row >= len(rows) || rows[row].kind == deletedRow {
+	if row < 0 || row >= len(rows) {
 		return -1
 	}
-	return rows[row].index
+	if kind := rows[row].kind; kind == itemRow || kind == peekRow {
+		return rows[row].index
+	}
+	return -1
 }
 
 // drawnRowKind is what a row of the var list draws.
@@ -282,6 +285,7 @@ type drawnRowKind int
 const (
 	itemRow    drawnRowKind = iota // a display item: a var or a group header
 	peekRow                        // the peek line under the item at the cursor
+	noteRow                        // in place of the items when there are none
 	deletedRow                     // a deleted var, below the last item
 )
 
@@ -294,11 +298,15 @@ type drawnRow struct {
 }
 
 // drawnRows returns the rows the list draws from Offset down: the items that
-// fit (visibleLines), the peek line under the cursor's when one is drawn, then
-// the deleted vars the rows left hold. renderRows draws them and IndexAt maps
-// clicks through them, so both follow one layout.
+// fit (visibleLines), the peek line under the cursor's when one is drawn, or a
+// note when no item is shown, then the deleted vars the rows left hold.
+// renderRows draws them and IndexAt maps clicks through them, so both follow
+// one layout.
 func (m *VarListModel) drawnRows() []drawnRow {
 	var rows []drawnRow
+	if len(m.displayItems) == 0 {
+		rows = append(rows, drawnRow{kind: noteRow})
+	}
 	for i := m.Offset; i < min(m.Offset+m.visibleLines(), len(m.displayItems)); i++ {
 		rows = append(rows, drawnRow{itemRow, i})
 		if i == m.Cursor && m.drawsPeekLine() {
@@ -603,6 +611,10 @@ func (m *VarListModel) calcColumnWidths() (int, int) {
 		}
 		longestKey = max(longestKey, len(m.File.Vars[item.VarIdx].Key))
 	}
+	// The deleted vars drawn below share the key column.
+	for _, v := range m.File.DeletedVars {
+		longestKey = max(longestKey, len(v.Key))
+	}
 	return columnLimits{
 		maxKey:   m.layout.VarListMaxKeyWidth,
 		padding:  max(m.layout.VarListPadding, config.VarListMinPadding),
@@ -610,8 +622,16 @@ func (m *VarListModel) calcColumnWidths() (int, int) {
 	}.split(longestKey, m.Width)
 }
 
-// renderRows renders the rows drawnRows lays out: items, the peek line and
-// deleted vars.
+// note is the row drawn in place of the items when no item is shown.
+func (m *VarListModel) note() string {
+	if m.SearchQuery != "" {
+		return fmt.Sprintf("  No matches for %q", m.SearchQuery)
+	}
+	return "  No variables"
+}
+
+// renderRows renders the rows drawnRows lays out: items, the peek line or the
+// note, and deleted vars.
 func (m *VarListModel) renderRows(keyWidth, maxValWidth int, theme Theme) []string {
 	var lines []string
 	for _, row := range m.drawnRows() {
@@ -626,6 +646,8 @@ func (m *VarListModel) renderRows(keyWidth, maxValWidth int, theme Theme) []stri
 		case peekRow:
 			v := &m.File.Vars[m.displayItems[row.index].VarIdx]
 			lines = append(lines, m.renderPeekLine(v, keyWidth, maxValWidth, theme))
+		case noteRow:
+			lines = append(lines, theme.MutedItem.Render(m.note()))
 		case deletedRow:
 			lines = append(lines, m.renderDeletedLine(&m.File.DeletedVars[row.index], keyWidth, maxValWidth, theme))
 		}
@@ -662,14 +684,6 @@ func (m *VarListModel) View(theme Theme) string {
 	if m.File == nil {
 		content := theme.MutedItem.Render("  Select a file")
 		return m.renderPanel(title, content, theme)
-	}
-
-	if len(m.displayItems) == 0 {
-		msg := "  No variables"
-		if m.SearchQuery != "" {
-			msg = fmt.Sprintf("  No matches for %q", m.SearchQuery)
-		}
-		return m.renderPanel(title, theme.MutedItem.Render(msg), theme)
 	}
 
 	keyWidth, maxValWidth := m.calcColumnWidths()

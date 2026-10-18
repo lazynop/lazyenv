@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -516,4 +517,17 @@ func TestMoreDeletedVarsThanRowsKeepTheCursorInView(t *testing.T) {
 	for _, key := range []string{"GONE1", "GONE2", "GONE3"} {
 		assert.Contains(t, view, key, "the rows under the cursor should hold deleted vars")
 	}
+}
+
+// TestDeletingTheLastVarKeepsItsRowUntilSave deletes a file's only var: the
+// panel says it has no variables and still lists the deleted one below, as it
+// does under the vars that are left.
+func TestDeletingTheLastVarKeepsItsRowUntilSave(t *testing.T) {
+	app := press(onVars(resize(newTestApp([]*model.EnvFile{makeTestFile(".env", "ONLY")}), 80, 24)), "d", "y")
+	require.Equal(t, ModeNormal, app.mode)
+
+	rows := strings.Split(stripAnsi(app.View().Content), "\n")
+	note := slices.IndexFunc(rows, func(row string) bool { return strings.Contains(row, "No variables") })
+	require.GreaterOrEqual(t, note, 0, "the panel should say it has no variables")
+	assert.Contains(t, rows[note+1], "ONLY  val_ONLY", "the deleted var should be listed below, its key whole")
 }
