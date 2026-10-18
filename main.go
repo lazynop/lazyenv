@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 
@@ -139,6 +140,31 @@ func checkConfig() {
 	os.Exit(1)
 }
 
+// showConfig writes cfg to stdout as TOML, after reporting on stderr why the
+// config file was rejected and the notices from the CLI flags, and returns the
+// exit status: 1 when the file was rejected.
+func showConfig(stdout, stderr io.Writer, cfg config.Config, configErrors, notices []string) int {
+	if len(configErrors) > 0 {
+		fmt.Fprintln(stderr, "Config file rejected; showing the defaults with the command-line flags applied:")
+		for _, e := range configErrors {
+			fmt.Fprintf(stderr, "  ✗ %s\n", e)
+		}
+	}
+	for _, n := range notices {
+		fmt.Fprintf(stderr, "Notice: %s\n", n)
+	}
+	enc := toml.NewEncoder(stdout)
+	enc.SetIndentTables(true)
+	if err := enc.Encode(cfg); err != nil {
+		fmt.Fprintf(stderr, "Error encoding config: %v\n", err)
+		return 1
+	}
+	if len(configErrors) > 0 {
+		return 1
+	}
+	return 0
+}
+
 func main() {
 	kong.Parse(&cli,
 		kong.Name("lazyenv"),
@@ -181,13 +207,7 @@ func main() {
 	}
 
 	if cli.ShowConfig {
-		enc := toml.NewEncoder(os.Stdout)
-		enc.SetIndentTables(true)
-		if err := enc.Encode(cfg); err != nil {
-			fmt.Fprintf(os.Stderr, "Error encoding config: %v\n", err)
-			os.Exit(1)
-		}
-		return
+		os.Exit(showConfig(os.Stdout, os.Stderr, cfg, configErrors, notices))
 	}
 
 	app := tui.NewApp(cfg, tui.StartupMessages{ConfigErrors: configErrors, Notices: notices})

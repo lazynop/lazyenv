@@ -35,7 +35,7 @@ lazyenv ./services -r
 |      | `--file-list-width` | Width of the file list panel in characters. `0` = auto (1/4 screen); min 20, lower values are raised. |
 | `-c` | `--config`       | Path to configuration file. Takes highest priority over default search paths.                               |
 |      | `--check-config` | Validate configuration file and exit. Shows search paths and any errors found.                              |
-|      | `--show-config`  | Print the effective configuration (TOML) and exit.                                                          |
+|      | `--show-config`  | Print the effective configuration (TOML) and exit. Config errors go to stderr, and a rejected file exits 1. |
 |      | `--list-themes`  | List available built-in themes and exit.                                                                    |
 |      | `--themes`       | Interactive theme preview. Browse all built-in themes and see their colors live.                             |
 | `-v` | `--version`      | Show version, commit, and build date.                                                                       |
