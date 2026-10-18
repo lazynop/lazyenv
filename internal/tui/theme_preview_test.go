@@ -252,7 +252,7 @@ func TestThemePreviewMouseClickOutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	}
 	require.Positive(t, m.scrollOffset())
 
-	for _, y := range []int{panelContentOffsetY - 1, panelContentOffsetY + m.listRows(), MinTerminalHeight - 1} {
+	for _, y := range []int{panelContentOffsetY - 1, panelContentOffsetY + m.visibleLines(), MinTerminalHeight - 1} {
 		updated, _ = m.Update(tea.MouseClickMsg{X: 5, Y: y, Button: tea.MouseLeft})
 		assert.Equal(t, 10, updated.(ThemePreviewModel).cursor, "a click at Y=%d draws no theme", y)
 	}
@@ -280,24 +280,24 @@ func TestThemePreviewMouseWheel(t *testing.T) {
 func TestThemePreviewScrollOffset(t *testing.T) {
 	m := NewThemePreview(config.DefaultConfig())
 
-	// Set height so contentHeight = max(24-4, 1) = 20
+	// Height 24 leaves visibleLines = 24 - statusBarHeight - panelChromeHeight = 20
 	updated, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 	m = updated.(ThemePreviewModel)
 
-	// cursor=0 < contentHeight=20 → offset should be 0
+	// cursor=0 < visibleLines=20 → offset should be 0
 	m.cursor = 0
-	assert.Equal(t, 0, m.scrollOffset(), "scrollOffset should be 0 when cursor < contentHeight")
+	assert.Equal(t, 0, m.scrollOffset(), "scrollOffset should be 0 when cursor < visibleLines")
 
-	// cursor=5 < contentHeight=20 → offset should still be 0
+	// cursor=5 < visibleLines=20 → offset should still be 0
 	m.cursor = 5
-	assert.Equal(t, 0, m.scrollOffset(), "scrollOffset should be 0 when cursor < contentHeight")
+	assert.Equal(t, 0, m.scrollOffset(), "scrollOffset should be 0 when cursor < visibleLines")
 
-	// cursor=20 >= contentHeight=20 → offset = 20 - 20 + 1 = 1
+	// cursor=20 >= visibleLines=20 → offset = 20 - 20 + 1 = 1
 	require.Greater(t, len(m.themes), 20, "need more than 20 themes for this test")
 	m.cursor = 20
-	assert.Equal(t, 1, m.scrollOffset(), "scrollOffset should be positive when cursor >= contentHeight")
+	assert.Equal(t, 1, m.scrollOffset(), "scrollOffset should be positive when cursor >= visibleLines")
 
-	// cursor=25 >= contentHeight=20 → offset = 25 - 20 + 1 = 6
+	// cursor=25 >= visibleLines=20 → offset = 25 - 20 + 1 = 6
 	require.Greater(t, len(m.themes), 25, "need more than 25 themes for this test")
 	m.cursor = 25
 	assert.Equal(t, 6, m.scrollOffset(), "scrollOffset should increase with cursor")

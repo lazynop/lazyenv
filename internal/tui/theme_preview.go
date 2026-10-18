@@ -122,7 +122,7 @@ func (m *ThemePreviewModel) moveDown() {
 func (m ThemePreviewModel) handleMouseClick(msg tea.MouseClickMsg) ThemePreviewModel {
 	if msg.Button == tea.MouseLeft {
 		if msg.X < m.listWidth() {
-			index := visibleIndex(msg.Y-panelContentOffsetY, m.scrollOffset(), m.listRows(), len(m.themes))
+			index := visibleIndex(msg.Y-panelContentOffsetY, m.scrollOffset(), m.visibleLines(), len(m.themes))
 			if index >= 0 {
 				m.cursor = index
 			}
@@ -141,7 +141,7 @@ func (m ThemePreviewModel) handleMouseWheel(msg tea.MouseWheelMsg) ThemePreviewM
 // scrollOffset returns the first theme the list shows: the list scrolls only
 // as far as the cursor needs.
 func (m ThemePreviewModel) scrollOffset() int {
-	return scrollOffset(m.cursor, 0, m.listRows(), len(m.themes))
+	return scrollOffset(m.cursor, 0, m.visibleLines(), len(m.themes))
 }
 
 // listWidth returns the width of the theme list panel, border included.
@@ -154,8 +154,8 @@ func (m ThemePreviewModel) panelHeight() int {
 	return m.height - statusBarHeight
 }
 
-// listRows returns how many themes the list panel shows.
-func (m ThemePreviewModel) listRows() int {
+// visibleLines returns how many themes the list panel shows.
+func (m ThemePreviewModel) visibleLines() int {
 	return max(m.panelHeight()-panelChromeHeight, 0)
 }
 
@@ -215,14 +215,14 @@ func (m ThemePreviewModel) renderThemeList(width int, rc resolvedColors) string 
 	title := lipgloss.NewStyle().Bold(true).Foreground(rc.primary).
 		Render(fmt.Sprintf(" Themes (%d)", len(m.themes)))
 
-	contentHeight := m.listRows()
+	visible := m.visibleLines()
 	offset := m.scrollOffset()
 
 	innerWidth := width - panelBorderWidth
 	itemStyle := lipgloss.NewStyle().Foreground(rc.muted).Width(innerWidth)
 	cursorStyle := lipgloss.NewStyle().Bold(true).Foreground(rc.fg).Background(rc.cursorBg).Width(innerWidth)
 	lines := []string{title}
-	for i := offset; i < len(m.themes) && i < offset+contentHeight; i++ {
+	for i := offset; i < len(m.themes) && i < offset+visible; i++ {
 		prefix, style := "  ", itemStyle
 		if i == m.cursor {
 			prefix, style = "▸ ", cursorStyle

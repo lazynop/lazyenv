@@ -104,8 +104,8 @@ func (m *MatrixModel) SetCursor(row, col int) {
 	m.ensureHorizontalVisible()
 }
 
-// viewRows returns how many body rows the matrix shows.
-func (m *MatrixModel) viewRows() int {
+// visibleLines returns how many body rows the matrix shows.
+func (m *MatrixModel) visibleLines() int {
 	return max(1, m.Height-matrixChromeHeight)
 }
 
@@ -115,7 +115,7 @@ func (m *MatrixModel) viewRows() int {
 // A click on the key column or the row counter right of the last column keeps
 // the cursor's column.
 func (m *MatrixModel) CellAt(x, y int) (row, col int) {
-	row = visibleIndex(y-matrixContentOffsetY, m.offsetRow, m.viewRows(), len(m.entries))
+	row = visibleIndex(y-matrixContentOffsetY, m.offsetRow, m.visibleLines(), len(m.entries))
 	col = m.cursorCol
 	// The matrix is drawn after its left padding.
 	if x -= matrixPaddingWidth/2 + m.layout.MatrixKeyWidth; x >= 0 {
@@ -127,7 +127,7 @@ func (m *MatrixModel) CellAt(x, y int) (row, col int) {
 }
 
 func (m *MatrixModel) ensureVisible() {
-	m.offsetRow = scrollOffset(m.cursorRow, m.offsetRow, m.viewRows(), len(m.entries))
+	m.offsetRow = scrollOffset(m.cursorRow, m.offsetRow, m.visibleLines(), len(m.entries))
 }
 
 func (m *MatrixModel) ensureHorizontalVisible() {
@@ -308,8 +308,8 @@ func (m *MatrixModel) View(theme Theme) string {
 	b.WriteString("\n")
 
 	// Body rows
-	viewRows := m.viewRows()
-	endRow := min(m.offsetRow+viewRows, len(m.entries))
+	visible := m.visibleLines()
+	endRow := min(m.offsetRow+visible, len(m.entries))
 
 	checkMark := "✓"
 	crossMark := "✗"
@@ -338,7 +338,7 @@ func (m *MatrixModel) View(theme Theme) string {
 
 	// Pad the body to its full height, so the stats footer concatenated below
 	// keeps its row however many keys there are.
-	content += strings.Repeat("\n", max(0, matrixContentOffsetY+viewRows-strings.Count(content, "\n")))
+	content += strings.Repeat("\n", max(0, matrixContentOffsetY+visible-strings.Count(content, "\n")))
 
 	style := lipgloss.NewStyle().
 		Width(m.Width).

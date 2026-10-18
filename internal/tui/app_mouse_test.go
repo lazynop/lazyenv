@@ -591,7 +591,7 @@ func TestMouseClickMatrixMode_OutsideTheDrawnCellsKeepsTheCursor(t *testing.T) {
 // under the last of five keys: it draws no key, so the cursor stays put.
 func TestMouseClickMatrixMode_BelowTheLastKeyKeepsTheCursor(t *testing.T) {
 	app := newMatrixTestApp(t)
-	require.Greater(t, app.matrixView.viewRows(), len(app.matrixView.entries), "the matrix needs padding rows")
+	require.Greater(t, app.matrixView.visibleLines(), len(app.matrixView.entries), "the matrix needs padding rows")
 
 	updated, _ := app.Update(tea.MouseClickMsg{X: matrixPaddingWidth, Y: matrixContentOffsetY + len(app.matrixView.entries), Button: tea.MouseLeft})
 
