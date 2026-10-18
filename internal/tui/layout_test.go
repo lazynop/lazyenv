@@ -163,7 +163,7 @@ var viewScenarios = []viewScenario{
 		ConfigErrors: []string{`invalid sort value: "random"`, `invalid colors.primary: "teal" (expected hex like #RRGGBB or ANSI 0-255)`},
 	}),
 	{"theme preview", -1, func(t *testing.T, width, height int, _ bool) string {
-		m := NewThemePreview(true)
+		m := NewThemePreview(true, config.DefaultMouseScrollLines)
 		m.searchPaths = []string{".lazyenvrc", "/home/user/.config/lazyenv/config.toml", "/home/user/.lazyenvrc"}
 		updated, _ := m.Update(tea.WindowSizeMsg{Width: width, Height: height})
 		return updated.(ThemePreviewModel).View().Content

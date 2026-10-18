@@ -137,7 +137,7 @@ Yes/no prompts confirm only with `y`: `Enter` and other keys are ignored. `Ctrl+
 | `q` / `Esc`    | Quit without selection                         |
 | `Ctrl+C`       | Quit without selection                         |
 
-With the mouse on, a click on a theme in the list shows it, and the wheel over the list moves through the themes.
+With the mouse on, a click on a theme in the list shows it, and the wheel over the list moves through the themes, `mouse-scroll-lines` themes per tick.
 
 ## Mouse
 

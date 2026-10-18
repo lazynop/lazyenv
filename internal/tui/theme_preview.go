@@ -54,14 +54,17 @@ type ThemePreviewModel struct {
 	width       int
 	height      int
 	noMouse     bool
+	scrollLines int // themes a wheel tick moves through: mouse-scroll-lines
 }
 
-// NewThemePreview returns a new theme preview model.
-func NewThemePreview(noMouse bool) ThemePreviewModel {
+// NewThemePreview returns a new theme preview model, with the mouse settings
+// from the config.
+func NewThemePreview(noMouse bool, mouseScrollLines int) ThemePreviewModel {
 	return ThemePreviewModel{
 		themes:      config.ThemeNames(),
 		searchPaths: config.ConfigSearchPaths(".", ""),
 		noMouse:     noMouse,
+		scrollLines: mouseScrollLines,
 	}
 }
 
@@ -97,23 +100,31 @@ func (m ThemePreviewModel) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.selected = m.themes[m.cursor]
 		return m, tea.Quit
 	case "up", "k":
-		if m.cursor > 0 {
-			m.cursor--
-		}
+		m.moveUp()
 	case "down", "j":
-		if m.cursor < len(m.themes)-1 {
-			m.cursor++
-		}
+		m.moveDown()
 	}
 	return m, nil
+}
+
+func (m *ThemePreviewModel) moveUp() {
+	if m.cursor > 0 {
+		m.cursor--
+	}
+}
+
+func (m *ThemePreviewModel) moveDown() {
+	if m.cursor < len(m.themes)-1 {
+		m.cursor++
+	}
 }
 
 func (m ThemePreviewModel) handleMouseClick(msg tea.MouseClickMsg) ThemePreviewModel {
 	if msg.Button == tea.MouseLeft {
 		listWidth := max(m.width/3, config.FileListMinWidth)
 		if msg.X < listWidth {
-			index := msg.Y - panelContentOffsetY + m.scrollOffset()
-			if index >= 0 && index < len(m.themes) {
+			index := visibleIndex(msg.Y-panelContentOffsetY, m.scrollOffset(), m.listRows(), len(m.themes))
+			if index >= 0 {
 				m.cursor = index
 			}
 		}
@@ -124,11 +135,7 @@ func (m ThemePreviewModel) handleMouseClick(msg tea.MouseClickMsg) ThemePreviewM
 func (m ThemePreviewModel) handleMouseWheel(msg tea.MouseWheelMsg) ThemePreviewModel {
 	listWidth := max(m.width/3, config.FileListMinWidth)
 	if msg.X < listWidth {
-		if msg.Button == tea.MouseWheelUp {
-			m.cursor = max(0, m.cursor-config.DefaultMouseScrollLines)
-		} else {
-			m.cursor = min(len(m.themes)-1, m.cursor+config.DefaultMouseScrollLines)
-		}
+		wheelScroll(m.scrollLines, msg.Button == tea.MouseWheelUp, m.moveUp, m.moveDown)
 	}
 	return m
 }
@@ -335,8 +342,8 @@ func (m ThemePreviewModel) renderStatusBar(rc resolvedColors) string {
 
 // RunThemePreview runs the interactive theme preview and returns the selected theme name.
 // Returns "" if the user quit without selecting.
-func RunThemePreview(noMouse bool) (string, error) {
-	m := NewThemePreview(noMouse)
+func RunThemePreview(noMouse bool, mouseScrollLines int) (string, error) {
+	m := NewThemePreview(noMouse, mouseScrollLines)
 	p := tea.NewProgram(m)
 	result, err := p.Run()
 	if err != nil {
