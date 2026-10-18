@@ -66,14 +66,18 @@ func (m *StatusBarModel) ClearMessage() {
 
 // View renders the status bar, its hints naming the keys that keys binds.
 func (m *StatusBarModel) View(theme Theme, keys KeyMap, mode AppMode, focus Focus, fileName string, varCount int, stats ...DiffStats) string {
-	// Build diff stats string if provided
-	diffStats := ""
-	if len(stats) > 0 {
-		diffStats = formatDiffStats(stats[0], theme)
+	// Left side: the transient message, or else the keybinding hints based on
+	// mode and focus
+	var left string
+	if m.Message != "" {
+		left = m.messageStyle(theme).Render(m.Message)
+	} else {
+		diffStats := ""
+		if len(stats) > 0 {
+			diffStats = formatDiffStats(stats[0], theme)
+		}
+		left = modeHints(theme, keys, mode, focus, diffStats)
 	}
-
-	// Left side: keybinding hints based on mode and focus
-	hints := modeHints(theme, keys, mode, focus, diffStats)
 
 	// Right side: file info + read-only badge
 	right := ""
@@ -87,12 +91,6 @@ func (m *StatusBarModel) View(theme Theme, keys KeyMap, mode AppMode, focus Focu
 		} else {
 			right = fileInfo
 		}
-	}
-
-	// Transient message overrides hints
-	left := hints
-	if m.Message != "" {
-		left = m.messageStyle(theme).Render(m.Message)
 	}
 
 	// Layout
