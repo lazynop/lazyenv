@@ -384,6 +384,20 @@ func TestConfigErrorScreenAlsoShowsNotices(t *testing.T) {
 		"the run stops on this screen, so a notice must not be lost behind it")
 }
 
+// TestFileListWidthBeyondTheTerminalLeavesTheVarListItsMinimum sets a
+// file-list-width wider than the terminal: the file list narrows so the
+// variables panel keeps its minimum and the screen fits the terminal.
+func TestFileListWidthBeyondTheTerminalLeavesTheVarListItsMinimum(t *testing.T) {
+	app := newTestApp([]*model.EnvFile{makeTestFile(".env", "A")})
+	app.config.Layout.FileListWidth = 200
+
+	app = resize(app, 80, 24)
+
+	assert.Equal(t, 80-config.VarListMinWidth, app.fileList.Width)
+	assert.Equal(t, config.VarListMinWidth, app.varList.Width)
+	assert.LessOrEqual(t, lipgloss.Width(app.View().Content), 80, "the screen should fit the terminal")
+}
+
 func TestFileListWidthBelowMinimumIsRaised(t *testing.T) {
 	app := newTestApp(nil)
 	app.config.Layout.FileListWidth = 5

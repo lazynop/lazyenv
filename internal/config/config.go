@@ -48,6 +48,11 @@ func (s SecretsConfig) ValueHeuristicEnabled() bool {
 // smaller fixed width to it.
 const FileListMinWidth = 20
 
+// VarListMinWidth is the narrowest the variables panel gets: the TUI narrows
+// a file-list-width that would leave it less. The minimum terminal width
+// leaves room for it beside a file list at FileListMinWidth.
+const VarListMinWidth = 40
+
 // VarListMinPadding is the smallest var-list-padding that fits a variable
 // row's fixed overhead: the panel border, the gaps around key and value, and
 // the change and issue markers. The TUI raises a smaller value to it, since

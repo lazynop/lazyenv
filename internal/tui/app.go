@@ -887,10 +887,13 @@ func (a App) inputBarRoom() int {
 }
 
 func (a *App) updateLayout() {
-	a.fileWidth = max(a.width/4, config.FileListMinWidth)
+	a.fileWidth = a.width / 4
 	if w := a.config.Layout.FileListWidth; w > 0 {
-		a.fileWidth = max(w, config.FileListMinWidth)
+		a.fileWidth = w
 	}
+	// The file list leaves the variables panel its minimum, then keeps its
+	// own, which wins only below the minimum terminal width.
+	a.fileWidth = max(min(a.fileWidth, a.width-config.VarListMinWidth), config.FileListMinWidth)
 	varWidth := a.width - a.fileWidth
 
 	panelHeight := a.height - bottomChromeHeight

@@ -39,6 +39,7 @@ var (
 	goVersionRe  = regexp.MustCompile(`Go (\d+\.\d+)\+`)
 	goModRe      = regexp.MustCompile(`(?m)^go (\d+\.\d+)`)
 	terminalRe   = regexp.MustCompile(`at least (\d+)x(\d+)`)
+	varListMinRe = regexp.MustCompile("terminal width (?:minus|-) `?(\\d+)")
 	// A help row's key column ends at its last run of two or more spaces,
 	// where wrapHelpRow starts the description: "↑/↓  k/j" is one column.
 	helpRowRe = regexp.MustCompile(`^ {2}(\S.*\S|\S) {2,}\S`)
@@ -245,6 +246,17 @@ func TestDocsStateCurrentCounts(t *testing.T) {
 		}
 		for _, m := range terminalRe.FindAllStringSubmatch(doc, -1) {
 			assert.Equal(t, terminal, m[1:], "%s states the wrong minimum terminal size", path)
+		}
+	}
+}
+
+// TestDocsStateTheVarListMinimum checks that each place describing
+// file-list-width states the width the TUI leaves the variables panel.
+func TestDocsStateTheVarListMinimum(t *testing.T) {
+	for _, path := range []string{"docs/configuration.md", "docs/usage.md", "examples/config/full.toml"} {
+		m := varListMinRe.FindStringSubmatch(readFile(t, path))
+		if assert.NotNil(t, m, "%s should state how wide file-list-width can get", path) {
+			assert.Equal(t, strconv.Itoa(config.VarListMinWidth), m[1], "%s states the wrong width the variables panel keeps", path)
 		}
 	}
 }

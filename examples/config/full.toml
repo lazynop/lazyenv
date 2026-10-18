@@ -36,7 +36,7 @@ var-list-min-value-width = 10
 var-list-padding = 12                # min 8; lower values are raised
 diff-min-value-width = 8
 diff-padding = 10                    # min 9; lower values are raised
-file-list-width = 0                  # 0 = auto (1/4 screen), > 0 = fixed width; min 20, lower values are raised
+file-list-width = 0                  # 0 = auto (1/4 screen), > 0 = fixed width; min 20, lower values are raised; max terminal width - 40
 mouse-scroll-lines = 1               # lines per mouse wheel event; 0 disables wheel scrolling
 
 # Secret detection tuning.

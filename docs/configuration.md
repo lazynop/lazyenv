@@ -61,7 +61,7 @@ mouse-scroll-lines = 1
 | `diff-padding`             | `10`    | Horizontal space reserved for borders, markers, and spacing in diff rows. Minimum `9`.      |
 | `matrix-key-width`         | `20`    | Width of the key column in the completeness matrix.                                         |
 | `matrix-col-width`         | `14`    | Width of each file column in the matrix. Controls how many files fit on screen.             |
-| `file-list-width`          | `0`     | Width of the file list panel. `0` = auto (1/4 of screen). Minimum `20`. File names truncate to fit. |
+| `file-list-width`          | `0`     | Width of the file list panel. `0` = auto (1/4 of screen). Minimum `20`. At most the terminal width minus `40`, which the variables panel keeps. File names truncate to fit. |
 | `mouse-scroll-lines`       | `1`     | Number of lines scrolled per mouse wheel event. `0` disables wheel scrolling.               |
 
 ## [secrets]

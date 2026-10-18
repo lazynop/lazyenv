@@ -32,7 +32,7 @@ lazyenv ./services -r
 |      | `--no-mouse`     | Disable mouse support. Useful in terminals or multiplexers with mouse conflicts.                            |
 |      | `--read-only`    | Disable all write operations. Useful for safely inspecting production files.                                 |
 |      | `--session-summary` / `--no-session-summary` | Force-enable or disable the on-exit summary of disk changes (default: enabled). `--read-only` forces it off. |
-|      | `--file-list-width` | Width of the file list panel in characters. `0` = auto (1/4 screen); min 20, lower values are raised. |
+|      | `--file-list-width` | Width of the file list panel in characters. `0` = auto (1/4 screen); min 20, lower values are raised; at most the terminal width minus 40. |
 | `-c` | `--config`       | Path to configuration file. Takes highest priority over default search paths.                               |
 |      | `--check-config` | Validate configuration file and exit. Shows search paths and any errors found.                              |
 |      | `--show-config`  | Print the effective configuration (TOML) and exit. Config errors go to stderr, and a rejected file exits 1. |
