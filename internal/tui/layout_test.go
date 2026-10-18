@@ -144,7 +144,7 @@ var viewScenarios = []viewScenario{
 	}),
 	appScenario("matrix confirm delete", ModeConfirmMatrixDelete, func(app App) App { return press(app, "m", "d") }),
 	{"config error", ModeConfigError, func(t *testing.T, width, height int, _ bool) string {
-		app := NewApp(config.DefaultConfig(), StartupMessages{ConfigErrors: []string{`invalid sort value: "random"`}})
+		app := NewApp(config.DefaultConfig(), StartupMessages{ConfigPath: ".lazyenvrc", ConfigErrors: []string{`invalid sort value: "random"`}})
 		updated, _ := app.Update(tea.WindowSizeMsg{Width: width, Height: height})
 		require.Equal(t, ModeConfigError, updated.(App).mode)
 		return updated.(App).View().Content

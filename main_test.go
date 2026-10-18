@@ -46,9 +46,9 @@ func TestShowConfigReportsRejectedFile(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	cfg := config.DefaultConfig()
 
-	startup := tui.StartupMessages{ConfigErrors: []string{`invalid sort value: "random"`}}
+	startup := tui.StartupMessages{ConfigPath: ".lazyenvrc", ConfigErrors: []string{`invalid sort value: "random"`}}
 
-	status := showConfig(&stdout, &stderr, cfg, ".lazyenvrc", startup)
+	status := showConfig(&stdout, &stderr, cfg, startup)
 
 	assert.Equal(t, 1, status)
 	assert.Contains(t, stderr.String(), "Config errors in .lazyenvrc:")
@@ -63,7 +63,7 @@ func TestShowConfigReportsNoticesWithoutFailing(t *testing.T) {
 
 	startup := tui.StartupMessages{Notices: []string{`unknown theme "nope" (see --list-themes)`}}
 
-	status := showConfig(&stdout, &stderr, cfg, ".lazyenvrc", startup)
+	status := showConfig(&stdout, &stderr, cfg, startup)
 
 	assert.Equal(t, 0, status, "a notice adjusts the run, it does not reject the file")
 	assert.Contains(t, stderr.String(), `unknown theme "nope" (see --list-themes)`)
@@ -76,11 +76,12 @@ func TestShowConfigReportsBeforeTheTOML(t *testing.T) {
 	cfg := config.DefaultConfig()
 
 	startup := tui.StartupMessages{
+		ConfigPath:   ".lazyenvrc",
 		ConfigErrors: []string{`invalid sort value: "random"`},
 		Notices:      []string{`unknown theme "nope" (see --list-themes)`},
 	}
 
-	showConfig(&terminal, &terminal, cfg, ".lazyenvrc", startup)
+	showConfig(&terminal, &terminal, cfg, startup)
 
 	out := terminal.String()
 	tomlStart := strings.Index(out, "sort = ")

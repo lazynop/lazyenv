@@ -235,6 +235,18 @@ func TestConfigErrorBlocksAndQuitsOnNextKey(t *testing.T) {
 	assert.IsType(t, tea.QuitMsg{}, cmd(), "a rejected config file must quit on the next key")
 }
 
+func TestConfigErrorScreenNamesTheFile(t *testing.T) {
+	cfg := config.DefaultConfig()
+	cfg.Dir = t.TempDir()
+
+	app := startApp(t, NewApp(cfg, StartupMessages{
+		ConfigPath:   "/home/user/.lazyenvrc",
+		ConfigErrors: []string{`invalid sort value: "random"`},
+	}))
+
+	assert.Contains(t, app.View().Content, "/home/user/.lazyenvrc")
+}
+
 func TestConfigErrorScreenAlsoShowsNotices(t *testing.T) {
 	cfg := config.DefaultConfig()
 	cfg.Dir = t.TempDir()

@@ -2,7 +2,9 @@ package config
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -55,7 +57,12 @@ func Load(projectDir, configPath string) LoadResult {
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return LoadResult{Config: cfg, Path: path, Errors: []string{fmt.Sprintf("cannot read %s: %v", path, err)}}
+		// The path is in LoadResult.Path, which every report of the errors names.
+		var pathErr *fs.PathError
+		if errors.As(err, &pathErr) {
+			err = pathErr.Err
+		}
+		return LoadResult{Config: cfg, Path: path, Errors: []string{fmt.Sprintf("cannot read the file: %v", err)}}
 	}
 
 	merged, errs := merge(cfg, data)

@@ -361,6 +361,20 @@ func TestLoadReturnsPath(t *testing.T) {
 	assert.True(t, r.Config.Recursive)
 }
 
+func TestLoadUnreadableFileErrorOmitsThePath(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, ".lazyenvrc")
+	require.NoError(t, os.WriteFile(path, []byte("recursive = true\n"), 0o000))
+	if _, err := os.ReadFile(path); err == nil {
+		t.Skip("the file is readable anyway (running as root)")
+	}
+
+	r := Load(dir, "")
+	assert.Equal(t, path, r.Path)
+	assert.Equal(t, []string{"cannot read the file: permission denied"}, r.Errors,
+		"the path is in r.Path; every surface that shows the errors names the file once")
+}
+
 func TestLoadNoConfig(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())

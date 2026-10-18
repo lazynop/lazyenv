@@ -11,12 +11,14 @@ func (a App) viewConfigError() string {
 
 	title := a.theme.GitWarning.Render("Configuration Error")
 
+	path := a.theme.MutedItem.Render(a.configPath)
+
 	msg := a.theme.NormalItem.Render(a.configError)
 
 	hint := a.theme.MutedItem.Render("Press any key to exit")
 
 	alert := box.Render(
-		lipgloss.JoinVertical(lipgloss.Center, title, "", msg, "", hint),
+		lipgloss.JoinVertical(lipgloss.Center, title, path, "", msg, "", hint),
 	)
 
 	return lipgloss.Place(a.width, a.height, lipgloss.Center, lipgloss.Center, alert)

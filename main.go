@@ -148,12 +148,12 @@ func writeConfigErrors(w io.Writer, path string, errs []string) {
 }
 
 // showConfig writes cfg to stdout as TOML, after reporting on stderr why the
-// config file at configPath was rejected and the notices from the CLI flags,
-// and returns the exit status: 1 when the file was rejected.
-func showConfig(stdout, stderr io.Writer, cfg config.Config, configPath string, startup tui.StartupMessages) int {
+// config file was rejected and the notices from the CLI flags, and returns the
+// exit status: 1 when the file was rejected.
+func showConfig(stdout, stderr io.Writer, cfg config.Config, startup tui.StartupMessages) int {
 	rejected := len(startup.ConfigErrors) > 0
 	if rejected {
-		writeConfigErrors(stderr, configPath, startup.ConfigErrors)
+		writeConfigErrors(stderr, startup.ConfigPath, startup.ConfigErrors)
 		fmt.Fprintln(stderr, "Showing the defaults with the command-line flags applied.")
 	}
 	for _, n := range startup.Notices {
@@ -190,7 +190,7 @@ func main() {
 	cfg := loaded.Config
 
 	cfg.Dir = cli.Path
-	startup := tui.StartupMessages{ConfigErrors: loaded.Errors, Notices: applyCLIOverrides(&cfg)}
+	startup := tui.StartupMessages{ConfigPath: loaded.Path, ConfigErrors: loaded.Errors, Notices: applyCLIOverrides(&cfg)}
 	config.FinalizeColors(&cfg)
 
 	if cli.ListThemes {
@@ -213,7 +213,7 @@ func main() {
 	}
 
 	if cli.ShowConfig {
-		os.Exit(showConfig(os.Stdout, os.Stderr, cfg, loaded.Path, startup))
+		os.Exit(showConfig(os.Stdout, os.Stderr, cfg, startup))
 	}
 
 	app := tui.NewApp(cfg, startup)

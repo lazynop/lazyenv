@@ -603,13 +603,13 @@
                       ╭──────────────────────────────────╮
                       │                                  │
                       │        Configuration Error       │
+                      │            .lazyenvrc            │
                       │                                  │
                       │   invalid sort value: "random"   │
                       │                                  │
                       │       Press any key to exit      │
                       │                                  │
                       ╰──────────────────────────────────╯
-
 
 
 

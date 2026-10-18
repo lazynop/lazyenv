@@ -66,6 +66,8 @@ type StartupNoticeMsg struct{ Notice string }
 // StartupMessages are the problems found while building the config, before
 // the TUI starts.
 type StartupMessages struct {
+	// ConfigPath is the config file the ConfigErrors are about.
+	ConfigPath string
 	// ConfigErrors are the reasons the config file was rejected and the
 	// defaults are in use. The App shows them on a blocking screen and quits
 	// on the next key.
@@ -97,7 +99,8 @@ type App struct {
 	searchInput textinput.Model
 	matrixView  MatrixModel
 
-	// Text of the blocking config error screen (ModeConfigError).
+	// File and text of the blocking config error screen (ModeConfigError).
+	configPath  string
 	configError string
 
 	// Startup notice, flashed once Init runs; empty when there is none.
@@ -167,6 +170,7 @@ func NewApp(cfg config.Config, startup StartupMessages) App {
 	app.setFocus(FocusFiles)
 	if len(startup.ConfigErrors) > 0 {
 		// The run stops on this screen, so the notices go on it too.
+		app.configPath = startup.ConfigPath
 		app.configError = strings.Join(slices.Concat(startup.ConfigErrors, startup.Notices), "; ")
 		app.mode = ModeConfigError
 	} else {
