@@ -261,6 +261,19 @@ func configErrorRows(view string) []string {
 	return rows
 }
 
+// smallestConfigErrorRows starts an App with startup's config messages in the
+// smallest terminal it draws its screens in, checks the config error screen
+// fits, and returns its rows as configErrorRows does.
+func smallestConfigErrorRows(t *testing.T, startup StartupMessages) []string {
+	t.Helper()
+	cfg := config.DefaultConfig()
+	cfg.Dir = t.TempDir()
+	updated, _ := NewApp(cfg, startup).Update(tea.WindowSizeMsg{Width: MinTerminalWidth, Height: MinTerminalHeight})
+	view := updated.(App).View().Content
+	assert.LessOrEqual(t, lipgloss.Height(view), MinTerminalHeight, "the screen should fit the terminal")
+	return configErrorRows(view)
+}
+
 func TestConfigErrorScreenWithoutAPathLeavesNoGap(t *testing.T) {
 	cfg := config.DefaultConfig()
 	cfg.Dir = t.TempDir()
@@ -295,19 +308,12 @@ func TestConfigErrorScreenShowsOneErrorPerRow(t *testing.T) {
 }
 
 func TestConfigErrorScreenCutsWhatDoesNotFit(t *testing.T) {
-	cfg := config.DefaultConfig()
-	cfg.Dir = t.TempDir()
 	errs := make([]string, 6)
 	for i := range errs {
 		errs[i] = fmt.Sprintf("invalid colors.color%d: \"teal\" (expected hex like #RRGGBB or ANSI 0-255)", i)
 	}
-	app := NewApp(cfg, StartupMessages{ConfigPath: ".lazyenvrc", ConfigErrors: errs})
 
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: MinTerminalWidth, Height: MinTerminalHeight})
-	view := updated.(App).View().Content
-
-	assert.LessOrEqual(t, lipgloss.Height(view), MinTerminalHeight)
-	rows := configErrorRows(view)
+	rows := smallestConfigErrorRows(t, StartupMessages{ConfigPath: ".lazyenvrc", ConfigErrors: errs})
 	title := slices.Index(rows, "Configuration Error")
 	hint := slices.IndexFunc(rows, func(row string) bool { return strings.HasPrefix(row, "Press any key") })
 	require.Less(t, title, hint)
@@ -327,19 +333,12 @@ func TestConfigErrorScreenCutsWhatDoesNotFit(t *testing.T) {
 }
 
 func TestConfigErrorScreenCutsAnErrorTallerThanTheTerminal(t *testing.T) {
-	cfg := config.DefaultConfig()
-	cfg.Dir = t.TempDir()
 	long := "config error: " + strings.Repeat("toml: expected a value here ", 20)
-	app := NewApp(cfg, StartupMessages{
+
+	rows := smallestConfigErrorRows(t, StartupMessages{
 		ConfigPath:   ".lazyenvrc",
 		ConfigErrors: []string{long, `invalid sort value: "random"`},
 	})
-
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: MinTerminalWidth, Height: MinTerminalHeight})
-	view := updated.(App).View().Content
-
-	assert.LessOrEqual(t, lipgloss.Height(view), MinTerminalHeight)
-	rows := configErrorRows(view)
 	hint := slices.IndexFunc(rows, func(row string) bool { return strings.HasPrefix(row, "Press any key") })
 	require.NotEqual(t, -1, hint)
 	assert.Equal(t, "… and 1 more", rows[hint-1])
@@ -348,16 +347,9 @@ func TestConfigErrorScreenCutsAnErrorTallerThanTheTerminal(t *testing.T) {
 }
 
 func TestConfigErrorScreenCutsAPathTooLong(t *testing.T) {
-	cfg := config.DefaultConfig()
-	cfg.Dir = t.TempDir()
 	path := "/home/user/" + strings.Repeat("a-deeply-nested-directory/", 12) + "lazyenv/config.toml"
-	app := NewApp(cfg, StartupMessages{ConfigPath: path, ConfigErrors: []string{`invalid sort value: "random"`}})
 
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: MinTerminalWidth, Height: MinTerminalHeight})
-	view := updated.(App).View().Content
-
-	assert.LessOrEqual(t, lipgloss.Height(view), MinTerminalHeight)
-	rows := configErrorRows(view)
+	rows := smallestConfigErrorRows(t, StartupMessages{ConfigPath: path, ConfigErrors: []string{`invalid sort value: "random"`}})
 	title := slices.Index(rows, "Configuration Error")
 	require.NotEqual(t, -1, title)
 	assert.True(t, strings.HasPrefix(rows[title+1], "…"), "the path loses its start: %q", rows[title+1])
@@ -367,14 +359,9 @@ func TestConfigErrorScreenCutsAPathTooLong(t *testing.T) {
 }
 
 func TestConfigErrorScreenCutsAWidePathToItsRows(t *testing.T) {
-	cfg := config.DefaultConfig()
-	cfg.Dir = t.TempDir()
 	path := "/home/user/" + strings.Repeat("設定ファイル", 20) + "/config.toml"
 	for pad := range 2 { // the wide characters land on the row boundary either way
-		app := NewApp(cfg, StartupMessages{ConfigPath: strings.Repeat("x", pad) + path, ConfigErrors: []string{`invalid sort value: "random"`}})
-
-		updated, _ := app.Update(tea.WindowSizeMsg{Width: MinTerminalWidth, Height: MinTerminalHeight})
-		rows := configErrorRows(updated.(App).View().Content)
+		rows := smallestConfigErrorRows(t, StartupMessages{ConfigPath: strings.Repeat("x", pad) + path, ConfigErrors: []string{`invalid sort value: "random"`}})
 
 		title := slices.Index(rows, "Configuration Error")
 		require.NotEqual(t, -1, title)

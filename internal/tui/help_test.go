@@ -37,11 +37,7 @@ const helpLastRow = "Jump to the top/bottom"
 // that pad it to the terminal width, so a failed assertion prints the text
 // rather than a screenful of blanks.
 func helpScreen(app App) string {
-	rows := strings.Split(stripAnsi(app.View().Content), "\n")
-	for i, row := range rows {
-		rows[i] = strings.TrimRight(row, " ")
-	}
-	return strings.Join(rows, "\n")
+	return plainRows(app.View().Content)
 }
 
 func TestViewHelp(t *testing.T) {

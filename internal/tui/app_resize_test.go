@@ -2,7 +2,7 @@ package tui
 
 import (
 	"fmt"
-	"strings"
+	"slices"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -13,10 +13,9 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// TestResizeKeepsTheCursorRowInView moves the cursor of every scrollable view
-// to a row near the bottom (a column near the right, in the matrix) of a large
-// terminal, then shrinks the terminal: the cursor stays in view.
-func TestResizeKeepsTheCursorRowInView(t *testing.T) {
+// resizeFixture returns 30 files that each hold the keys K00 to K29: more
+// rows and columns than any view shows at the sizes the resize tests use.
+func resizeFixture() []*model.EnvFile {
 	keys := make([]string, 30)
 	for i := range keys {
 		keys[i] = fmt.Sprintf("K%02d", i)
@@ -25,8 +24,16 @@ func TestResizeKeepsTheCursorRowInView(t *testing.T) {
 	for i := range files {
 		files[i] = makeTestFile(fmt.Sprintf(".env.%02d", i), keys...)
 	}
-	down := strings.Split(strings.Repeat("j", 20), "")
-	right := strings.Split(strings.Repeat("l", 20), "")
+	return files
+}
+
+// TestResizeKeepsTheCursorRowInView moves the cursor of every scrollable view
+// to a row near the bottom (a column near the right, in the matrix) of a large
+// terminal, then shrinks the terminal: the cursor stays in view.
+func TestResizeKeepsTheCursorRowInView(t *testing.T) {
+	files := resizeFixture()
+	down := slices.Repeat([]string{"j"}, 20)
+	right := slices.Repeat([]string{"l"}, 20)
 	tests := []struct {
 		name, atCursor string
 		keys           []string
@@ -54,15 +61,8 @@ func TestResizeKeepsTheCursorRowInView(t *testing.T) {
 // to its last row in a small terminal, then grows the terminal: the view
 // scrolls back to show the rows above instead of leaving blank rows below.
 func TestGrowingTheTerminalScrollsBackToFillTheView(t *testing.T) {
-	keys := make([]string, 30)
-	for i := range keys {
-		keys[i] = fmt.Sprintf("K%02d", i)
-	}
-	files := make([]*model.EnvFile, 30)
-	for i := range files {
-		files[i] = makeTestFile(fmt.Sprintf(".env.%02d", i), keys...)
-	}
-	end := strings.Split(strings.Repeat("j", 29), "")
+	files := resizeFixture()
+	end := slices.Repeat([]string{"j"}, 29)
 	tests := []struct {
 		name, firstRow string
 		keys           []string

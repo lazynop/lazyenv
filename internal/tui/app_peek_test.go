@@ -399,9 +399,9 @@ func TestPeekReservesNoRowWhenUnfocused(t *testing.T) {
 	assert.Contains(t, rows[len(rows)-2], "val_C", "with no peek line drawn, the last inner row should hold a var")
 }
 
-// peekedBottomRowHeight is the terminal height peekedBottomRowApp lays out:
-// four var rows.
-const peekedBottomRowHeight = bottomChromeHeight + panelChromeHeight + 4
+// fourRowPanelsHeight is the terminal height that leaves the panels four
+// rows inside their chrome.
+const fourRowPanelsHeight = bottomChromeHeight + panelChromeHeight + 4
 
 // peekedBottomRowApp returns an App whose file list has the focus, with peek
 // on and the var cursor scrolled, by mouse wheel, onto the bottom row: F,
@@ -409,7 +409,7 @@ const peekedBottomRowHeight = bottomChromeHeight + panelChromeHeight + 4
 func peekedBottomRowApp() App {
 	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F")
 	f.UpdateVar(5, "edited", false)
-	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: peekedBottomRowHeight})
+	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: fourRowPanelsHeight})
 	app := press(updated.(App), "right", "p", "left")
 	for range len(f.Vars) - 1 {
 		updated, _ = app.Update(tea.MouseWheelMsg{X: 60, Y: 3, Button: tea.MouseWheelDown})
@@ -426,7 +426,7 @@ func TestFocusingTheVarListKeepsThePeekedCursorRowVisible(t *testing.T) {
 	focusVars := map[string]tea.Msg{
 		"right key": tea.KeyPressMsg{Code: tea.KeyRight},
 		// The bottom border selects no row, so only the focus changes.
-		"click on the bottom border": tea.MouseClickMsg{X: 60, Y: peekedBottomRowHeight - bottomChromeHeight - 1, Button: tea.MouseLeft},
+		"click on the bottom border": tea.MouseClickMsg{X: 60, Y: fourRowPanelsHeight - bottomChromeHeight - 1, Button: tea.MouseLeft},
 	}
 	for name, focus := range focusVars {
 		t.Run(name, func(t *testing.T) {
@@ -465,15 +465,22 @@ func TestPeekLineLeavesRoomForDeletedVars(t *testing.T) {
 	assert.Equal(t, 4, drawn, "the rows left under five vars and the peek line should hold four deleted vars")
 }
 
+// lastVarAboveDeletedApp returns an App whose var list, four rows tall and
+// focused, has its cursor on H, the last of eight vars, with GONE1 and GONE2
+// deleted below it.
+func lastVarAboveDeletedApp() App {
+	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F", "G", "H", "GONE1", "GONE2")
+	f.DeleteVar(9)
+	f.DeleteVar(8)
+	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: fourRowPanelsHeight})
+	return press(updated.(App), "right", "j", "j", "j", "j", "j", "j", "j")
+}
+
 // TestDeletedVarsShowAtTheEndOfALongList moves the cursor to the last var of a
 // list longer than its panel: the list scrolls on to show the deleted vars
 // below it, keeping the cursor row in view.
 func TestDeletedVarsShowAtTheEndOfALongList(t *testing.T) {
-	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F", "G", "H", "GONE1", "GONE2")
-	f.DeleteVar(9)
-	f.DeleteVar(8)
-	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: bottomChromeHeight + panelChromeHeight + 4})
-	app := press(updated.(App), "right", "j", "j", "j", "j", "j", "j", "j") // H, the last var
+	app := lastVarAboveDeletedApp()
 
 	view := stripAnsi(app.View().Content)
 
@@ -486,11 +493,7 @@ func TestDeletedVarsShowAtTheEndOfALongList(t *testing.T) {
 // var, then moves up one var: the list keeps its scroll instead of jumping
 // back, since the cursor row is still in view.
 func TestMovingUpFromTheLastVarKeepsTheScroll(t *testing.T) {
-	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F", "G", "H", "GONE1", "GONE2")
-	f.DeleteVar(9)
-	f.DeleteVar(8)
-	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: bottomChromeHeight + panelChromeHeight + 4})
-	app := press(updated.(App), "right", "j", "j", "j", "j", "j", "j", "j") // H, the last var
+	app := lastVarAboveDeletedApp()
 	offset := app.varList.Offset
 
 	app = press(app, "k") // G
@@ -507,7 +510,7 @@ func TestMoreDeletedVarsThanRowsKeepTheCursorInView(t *testing.T) {
 	for range 6 {
 		f.DeleteVar(2)
 	}
-	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: bottomChromeHeight + panelChromeHeight + 4})
+	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: fourRowPanelsHeight})
 	app := press(updated.(App), "right", "j") // B, the last var
 
 	view := stripAnsi(app.View().Content)

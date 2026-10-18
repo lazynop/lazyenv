@@ -283,7 +283,7 @@ func TestMouseClickVarList_SelectsTheVarDrawnAtTheRow(t *testing.T) {
 // so the cursor stays put.
 func TestMouseClickVarList_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J")
-	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: bottomChromeHeight + panelChromeHeight + 4})
+	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: fourRowPanelsHeight})
 	app := press(updated.(App), "right", "j", "j", "j", "j", "j") // F, with C to F drawn
 	require.Equal(t, 2, app.varList.Offset)
 
@@ -304,7 +304,7 @@ func TestMouseClickFileList_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	for i := range files {
 		files[i] = makeTestFile(fmt.Sprintf(".env.%d", i), "K")
 	}
-	updated, _ := newTestApp(files).Update(tea.WindowSizeMsg{Width: 80, Height: bottomChromeHeight + panelChromeHeight + 4})
+	updated, _ := newTestApp(files).Update(tea.WindowSizeMsg{Width: 80, Height: fourRowPanelsHeight})
 	app := press(updated.(App), "j", "j", "j", "j", "j") // .env.5, with .env.2 to .env.5 drawn
 	require.Equal(t, 2, app.fileList.Offset)
 
@@ -357,10 +357,7 @@ func TestMouseClickCompareMode_SelectsTheClickedEntry(t *testing.T) {
 	keys := []string{"ALPHA", "BRAVO", "CHARLIE", "DELTA"}
 	app := enterCompareMode(t, makeTestFile(".env", keys...), makeTestFile(".env.prod", keys...))
 
-	row := slices.IndexFunc(strings.Split(stripAnsi(app.View().Content), "\n"), func(line string) bool {
-		return strings.Contains(line, "CHARLIE")
-	})
-	require.GreaterOrEqual(t, row, 0, "CHARLIE should be drawn in the diff view")
+	row := rowDrawing(t, app.View().Content, "CHARLIE")
 
 	updated, _ := app.Update(tea.MouseClickMsg{X: 10, Y: row, Button: tea.MouseLeft})
 	app = updated.(App)
@@ -374,7 +371,7 @@ func TestMouseClickCompareMode_SelectsTheClickedEntry(t *testing.T) {
 func TestMouseClickCompareMode_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	keys := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"}
 	app := enterCompareMode(t, makeTestFile(".env", keys...), makeTestFile(".env.prod", keys...))
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: 80, Height: bottomChromeHeight + panelChromeHeight + 4})
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: 80, Height: fourRowPanelsHeight})
 	app = press(updated.(App), "j", "j", "j", "j", "j") // F, with C to F drawn
 	require.Equal(t, 2, app.diffView.Offset)
 

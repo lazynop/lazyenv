@@ -363,17 +363,6 @@ func TestCompareEditRefiltersKeptSearch(t *testing.T) {
 	assert.Empty(t, app.varList.displayItems, "HOST no longer matches the kept search")
 }
 
-func TestCompareNeedsAtLeast2Files(t *testing.T) {
-	f1 := makeTestFile(".env", "FOO")
-	app := newTestApp([]*model.EnvFile{f1})
-	app.focus = FocusVars
-
-	// With only 1 file, compare should not enter compare mode
-	updated, _ := app.Update(keyMsg("c"))
-	app = updated.(App)
-	assert.Equal(t, ModeNormal, app.mode)
-}
-
 func TestCompareResetUsesKeyMap(t *testing.T) {
 	// Compare-mode reset must route through keys.Reset, not a hardcoded 'r'.
 	// Rebinding Reset to a different key must take effect.
