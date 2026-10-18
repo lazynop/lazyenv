@@ -272,6 +272,54 @@ func TestMouseClickVarList_SelectsTheVarDrawnAtTheRow(t *testing.T) {
 	}
 }
 
+// longFileName is wider than the title of any panel at the sizes these tests
+// use.
+var longFileName = ".env." + strings.Repeat("verylongname", 6)
+
+// TestMouseClickVarList_UnderALongFileName opens a file whose name is wider
+// than the var panel: the name gives way to the var count, so the title keeps
+// its one row and a click lands on the var drawn on the clicked row.
+func TestMouseClickVarList_UnderALongFileName(t *testing.T) {
+	f := makeTestFile(longFileName, "ALPHA", "BRAVO", "CHARLIE")
+	app := onVars(resize(newTestApp([]*model.EnvFile{f}), 80, 24))
+	view := app.View().Content
+	require.Contains(t, strings.Split(stripAnsi(view), "\n")[panelContentOffsetY-1], "(3 vars)", "the title row ends in the count")
+
+	updated, _ := app.Update(tea.MouseClickMsg{X: 40, Y: rowDrawing(t, view, "BRAVO"), Button: tea.MouseLeft})
+
+	clicked := updated.(App)
+	assert.Equal(t, "BRAVO", clicked.varList.SelectedVar().Key)
+}
+
+// TestMouseClickVarList_UnderALongGroupHeader groups two vars under a prefix
+// wider than the var panel: the prefix gives way to the count, so the header
+// keeps its one row and the first var is drawn on the row a click maps to it.
+func TestMouseClickVarList_UnderALongGroupHeader(t *testing.T) {
+	prefix := strings.Repeat("LONGPREFIX", 8)
+	f := makeTestFile(".env", prefix+"_HOST", prefix+"_PORT")
+	app := press(onVars(resize(newTestApp([]*model.EnvFile{f}), 80, 24)), "g")
+
+	rows := strings.Split(stripAnsi(app.View().Content), "\n")
+	assert.Contains(t, rows[panelContentOffsetY], "(2)", "the header row ends in the count")
+	assert.Contains(t, rows[panelContentOffsetY+1], "val_", "the first var follows the header")
+}
+
+// TestMouseClickCompareMode_UnderALongFileName compares with a file whose name
+// is wider than its panel: the name gives way, so both panels draw each key on
+// one row and a click lands on the entry drawn on the clicked row.
+func TestMouseClickCompareMode_UnderALongFileName(t *testing.T) {
+	keys := []string{"ALPHA", "BRAVO", "CHARLIE"}
+	app := enterCompareMode(t, makeTestFile(".env", keys...), makeTestFile(longFileName, keys...))
+	view := app.View().Content
+	row := rowDrawing(t, view, "BRAVO")
+	require.Equal(t, 2, strings.Count(strings.Split(stripAnsi(view), "\n")[row], "  BRAVO "), "both panels draw BRAVO on one row")
+
+	updated, _ := app.Update(tea.MouseClickMsg{X: 10, Y: row, Button: tea.MouseLeft})
+
+	clicked := updated.(App).diffView
+	assert.Equal(t, "BRAVO", clicked.Entries[clicked.Cursor].Key)
+}
+
 // TestMouseClickVarList_OnADeletedVarKeepsTheCursor clicks the row of a
 // deleted var, drawn below the last var: no cursor reaches it, so the cursor
 // stays put.

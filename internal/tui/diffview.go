@@ -256,16 +256,9 @@ func (m *DiffViewModel) View(theme Theme) string {
 	halfWidth := m.Width / 2
 
 	// Headers
-	leftName := m.FileA.Name
-	rightName := m.FileB.Name
-	if m.FileA.Modified {
-		leftName += modifiedFileGlyph
-	}
-	if m.FileB.Modified {
-		rightName += modifiedFileGlyph
-	}
-	leftTitle := theme.PanelTitle.Render(leftName)
-	rightTitle := theme.PanelTitle.Render(rightName)
+	room := halfWidth - panelBorderWidth - theme.PanelTitle.GetHorizontalFrameSize()
+	leftTitle := theme.PanelTitle.Render(titleName(m.FileA, room))
+	rightTitle := theme.PanelTitle.Render(titleName(m.FileB, room))
 
 	// Calculate column widths
 	longestKey := 0
@@ -301,6 +294,17 @@ func (m *DiffViewModel) View(theme Theme) string {
 	return lipgloss.JoinHorizontal(lipgloss.Top,
 		panel.Render(fmt.Sprintf("%s\n%s", leftTitle, leftContent)),
 		panel.Render(fmt.Sprintf("%s\n%s", rightTitle, rightContent)))
+}
+
+// titleName is f's name as a panel title room columns wide shows it, followed
+// by the modified mark when f has unsaved changes: the name gives way to the
+// mark, so the title keeps its one row.
+func titleName(f *model.EnvFile, room int) string {
+	mark := ""
+	if f.Modified {
+		mark = modifiedFileGlyph
+	}
+	return truncate(f.Name, room-lipgloss.Width(mark)) + mark
 }
 
 // renderDiffEntry renders a single diff entry, returning the left and right

@@ -533,6 +533,9 @@ func (m *VarListModel) renderHeaderLine(rowIdx int, group model.VarGroup, theme 
 		label = ungroupedHeaderLabel
 	}
 	countStr := fmt.Sprintf("(%d)", len(group.Vars))
+	// The label gives way to the arrow and the count, so the header keeps its
+	// one row.
+	label = truncate(label, m.Width-panelBorderWidth-ansi.StringWidth(fmt.Sprintf("  %s  %s", arrow, countStr)))
 
 	if rowIdx == m.Cursor && m.Focused {
 		return theme.CursorItem.Render(fmt.Sprintf("  %s %s %s", arrow, label, countStr))
@@ -646,7 +649,10 @@ func (m *VarListModel) viewTitle(theme Theme) string {
 	if m.SearchQuery != "" && displayed != total {
 		count = fmt.Sprintf("%d/%d", displayed, total)
 	}
-	return theme.PanelTitle.Render(m.File.Name) + " " + theme.MutedItem.Render(fmt.Sprintf("(%s vars)", count))
+	count = fmt.Sprintf("(%s vars)", count)
+	// The name gives way to the count, so the title keeps its one row.
+	room := m.Width - panelBorderWidth - theme.PanelTitle.GetHorizontalFrameSize() - 1 - ansi.StringWidth(count)
+	return theme.PanelTitle.Render(truncate(m.File.Name, room)) + " " + theme.MutedItem.Render(count)
 }
 
 // View renders the variable list panel.
