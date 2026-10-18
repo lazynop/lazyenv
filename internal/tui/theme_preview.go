@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"strings"
 
+	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 
@@ -49,6 +50,7 @@ func resolveThemeColors(tc themes.Colors) resolvedColors {
 type ThemePreviewModel struct {
 	themes      []string
 	searchPaths []string
+	keys        KeyMap
 	cursor      int
 	selected    string // non-empty if user pressed Enter
 	width       int
@@ -63,6 +65,7 @@ func NewThemePreview(cfg config.Config) ThemePreviewModel {
 	return ThemePreviewModel{
 		themes:      config.ThemeNames(),
 		searchPaths: config.ConfigSearchPaths(".", ""),
+		keys:        DefaultKeyMap(),
 		noMouse:     cfg.NoMouse,
 		scrollLines: cfg.Layout.MouseScrollLines,
 	}
@@ -93,15 +96,15 @@ func (m ThemePreviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m ThemePreviewModel) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "q", "esc", "ctrl+c":
+	switch {
+	case key.Matches(msg, m.keys.Quit, m.keys.Escape):
 		return m, tea.Quit
-	case "enter":
+	case key.Matches(msg, m.keys.Enter):
 		m.selected = m.themes[m.cursor]
 		return m, tea.Quit
-	case "up", "k":
+	case key.Matches(msg, m.keys.Up):
 		m.moveUp()
-	case "down", "j":
+	case key.Matches(msg, m.keys.Down):
 		m.moveDown()
 	}
 	return m, nil
@@ -332,9 +335,9 @@ func (m ThemePreviewModel) renderStatusBar(rc resolvedColors) string {
 	descStyle := lipgloss.NewStyle().Foreground(rc.muted)
 
 	bar := fmt.Sprintf(" %s %s  %s %s  %s %s",
-		keyStyle.Render("↑↓/jk"), descStyle.Render("navigate"),
-		keyStyle.Render("enter"), descStyle.Render("select"),
-		keyStyle.Render("q/esc"), descStyle.Render("quit"),
+		keyStyle.Render(shortKeys(m.keys.Up, m.keys.Down)), descStyle.Render("navigate"),
+		keyStyle.Render(shortKeys(m.keys.Enter)), descStyle.Render("select"),
+		keyStyle.Render(shortKeys(m.keys.Quit, m.keys.Escape)), descStyle.Render("quit"),
 	)
 
 	// Inline keeps the bar on one row, cut at the terminal width.
