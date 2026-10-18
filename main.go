@@ -112,7 +112,7 @@ func applySessionSummaryOverride(cfg *config.Config) {
 // checkConfig lists the config search paths and validates the file found, and
 // returns the exit status: 1 when the file was rejected.
 func checkConfig(stdout, stderr io.Writer) int {
-	r := config.LoadFull(".", cli.Config)
+	r := config.Load(".", cli.Config)
 	paths := config.ConfigSearchPaths(".", cli.Config)
 
 	fmt.Fprintln(stdout, "Search paths (highest priority first):")
@@ -186,7 +186,7 @@ func main() {
 		os.Exit(checkConfig(os.Stdout, os.Stderr))
 	}
 
-	loaded := config.LoadFull(".", cli.Config)
+	loaded := config.Load(".", cli.Config)
 	cfg := loaded.Config
 
 	cfg.Dir = cli.Path

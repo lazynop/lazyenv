@@ -45,13 +45,7 @@ type LoadResult struct {
 // If configPath is non-empty, it takes highest priority.
 // A malformed or invalid config is rejected as a whole: Load returns the
 // defaults and the errors that rejected it.
-func Load(projectDir, configPath string) (Config, []string) {
-	r := LoadFull(projectDir, configPath)
-	return r.Config, r.Errors
-}
-
-// LoadFull searches for config files and returns detailed results.
-func LoadFull(projectDir, configPath string) LoadResult {
+func Load(projectDir, configPath string) LoadResult {
 	cfg := DefaultConfig()
 
 	path := findConfigFile(projectDir, configPath)
