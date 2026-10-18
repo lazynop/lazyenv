@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -53,8 +52,7 @@ func TestEditMasksTheNewValueWhenItIsASecret(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := parser.ParseBytes(".env", []byte(tt.line+"\n"), config.SecretsConfig{})
-			updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
-			app := press(updated.(App), "right", "e")
+			app := press(resize(newTestApp([]*model.EnvFile{f}), 80, 24), "right", "e")
 			app.editor.input.SetValue(tt.newValue)
 
 			view := stripAnsi(press(app, "enter").View().Content)
@@ -87,9 +85,9 @@ func TestConfirmingAnUntouchedEditKeepsTheValue(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			f := parser.ParseBytes(".env", []byte("CERT=\"line1\\nline2\"\nTAB=\"a\\tb\"\n"), config.SecretsConfig{})
 			other := parser.ParseBytes(".env.prod", []byte("CERT=x\n"), config.SecretsConfig{})
-			updated, _ := newTestApp([]*model.EnvFile{f, other}).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+			app := resize(newTestApp([]*model.EnvFile{f, other}), 80, 24)
 
-			press(updated.(App), append(open, "enter")...)
+			press(app, append(open, "enter")...)
 
 			assert.Equal(t, "line1\nline2", f.Vars[0].Value)
 			assert.False(t, f.Modified, "an untouched edit must not modify the file")
@@ -102,9 +100,9 @@ func TestConfirmingAnUntouchedEditKeepsTheValue(t *testing.T) {
 func TestEditingALongValueKeepsAllOfIt(t *testing.T) {
 	long := strings.Repeat("a", 1500)
 	f := parser.ParseBytes(".env", []byte("CERT="+long+"\n"), config.SecretsConfig{})
-	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	app := resize(newTestApp([]*model.EnvFile{f}), 80, 24)
 
-	press(updated.(App), "right", "e", "z", "enter")
+	press(app, "right", "e", "z", "enter")
 
 	assert.Equal(t, long+"z", f.Vars[0].Value)
 }

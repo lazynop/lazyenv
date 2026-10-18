@@ -268,8 +268,7 @@ func smallestConfigErrorRows(t *testing.T, startup StartupMessages) []string {
 	t.Helper()
 	cfg := config.DefaultConfig()
 	cfg.Dir = t.TempDir()
-	updated, _ := NewApp(cfg, startup).Update(tea.WindowSizeMsg{Width: MinTerminalWidth, Height: MinTerminalHeight})
-	view := updated.(App).View().Content
+	view := resize(NewApp(cfg, startup), MinTerminalWidth, MinTerminalHeight).View().Content
 	assert.LessOrEqual(t, lipgloss.Height(view), MinTerminalHeight, "the screen should fit the terminal")
 	return configErrorRows(view)
 }
@@ -389,6 +388,6 @@ func TestFileListWidthBelowMinimumIsRaised(t *testing.T) {
 	app := newTestApp(nil)
 	app.config.Layout.FileListWidth = 5
 
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-	assert.Equal(t, 20, updated.(App).fileList.Width)
+	app = resize(app, 120, 40)
+	assert.Equal(t, 20, app.fileList.Width)
 }

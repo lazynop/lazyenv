@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"charm.land/bubbles/v2/textinput"
-	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -45,8 +44,7 @@ var longInput = strings.Repeat("x", 90) + inputTail
 // opens tc's bar and types value into it.
 func openInputBar(t *testing.T, tc inputBarCase, width int, value string) App {
 	t.Helper()
-	updated, _ := newTestApp(layoutFiles()).Update(tea.WindowSizeMsg{Width: width, Height: 24})
-	app := tc.open(updated.(App))
+	app := tc.open(resize(newTestApp(layoutFiles()), width, 24))
 	require.Equal(t, tc.mode, app.mode, "%s: the bar should be open", tc.name)
 	input := tc.input(&app)
 	input.SetValue(value)
@@ -92,9 +90,7 @@ func TestInputBarsRefitAfterAResize(t *testing.T) {
 	for _, tc := range inputBarCases {
 		t.Run(tc.name, func(t *testing.T) {
 			short := openInputBar(t, tc, 60, "short").View().Content
-			updated, _ := openInputBar(t, tc, 120, longInput).Update(tea.WindowSizeMsg{Width: 60, Height: 24})
-
-			view := updated.(App).View().Content
+			view := resize(openInputBar(t, tc, 120, longInput), 60, 24).View().Content
 
 			assert.Equal(t, lipgloss.Height(short), lipgloss.Height(view), "the bar should keep one row")
 			assert.Contains(t, stripAnsi(view), inputTail, "the end of the value, at the cursor, should be in view")
@@ -123,11 +119,10 @@ func TestInputBarsKeepTextTypedMidValueInView(t *testing.T) {
 // is wider than the bar: the label is cut, so the bar keeps one row.
 func TestInputBarCutsALongLabel(t *testing.T) {
 	const longKey = "UPSTREAM_SERVICE_CIRCUIT_BREAKER_THRESHOLD_MS"
-	updated, _ := newTestApp([]*model.EnvFile{
+	app := press(resize(newTestApp([]*model.EnvFile{
 		makeTestFile(".env", "A"),
 		makeTestFile(".env.production.local", "A", longKey),
-	}).Update(tea.WindowSizeMsg{Width: 60, Height: 20})
-	app := press(updated.(App), "m", "j", "a") // the long key, missing from .env
+	}), 60, 20), "m", "j", "a") // the long key, missing from .env
 	require.Equal(t, ModeMatrixEditing, app.mode)
 
 	rows := strings.Split(stripAnsi(app.View().Content), "\n")

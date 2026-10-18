@@ -92,8 +92,7 @@ func TestMouseClickOnHeader_TogglesCollapse(t *testing.T) {
 	)
 	app := newTestApp([]*model.EnvFile{f})
 	// Trigger layout so fileWidth is computed for the click X dispatch.
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-	app = updated.(App)
+	app = resize(app, 120, 40)
 	app.varList.Grouping = true
 	app.varList.Refresh()
 
@@ -101,7 +100,7 @@ func TestMouseClickOnHeader_TogglesCollapse(t *testing.T) {
 	// (Y=0 border, Y=1 title, Y=2 first item) and X must land in the var
 	// panel (X >= a.fileWidth).
 	clickX := app.fileWidth + 5
-	updated, _ = app.Update(tea.MouseClickMsg{X: clickX, Y: 2, Button: tea.MouseLeft})
+	updated, _ := app.Update(tea.MouseClickMsg{X: clickX, Y: 2, Button: tea.MouseLeft})
 	app = updated.(App)
 
 	require.Equal(t, FocusVars, app.focus)
@@ -118,15 +117,14 @@ func TestMouseClickOnHeader_TogglesCollapse(t *testing.T) {
 func TestMouseClickOnVar_DoesNotToggleCollapse(t *testing.T) {
 	f := makeTestFile(".env", "DB_HOST", "DB_PORT", "DB_USER")
 	app := newTestApp([]*model.EnvFile{f})
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-	app = updated.(App)
+	app = resize(app, 120, 40)
 	app.varList.Grouping = true
 	app.varList.Refresh()
 
 	// Y=3 → row 1 = first DB var (DB_HOST). Click on a var must just
 	// move the cursor without toggling.
 	clickX := app.fileWidth + 5
-	updated, _ = app.Update(tea.MouseClickMsg{X: clickX, Y: 3, Button: tea.MouseLeft})
+	updated, _ := app.Update(tea.MouseClickMsg{X: clickX, Y: 3, Button: tea.MouseLeft})
 	app = updated.(App)
 
 	assert.False(t, app.varList.collapsed["DB"],
@@ -213,11 +211,10 @@ func TestMouseWheelNormal_FileList(t *testing.T) {
 	f2 := makeTestFile(".env.prod", "B")
 	f3 := makeTestFile(".env.local", "C")
 	app := newTestApp([]*model.EnvFile{f1, f2, f3})
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-	app = updated.(App)
+	app = resize(app, 120, 40)
 
 	// Wheel down over the file panel (X < fileWidth)
-	updated, _ = app.Update(tea.MouseWheelMsg{X: 1, Y: 5, Button: tea.MouseWheelDown})
+	updated, _ := app.Update(tea.MouseWheelMsg{X: 1, Y: 5, Button: tea.MouseWheelDown})
 	app = updated.(App)
 	require.Greater(t, app.fileList.Cursor, 0, "wheel down should advance the file cursor")
 	assert.Equal(t, app.fileList.SelectedFile(), app.varList.File,
@@ -232,10 +229,9 @@ func TestMouseWheelNormal_FileList(t *testing.T) {
 func TestMouseWheelNormal_VarList(t *testing.T) {
 	f := makeTestFile(".env", "A", "B", "C", "D", "E")
 	app := newTestApp([]*model.EnvFile{f})
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-	app = updated.(App)
+	app = resize(app, 120, 40)
 
-	updated, _ = app.Update(tea.MouseWheelMsg{X: app.fileWidth + 5, Y: 5, Button: tea.MouseWheelDown})
+	updated, _ := app.Update(tea.MouseWheelMsg{X: app.fileWidth + 5, Y: 5, Button: tea.MouseWheelDown})
 	app = updated.(App)
 	assert.Greater(t, app.varList.Cursor, 0,
 		"wheel down over the var panel should advance the var cursor")
@@ -264,11 +260,10 @@ func TestMouseClickVarList_SelectsTheVarDrawnAtTheRow(t *testing.T) {
 		t.Run(tt.click, func(t *testing.T) {
 			f := makeTestFile(".env", "ALPHA", "BRAVO", "CHARLIE", "DELTA")
 			f.UpdateVar(0, "edited", false)
-			updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
-			app := press(updated.(App), "right", "p")
+			app := press(resize(newTestApp([]*model.EnvFile{f}), 80, 24), "right", "p")
 			row := rowDrawing(t, app.View().Content, tt.click)
 
-			updated, _ = app.Update(tea.MouseClickMsg{X: 40, Y: row, Button: tea.MouseLeft})
+			updated, _ := app.Update(tea.MouseClickMsg{X: 40, Y: row, Button: tea.MouseLeft})
 
 			app = updated.(App)
 			require.NotNil(t, app.varList.SelectedVar())
@@ -283,12 +278,11 @@ func TestMouseClickVarList_SelectsTheVarDrawnAtTheRow(t *testing.T) {
 // so the cursor stays put.
 func TestMouseClickVarList_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J")
-	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: fourRowPanelsHeight})
-	app := press(updated.(App), "right", "j", "j", "j", "j", "j") // F, with C to F drawn
+	app := press(resize(newTestApp([]*model.EnvFile{f}), 80, fourRowPanelsHeight), "right", "j", "j", "j", "j", "j") // F, with C to F drawn
 	require.Equal(t, 2, app.varList.Offset)
 
 	for _, y := range []int{panelContentOffsetY - 1, panelContentOffsetY + 4} {
-		updated, _ = app.Update(tea.MouseClickMsg{X: 40, Y: y, Button: tea.MouseLeft})
+		updated, _ := app.Update(tea.MouseClickMsg{X: 40, Y: y, Button: tea.MouseLeft})
 		clicked := updated.(App)
 		assert.Equal(t, "F", clicked.varList.SelectedVar().Key, "a click at Y=%d draws no var", y)
 	}
@@ -304,14 +298,13 @@ func TestMouseClickFileList_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	for i := range files {
 		files[i] = makeTestFile(fmt.Sprintf(".env.%d", i), "K")
 	}
-	updated, _ := newTestApp(files).Update(tea.WindowSizeMsg{Width: 80, Height: fourRowPanelsHeight})
-	app := press(updated.(App), "j", "j", "j", "j", "j") // .env.5, with .env.2 to .env.5 drawn
+	app := press(resize(newTestApp(files), 80, fourRowPanelsHeight), "j", "j", "j", "j", "j") // .env.5, with .env.2 to .env.5 drawn
 	require.Equal(t, 2, app.fileList.Offset)
 
 	for _, mode := range []AppMode{ModeNormal, ModeCompareSelect} {
 		app.mode = mode
 		for _, y := range []int{panelContentOffsetY - 1, panelContentOffsetY + 4} {
-			updated, _ = app.Update(tea.MouseClickMsg{X: 5, Y: y, Button: tea.MouseLeft})
+			updated, _ := app.Update(tea.MouseClickMsg{X: 5, Y: y, Button: tea.MouseLeft})
 			clicked := updated.(App).fileList
 			assert.Equal(t, 5, clicked.Cursor, "in mode %v a click at Y=%d draws no file", mode, y)
 			assert.Equal(t, 2, clicked.Offset, "in mode %v a click at Y=%d scrolls nothing", mode, y)
@@ -325,12 +318,11 @@ func TestMouseClickFileList_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 // active file in the main view.
 func TestMouseClickFileList_BelowTheLastFileKeepsTheCursor(t *testing.T) {
 	files := []*model.EnvFile{makeTestFile(".env", "K"), makeTestFile(".env.a", "K"), makeTestFile(".env.b", "K")}
-	updated, _ := newTestApp(files).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
-	app := updated.(App)
+	app := resize(newTestApp(files), 80, 24)
 
 	for _, mode := range []AppMode{ModeNormal, ModeCompareSelect} {
 		app.mode = mode
-		updated, _ = app.Update(tea.MouseClickMsg{X: 5, Y: panelContentOffsetY + len(files), Button: tea.MouseLeft})
+		updated, _ := app.Update(tea.MouseClickMsg{X: 5, Y: panelContentOffsetY + len(files), Button: tea.MouseLeft})
 		clicked := updated.(App).fileList
 		assert.Equal(t, 0, clicked.Cursor, "in mode %v a blank row draws no file", mode)
 	}
@@ -371,12 +363,11 @@ func TestMouseClickCompareMode_SelectsTheClickedEntry(t *testing.T) {
 func TestMouseClickCompareMode_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	keys := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"}
 	app := enterCompareMode(t, makeTestFile(".env", keys...), makeTestFile(".env.prod", keys...))
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: 80, Height: fourRowPanelsHeight})
-	app = press(updated.(App), "j", "j", "j", "j", "j") // F, with C to F drawn
+	app = press(resize(app, 80, fourRowPanelsHeight), "j", "j", "j", "j", "j") // F, with C to F drawn
 	require.Equal(t, 2, app.diffView.Offset)
 
 	for _, y := range []int{panelContentOffsetY - 1, panelContentOffsetY + 4} {
-		updated, _ = app.Update(tea.MouseClickMsg{X: 10, Y: y, Button: tea.MouseLeft})
+		updated, _ := app.Update(tea.MouseClickMsg{X: 10, Y: y, Button: tea.MouseLeft})
 		clicked := updated.(App).diffView
 		assert.Equal(t, 5, clicked.Cursor, "a click at Y=%d draws no entry", y)
 		assert.Equal(t, 2, clicked.Offset, "a click at Y=%d scrolls nothing", y)
@@ -385,12 +376,11 @@ func TestMouseClickCompareMode_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 
 func TestMouseWheelCompareMode_ScrollsDiff(t *testing.T) {
 	app := newTestApp(nil)
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-	app = updated.(App)
+	app = resize(app, 120, 40)
 	app.mode = ModeComparing
 	app.diffView = DiffViewModel{Entries: make([]model.DiffEntry, 10), Height: 20}
 
-	updated, _ = app.Update(tea.MouseWheelMsg{X: 10, Y: 5, Button: tea.MouseWheelDown})
+	updated, _ := app.Update(tea.MouseWheelMsg{X: 10, Y: 5, Button: tea.MouseWheelDown})
 	app = updated.(App)
 	assert.Greater(t, app.diffView.Cursor, 0, "wheel down should scroll the diff view")
 }
@@ -402,12 +392,11 @@ func TestMouseClickCompareSelectMode_MovesCursorOnly(t *testing.T) {
 	f2 := makeTestFile(".env.prod", "B")
 	f3 := makeTestFile(".env.local", "C")
 	app := newTestApp([]*model.EnvFile{f1, f2, f3})
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-	app = updated.(App)
+	app = resize(app, 120, 40)
 	app.mode = ModeCompareSelect
 
 	// index = Y - 2 + Offset = 4 - 2 + 0 = 2
-	updated, _ = app.Update(tea.MouseClickMsg{X: 5, Y: 4, Button: tea.MouseLeft})
+	updated, _ := app.Update(tea.MouseClickMsg{X: 5, Y: 4, Button: tea.MouseLeft})
 	app = updated.(App)
 	assert.Equal(t, 2, app.fileList.Cursor, "compare-select click moves the cursor")
 	assert.Equal(t, 0, app.fileList.Selected,
@@ -421,11 +410,10 @@ func TestMouseWheelCompareSelectMode_MovesCursorOnly(t *testing.T) {
 	f1 := makeTestFile(".env", "A")
 	f2 := makeTestFile(".env.prod", "B")
 	f3 := makeTestFile(".env.local", "C")
-	updated, _ := newTestApp([]*model.EnvFile{f1, f2, f3}).Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-	app := press(updated.(App), "c")
+	app := press(resize(newTestApp([]*model.EnvFile{f1, f2, f3}), 120, 40), "c")
 	require.Equal(t, ModeCompareSelect, app.mode)
 
-	updated, _ = app.Update(tea.MouseWheelMsg{X: 5, Y: 4, Button: tea.MouseWheelDown})
+	updated, _ := app.Update(tea.MouseWheelMsg{X: 5, Y: 4, Button: tea.MouseWheelDown})
 	app = updated.(App)
 	assert.Equal(t, 1, app.fileList.Cursor, "the wheel moves the cursor")
 	assert.Equal(t, 0, app.fileList.Selected, "the wheel must not change the active file")
@@ -437,10 +425,9 @@ func TestMouseWheelCompareSelectMode_MovesCursorOnly(t *testing.T) {
 // it leaves the compare target alone.
 func TestMouseWheelCompareSelectMode_IgnoresTheVarPanel(t *testing.T) {
 	f1, f2 := makeTestFile(".env", "A"), makeTestFile(".env.prod", "B")
-	updated, _ := newTestApp([]*model.EnvFile{f1, f2}).Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-	app := press(updated.(App), "c")
+	app := press(resize(newTestApp([]*model.EnvFile{f1, f2}), 120, 40), "c")
 
-	updated, _ = app.Update(tea.MouseWheelMsg{X: app.fileWidth + 5, Y: 4, Button: tea.MouseWheelDown})
+	updated, _ := app.Update(tea.MouseWheelMsg{X: app.fileWidth + 5, Y: 4, Button: tea.MouseWheelDown})
 
 	assert.Equal(t, 0, updated.(App).fileList.Cursor, "the wheel over the var panel moves nothing")
 }
@@ -466,12 +453,11 @@ func TestMouseClickEditingCompareMode_KeepsTheEditedEntry(t *testing.T) {
 // prompt names.
 func TestMouseWheelConfirmMatrixDelete_KeepsTheKeyToDelete(t *testing.T) {
 	a := makeTestFile(".env", "ALPHA", "BRAVO", "CHARLIE")
-	updated, _ := newTestApp([]*model.EnvFile{a, makeTestFile(".env.prod", "ALPHA")}).Update(tea.WindowSizeMsg{Width: 120, Height: 24})
-	app := press(updated.(App), "m", "d") // delete ALPHA from .env
+	app := press(resize(newTestApp([]*model.EnvFile{a, makeTestFile(".env.prod", "ALPHA")}), 120, 24), "m", "d") // delete ALPHA from .env
 	require.Equal(t, ModeConfirmMatrixDelete, app.mode)
 	require.Contains(t, app.statusBar.Message, "ALPHA")
 
-	updated, _ = app.Update(tea.MouseWheelMsg{X: 10, Y: 5, Button: tea.MouseWheelDown})
+	updated, _ := app.Update(tea.MouseWheelMsg{X: 10, Y: 5, Button: tea.MouseWheelDown})
 	press(updated.(App), "y")
 
 	assert.Nil(t, a.VarByKey("ALPHA"), "the key the prompt named should be deleted")
@@ -483,11 +469,10 @@ func TestMouseWheelConfirmMatrixDelete_KeepsTheKeyToDelete(t *testing.T) {
 // the cursor stays on the first file.
 func TestMouseClickCompareSelectMode_IgnoresTheVarPanel(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.prod", "B"), makeTestFile(".env.local", "C")})
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-	app = press(updated.(App), "c")
+	app = press(resize(app, 120, 40), "c")
 	require.Equal(t, ModeCompareSelect, app.mode)
 
-	updated, _ = app.Update(tea.MouseClickMsg{X: app.fileWidth + 10, Y: 4, Button: tea.MouseLeft})
+	updated, _ := app.Update(tea.MouseClickMsg{X: app.fileWidth + 10, Y: 4, Button: tea.MouseLeft})
 
 	assert.Equal(t, 0, updated.(App).fileList.Cursor, "a click on the var panel should not move the file cursor")
 }
@@ -497,8 +482,7 @@ func TestMouseClickCompareSelectMode_IgnoresTheVarPanel(t *testing.T) {
 func newMatrixTestApp(t *testing.T) App {
 	t.Helper()
 	app := newTestApp(nil)
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-	app = updated.(App)
+	app = resize(app, 120, 40)
 	app.mode = ModeMatrix
 	mv := MatrixModel{
 		entries:   make([]model.MatrixEntry, 5),
@@ -536,14 +520,13 @@ func TestMouseClickMatrixMode_SetsCell(t *testing.T) {
 // file's column, as drawn under its name in the header, and the cell just
 // before it, the last of the previous column.
 func TestMouseClickMatrixMode_SelectsTheColumnDrawnAtX(t *testing.T) {
-	updated, _ := newTestApp([]*model.EnvFile{makeTestFile(".env.a", "K"), makeTestFile(".env.b", "K")}).Update(tea.WindowSizeMsg{Width: 120, Height: 24})
-	app := press(updated.(App), "m")
+	app := press(resize(newTestApp([]*model.EnvFile{makeTestFile(".env.a", "K"), makeTestFile(".env.b", "K")}), 120, 24), "m")
 	header := strings.Split(stripAnsi(app.View().Content), "\n")[0]
 	x := strings.Index(header, ".env.b")
 	require.Positive(t, x, "the header should name .env.b")
 
 	for _, tt := range []struct{ x, col int }{{x, 1}, {x - 1, 0}} {
-		updated, _ = app.Update(tea.MouseClickMsg{X: tt.x, Y: matrixContentOffsetY, Button: tea.MouseLeft})
+		updated, _ := app.Update(tea.MouseClickMsg{X: tt.x, Y: matrixContentOffsetY, Button: tea.MouseLeft})
 		assert.Equal(t, tt.col, updated.(App).matrixView.cursorCol, "click at X=%d", tt.x)
 	}
 }
@@ -558,8 +541,7 @@ func TestMouseClickMatrixMode_OutsideTheDrawnCellsKeepsTheCursor(t *testing.T) {
 	for i := range keys {
 		keys[i] = fmt.Sprintf("K%02d", i)
 	}
-	updated, _ := newTestApp([]*model.EnvFile{makeTestFile(".env.a", keys...), makeTestFile(".env.b", keys...)}).Update(tea.WindowSizeMsg{Width: 80, Height: 20})
-	app := press(updated.(App), "m")
+	app := press(resize(newTestApp([]*model.EnvFile{makeTestFile(".env.a", keys...), makeTestFile(".env.b", keys...)}), 80, 20), "m")
 	app = press(app, slices.Repeat([]string{"j"}, 20)...)
 	require.Positive(t, app.matrixView.offsetRow)
 	lines := strings.Split(stripAnsi(app.View().Content), "\n")
@@ -576,7 +558,7 @@ func TestMouseClickMatrixMode_OutsideTheDrawnCellsKeepsTheCursor(t *testing.T) {
 		{"stats footer", matrixPaddingWidth, rowDrawing(t, app.View().Content, "40 keys")},
 		{"row counter", counterX, cursorRow},
 	} {
-		updated, _ = app.Update(tea.MouseClickMsg{X: click.x, Y: click.y, Button: tea.MouseLeft})
+		updated, _ := app.Update(tea.MouseClickMsg{X: click.x, Y: click.y, Button: tea.MouseLeft})
 		clicked := updated.(App).matrixView
 		assert.Equal(t, 20, clicked.cursorRow, "a click on the %s draws no key", click.name)
 		assert.Equal(t, 0, clicked.cursorCol, "a click on the %s draws no file", click.name)

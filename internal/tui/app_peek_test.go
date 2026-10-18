@@ -409,10 +409,9 @@ const fourRowPanelsHeight = bottomChromeHeight + panelChromeHeight + 4
 func peekedBottomRowApp() App {
 	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F")
 	f.UpdateVar(5, "edited", false)
-	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: fourRowPanelsHeight})
-	app := press(updated.(App), "right", "p", "left")
+	app := press(resize(newTestApp([]*model.EnvFile{f}), 80, fourRowPanelsHeight), "right", "p", "left")
 	for range len(f.Vars) - 1 {
-		updated, _ = app.Update(tea.MouseWheelMsg{X: 60, Y: 3, Button: tea.MouseWheelDown})
+		updated, _ := app.Update(tea.MouseWheelMsg{X: 60, Y: 3, Button: tea.MouseWheelDown})
 		app = updated.(App)
 	}
 	return app
@@ -472,8 +471,7 @@ func lastVarAboveDeletedApp() App {
 	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F", "G", "H", "GONE1", "GONE2")
 	f.DeleteVar(9)
 	f.DeleteVar(8)
-	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: fourRowPanelsHeight})
-	return press(updated.(App), "right", "j", "j", "j", "j", "j", "j", "j")
+	return press(resize(newTestApp([]*model.EnvFile{f}), 80, fourRowPanelsHeight), "right", "j", "j", "j", "j", "j", "j", "j")
 }
 
 // TestDeletedVarsShowAtTheEndOfALongList moves the cursor to the last var of a
@@ -510,8 +508,7 @@ func TestMoreDeletedVarsThanRowsKeepTheCursorInView(t *testing.T) {
 	for range 6 {
 		f.DeleteVar(2)
 	}
-	updated, _ := newTestApp([]*model.EnvFile{f}).Update(tea.WindowSizeMsg{Width: 80, Height: fourRowPanelsHeight})
-	app := press(updated.(App), "right", "j") // B, the last var
+	app := press(resize(newTestApp([]*model.EnvFile{f}), 80, fourRowPanelsHeight), "right", "j") // B, the last var
 
 	view := stripAnsi(app.View().Content)
 

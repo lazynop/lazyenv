@@ -28,8 +28,7 @@ import (
 // terminal.
 func TestLongMessageKeepsTheScreenInTheTerminal(t *testing.T) {
 	for _, keys := range [][]string{{"right"}, {"right", "e"}} {
-		updated, _ := newTestApp(layoutFiles()).Update(tea.WindowSizeMsg{Width: 60, Height: 16})
-		app := updated.(App)
+		app := resize(newTestApp(layoutFiles()), 60, 16)
 		app.flashError("Error saving: " + strings.Repeat("permission denied ", 12))
 
 		app = press(app, keys...)

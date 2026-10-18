@@ -86,11 +86,10 @@ func enterCompareMode(t *testing.T, f1, f2 *model.EnvFile) App {
 	app.focus = FocusVars
 
 	// Size the views the way a real terminal does
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: app.width, Height: app.height})
-	app = updated.(App)
+	app = resize(app, app.width, app.height)
 
 	// Press 'c' to start compare select
-	updated, _ = app.Update(keyMsg("c"))
+	updated, _ := app.Update(keyMsg("c"))
 	app = updated.(App)
 
 	// Move to second file and confirm
@@ -486,8 +485,8 @@ func panelBottomRow(view string) int {
 
 func TestCompareViewFillsTheNormalPanelHeight(t *testing.T) {
 	app := enterCompareMode(t, makeTestFile(".env", "FOO", "BAR"), makeTestFile(".env.prod", "FOO", "BAZ"))
-	normal, _ := newTestApp(nil).Update(tea.WindowSizeMsg{Width: app.width, Height: app.height})
-	normalBottom := panelBottomRow(normal.(App).View().Content)
+	normal := resize(newTestApp(nil), app.width, app.height)
+	normalBottom := panelBottomRow(normal.View().Content)
 	require.Positive(t, normalBottom)
 
 	assert.Equal(t, normalBottom, panelBottomRow(app.View().Content),

@@ -46,13 +46,12 @@ func TestResizeKeepsTheCursorRowInView(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			updated, _ := newTestApp(files).Update(tea.WindowSizeMsg{Width: 120, Height: 30})
-			app := press(updated.(App), tt.keys...)
+			app := press(resize(newTestApp(files), 120, 30), tt.keys...)
 			assert.Contains(t, stripAnsi(app.View().Content), tt.atCursor, "the cursor should be in view before the resize")
 
-			updated, _ = app.Update(tea.WindowSizeMsg{Width: 60, Height: 12})
+			app = resize(app, 60, 12)
 
-			assert.Contains(t, stripAnsi(updated.(App).View().Content), tt.atCursor, "the cursor should stay in view")
+			assert.Contains(t, stripAnsi(app.View().Content), tt.atCursor, "the cursor should stay in view")
 		})
 	}
 }
@@ -74,13 +73,12 @@ func TestGrowingTheTerminalScrollsBackToFillTheView(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			updated, _ := newTestApp(files).Update(tea.WindowSizeMsg{Width: 120, Height: 12})
-			app := press(updated.(App), tt.keys...)
+			app := press(resize(newTestApp(files), 120, 12), tt.keys...)
 			assert.NotContains(t, stripAnsi(app.View().Content), tt.firstRow, "the first row should be scrolled off before the resize")
 
-			updated, _ = app.Update(tea.WindowSizeMsg{Width: 120, Height: 60})
+			app = resize(app, 120, 60)
 
-			assert.Contains(t, stripAnsi(updated.(App).View().Content), tt.firstRow, "a view tall enough for every row should show the first")
+			assert.Contains(t, stripAnsi(app.View().Content), tt.firstRow, "a view tall enough for every row should show the first")
 		})
 	}
 }
@@ -88,8 +86,7 @@ func TestGrowingTheTerminalScrollsBackToFillTheView(t *testing.T) {
 // TestStartupFocusesTheFileList lays out a fresh App: the file list, which
 // holds the focus, is drawn focused.
 func TestStartupFocusesTheFileList(t *testing.T) {
-	updated, _ := newTestApp([]*model.EnvFile{makeTestFile(".env", "A")}).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
-	app := updated.(App)
+	app := resize(newTestApp([]*model.EnvFile{makeTestFile(".env", "A")}), 80, 24)
 
 	assert.Equal(t, FocusFiles, app.focus)
 	assert.True(t, app.fileList.Focused, "the file list should be drawn focused")
@@ -100,10 +97,8 @@ func TestStartupFocusesTheFileList(t *testing.T) {
 // narrower than its padding: it renders without panicking. The App draws the
 // too-small notice there instead, so the matrix is rendered directly.
 func TestMatrixRendersInATinyTerminal(t *testing.T) {
-	updated, _ := newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.prod", "B")}).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
-	app := press(updated.(App), "m")
-	updated, _ = app.Update(tea.WindowSizeMsg{Width: 1, Height: 24})
-	app = updated.(App)
+	app := press(resize(newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.prod", "B")}), 80, 24), "m")
+	app = resize(app, 1, 24)
 
 	assert.NotPanics(t, func() { _ = app.matrixView.View(app.theme) })
 }
@@ -119,17 +114,17 @@ func TestTooSmallTerminalShowsANotice(t *testing.T) {
 	}
 	for _, size := range sizes {
 		t.Run(fmt.Sprintf("%dx%d", size.width, size.height), func(t *testing.T) {
-			updated, _ := newTestApp([]*model.EnvFile{makeTestFile(".env", "A")}).Update(tea.WindowSizeMsg{Width: size.width, Height: size.height})
-			view := updated.(App).View().Content
+			app := resize(newTestApp([]*model.EnvFile{makeTestFile(".env", "A")}), size.width, size.height)
+			view := app.View().Content
 
 			assert.Contains(t, stripAnsi(view), "too small")
 			assert.NotContains(t, stripAnsi(view), ".env", "the panels should not be drawn")
 			assert.LessOrEqual(t, lipgloss.Width(view), size.width, "the notice should fit the terminal")
 			assert.LessOrEqual(t, lipgloss.Height(view), size.height, "the notice should fit the terminal")
 
-			updated, _ = updated.Update(tea.WindowSizeMsg{Width: MinTerminalWidth, Height: MinTerminalHeight})
+			app = resize(app, MinTerminalWidth, MinTerminalHeight)
 
-			assert.Contains(t, stripAnsi(updated.(App).View().Content), ".env", "the panels should be back")
+			assert.Contains(t, stripAnsi(app.View().Content), ".env", "the panels should be back")
 		})
 	}
 }
@@ -138,10 +133,8 @@ func TestTooSmallTerminalShowsANotice(t *testing.T) {
 // terminal is below the minimum: none acts on the hidden screen, and Ctrl+C
 // still quits.
 func TestTooSmallTerminalIgnoresInputButCtrlC(t *testing.T) {
-	updated, _ := newTestApp([]*model.EnvFile{makeTestFile(".env", "A", "B")}).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
-	app := onVars(updated.(App))
-	updated, _ = app.Update(tea.WindowSizeMsg{Width: MinTerminalWidth - 1, Height: 24})
-	app = updated.(App)
+	app := onVars(resize(newTestApp([]*model.EnvFile{makeTestFile(".env", "A", "B")}), 80, 24))
+	app = resize(app, MinTerminalWidth-1, 24)
 
 	app = press(app, "j", "d")
 	updated, cmd := app.Update(tea.MouseClickMsg{Button: tea.MouseLeft, X: 2, Y: 3})

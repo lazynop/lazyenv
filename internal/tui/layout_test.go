@@ -58,8 +58,7 @@ type viewScenario struct {
 func appScenario(name string, mode AppMode, setup func(app App) App) viewScenario {
 	return viewScenario{name, mode, func(t *testing.T, width, height int, reveal bool) string {
 		t.Helper()
-		updated, _ := newTestApp(layoutFiles()).Update(tea.WindowSizeMsg{Width: width, Height: height})
-		app := updated.(App)
+		app := resize(newTestApp(layoutFiles()), width, height)
 		app.varList.SetShowSecrets(reveal)
 		app = setup(app)
 		require.Equal(t, mode, app.mode, "%s: setup should reach the mode", name)
@@ -72,9 +71,9 @@ func appScenario(name string, mode AppMode, setup func(app App) App) viewScenari
 func configErrorScenario(name string, startup StartupMessages) viewScenario {
 	return viewScenario{name, ModeConfigError, func(t *testing.T, width, height int, _ bool) string {
 		t.Helper()
-		updated, _ := NewApp(config.DefaultConfig(), startup).Update(tea.WindowSizeMsg{Width: width, Height: height})
-		require.Equal(t, ModeConfigError, updated.(App).mode, "%s: startup should reach the mode", name)
-		return updated.(App).View().Content
+		app := resize(NewApp(config.DefaultConfig(), startup), width, height)
+		require.Equal(t, ModeConfigError, app.mode, "%s: startup should reach the mode", name)
+		return app.View().Content
 	}}
 }
 
@@ -85,6 +84,13 @@ func press(app App, keys ...string) App {
 		app = updated.(App)
 	}
 	return app
+}
+
+// resize sends app the size of a terminal width columns wide and height rows
+// tall, as the terminal does on startup and on every resize.
+func resize(app App, width, height int) App {
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: width, Height: height})
+	return updated.(App)
 }
 
 // onVars moves the focus to the var list, the way the user does.

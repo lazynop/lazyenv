@@ -293,8 +293,7 @@ func TestMatrixDeleteNotPresent(t *testing.T) {
 // from the matrix: back in the var list, the new var is listed.
 func TestMatrixAddShowsInTheVarList(t *testing.T) {
 	env := makeTestFile(".env", "A")
-	updated, _ := newTestApp([]*model.EnvFile{env, makeTestFile(".env.prod", "A", "B")}).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
-	app := press(updated.(App), "m", "j", "a") // B, missing from .env
+	app := press(resize(newTestApp([]*model.EnvFile{env, makeTestFile(".env.prod", "A", "B")}), 80, 24), "m", "j", "a") // B, missing from .env
 	require.Equal(t, ModeMatrixEditing, app.mode)
 	app.matrixView.editor.SetValue("added")
 

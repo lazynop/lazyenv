@@ -21,9 +21,7 @@ func openHelp(width, height int) App {
 
 // openHelpWith is openHelp for an app started with cfg.
 func openHelpWith(cfg config.Config, width, height int) App {
-	var app tea.Model = NewApp(cfg, StartupMessages{})
-	app, _ = app.Update(tea.WindowSizeMsg{Width: width, Height: height})
-	return press(app.(App), "?")
+	return press(resize(NewApp(cfg, StartupMessages{}), width, height), "?")
 }
 
 // scrollPastTheEnd is more down presses than the help has rows to scroll at
@@ -114,9 +112,9 @@ func TestHelpGrowingTheTerminalScrollsBackToFit(t *testing.T) {
 		app = press(app, "down")
 	}
 
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: 120, Height: 200})
+	app = resize(app, 120, 200)
 
-	assert.Contains(t, helpScreen(updated.(App)), "lazyenv — TUI for managing .env files",
+	assert.Contains(t, helpScreen(app), "lazyenv — TUI for managing .env files",
 		"a terminal tall enough for the whole help shows it from the top")
 }
 
@@ -377,8 +375,8 @@ func TestHelpKeepsItsTopRowWhenTheWidthChanges(t *testing.T) {
 	}
 	require.Equal(t, "Compare view", helpTopRow(app))
 
-	updated, _ := app.Update(tea.WindowSizeMsg{Width: MinTerminalWidth, Height: 24})
+	app = resize(app, MinTerminalWidth, 24)
 
-	assert.Equal(t, "Compare view", helpTopRow(updated.(App)),
+	assert.Equal(t, "Compare view", helpTopRow(app),
 		"rows that wrap above the top row must not shift what the screen shows")
 }
