@@ -91,7 +91,8 @@ func applyCLIOverrides(cfg *config.Config) []string {
 }
 
 // applyFileListWidthOverride sets the file list width from the flag; the TUI
-// raises a value below config.FileListMinWidth to it.
+// raises a value below config.FileListMinWidth to it, and narrows one that
+// would leave the variables panel less than config.VarListMinWidth.
 func applyFileListWidthOverride(cfg *config.Config) {
 	if cli.FileListWidth != nil {
 		cfg.Layout.FileListWidth = *cli.FileListWidth
