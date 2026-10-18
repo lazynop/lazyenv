@@ -366,7 +366,7 @@ func TestLoadUnreadableFileErrorOmitsThePath(t *testing.T) {
 	path := filepath.Join(dir, ".lazyenvrc")
 	require.NoError(t, os.WriteFile(path, []byte("recursive = true\n"), 0o000))
 	if _, err := os.ReadFile(path); err == nil {
-		t.Skip("the file is readable anyway (running as root)")
+		t.Skip("the file stays readable (running as root, or mode bits ignored as on Windows)")
 	}
 
 	r := Load(dir, "")
