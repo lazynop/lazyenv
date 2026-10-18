@@ -12,6 +12,18 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
+// The var list's indicators, which the help lists under Variable Indicators.
+const (
+	newVarGlyph         = "+"
+	modifiedVarGlyph    = "*"
+	deletedVarGlyph     = "-"
+	duplicateKeyGlyph   = "D"
+	emptyValueGlyph     = "○"
+	placeholderGlyph    = "…"
+	collapsedGroupGlyph = "▸"
+	expandedGroupGlyph  = "▾"
+)
+
 // ungroupedHeaderLabel is the label shown above the trailing bucket of
 // variables with a unique prefix, no '_', or a leading '_'.
 const ungroupedHeaderLabel = "UNGROUPED"
@@ -462,17 +474,17 @@ func (m *VarListModel) renderWarningIndicators(v *model.EnvVar, theme Theme) str
 	issue := " "
 
 	if v.IsNew {
-		mod = theme.AddedMarker.Render("+")
+		mod = theme.AddedMarker.Render(newVarGlyph)
 	} else if v.Modified {
-		mod = theme.ModifiedMarker.Render("*")
+		mod = theme.ModifiedMarker.Render(modifiedVarGlyph)
 	}
 
 	if v.IsDuplicate {
-		issue = theme.DuplicateWarn.Render("D")
+		issue = theme.DuplicateWarn.Render(duplicateKeyGlyph)
 	} else if v.IsEmpty {
-		issue = theme.EmptyWarning.Render("○")
+		issue = theme.EmptyWarning.Render(emptyValueGlyph)
 	} else if v.IsPlaceholder {
-		issue = theme.PlaceholderWarn.Render("…")
+		issue = theme.PlaceholderWarn.Render(placeholderGlyph)
 	}
 
 	return mod + issue
@@ -512,9 +524,9 @@ func (m *VarListModel) renderVarLine(rowIdx int, v *model.EnvVar, keyWidth, maxV
 // re-rendered as a single CursorItem block (ANSI-stripped first) to avoid
 // nesting reset codes from inner Render() calls.
 func (m *VarListModel) renderHeaderLine(rowIdx int, group model.VarGroup, theme Theme) string {
-	arrow := "▾"
+	arrow := expandedGroupGlyph
 	if m.collapsed[group.Prefix] {
-		arrow = "▸"
+		arrow = collapsedGroupGlyph
 	}
 	label := group.Prefix
 	if group.IsUngrouped() {
@@ -546,7 +558,7 @@ func (m *VarListModel) renderPeekLine(v *model.EnvVar, keyWidth, maxValWidth int
 func (m *VarListModel) renderDeletedLine(dv *model.EnvVar, keyWidth, maxValWidth int, theme Theme) string {
 	key := padRight(truncate(dv.Key, keyWidth), keyWidth)
 	value := m.formatValue(dv, maxValWidth)
-	return theme.MutedItem.Render(fmt.Sprintf("  %s  %s", key, value)) + theme.DeletedMarker.Render("-") + " "
+	return theme.MutedItem.Render(fmt.Sprintf("  %s  %s", key, value)) + theme.DeletedMarker.Render(deletedVarGlyph) + " "
 }
 
 // contentRows returns how many rows the panel has inside its chrome.

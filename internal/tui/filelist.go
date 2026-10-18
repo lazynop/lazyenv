@@ -9,6 +9,13 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
+// The file list's indicators, which the help lists under File Indicators.
+const (
+	selectedFileGlyph = "●"
+	modifiedFileGlyph = "*" // also after a file's name in the compare view
+	gitWarningGlyph   = "!"
+)
+
 // FileListModel manages the file list panel.
 type FileListModel struct {
 	Files    []*model.EnvFile
@@ -158,15 +165,15 @@ func (m *FileListModel) View(theme Theme) string {
 		if i == m.Cursor && m.Focused {
 			warn := ""
 			if f.GitWarning {
-				warn = "! "
+				warn = gitWarningGlyph + " "
 			}
 			mod := ""
 			if f.Modified {
-				mod = "*"
+				mod = modifiedFileGlyph
 			}
 			sel := "  "
 			if i == m.Selected {
-				sel = "● "
+				sel = selectedFileGlyph + " "
 			}
 			raw := fmt.Sprintf("%s%s%s%s%s%s", sel, warn, name, strings.Repeat(" ", gap), varCount, mod)
 			line = theme.CursorItem.Render(padRight(raw, inner))
@@ -181,17 +188,17 @@ func (m *FileListModel) View(theme Theme) string {
 
 			gitWarn := ""
 			if f.GitWarning {
-				gitWarn = theme.GitWarning.Render("! ")
+				gitWarn = theme.GitWarning.Render(gitWarningGlyph + " ")
 			}
 
 			indicator := "  "
 			if i == m.Selected {
-				indicator = "● "
+				indicator = selectedFileGlyph + " "
 			}
 
 			modified := ""
 			if f.Modified {
-				modified = theme.ModifiedMarker.Render("*")
+				modified = theme.ModifiedMarker.Render(modifiedFileGlyph)
 			}
 
 			line = fmt.Sprintf("%s%s%s%s%s%s",

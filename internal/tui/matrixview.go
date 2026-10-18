@@ -13,6 +13,12 @@ import (
 	"github.com/lazynop/lazyenv/internal/util"
 )
 
+// The matrix's cell marks, which the help lists under Matrix Indicators.
+const (
+	presentGlyph = "✓"
+	missingGlyph = "✗"
+)
+
 // MatrixModel manages the completeness matrix view.
 type MatrixModel struct {
 	files     []*model.EnvFile
@@ -240,7 +246,7 @@ func (m *MatrixModel) renderHeaderRow(endCol int, theme Theme) string {
 	return hdr.String()
 }
 
-func (m *MatrixModel) renderBodyRow(ri, endCol int, checkMark, crossMark string, theme Theme) string {
+func (m *MatrixModel) renderBodyRow(ri, endCol int, theme Theme) string {
 	entry := m.entries[ri]
 
 	// Key name
@@ -259,14 +265,14 @@ func (m *MatrixModel) renderBodyRow(ri, endCol int, checkMark, crossMark string,
 		if ri == m.cursorRow && ci == m.cursorCol {
 			// Highlight active cell
 			if entry.Present[ci] {
-				cell = theme.SelectedItem.Render(padRight(" "+checkMark, m.layout.MatrixColWidth))
+				cell = theme.SelectedItem.Render(padRight(" "+presentGlyph, m.layout.MatrixColWidth))
 			} else {
-				cell = theme.DiffRemoved.Bold(true).Render(padRight(" "+crossMark, m.layout.MatrixColWidth))
+				cell = theme.DiffRemoved.Bold(true).Render(padRight(" "+missingGlyph, m.layout.MatrixColWidth))
 			}
 		} else if entry.Present[ci] {
-			cell = theme.DiffEqual.Render(padRight(" "+checkMark, m.layout.MatrixColWidth))
+			cell = theme.DiffEqual.Render(padRight(" "+presentGlyph, m.layout.MatrixColWidth))
 		} else {
-			cell = theme.DiffRemoved.Render(padRight(" "+crossMark, m.layout.MatrixColWidth))
+			cell = theme.DiffRemoved.Render(padRight(" "+missingGlyph, m.layout.MatrixColWidth))
 		}
 		row.WriteString(cell)
 	}
@@ -318,11 +324,8 @@ func (m *MatrixModel) View(theme Theme) string {
 	visible := m.visibleLines()
 	endRow := min(m.offsetRow+visible, len(m.entries))
 
-	checkMark := "✓"
-	crossMark := "✗"
-
 	for ri := m.offsetRow; ri < endRow; ri++ {
-		b.WriteString(m.renderBodyRow(ri, endCol, checkMark, crossMark, theme))
+		b.WriteString(m.renderBodyRow(ri, endCol, theme))
 		b.WriteString("\n")
 	}
 

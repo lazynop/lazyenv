@@ -11,6 +11,15 @@ import (
 	"github.com/lazynop/lazyenv/internal/util"
 )
 
+// The compare view's status marks, which the help lists under Compare
+// Indicators.
+const (
+	diffEqualGlyph   = "="
+	diffChangedGlyph = "≠"
+	diffAddedGlyph   = "+"
+	diffRemovedGlyph = "-"
+)
+
 // DiffStats holds counts of each diff type.
 type DiffStats struct {
 	Equal   int
@@ -250,10 +259,10 @@ func (m *DiffViewModel) View(theme Theme) string {
 	leftName := m.FileA.Name
 	rightName := m.FileB.Name
 	if m.FileA.Modified {
-		leftName += "*"
+		leftName += modifiedFileGlyph
 	}
 	if m.FileB.Modified {
-		rightName += "*"
+		rightName += modifiedFileGlyph
 	}
 	leftTitle := theme.PanelTitle.Render(leftName)
 	rightTitle := theme.PanelTitle.Render(rightName)
@@ -302,16 +311,16 @@ func (m *DiffViewModel) renderDiffEntry(e model.DiffEntry, isCursor bool, keyWid
 
 	switch e.Status {
 	case model.DiffEqual:
-		statusChar = "="
+		statusChar = diffEqualGlyph
 		style = theme.DiffEqual
 	case model.DiffChanged:
-		statusChar = "≠"
+		statusChar = diffChangedGlyph
 		style = theme.DiffChanged
 	case model.DiffAdded:
-		statusChar = "+"
+		statusChar = diffAddedGlyph
 		style = theme.DiffAdded
 	case model.DiffRemoved:
-		statusChar = "-"
+		statusChar = diffRemovedGlyph
 		style = theme.DiffRemoved
 	}
 
