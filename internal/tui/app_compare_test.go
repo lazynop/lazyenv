@@ -492,7 +492,7 @@ func TestCompareViewFillsTheNormalPanelHeight(t *testing.T) {
 	assert.Equal(t, normalBottom, panelBottomRow(app.View().Content),
 		"the diff panels should end on the same row as the normal panels")
 
-	app = sendKey(app, keyMsg("e"))
+	app = press(app, "e")
 	require.Equal(t, ModeEditingCompare, app.mode)
 	assert.LessOrEqual(t, lipgloss.Height(app.View().Content), app.height,
 		"the editor bar must still fit in the terminal")
