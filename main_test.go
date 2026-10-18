@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -88,4 +90,44 @@ func TestShowConfigReportsBeforeTheTOML(t *testing.T) {
 		require.NotEqual(t, -1, at, "%q is printed", report)
 		assert.Less(t, at, tomlStart, "%q comes before the TOML", report)
 	}
+}
+
+func TestCheckConfigRejectsAnInvalidFile(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, ".lazyenvrc")
+	require.NoError(t, os.WriteFile(path, []byte("sort = \"random\"\n"), 0o644))
+	var stdout, stderr bytes.Buffer
+
+	status := checkConfig(&stdout, &stderr, dir, "")
+
+	assert.Equal(t, 1, status)
+	assert.Contains(t, stdout.String(), "✓ "+path, "the file in use is marked")
+	assert.Contains(t, stderr.String(), "Config errors in "+path+":")
+	assert.Contains(t, stderr.String(), `✗ invalid sort value: "random"`)
+}
+
+func TestCheckConfigAcceptsAValidFile(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, ".lazyenvrc")
+	require.NoError(t, os.WriteFile(path, []byte("sort = \"alphabetical\"\n"), 0o644))
+	var stdout, stderr bytes.Buffer
+
+	status := checkConfig(&stdout, &stderr, dir, "")
+
+	assert.Equal(t, 0, status)
+	assert.Contains(t, stdout.String(), "Config OK: "+path)
+	assert.Empty(t, stderr.String())
+}
+
+func TestCheckConfigWithoutAFile(t *testing.T) {
+	// Isolate from the user's global config
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
+	var stdout, stderr bytes.Buffer
+
+	status := checkConfig(&stdout, &stderr, t.TempDir(), "")
+
+	assert.Equal(t, 0, status)
+	assert.Contains(t, stdout.String(), "No configuration file found (defaults will be used).")
+	assert.NotContains(t, stdout.String(), "✓", "no path is marked as in use")
 }
