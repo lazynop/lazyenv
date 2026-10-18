@@ -647,7 +647,8 @@ func (m *VarListModel) renderRows(keyWidth, maxValWidth int, theme Theme) []stri
 			v := &m.File.Vars[m.displayItems[row.index].VarIdx]
 			lines = append(lines, m.renderPeekLine(v, keyWidth, maxValWidth, theme))
 		case noteRow:
-			lines = append(lines, theme.MutedItem.Render(m.note()))
+			// Cut to its one row, which drawnRows counts it as.
+			lines = append(lines, theme.MutedItem.Render(truncate(m.note(), m.Width-panelBorderWidth)))
 		case deletedRow:
 			lines = append(lines, m.renderDeletedLine(&m.File.DeletedVars[row.index], keyWidth, maxValWidth, theme))
 		}

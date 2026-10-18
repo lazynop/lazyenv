@@ -1,11 +1,13 @@
 package tui
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -530,4 +532,28 @@ func TestDeletingTheLastVarKeepsItsRowUntilSave(t *testing.T) {
 	note := slices.IndexFunc(rows, func(row string) bool { return strings.Contains(row, "No variables") })
 	require.GreaterOrEqual(t, note, 0, "the panel should say it has no variables")
 	assert.Contains(t, rows[note+1], "ONLY  val_ONLY", "the deleted var should be listed below, its key whole")
+}
+
+// TestALongNoMatchesNoteKeepsItsRow searches, for text no var matches, a file
+// whose vars are deleted but one, the query wider than the panel: the note is
+// cut to its one row, so the deleted vars listed below keep the panel inside
+// the terminal.
+func TestALongNoMatchesNoteKeepsItsRow(t *testing.T) {
+	keys := []string{"KEEP"}
+	for i := range 11 {
+		keys = append(keys, fmt.Sprintf("GONE%02d", i))
+	}
+	f := makeTestFile(".env", keys...)
+	for range 11 {
+		f.DeleteVar(1)
+	}
+	app := press(onVars(resize(newTestApp([]*model.EnvFile{f}), MinTerminalWidth, 16)), "/")
+	app = press(app, slices.Repeat([]string{"z"}, 60)...)
+
+	view := app.View().Content
+	assert.LessOrEqual(t, lipgloss.Height(view), 16, "the screen should fit the terminal")
+	rows := strings.Split(stripAnsi(view), "\n")
+	note := slices.IndexFunc(rows, func(row string) bool { return strings.Contains(row, "No matches for") })
+	require.GreaterOrEqual(t, note, 0, "the panel should say nothing matches")
+	assert.Contains(t, rows[note+1], "GONE00", "the deleted vars should follow the note's one row")
 }
