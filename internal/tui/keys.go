@@ -55,174 +55,48 @@ type KeyMap struct {
 // DefaultKeyMap returns the default keybindings.
 func DefaultKeyMap() KeyMap {
 	return KeyMap{
-		Up: key.NewBinding(
-			key.WithKeys("up", "k"),
-			key.WithHelp("↑/k", "up"),
-		),
-		Down: key.NewBinding(
-			key.WithKeys("down", "j"),
-			key.WithHelp("↓/j", "down"),
-		),
-		Left: key.NewBinding(
-			key.WithKeys("left", "h"),
-			key.WithHelp("←/h", "files"),
-		),
-		Right: key.NewBinding(
-			key.WithKeys("right", "l"),
-			key.WithHelp("→/l", "vars"),
-		),
-		Enter: key.NewBinding(
-			key.WithKeys("enter"),
-			key.WithHelp("enter", "select"),
-		),
-		Edit: key.NewBinding(
-			key.WithKeys("e"),
-			key.WithHelp("e", "edit value"),
-		),
-		EditKey: key.NewBinding(
-			key.WithKeys("E"),
-			key.WithHelp("E", "rename key"),
-		),
-		EditRight: key.NewBinding(
-			key.WithKeys("E"),
-			key.WithHelp("E", "edit right file"),
-		),
-		Add: key.NewBinding(
-			key.WithKeys("a"),
-			key.WithHelp("a", "add"),
-		),
-		Delete: key.NewBinding(
-			key.WithKeys("d"),
-			key.WithHelp("d", "delete"),
-		),
-		Compare: key.NewBinding(
-			key.WithKeys("c"),
-			key.WithHelp("c", "compare"),
-		),
-		Search: key.NewBinding(
-			key.WithKeys("/"),
-			key.WithHelp("/", "search"),
-		),
-		Save: key.NewBinding(
-			key.WithKeys("w"),
-			key.WithHelp("w", "save"),
-		),
-		Reset: key.NewBinding(
-			key.WithKeys("r"),
-			key.WithHelp("r", "reset"),
-		),
-		ToggleSecret: key.NewBinding(
-			key.WithKeys("ctrl+s"),
-			key.WithHelp("ctrl+s", "toggle secrets"),
-		),
-		ToggleSort: key.NewBinding(
-			key.WithKeys("o"),
-			key.WithHelp("o", "sort"),
-		),
-		ToggleGroup: key.NewBinding(
-			key.WithKeys("g"),
-			key.WithHelp("g", "toggle grouping"),
-		),
-		ToggleCollapse: key.NewBinding(
-			key.WithKeys("space"),
-			key.WithHelp("space", "collapse/expand group"),
-		),
-		Help: key.NewBinding(
-			key.WithKeys("?"),
-			key.WithHelp("?", "help"),
-		),
-		Quit: key.NewBinding(
-			key.WithKeys("q", "ctrl+c"),
-			key.WithHelp("q", "quit"),
-		),
-		Escape: key.NewBinding(
-			key.WithKeys("esc"),
-			key.WithHelp("esc", "back"),
-		),
-		Confirm: key.NewBinding(
-			key.WithKeys("y"),
-			key.WithHelp("y", "yes"),
-		),
-		Deny: key.NewBinding(
-			key.WithKeys("n"),
-			key.WithHelp("n", "no"),
-		),
-		NextDiff: key.NewBinding(
-			key.WithKeys("n"),
-			key.WithHelp("n", "next diff"),
-		),
-		PrevDiff: key.NewBinding(
-			key.WithKeys("N"),
-			key.WithHelp("N", "prev diff"),
-		),
-		Filter: key.NewBinding(
-			key.WithKeys("f"),
-			key.WithHelp("f", "filter"),
-		),
-		Matrix: key.NewBinding(
-			key.WithKeys("m"),
-			key.WithHelp("m", "matrix"),
-		),
-		YankValue: key.NewBinding(
-			key.WithKeys("y"),
-			key.WithHelp("y", "yank value"),
-		),
-		YankLine: key.NewBinding(
-			key.WithKeys("Y"),
-			key.WithHelp("Y", "yank KEY=value"),
-		),
-		Peek: key.NewBinding(
-			key.WithKeys("p"),
-			key.WithHelp("p", "peek original"),
-		),
-		CreateFile: key.NewBinding(
-			key.WithKeys("N"),
-			key.WithHelp("N", "new file"),
-		),
-		DuplicateFile: key.NewBinding(
-			key.WithKeys("C"),
-			key.WithHelp("C", "duplicate file"),
-		),
-		DeleteFile: key.NewBinding(
-			key.WithKeys("D"),
-			key.WithHelp("D", "delete file"),
-		),
-		RenameFile: key.NewBinding(
-			key.WithKeys("R"),
-			key.WithHelp("R", "rename file"),
-		),
-		TemplateFile: key.NewBinding(
-			key.WithKeys("T"),
-			key.WithHelp("T", "template"),
-		),
-		Reorder: key.NewBinding(
-			key.WithKeys("O"),
-			key.WithHelp("O", "reorder on disk"),
-		),
-		ReorderAlpha: key.NewBinding(
-			key.WithKeys("a"),
-			key.WithHelp("a", "alphabetical"),
-		),
-		ReorderGrouped: key.NewBinding(
-			key.WithKeys("g"),
-			key.WithHelp("g", "grouped"),
-		),
-		PageUp: key.NewBinding(
-			key.WithKeys("pgup"),
-			key.WithHelp("pgup", "page up"),
-		),
-		PageDown: key.NewBinding(
-			key.WithKeys("pgdown"),
-			key.WithHelp("pgdown", "page down"),
-		),
-		Home: key.NewBinding(
-			key.WithKeys("home"),
-			key.WithHelp("home", "top"),
-		),
-		End: key.NewBinding(
-			key.WithKeys("end"),
-			key.WithHelp("end", "bottom"),
-		),
+		Up:             key.NewBinding(key.WithKeys("up", "k")),
+		Down:           key.NewBinding(key.WithKeys("down", "j")),
+		Left:           key.NewBinding(key.WithKeys("left", "h")),
+		Right:          key.NewBinding(key.WithKeys("right", "l")),
+		Enter:          key.NewBinding(key.WithKeys("enter")),
+		Edit:           key.NewBinding(key.WithKeys("e")),
+		EditKey:        key.NewBinding(key.WithKeys("E")),
+		EditRight:      key.NewBinding(key.WithKeys("E")),
+		Add:            key.NewBinding(key.WithKeys("a")),
+		Delete:         key.NewBinding(key.WithKeys("d")),
+		Compare:        key.NewBinding(key.WithKeys("c")),
+		Search:         key.NewBinding(key.WithKeys("/")),
+		Save:           key.NewBinding(key.WithKeys("w")),
+		Reset:          key.NewBinding(key.WithKeys("r")),
+		ToggleSecret:   key.NewBinding(key.WithKeys("ctrl+s")),
+		ToggleSort:     key.NewBinding(key.WithKeys("o")),
+		ToggleGroup:    key.NewBinding(key.WithKeys("g")),
+		ToggleCollapse: key.NewBinding(key.WithKeys("space")),
+		Help:           key.NewBinding(key.WithKeys("?")),
+		Quit:           key.NewBinding(key.WithKeys("q", "ctrl+c")),
+		Escape:         key.NewBinding(key.WithKeys("esc")),
+		Confirm:        key.NewBinding(key.WithKeys("y")),
+		Deny:           key.NewBinding(key.WithKeys("n")),
+		NextDiff:       key.NewBinding(key.WithKeys("n")),
+		PrevDiff:       key.NewBinding(key.WithKeys("N")),
+		Filter:         key.NewBinding(key.WithKeys("f")),
+		Matrix:         key.NewBinding(key.WithKeys("m")),
+		YankValue:      key.NewBinding(key.WithKeys("y")),
+		YankLine:       key.NewBinding(key.WithKeys("Y")),
+		Peek:           key.NewBinding(key.WithKeys("p")),
+		CreateFile:     key.NewBinding(key.WithKeys("N")),
+		DuplicateFile:  key.NewBinding(key.WithKeys("C")),
+		DeleteFile:     key.NewBinding(key.WithKeys("D")),
+		RenameFile:     key.NewBinding(key.WithKeys("R")),
+		TemplateFile:   key.NewBinding(key.WithKeys("T")),
+		Reorder:        key.NewBinding(key.WithKeys("O")),
+		ReorderAlpha:   key.NewBinding(key.WithKeys("a")),
+		ReorderGrouped: key.NewBinding(key.WithKeys("g")),
+		PageUp:         key.NewBinding(key.WithKeys("pgup")),
+		PageDown:       key.NewBinding(key.WithKeys("pgdown")),
+		Home:           key.NewBinding(key.WithKeys("home")),
+		End:            key.NewBinding(key.WithKeys("end")),
 	}
 }
 

@@ -94,7 +94,7 @@ Caught by `TestDiskWritesGoThroughChokepoint`: a direct `parser.WriteFile`, `par
 
 `go build` and gopls track Go identifiers; names that live in strings are invisible to them. When renaming a TOML key, CLI flag, theme name, keybinding or user-facing message, search for the old string separately in:
 
-- struct tags (`toml:"..."`, Kong `name:"..."`) and `key.WithKeys(...)` / help text in `internal/tui/keys.go`;
+- struct tags (`toml:"..."`, Kong `name:"..."`) and `key.WithKeys(...)` in `internal/tui/keys.go`;
 - tests and their fixtures;
 - `examples/config/`, `justfile`, `docs/`, `README.md`.
 
