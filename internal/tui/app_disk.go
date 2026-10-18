@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/lazynop/lazyenv/internal/parser"
 )
@@ -47,7 +48,8 @@ func (a App) duplicateFile(path string, data []byte, srcPath string) error {
 	if err := parser.WriteFileAtomic(path, data, envFilePerm); err != nil {
 		return err
 	}
-	copied := parser.ParseBytes(filepath.Base(path), data, a.config.Secrets)
+	// The stats read only keys and values, so no secrets config is needed.
+	copied := parser.ParseBytes(filepath.Base(path), data, config.SecretsConfig{})
 	a.sessionStats.RecordCreateDuplicate(path, srcPath, copied.Vars)
 	return nil
 }

@@ -18,9 +18,9 @@ const (
 )
 
 type createOrigin struct {
-	kind        createKind
-	source      string
-	initialVars *fileSnapshot
+	kind     createKind
+	source   string
+	baseline *fileSnapshot
 }
 
 // SessionStats tracks disk-level changes during a lazyenv session.
@@ -100,16 +100,18 @@ func (s *SessionStats) recordCreate(path string, kind createKind, source string,
 	}
 	snap := snapshot(vars)
 	origin := createOrigin{kind: kind, source: source}
-	// initialVars is only consulted for createDuplicate (diff against post-create edits).
+	// baseline is only consulted for createDuplicate (diff against post-create edits).
 	// Storing it for scratch/template would be dead weight.
 	if kind == createDuplicate {
-		origin.initialVars = snap
+		origin.baseline = snap
 	}
 	s.created[path] = origin
 	s.final[path] = snap
 }
 
-func pluralVars(n int) string {
+// pluralVars words how many variables f holds.
+func pluralVars(f *fileSnapshot) string {
+	n := len(f.values)
 	if n == 1 {
 		return "1 variable"
 	}
@@ -251,13 +253,13 @@ func (s *SessionStats) formatDeletedRow(path string) (string, string, bool) {
 func (s *SessionStats) formatCreatedRow(path string, co createOrigin, content *fileSnapshot) string {
 	switch co.kind {
 	case createScratch:
-		return fmt.Sprintf("%s — new file (%s)", path, pluralVars(len(content.values)))
+		return fmt.Sprintf("%s — new file (%s)", path, pluralVars(content))
 	case createTemplate:
-		return fmt.Sprintf("%s — from template %s (%s)", path, co.source, pluralVars(len(content.values)))
+		return fmt.Sprintf("%s — from template %s (%s)", path, co.source, pluralVars(content))
 	case createDuplicate:
-		desc, changed := describeChanges(co.initialVars, content)
+		desc, changed := describeChanges(co.baseline, content)
 		if !changed {
-			return fmt.Sprintf("%s — duplicated from %s (%s)", path, co.source, pluralVars(len(content.values)))
+			return fmt.Sprintf("%s — duplicated from %s (%s)", path, co.source, pluralVars(content))
 		}
 		return fmt.Sprintf("%s — duplicated from %s, %s", path, co.source, desc)
 	}
@@ -276,14 +278,15 @@ func describeChanges(base, target *fileSnapshot) (string, bool) {
 		base = snapshot(nil)
 	}
 	a, c, d := diff(base.values, target.values)
+	edited := a+c+d > 0
 	moved := reordered(base, target)
 	switch {
-	case a == 0 && c == 0 && d == 0 && moved:
+	case moved && !edited:
 		return "reordered", true
 	case moved:
 		return formatCounts(a, c, d) + ", reordered", true
 	}
-	return formatCounts(a, c, d), a != 0 || c != 0 || d != 0
+	return formatCounts(a, c, d), edited
 }
 
 // reordered reports whether the keys base and target share appear in a
