@@ -51,7 +51,6 @@ func TestEditorFinishEdit(t *testing.T) {
 	assert.Equal(t, "new", result.Value)
 	assert.Equal(t, 2, result.VarIndex)
 	assert.False(t, result.IsAdd)
-	assert.False(t, result.Cancelled)
 }
 
 func TestEditorFinishAddKeyStep(t *testing.T) {

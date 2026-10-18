@@ -23,7 +23,6 @@ type EditorResult struct {
 	IsAdd       bool
 	IsRenameKey bool
 	AddStep     addStep
-	Cancelled   bool
 	// Untouched is set for a value edit confirmed as the bar showed it. The
 	// bar can't show every value as is (it turns line breaks into spaces and
 	// drops control characters), so writing it back could change the value.

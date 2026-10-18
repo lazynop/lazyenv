@@ -19,9 +19,6 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, a.keys.Enter):
 		result := a.editor.Finish()
 		a.mode = ModeNormal
-		if result.Cancelled {
-			return a, nil
-		}
 		if result.IsRenameKey {
 			return a.confirmRenameKey(result)
 		}
