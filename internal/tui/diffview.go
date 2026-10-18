@@ -147,10 +147,10 @@ func (m *DiffViewModel) visibleLines() int {
 	return max(m.Height-panelChromeHeight, 1)
 }
 
-// IndexAtRow returns the index of the entry drawn on row, the panels' rows
-// counted from the first one shown, or -1 for a row that draws no entry.
-func (m *DiffViewModel) IndexAtRow(row int) int {
-	return visibleIndex(row, m.Offset, m.visibleLines(), len(m.Entries))
+// IndexAt returns the index of the entry drawn on screen row y, the panels
+// being drawn from the top of the screen, or -1 for a row that draws no entry.
+func (m *DiffViewModel) IndexAt(y int) int {
+	return visibleIndex(y-panelContentOffsetY, m.Offset, m.visibleLines(), len(m.Entries))
 }
 
 // ensureVisible scrolls just enough to keep the cursor on screen.

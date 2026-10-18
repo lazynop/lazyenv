@@ -30,7 +30,7 @@ func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 	if msg.X < a.fileWidth {
 		// Click on file list panel
 		a.setFocus(FocusFiles)
-		index := a.fileList.IndexAtRow(msg.Y - panelContentOffsetY)
+		index := a.fileList.IndexAt(msg.Y)
 		if index >= 0 {
 			prev := a.fileList.SelectedFile()
 			a.fileList.SetCursor(index)
@@ -41,7 +41,7 @@ func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 	} else {
 		// Click on var list panel. The row maps to an item as drawn when
 		// clicked, before focusing the list draws a peek line and scrolls.
-		index := a.varList.IndexAtRow(msg.Y - panelContentOffsetY)
+		index := a.varList.IndexAt(msg.Y)
 		a.setFocus(FocusVars)
 		if index >= 0 {
 			a.varList.SetCursor(index)
@@ -54,7 +54,7 @@ func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 }
 
 func (a App) handleCompareMouseClick(msg tea.MouseClickMsg) App {
-	index := a.diffView.IndexAtRow(msg.Y - panelContentOffsetY)
+	index := a.diffView.IndexAt(msg.Y)
 	if index >= 0 {
 		a.diffView.SetCursor(index)
 	}
@@ -65,7 +65,7 @@ func (a App) handleCompareSelectMouseClick(msg tea.MouseClickMsg) App {
 	if msg.X >= a.fileWidth {
 		return a // only the file list picks the file to compare with
 	}
-	index := a.fileList.IndexAtRow(msg.Y - panelContentOffsetY)
+	index := a.fileList.IndexAt(msg.Y)
 	if index >= 0 {
 		a.fileList.MoveCursorTo(index) // the compare target, not the active file
 	}

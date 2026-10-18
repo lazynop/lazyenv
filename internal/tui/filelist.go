@@ -95,10 +95,10 @@ func (m *FileListModel) visibleLines() int {
 	return max(m.Height-panelChromeHeight, 1)
 }
 
-// IndexAtRow returns the index of the file drawn on row, the list's rows
-// counted from the first one shown, or -1 for a row that draws no file.
-func (m *FileListModel) IndexAtRow(row int) int {
-	return visibleIndex(row, m.Offset, m.visibleLines(), len(m.Files))
+// IndexAt returns the index of the file drawn on screen row y, the panel
+// being drawn from the top of the screen, or -1 for a row that draws no file.
+func (m *FileListModel) IndexAt(y int) int {
+	return visibleIndex(y-panelContentOffsetY, m.Offset, m.visibleLines(), len(m.Files))
 }
 
 // Select selects the current cursor position.

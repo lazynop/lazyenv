@@ -251,11 +251,12 @@ func (m *VarListModel) SetCursor(index int) {
 	m.ensureCursorVisible()
 }
 
-// IndexAtRow returns the index in displayItems of the item drawn on row, the
-// list's rows counted from the first one shown, or -1 for a row that draws no
-// item. The peek line maps to the item at the cursor, which it belongs to.
-func (m *VarListModel) IndexAtRow(row int) int {
+// IndexAt returns the index in displayItems of the item drawn on screen row y,
+// the panel being drawn from the top of the screen, or -1 for a row that draws
+// no item. The peek line maps to the item at the cursor, which it belongs to.
+func (m *VarListModel) IndexAt(y int) int {
 	rows := m.drawnRows()
+	row := y - panelContentOffsetY
 	if row < 0 || row >= len(rows) {
 		return -1
 	}
@@ -271,7 +272,7 @@ type drawnRow struct {
 
 // drawnRows returns the rows the list draws from Offset down: the items that
 // fit (visibleLines), and the peek line under the cursor's when one is drawn.
-// renderRows draws them and IndexAtRow maps clicks through them, so both follow
+// renderRows draws them and IndexAt maps clicks through them, so both follow
 // one layout.
 func (m *VarListModel) drawnRows() []drawnRow {
 	var rows []drawnRow
