@@ -76,6 +76,12 @@ func (m *FileListModel) MoveCursorTo(index int) {
 	m.ensureCursorVisible()
 }
 
+// SetSize sizes the panel and scrolls the cursor back into it.
+func (m *FileListModel) SetSize(width, height int) {
+	m.Width, m.Height = width, height
+	m.ensureCursorVisible()
+}
+
 // ensureCursorVisible scrolls so the cursor row sits inside the viewport, and
 // the viewport shows no blank rows while rows above it are scrolled off.
 func (m *FileListModel) ensureCursorVisible() {

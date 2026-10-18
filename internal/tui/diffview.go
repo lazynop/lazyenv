@@ -51,6 +51,12 @@ func (m *DiffViewModel) SetFiles(a, b *model.EnvFile) {
 	m.recompute()
 }
 
+// SetSize sizes the panels and scrolls the cursor back into them.
+func (m *DiffViewModel) SetSize(width, height int) {
+	m.Width, m.Height = width, height
+	m.ensureVisible()
+}
+
 func (m *DiffViewModel) recompute() {
 	m.Stats = DiffStats{}
 	m.Entries = nil

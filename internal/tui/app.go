@@ -895,24 +895,10 @@ func (a *App) updateLayout() {
 
 	panelHeight := a.height - bottomChromeHeight
 
-	// Each view scrolls its cursor back into its new size.
-	a.fileList.Width = a.fileWidth
-	a.fileList.Height = panelHeight
-	a.fileList.ensureCursorVisible()
-
-	a.varList.Width = varWidth
-	a.varList.Height = panelHeight
-	a.varList.ensureCursorVisible()
-
-	a.diffView.Width = a.width - compareMarginWidth
-	a.diffView.Height = panelHeight
-	a.diffView.ensureVisible()
-
-	a.matrixView.Width = a.width
-	a.matrixView.Height = panelHeight
-	a.matrixView.ensureVisible()
-	a.matrixView.ensureHorizontalVisible()
-
+	a.fileList.SetSize(a.fileWidth, panelHeight)
+	a.varList.SetSize(varWidth, panelHeight)
+	a.diffView.SetSize(a.width-compareMarginWidth, panelHeight)
+	a.matrixView.SetSize(a.width, panelHeight)
 	a.helpView.SetSize(a.width, a.height)
 
 	a.statusBar.Width = a.width

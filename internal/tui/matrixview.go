@@ -126,6 +126,13 @@ func (m *MatrixModel) CellAt(x, y int) (row, col int) {
 	return row, col
 }
 
+// SetSize sizes the matrix and scrolls the cursor cell back into it.
+func (m *MatrixModel) SetSize(width, height int) {
+	m.Width, m.Height = width, height
+	m.ensureVisible()
+	m.ensureHorizontalVisible()
+}
+
 func (m *MatrixModel) ensureVisible() {
 	m.offsetRow = scrollOffset(m.cursorRow, m.offsetRow, m.visibleLines(), len(m.entries))
 }

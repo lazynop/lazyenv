@@ -186,6 +186,12 @@ func (m *VarListModel) clampCursor() {
 	m.ensureCursorVisible()
 }
 
+// SetSize sizes the panel and scrolls the cursor back into it.
+func (m *VarListModel) SetSize(width, height int) {
+	m.Width, m.Height = width, height
+	m.ensureCursorVisible()
+}
+
 // ensureCursorVisible scrolls so the cursor row, and its peek line when one
 // is drawn, sit inside the viewport, and the viewport shows no blank rows
 // while rows above it are scrolled off. The deleted vars, drawn below the

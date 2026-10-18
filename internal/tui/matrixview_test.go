@@ -339,14 +339,10 @@ func TestMatrixViewAlignsColumnsAfterANonASCIIFileName(t *testing.T) {
 	}
 }
 
-// TestZeroMatrixModelSurvivesALayout sizes a MatrixModel that was never built
-// with a layout, as App.updateLayout does before the matrix is opened: it
-// scrolls without dividing by its zero column width.
+// TestZeroMatrixModelSurvivesALayout sizes a zero MatrixModel, never built
+// with a layout: it scrolls without dividing by its zero column width.
 func TestZeroMatrixModelSurvivesALayout(t *testing.T) {
-	m := MatrixModel{Width: 80, Height: 20}
+	var m MatrixModel
 
-	assert.NotPanics(t, func() {
-		m.ensureVisible()
-		m.ensureHorizontalVisible()
-	})
+	assert.NotPanics(t, func() { m.SetSize(80, 20) })
 }
