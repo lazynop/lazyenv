@@ -99,9 +99,10 @@ type App struct {
 	searchInput textinput.Model
 	matrixView  MatrixModel
 
-	// File and text of the blocking config error screen (ModeConfigError).
+	// File and lines (errors, then notices) of the blocking config error
+	// screen (ModeConfigError).
 	configPath  string
-	configError string
+	configLines []string
 
 	// Startup notice, flashed once Init runs; empty when there is none.
 	startupNotice string
@@ -171,7 +172,7 @@ func NewApp(cfg config.Config, startup StartupMessages) App {
 	if len(startup.ConfigErrors) > 0 {
 		// The run stops on this screen, so the notices go on it too.
 		app.configPath = startup.ConfigPath
-		app.configError = strings.Join(slices.Concat(startup.ConfigErrors, startup.Notices), "; ")
+		app.configLines = slices.Concat(startup.ConfigErrors, startup.Notices)
 		app.mode = ModeConfigError
 	} else {
 		app.startupNotice = strings.Join(startup.Notices, "; ")

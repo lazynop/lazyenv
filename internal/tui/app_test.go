@@ -251,20 +251,47 @@ func TestConfigErrorScreenNamesTheFile(t *testing.T) {
 	assert.Contains(t, app.View().Content, "/home/user/.lazyenvrc")
 }
 
+// configErrorRows returns the rows of a config error screen, stripped of
+// styling, of the box border and of the centering spaces.
+func configErrorRows(view string) []string {
+	var rows []string
+	for _, row := range strings.Split(stripAnsi(view), "\n") {
+		rows = append(rows, strings.Trim(row, " │╭╮╰╯─"))
+	}
+	return rows
+}
+
 func TestConfigErrorScreenWithoutAPathLeavesNoGap(t *testing.T) {
 	cfg := config.DefaultConfig()
 	cfg.Dir = t.TempDir()
 
 	app := startApp(t, NewApp(cfg, StartupMessages{ConfigErrors: []string{`invalid sort value: "random"`}}))
 
-	var rows []string
-	for _, row := range strings.Split(stripAnsi(app.View().Content), "\n") {
-		rows = append(rows, strings.Trim(row, " │╭╮╰╯─"))
-	}
+	rows := configErrorRows(app.View().Content)
 	title := slices.Index(rows, "Configuration Error")
 	require.NotEqual(t, -1, title)
 	assert.Equal(t, []string{"", `invalid sort value: "random"`}, rows[title+1:title+3],
 		"the error follows the title after one blank row, not a blank path row")
+}
+
+func TestConfigErrorScreenShowsOneErrorPerRow(t *testing.T) {
+	cfg := config.DefaultConfig()
+	cfg.Dir = t.TempDir()
+
+	app := startApp(t, NewApp(cfg, StartupMessages{
+		ConfigPath:   ".lazyenvrc",
+		ConfigErrors: []string{`invalid sort value: "random"`, "invalid file-list-width: -1 (must be >= 0)"},
+		Notices:      []string{`unknown theme "nope" (see --list-themes)`},
+	}))
+
+	rows := configErrorRows(app.View().Content)
+	for _, line := range []string{
+		`invalid sort value: "random"`,
+		"invalid file-list-width: -1 (must be >= 0)",
+		`unknown theme "nope" (see --list-themes)`,
+	} {
+		assert.Contains(t, rows, line, "each error and notice starts its own row")
+	}
 }
 
 func TestConfigErrorScreenCutsWhatDoesNotFit(t *testing.T) {
@@ -277,20 +304,47 @@ func TestConfigErrorScreenCutsWhatDoesNotFit(t *testing.T) {
 	app := NewApp(cfg, StartupMessages{ConfigPath: ".lazyenvrc", ConfigErrors: errs})
 
 	updated, _ := app.Update(tea.WindowSizeMsg{Width: MinTerminalWidth, Height: MinTerminalHeight})
-	view := stripAnsi(updated.(App).View().Content)
+	view := updated.(App).View().Content
 
 	assert.LessOrEqual(t, lipgloss.Height(view), MinTerminalHeight)
-	assert.Contains(t, view, "…", "the cut errors end in an ellipsis")
-	assert.Contains(t, view, "see lazyenv --check-config", "the hint points to the full list")
-	assert.NotContains(t, view, "color5", "the last errors are cut")
-	var rows []string
-	for _, row := range strings.Split(view, "\n") {
-		rows = append(rows, strings.Trim(row, " │╭╮╰╯─"))
-	}
+	rows := configErrorRows(view)
 	title := slices.Index(rows, "Configuration Error")
 	hint := slices.IndexFunc(rows, func(row string) bool { return strings.HasPrefix(row, "Press any key") })
 	require.Less(t, title, hint)
 	assert.NotContains(t, rows[title:hint], "", "the blank rows go before any error is cut")
+	assert.Contains(t, rows[hint], "see lazyenv --check-config", "the hint points to the full list")
+
+	// A wrapped error reads whole once its rows are joined back.
+	body := strings.Join(rows[title+2:hint], " ")
+	shown := 0
+	for shown < len(errs) && strings.Contains(body, errs[shown]) {
+		shown++
+	}
+	require.Positive(t, shown, "at least one error is shown")
+	require.Less(t, shown, len(errs), "the errors do not all fit at %dx%d", MinTerminalWidth, MinTerminalHeight)
+	assert.Equal(t, fmt.Sprintf("… and %d more", len(errs)-shown), rows[hint-1],
+		"the errors shown are whole, and the last row counts the ones cut")
+}
+
+func TestConfigErrorScreenCutsAnErrorTallerThanTheTerminal(t *testing.T) {
+	cfg := config.DefaultConfig()
+	cfg.Dir = t.TempDir()
+	long := "config error: " + strings.Repeat("toml: expected a value here ", 20)
+	app := NewApp(cfg, StartupMessages{
+		ConfigPath:   ".lazyenvrc",
+		ConfigErrors: []string{long, `invalid sort value: "random"`},
+	})
+
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: MinTerminalWidth, Height: MinTerminalHeight})
+	view := updated.(App).View().Content
+
+	assert.LessOrEqual(t, lipgloss.Height(view), MinTerminalHeight)
+	rows := configErrorRows(view)
+	hint := slices.IndexFunc(rows, func(row string) bool { return strings.HasPrefix(row, "Press any key") })
+	require.NotEqual(t, -1, hint)
+	assert.Equal(t, "… and 1 more", rows[hint-1])
+	assert.True(t, strings.HasSuffix(rows[hint-2], "…"), "the first error is cut at its last row shown: %q", rows[hint-2])
+	assert.True(t, strings.HasPrefix(rows[slices.Index(rows, ".lazyenvrc")+1], "config error: toml:"), "the first error starts the list")
 }
 
 func TestConfigErrorScreenAlsoShowsNotices(t *testing.T) {
