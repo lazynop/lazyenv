@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lazynop/lazyenv/internal/config"
@@ -106,18 +105,10 @@ func TestReadOnlyNoKeyChangesFiles(t *testing.T) {
 // sized read-only App the way the program does: scan, then FilesLoadedMsg.
 func newReadOnlyDiskApp(t *testing.T) (App, string) {
 	t.Helper()
-	dir := setupScanDir(t, readOnlyFixture)
 	cfg := config.DefaultConfig()
-	cfg.Dir = dir
 	cfg.ReadOnly = true
-	files, err := ScanDir(dir, false, cfg.Files, cfg.Secrets)
-	require.NoError(t, err)
-	require.Len(t, files, len(readOnlyFixture))
-
-	var m tea.Model = NewApp(cfg, StartupMessages{})
-	m, _ = m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-	m, _ = m.Update(FilesLoadedMsg{Files: files})
-	return m.(App), dir
+	app := loadFixtureApp(t, cfg, readOnlyFixture, 120, 40)
+	return app, app.config.Dir
 }
 
 // requireReadOnlyHeld fails the test if the last key press (pressed) broke the

@@ -49,14 +49,7 @@ var cursorFollowUps = [][]string{
 
 func TestMainViewCursorStaysOnTheActiveFile(t *testing.T) {
 	newApp := func(t *testing.T) App {
-		cfg := config.DefaultConfig()
-		cfg.Dir = setupScanDir(t, readOnlyFixture)
-		files, err := ScanDir(cfg.Dir, false, cfg.Files, cfg.Secrets)
-		require.NoError(t, err)
-		var m tea.Model = NewApp(cfg, StartupMessages{})
-		m, _ = m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
-		m, _ = m.Update(FilesLoadedMsg{Files: files})
-		return m.(App)
+		return loadFixtureApp(t, config.DefaultConfig(), readOnlyFixture, 120, 40)
 	}
 	inputs := cursorInputs(t, newApp(t))
 	for _, first := range inputs {

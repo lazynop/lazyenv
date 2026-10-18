@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -20,6 +21,21 @@ func setupScanDir(t *testing.T, files map[string]string) string {
 		require.NoError(t, os.WriteFile(path, []byte(content), 0644))
 	}
 	return dir
+}
+
+// loadFixtureApp writes fixture to a temp dir and loads it into an app sized
+// width x height the way the program does: scan, then FilesLoadedMsg.
+func loadFixtureApp(t *testing.T, cfg config.Config, fixture map[string]string, width, height int) App {
+	t.Helper()
+	cfg.Dir = setupScanDir(t, fixture)
+	files, err := ScanDir(cfg.Dir, false, cfg.Files, cfg.Secrets)
+	require.NoError(t, err)
+	require.Len(t, files, len(fixture))
+
+	var m tea.Model = NewApp(cfg, StartupMessages{})
+	m, _ = m.Update(tea.WindowSizeMsg{Width: width, Height: height})
+	m, _ = m.Update(FilesLoadedMsg{Files: files})
+	return m.(App)
 }
 
 func TestScanDirFindsEnvFiles(t *testing.T) {

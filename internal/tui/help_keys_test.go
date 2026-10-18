@@ -255,14 +255,7 @@ func requireHelpStatesReached(t *testing.T) {
 // returns, the clear's tick, where every persistent prompt returns none.
 func openHelpState(t *testing.T, state *helpState) App {
 	t.Helper()
-	cfg := config.DefaultConfig()
-	cfg.Dir = setupScanDir(t, helpKeysFixture)
-	files, err := ScanDir(cfg.Dir, false, cfg.Files, cfg.Secrets)
-	require.NoError(t, err)
-	var m tea.Model = NewApp(cfg, StartupMessages{})
-	m, _ = m.Update(tea.WindowSizeMsg{Width: 120, Height: 24})
-	m, _ = m.Update(FilesLoadedMsg{Files: files})
-	app := m.(App)
+	app := loadFixtureApp(t, config.DefaultConfig(), helpKeysFixture, 120, 24)
 	for _, k := range state.keys {
 		gen := app.statusBar.msgGen
 		next, cmd, acted := helpKeyActs(app, keyMsg(k))
