@@ -137,7 +137,7 @@ Session summary:
   .env.schema — from template .env.production (8 variables)
 ```
 
-Paths include the directory you passed: with `lazyenv ./services`, a line reads `services/.env — …`. A file renamed several times shows a single rename from its original name, renaming a file back to its original name drops the rename, and a file created and then deleted in the same session is not listed.
+Paths include the directory you passed: with `lazyenv ./services`, a line reads `services/.env — …`. A file renamed several times shows a single rename from its original name, renaming a file back to its original name drops the rename, and a file created and then deleted in the same session is not listed. A duplicate counts from the source's contents on disk, so edits to the source not yet saved are not part of it.
 
 Silent when nothing changed. Disable via `session-summary = false` in config or the `--no-session-summary` flag. `--read-only` disables it implicitly.
 

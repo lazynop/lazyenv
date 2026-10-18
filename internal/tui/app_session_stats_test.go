@@ -96,6 +96,24 @@ func TestApp_SessionStats_Duplicate(t *testing.T) {
 	}, app.sessionStats.Summary())
 }
 
+// The duplicate copies the source's bytes on disk, so the source's unsaved
+// edits are neither in the new file nor in its baseline.
+func TestApp_SessionStats_DuplicateOfUnsavedSource(t *testing.T) {
+	app, ef, dir, srcPath := setupStatsFixture(t, ".env", "FOO=1\nBAR=2\n")
+	ef.UpdateVar(0, "99", false)
+	ef.AddVar("BAZ", "3", false)
+
+	app.fileOpSource = ef
+	app.fileInput.SetValue(".env.copy")
+	app.mode = ModeDuplicateFile
+	out, _ := app.confirmDuplicateFile()
+	app = out.(App)
+
+	assert.Equal(t, []string{
+		dir + "/.env.copy — duplicated from " + srcPath + " (2 variables)",
+	}, app.sessionStats.Summary())
+}
+
 func TestApp_SessionStats_Template(t *testing.T) {
 	app, ef, dir, srcPath := setupStatsFixture(t, ".env", "FOO=1\nBAR=2\n")
 

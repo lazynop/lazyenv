@@ -30,7 +30,7 @@ func (a App) confirmDuplicateFile() (tea.Model, tea.Cmd) {
 		return a, a.flashError("Error reading source: " + err.Error())
 	}
 
-	if err := a.duplicateFile(destPath, data, src); err != nil {
+	if err := a.duplicateFile(destPath, data, src.Path); err != nil {
 		return a, a.flashError("Error creating file: " + err.Error())
 	}
 

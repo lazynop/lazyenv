@@ -2,6 +2,7 @@ package tui
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/lazynop/lazyenv/internal/parser"
@@ -39,13 +40,15 @@ func (a App) createFile(path string) error {
 	return nil
 }
 
-// duplicateFile writes data, a byte copy of src, to the new file at path and
-// records it as a duplicate holding src's vars.
-func (a App) duplicateFile(path string, data []byte, src *model.EnvFile) error {
+// duplicateFile writes data, a byte copy of the file at srcPath, to the new
+// file at path and records it as a duplicate holding the vars parsed from
+// data: the source's unsaved edits are not in the copy.
+func (a App) duplicateFile(path string, data []byte, srcPath string) error {
 	if err := parser.WriteFileAtomic(path, data, envFilePerm); err != nil {
 		return err
 	}
-	a.sessionStats.RecordCreateDuplicate(path, src.Path, src.Vars)
+	copied := parser.ParseBytes(filepath.Base(path), data, a.config.Secrets)
+	a.sessionStats.RecordCreateDuplicate(path, srcPath, copied.Vars)
 	return nil
 }
 
