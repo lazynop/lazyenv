@@ -67,6 +67,17 @@ func appScenario(name string, mode AppMode, setup func(app App) App) viewScenari
 	}}
 }
 
+// configErrorScenario sizes an App that startup sends to the config error
+// screen and renders it.
+func configErrorScenario(name string, startup StartupMessages) viewScenario {
+	return viewScenario{name, ModeConfigError, func(t *testing.T, width, height int, _ bool) string {
+		t.Helper()
+		updated, _ := NewApp(config.DefaultConfig(), startup).Update(tea.WindowSizeMsg{Width: width, Height: height})
+		require.Equal(t, ModeConfigError, updated.(App).mode, "%s: startup should reach the mode", name)
+		return updated.(App).View().Content
+	}}
+}
+
 // press sends keys to app, each as keyMsg builds it.
 func press(app App, keys ...string) App {
 	for _, k := range keys {
@@ -143,12 +154,14 @@ var viewScenarios = []viewScenario{
 		return press(app, "m", "j", "right", "a") // EMPTY, missing from .env.local
 	}),
 	appScenario("matrix confirm delete", ModeConfirmMatrixDelete, func(app App) App { return press(app, "m", "d") }),
-	{"config error", ModeConfigError, func(t *testing.T, width, height int, _ bool) string {
-		app := NewApp(config.DefaultConfig(), StartupMessages{ConfigPath: ".lazyenvrc", ConfigErrors: []string{`invalid sort value: "random"`}})
-		updated, _ := app.Update(tea.WindowSizeMsg{Width: width, Height: height})
-		require.Equal(t, ModeConfigError, updated.(App).mode)
-		return updated.(App).View().Content
-	}},
+	configErrorScenario("config error", StartupMessages{
+		ConfigPath:   ".lazyenvrc",
+		ConfigErrors: []string{`invalid sort value: "random"`},
+	}),
+	configErrorScenario("config error, long path", StartupMessages{
+		ConfigPath:   "/home/user/projects/a-rather-long-project-name/configuration/lazyenv/config.toml",
+		ConfigErrors: []string{`invalid sort value: "random"`, `invalid colors.primary: "teal" (expected hex like #RRGGBB or ANSI 0-255)`},
+	}),
 	{"theme preview", -1, func(t *testing.T, width, height int, _ bool) string {
 		m := NewThemePreview(true)
 		m.searchPaths = []string{".lazyenvrc", "/home/user/.config/lazyenv/config.toml", "/home/user/.lazyenvrc"}

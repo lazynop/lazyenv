@@ -138,6 +138,6 @@ Files are not merged: the file found is used whole, and a key it leaves out take
 
 ## Invalid configuration
 
-The file is validated as a whole. A TOML syntax error, an unknown key or an invalid value rejects the entire file: lazyenv opens on an error screen naming the file and listing the problems and quits on the next key press. `--show-config` lists the errors on stderr, prints the built-in defaults instead, with any command-line flags applied, and exits with status 1. Run `lazyenv --check-config` to validate the file without starting the TUI: it lists the errors and exits with status 1.
+The file is validated as a whole. A TOML syntax error, an unknown key or an invalid value rejects the entire file: lazyenv opens on an error screen naming the file and listing the problems and quits on the next key press; on a terminal too small for the whole list, the screen cuts it and points to `--check-config`. `--show-config` lists the errors on stderr, prints the built-in defaults instead, with any command-line flags applied, and exits with status 1. Run `lazyenv --check-config` to validate the file without starting the TUI: it lists the errors and exits with status 1.
 
 Two inputs are adjusted instead of rejected. An unknown `--theme` on the command line shows a notice in the status bar for 3 seconds (`--show-config` prints it on stderr), and the TUI runs with the default colors plus any `[colors]` overrides. A layout value below its minimum is raised to it (see [`[layout]`](#layout)).

@@ -617,6 +617,31 @@
 
 
 
+=== config error, long path
+
+
+
+
+
+
+ ╭────────────────────────────────────────────────────────────────────────────╮
+ │                                                                            │
+ │                             Configuration Error                            │
+ │                 /home/user/projects/a-rather-long-project-                 │
+ │                   name/configuration/lazyenv/config.toml                   │
+ │                                                                            │
+ │   invalid sort value: "random"; invalid colors.primary: "teal" (expected   │
+ │                       hex like #RRGGBB or ANSI 0-255)                      │
+ │                                                                            │
+ │                            Press any key to exit                           │
+ │                                                                            │
+ ╰────────────────────────────────────────────────────────────────────────────╯
+
+
+
+
+
+
 === theme preview
 ╭────────────────────────╮╭────────────────────────────────────────────────────╮
 │ Themes (56)            ││ andromeda                                          │

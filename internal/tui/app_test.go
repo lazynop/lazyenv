@@ -1,9 +1,13 @@
 package tui
 
 import (
+	"fmt"
+	"slices"
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -245,6 +249,40 @@ func TestConfigErrorScreenNamesTheFile(t *testing.T) {
 	}))
 
 	assert.Contains(t, app.View().Content, "/home/user/.lazyenvrc")
+}
+
+func TestConfigErrorScreenWithoutAPathLeavesNoGap(t *testing.T) {
+	cfg := config.DefaultConfig()
+	cfg.Dir = t.TempDir()
+
+	app := startApp(t, NewApp(cfg, StartupMessages{ConfigErrors: []string{`invalid sort value: "random"`}}))
+
+	var rows []string
+	for _, row := range strings.Split(stripAnsi(app.View().Content), "\n") {
+		rows = append(rows, strings.Trim(row, " │╭╮╰╯─"))
+	}
+	title := slices.Index(rows, "Configuration Error")
+	require.NotEqual(t, -1, title)
+	assert.Equal(t, []string{"", `invalid sort value: "random"`}, rows[title+1:title+3],
+		"the error follows the title after one blank row, not a blank path row")
+}
+
+func TestConfigErrorScreenCutsWhatDoesNotFit(t *testing.T) {
+	cfg := config.DefaultConfig()
+	cfg.Dir = t.TempDir()
+	errs := make([]string, 6)
+	for i := range errs {
+		errs[i] = fmt.Sprintf("invalid colors.color%d: \"teal\" (expected hex like #RRGGBB or ANSI 0-255)", i)
+	}
+	app := NewApp(cfg, StartupMessages{ConfigPath: ".lazyenvrc", ConfigErrors: errs})
+
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: MinTerminalWidth, Height: MinTerminalHeight})
+	view := stripAnsi(updated.(App).View().Content)
+
+	assert.LessOrEqual(t, lipgloss.Height(view), MinTerminalHeight)
+	assert.Contains(t, view, "…", "the cut errors end in an ellipsis")
+	assert.Contains(t, view, "see lazyenv --check-config", "the hint points to the full list")
+	assert.NotContains(t, view, "color5", "the last errors are cut")
 }
 
 func TestConfigErrorScreenAlsoShowsNotices(t *testing.T) {
