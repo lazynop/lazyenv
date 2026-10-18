@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
 	"github.com/lazynop/lazyenv/internal/config"
@@ -541,14 +542,15 @@ func (m *VarListModel) renderHeaderLine(rowIdx int, group model.VarGroup, theme 
 		label = ungroupedHeaderLabel
 	}
 	countStr := fmt.Sprintf("(%d)", len(group.Vars))
+	const format = "  %s %s %s" // arrow, label, count
 	// The label gives way to the arrow and the count, so the header keeps its
 	// one row.
-	label = truncate(label, m.Width-panelBorderWidth-ansi.StringWidth(fmt.Sprintf("  %s  %s", arrow, countStr)))
+	label = truncate(label, m.Width-panelBorderWidth-lipgloss.Width(fmt.Sprintf(format, arrow, "", countStr)))
 
 	if rowIdx == m.Cursor && m.Focused {
-		return theme.CursorItem.Render(fmt.Sprintf("  %s %s %s", arrow, label, countStr))
+		return theme.CursorItem.Render(fmt.Sprintf(format, arrow, label, countStr))
 	}
-	return fmt.Sprintf("  %s %s %s",
+	return fmt.Sprintf(format,
 		theme.MutedItem.Render(arrow),
 		theme.KeyStyle.Render(label),
 		theme.MutedItem.Render(countStr))
@@ -678,9 +680,10 @@ func (m *VarListModel) viewTitle(theme Theme) string {
 		count = fmt.Sprintf("%d/%d", displayed, total)
 	}
 	count = fmt.Sprintf("(%s vars)", count)
+	const sep = " "
 	// The name gives way to the count, so the title keeps its one row.
-	room := m.Width - panelBorderWidth - theme.PanelTitle.GetHorizontalFrameSize() - 1 - ansi.StringWidth(count)
-	return theme.PanelTitle.Render(truncate(m.File.Name, room)) + " " + theme.MutedItem.Render(count)
+	room := m.Width - panelBorderWidth - theme.PanelTitle.GetHorizontalFrameSize() - lipgloss.Width(sep+count)
+	return theme.PanelTitle.Render(truncate(m.File.Name, room)) + sep + theme.MutedItem.Render(count)
 }
 
 // View renders the variable list panel.
