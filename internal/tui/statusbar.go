@@ -23,7 +23,6 @@ type StatusBarModel struct {
 	ReadOnly bool        // show [READ-ONLY] badge
 	Message  string      // transient message (e.g. "Saved!")
 	kind     messageKind // color Message renders in
-	Mode     string      // current mode label
 	msgGen   int         // bumped on every message set; guards against stale clears
 }
 

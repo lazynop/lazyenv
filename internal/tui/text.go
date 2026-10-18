@@ -66,6 +66,12 @@ func truncate(s string, maxCols int) string {
 	return ansi.Truncate(s, maxCols, "..")
 }
 
+// wrapRows wraps s to width columns, at spaces where it can, and returns its
+// rows.
+func wrapRows(s string, width int) []string {
+	return strings.Split(ansi.Wrap(s, width, ""), "\n")
+}
+
 // padRight pads s with spaces to width display columns, measured by grapheme
 // cluster like truncate, so a cell it pads is width columns wide whatever runes
 // s holds. A string already that wide or wider comes back unchanged.

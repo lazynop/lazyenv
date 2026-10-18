@@ -469,7 +469,7 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 			return a, a.flashWarning("Need at least 2 files to compare")
 		}
 		f := a.fileList.SelectedFile()
-		if f == nil && a.fileList.CursorFile() != nil {
+		if f == nil {
 			f = a.fileList.CursorFile()
 		}
 		a.compareFirstFile = f
@@ -819,7 +819,7 @@ func (a *App) inputBar() (string, *textinput.Model) {
 		return a.matrixView.EditBar()
 	}
 	if label, ok := fileInputLabels[a.mode]; ok {
-		return label, a.activeFileInput()
+		return label, &a.fileInput
 	}
 	return "", nil
 }

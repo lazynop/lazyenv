@@ -35,10 +35,7 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 	switch {
 	case key.Matches(msg, a.keys.Quit), key.Matches(msg, a.keys.Escape):
-		a.mode = ModeNormal
-		a.compareFirstFile = nil
-		// Restore cursor to the selected file so file list and var panel stay in sync.
-		a.fileList.MoveCursorTo(a.fileList.Selected)
+		a.exitCompare()
 	case key.Matches(msg, a.keys.Up):
 		a.diffView.MoveUp()
 	case key.Matches(msg, a.keys.Down):
@@ -197,15 +194,21 @@ func compareSelectHelp(keys KeyMap) helpSection {
 	}}
 }
 
+// exitCompare goes back to the main view from compare or from picking its
+// second file, the file list's cursor back on the active file so the list and
+// the vars panel stay in sync.
+func (a *App) exitCompare() {
+	a.mode = ModeNormal
+	a.compareFirstFile = nil
+	a.fileList.MoveCursorTo(a.fileList.Selected)
+}
+
 func (a App) handleCompareSelectKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Escape, a.keys.Quit):
 		// q and Ctrl+C go back here, as they do from compare and matrix.
-		a.mode = ModeNormal
-		a.compareFirstFile = nil
+		a.exitCompare()
 		a.statusBar.ClearMessage()
-		// Restore cursor to the selected file so file list and var panel stay in sync.
-		a.fileList.MoveCursorTo(a.fileList.Selected)
 	case key.Matches(msg, a.keys.Up):
 		a.fileList.MoveUp()
 	case key.Matches(msg, a.keys.Down):

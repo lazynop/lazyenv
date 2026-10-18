@@ -11,7 +11,7 @@ import (
 
 const (
 	configErrorHint    = "Press any key to exit"
-	configErrorCutHint = "Press any key to exit · see lazyenv --check-config"
+	configErrorCutHint = configErrorHint + " · see lazyenv --check-config"
 
 	// configPathMaxRows caps the rows the config file's path takes on the
 	// error screen, so at least one error fits on the smallest terminal.
@@ -30,7 +30,7 @@ func (a App) viewConfigError() string {
 	room := max(a.width-box.GetHorizontalFrameSize(), 1)
 	var path []string
 	if a.configPath != "" {
-		path = strings.Split(ansi.Wrap(a.configPath, room, ""), "\n")
+		path = wrapRows(a.configPath, room)
 	}
 	if len(path) > configPathMaxRows {
 		// Keep the end, which names the file. The ellipsis takes one cell, and
@@ -50,7 +50,7 @@ func (a App) viewConfigError() string {
 	msg := wrapEach(a.configLines, room)
 	msgRows := len(slices.Concat(msg...))
 	if rowsBesideMsg()+msgRows > a.height {
-		box = box.Padding(0, 3)
+		box = box.PaddingTop(0).PaddingBottom(0)
 	}
 	if rowsBesideMsg()+msgRows > a.height {
 		blankRows = 0
@@ -84,7 +84,7 @@ func (a App) viewConfigError() string {
 func wrapEach(texts []string, width int) [][]string {
 	wrapped := make([][]string, len(texts))
 	for i, text := range texts {
-		wrapped[i] = strings.Split(ansi.Wrap(text, width, ""), "\n")
+		wrapped[i] = wrapRows(text, width)
 	}
 	return wrapped
 }

@@ -44,11 +44,9 @@ func NewDiffViewModel(layout config.LayoutConfig, secrets config.SecretsConfig) 
 
 // SetFiles computes the diff between two files.
 func (m *DiffViewModel) SetFiles(a, b *model.EnvFile) {
-	m.FileA = a
-	m.FileB = b
-	m.allEntries = model.ComputeDiff(a, b)
+	m.FileA, m.FileB = a, b
 	m.HideEqual = false
-	m.recompute()
+	m.Rediff()
 }
 
 // SetSize sizes the panels and scrolls the cursor back into them.

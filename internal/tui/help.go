@@ -6,7 +6,6 @@ import (
 
 	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/x/ansi"
 )
 
 // helpTitle is the first row of the help screen.
@@ -160,8 +159,7 @@ func helpText(sections []helpSection) string {
 	for _, section := range sections {
 		lines = append(lines, "", "  "+section.title)
 		for _, row := range section.rows {
-			pad := strings.Repeat(" ", width-lipgloss.Width(row.keys)+3)
-			lines = append(lines, "    "+row.keys+pad+row.desc)
+			lines = append(lines, "    "+padRight(row.keys, width+3)+row.desc)
 		}
 	}
 	return strings.Join(lines, "\n")
@@ -232,9 +230,9 @@ func wrapHelpRow(row string, width int) []string {
 	}
 	indent := lipgloss.Width(row[:start])
 	if indent >= width {
-		return strings.Split(ansi.Wrap(row, width, ""), "\n")
+		return wrapRows(row, width)
 	}
-	lines := strings.Split(ansi.Wrap(row[start:], width-indent, ""), "\n")
+	lines := wrapRows(row[start:], width-indent)
 	lines[0] = row[:start] + lines[0]
 	for i := 1; i < len(lines); i++ {
 		lines[i] = strings.Repeat(" ", indent) + lines[i]
@@ -288,7 +286,7 @@ func (m *HelpViewModel) ScrollDown() {
 func (m *HelpViewModel) View(theme Theme) string {
 	visible := m.visibleLines()
 	end := min(m.offset+visible, len(m.lines))
-	text := lipgloss.NewStyle().Foreground(theme.ColorFg).Render(strings.Join(m.lines[m.offset:end], "\n"))
+	text := theme.NormalItem.Render(strings.Join(m.lines[m.offset:end], "\n"))
 
 	hint := "  Press " + m.close + " to close"
 	if len(m.lines) > visible {
