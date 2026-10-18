@@ -133,6 +133,17 @@ func TestThemePreviewQuitWithQ(t *testing.T) {
 	assert.IsType(t, tea.QuitMsg{}, msg, "q should return tea.Quit")
 }
 
+func TestThemePreviewQuitWithCtrlC(t *testing.T) {
+	m := NewThemePreview(config.DefaultConfig())
+
+	updated, cmd := m.Update(keyMsg("ctrl+c"))
+	m = updated.(ThemePreviewModel)
+
+	assert.Equal(t, "", m.selected, "selected should remain empty on quit")
+	require.NotNil(t, cmd)
+	assert.IsType(t, tea.QuitMsg{}, cmd(), "Ctrl+C should return tea.Quit")
+}
+
 func TestThemePreviewQuitWithEsc(t *testing.T) {
 	m := NewThemePreview(config.DefaultConfig())
 
