@@ -18,12 +18,14 @@ func TestSnapshot_LastWinsForDuplicateKeys(t *testing.T) {
 	assert.Equal(t, map[string]string{
 		"FOO": "override",
 		"BAR": "2",
-	}, got)
+	}, got.values)
+	assert.Equal(t, []string{"BAR", "FOO"}, got.order)
 }
 
 func TestSnapshot_Empty(t *testing.T) {
 	got := snapshot(nil)
-	assert.Equal(t, map[string]string{}, got)
+	assert.Empty(t, got.values)
+	assert.Empty(t, got.order)
 }
 
 func TestStats_ExistingFile_SaveDiff(t *testing.T) {
@@ -60,6 +62,76 @@ func TestStats_ExistingFile_EditedAndReverted_NotReported(t *testing.T) {
 	s.RecordSave("/p/.env", []model.EnvVar{{Key: "FOO", Value: "1"}})
 
 	assert.Empty(t, s.Summary())
+}
+
+func TestStats_ExistingFile_ReorderOnly(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordInitialLoad("/p/.env", []model.EnvVar{
+		{Key: "FOO", Value: "1"},
+		{Key: "BAR", Value: "2"},
+	})
+	s.RecordSave("/p/.env", []model.EnvVar{
+		{Key: "BAR", Value: "2"},
+		{Key: "FOO", Value: "1"},
+	})
+
+	assert.Equal(t, []string{"/p/.env — reordered"}, s.Summary())
+}
+
+func TestStats_ExistingFile_ReorderWithEdits(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordInitialLoad("/p/.env", []model.EnvVar{
+		{Key: "FOO", Value: "1"},
+		{Key: "BAR", Value: "2"},
+	})
+	s.RecordSave("/p/.env", []model.EnvVar{
+		{Key: "BAR", Value: "2"},
+		{Key: "BAZ", Value: "3"},
+		{Key: "FOO", Value: "1"},
+	})
+
+	assert.Equal(t, []string{"/p/.env — 1 added, 0 changed, 0 deleted, reordered"}, s.Summary())
+}
+
+// Adding or deleting a key leaves the others in their order: no reorder.
+func TestStats_ExistingFile_AddAndDelete_NotReordered(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordInitialLoad("/p/.env", []model.EnvVar{
+		{Key: "FOO", Value: "1"},
+		{Key: "BAR", Value: "2"},
+		{Key: "QUX", Value: "4"},
+	})
+	s.RecordSave("/p/.env", []model.EnvVar{
+		{Key: "BAZ", Value: "3"},
+		{Key: "FOO", Value: "1"},
+		{Key: "QUX", Value: "4"},
+	})
+
+	assert.Equal(t, []string{"/p/.env — 1 added, 0 changed, 1 deleted"}, s.Summary())
+}
+
+// A key's position is its last occurrence, the one a shell keeps: moving the
+// shadowed occurrence is no reorder, moving the last one is.
+func TestStats_ExistingFile_DuplicateKeyOrderFollowsLastOccurrence(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordInitialLoad("/p/.env", []model.EnvVar{
+		{Key: "FOO", Value: "old"},
+		{Key: "BAR", Value: "2"},
+		{Key: "FOO", Value: "1"},
+	})
+	s.RecordSave("/p/.env", []model.EnvVar{
+		{Key: "BAR", Value: "2"},
+		{Key: "FOO", Value: "old"},
+		{Key: "FOO", Value: "1"},
+	})
+	assert.Empty(t, s.Summary())
+
+	s.RecordSave("/p/.env", []model.EnvVar{
+		{Key: "FOO", Value: "old"},
+		{Key: "FOO", Value: "1"},
+		{Key: "BAR", Value: "2"},
+	})
+	assert.Equal(t, []string{"/p/.env — reordered"}, s.Summary())
 }
 
 func TestStats_InitialLoadIdempotent(t *testing.T) {
@@ -163,6 +235,21 @@ func TestStats_CreateDuplicate_WithEdits(t *testing.T) {
 	}, s.Summary())
 }
 
+func TestStats_CreateDuplicate_Reordered(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordCreateDuplicate("/p/.env.copy", "/p/.env.local", []model.EnvVar{
+		{Key: "FOO", Value: "1"},
+		{Key: "BAR", Value: "2"},
+	})
+	s.RecordSave("/p/.env.copy", []model.EnvVar{
+		{Key: "BAR", Value: "2"},
+		{Key: "FOO", Value: "1"},
+	})
+	assert.Equal(t, []string{
+		"/p/.env.copy — duplicated from /p/.env.local, reordered",
+	}, s.Summary())
+}
+
 func TestStats_CreateThenDelete_NetZero(t *testing.T) {
 	s := NewSessionStats()
 	s.RecordCreateScratch("/p/.env.new", []model.EnvVar{{Key: "FOO", Value: "1"}})
@@ -212,6 +299,22 @@ func TestStats_Rename_WithEdits(t *testing.T) {
 	})
 	assert.Equal(t, []string{
 		"/p/.env.dev (renamed from /p/.env.local) — 1 added, 1 changed, 0 deleted",
+	}, s.Summary())
+}
+
+func TestStats_Rename_Reordered(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordInitialLoad("/p/.env.local", []model.EnvVar{
+		{Key: "FOO", Value: "1"},
+		{Key: "BAR", Value: "2"},
+	})
+	s.RecordRename("/p/.env.local", "/p/.env.dev")
+	s.RecordSave("/p/.env.dev", []model.EnvVar{
+		{Key: "BAR", Value: "2"},
+		{Key: "FOO", Value: "1"},
+	})
+	assert.Equal(t, []string{
+		"/p/.env.dev (renamed from /p/.env.local) — reordered",
 	}, s.Summary())
 }
 

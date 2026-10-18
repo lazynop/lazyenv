@@ -237,6 +237,14 @@ func TestApp_SessionStats_Delete(t *testing.T) {
 	assert.Equal(t, []string{path + " — deleted"}, app.sessionStats.Summary())
 }
 
+func TestApp_SessionStats_Reorder(t *testing.T) {
+	app, _, _, path := setupStatsFixture(t, ".env", "FOO=1\nBAR=2\n")
+
+	app = press(app, "O", "a", "y")
+
+	assert.Equal(t, []string{path + " — reordered"}, app.sessionStats.Summary())
+}
+
 func TestApp_SessionStats_HandleSave(t *testing.T) {
 	app, _, _, path := setupStatsFixture(t, ".env", "FOO=1\n")
 

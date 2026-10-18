@@ -123,13 +123,14 @@ Useful for safely inspecting production `.env` files without risk of accidental 
 
 ## Session summary
 
-When you exit lazyenv, a recap of disk-level changes is printed to stdout. It lists only files that actually changed on disk during the session — created, deleted, renamed, duplicated, templated, or with variables that differ from session start (a reorder alone does not count) — one line per file, sorted by path.
+When you exit lazyenv, a recap of disk-level changes is printed to stdout. It lists only files that actually changed on disk during the session — created, deleted, renamed, duplicated, templated, or with variables that differ from session start in value or in order — one line per file, sorted by path. A change of order, such as a reorder on disk, shows as `reordered`; adding or deleting a variable leaves the others in their order, so it is not a reorder.
 
 Example:
 
 ```
 Session summary:
   .env.backup — duplicated from .env.local, 0 added, 1 changed, 2 deleted
+  .env.ci — reordered
   .env.dev (renamed from .env.staging) — 0 added, 2 changed, 0 deleted
   .env.fresh — new file (3 variables)
   .env.local — 2 added, 1 changed, 0 deleted

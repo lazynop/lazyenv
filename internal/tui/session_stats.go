@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -19,37 +20,47 @@ const (
 type createOrigin struct {
 	kind        createKind
 	source      string
-	initialVars map[string]string
+	initialVars *fileSnapshot
 }
 
 // SessionStats tracks disk-level changes during a lazyenv session.
 // All maps are keyed by absolute file path.
 type SessionStats struct {
-	initial map[string]map[string]string // path → key→value at session start
-	final   map[string]map[string]string // path → key→value after latest save; nil value = deleted
-	renames map[string]string            // currentPath → originalPath (chain collapsed)
-	created map[string]createOrigin      // newPath → origin info
+	initial map[string]*fileSnapshot // path → vars at session start
+	final   map[string]*fileSnapshot // path → vars after latest save; nil value = deleted
+	renames map[string]string        // currentPath → originalPath (chain collapsed)
+	created map[string]createOrigin  // newPath → origin info
 }
 
 // NewSessionStats returns an empty stats tracker.
 func NewSessionStats() *SessionStats {
 	return &SessionStats{
-		initial: map[string]map[string]string{},
-		final:   map[string]map[string]string{},
+		initial: map[string]*fileSnapshot{},
+		final:   map[string]*fileSnapshot{},
 		renames: map[string]string{},
 		created: map[string]createOrigin{},
 	}
 }
 
-// snapshot builds a key→value map from vars using shell semantics: later
-// occurrences of a duplicate key overwrite earlier ones, matching what a shell
-// would see when sourcing the file.
-func snapshot(vars []model.EnvVar) map[string]string {
-	m := make(map[string]string, len(vars))
-	for _, v := range vars {
-		m[v.Key] = v.Value
+// fileSnapshot is a file's variables as a shell sees them when sourcing it:
+// the last occurrence of a duplicate key wins, both for the value and for the
+// key's position in order.
+type fileSnapshot struct {
+	values map[string]string // key → value
+	order  []string          // keys in file order
+}
+
+func snapshot(vars []model.EnvVar) *fileSnapshot {
+	values := make(map[string]string, len(vars))
+	var order []string
+	for i := len(vars) - 1; i >= 0; i-- {
+		if _, seen := values[vars[i].Key]; !seen {
+			values[vars[i].Key] = vars[i].Value
+			order = append(order, vars[i].Key)
+		}
 	}
-	return m
+	slices.Reverse(order)
+	return &fileSnapshot{values: values, order: order}
 }
 
 // RecordInitialLoad is idempotent: only the first call for a given path wins,
@@ -204,7 +215,7 @@ func (s *SessionStats) Summary() []string {
 	return out
 }
 
-func (s *SessionStats) formatLiveRow(path string, content map[string]string) (string, bool) {
+func (s *SessionStats) formatLiveRow(path string, content *fileSnapshot) (string, bool) {
 	if content == nil {
 		return "", false
 	}
@@ -212,17 +223,18 @@ func (s *SessionStats) formatLiveRow(path string, content map[string]string) (st
 		return s.formatCreatedRow(path, co, content), true
 	}
 	if origin, ok := s.renames[path]; ok {
-		return fmt.Sprintf("%s (renamed from %s) — %s", path, origin, diffCounts(s.initial[origin], content)), true
+		desc, _ := describeChanges(s.initial[origin], content)
+		return fmt.Sprintf("%s (renamed from %s) — %s", path, origin, desc), true
 	}
 	base, ok := s.initial[path]
 	if !ok {
 		return "", false
 	}
-	a, c, d := diff(base, content)
-	if a == 0 && c == 0 && d == 0 {
+	desc, changed := describeChanges(base, content)
+	if !changed {
 		return "", false
 	}
-	return fmt.Sprintf("%s — %s", path, formatCounts(a, c, d)), true
+	return fmt.Sprintf("%s — %s", path, desc), true
 }
 
 func (s *SessionStats) formatDeletedRow(path string) (string, string, bool) {
@@ -236,18 +248,18 @@ func (s *SessionStats) formatDeletedRow(path string) (string, string, bool) {
 	return target, fmt.Sprintf("%s — deleted", target), true
 }
 
-func (s *SessionStats) formatCreatedRow(path string, co createOrigin, content map[string]string) string {
+func (s *SessionStats) formatCreatedRow(path string, co createOrigin, content *fileSnapshot) string {
 	switch co.kind {
 	case createScratch:
-		return fmt.Sprintf("%s — new file (%s)", path, pluralVars(len(content)))
+		return fmt.Sprintf("%s — new file (%s)", path, pluralVars(len(content.values)))
 	case createTemplate:
-		return fmt.Sprintf("%s — from template %s (%s)", path, co.source, pluralVars(len(content)))
+		return fmt.Sprintf("%s — from template %s (%s)", path, co.source, pluralVars(len(content.values)))
 	case createDuplicate:
-		a, c, d := diff(co.initialVars, content)
-		if a == 0 && c == 0 && d == 0 {
-			return fmt.Sprintf("%s — duplicated from %s (%s)", path, co.source, pluralVars(len(content)))
+		desc, changed := describeChanges(co.initialVars, content)
+		if !changed {
+			return fmt.Sprintf("%s — duplicated from %s (%s)", path, co.source, pluralVars(len(content.values)))
 		}
-		return fmt.Sprintf("%s — duplicated from %s, %s", path, co.source, formatCounts(a, c, d))
+		return fmt.Sprintf("%s — duplicated from %s, %s", path, co.source, desc)
 	}
 	return ""
 }
@@ -256,9 +268,39 @@ func formatCounts(added, changed, deleted int) string {
 	return fmt.Sprintf("%d added, %d changed, %d deleted", added, changed, deleted)
 }
 
-func diffCounts(base, target map[string]string) string {
-	a, c, d := diff(base, target)
-	return formatCounts(a, c, d)
+// describeChanges words how target differs from base, and reports whether it
+// differs at all; with no difference the words are the three zero counts. A
+// nil base is a file with no variables.
+func describeChanges(base, target *fileSnapshot) (string, bool) {
+	if base == nil {
+		base = snapshot(nil)
+	}
+	a, c, d := diff(base.values, target.values)
+	moved := reordered(base, target)
+	switch {
+	case a == 0 && c == 0 && d == 0 && moved:
+		return "reordered", true
+	case moved:
+		return formatCounts(a, c, d) + ", reordered", true
+	}
+	return formatCounts(a, c, d), a != 0 || c != 0 || d != 0
+}
+
+// reordered reports whether the keys base and target share appear in a
+// different order: adding or deleting a key moves no other key.
+func reordered(base, target *fileSnapshot) bool {
+	return !slices.Equal(sharedKeys(base.order, target.values), sharedKeys(target.order, base.values))
+}
+
+// sharedKeys returns the keys of order that other also holds, in order.
+func sharedKeys(order []string, other map[string]string) []string {
+	var shared []string
+	for _, k := range order {
+		if _, ok := other[k]; ok {
+			shared = append(shared, k)
+		}
+	}
+	return shared
 }
 
 // Format returns the stdout-ready summary block (with trailing newline), or ""
