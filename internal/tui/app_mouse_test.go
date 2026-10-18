@@ -297,20 +297,30 @@ func TestMouseClickVarList_UnderALongFileName(t *testing.T) {
 func TestMouseClickVarList_UnderALongGroupHeader(t *testing.T) {
 	prefix := strings.Repeat("LONGPREFIX", 8)
 	f := makeTestFile(".env", prefix+"_HOST", prefix+"_PORT")
-	app := press(onVars(resize(newTestApp([]*model.EnvFile{f}), 80, 24)), "g")
-
+	app := press(onVars(resize(newTestApp([]*model.EnvFile{f}), 80, 24)), "g", "j") // the second var
 	rows := strings.Split(stripAnsi(app.View().Content), "\n")
-	assert.Contains(t, rows[panelContentOffsetY], "(2)", "the header row ends in the count")
-	assert.Contains(t, rows[panelContentOffsetY+1], "val_", "the first var follows the header")
+	require.Contains(t, rows[panelContentOffsetY], "(2)", "the header row ends in the count")
+	firstVar := panelContentOffsetY + 1
+	require.Contains(t, rows[firstVar], "val_", "the first var follows the header")
+
+	updated, _ := app.Update(tea.MouseClickMsg{X: 40, Y: firstVar, Button: tea.MouseLeft})
+
+	clicked := updated.(App)
+	assert.Equal(t, prefix+"_HOST", clicked.varList.SelectedVar().Key)
 }
 
-// TestMouseClickCompareMode_UnderALongFileName compares with a file whose name
-// is wider than its panel: the name gives way, so both panels draw each key on
-// one row and a click lands on the entry drawn on the clicked row.
+// TestMouseClickCompareMode_UnderALongFileName compares with a modified file
+// whose name is wider than its panel: the name gives way to the modified mark,
+// so both panels draw each key on one row and a click lands on the entry drawn
+// on the clicked row.
 func TestMouseClickCompareMode_UnderALongFileName(t *testing.T) {
 	keys := []string{"ALPHA", "BRAVO", "CHARLIE"}
-	app := enterCompareMode(t, makeTestFile(".env", keys...), makeTestFile(longFileName, keys...))
+	long := makeTestFile(longFileName, keys...)
+	long.Modified = true
+	app := enterCompareMode(t, makeTestFile(".env", keys...), long)
 	view := app.View().Content
+	require.Contains(t, strings.Split(stripAnsi(view), "\n")[panelContentOffsetY-1], ".."+modifiedFileGlyph+" │",
+		"the cut name keeps its mark, and the title its padding")
 	row := rowDrawing(t, view, "BRAVO")
 	require.Equal(t, 2, strings.Count(strings.Split(stripAnsi(view), "\n")[row], "  BRAVO "), "both panels draw BRAVO on one row")
 

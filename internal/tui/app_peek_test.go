@@ -521,10 +521,10 @@ func TestMoreDeletedVarsThanRowsKeepTheCursorInView(t *testing.T) {
 	}
 }
 
-// TestDeletingTheLastVarKeepsItsRowUntilSave deletes a file's only var: the
+// TestDeletingTheLastVarListsItUnderTheNote deletes a file's only var: the
 // panel says it has no variables and still lists the deleted one below, as it
 // does under the vars that are left.
-func TestDeletingTheLastVarKeepsItsRowUntilSave(t *testing.T) {
+func TestDeletingTheLastVarListsItUnderTheNote(t *testing.T) {
 	app := press(onVars(resize(newTestApp([]*model.EnvFile{makeTestFile(".env", "ONLY")}), 80, 24)), "d", "y")
 	require.Equal(t, ModeNormal, app.mode)
 
