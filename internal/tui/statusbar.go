@@ -120,13 +120,13 @@ func (m *StatusBarModel) messageStyle(theme Theme) lipgloss.Style {
 func formatDiffStats(s DiffStats, theme Theme) string {
 	var parts []string
 	if s.Changed > 0 {
-		parts = append(parts, theme.DiffChanged.Render(fmt.Sprintf("%d≠", s.Changed)))
+		parts = append(parts, theme.DiffChanged.Render(fmt.Sprintf("%d%s", s.Changed, diffChangedGlyph)))
 	}
 	if s.Added > 0 {
-		parts = append(parts, theme.DiffAdded.Render(fmt.Sprintf("%d+", s.Added)))
+		parts = append(parts, theme.DiffAdded.Render(fmt.Sprintf("%d%s", s.Added, diffAddedGlyph)))
 	}
 	if s.Removed > 0 {
-		parts = append(parts, theme.DiffRemoved.Render(fmt.Sprintf("%d-", s.Removed)))
+		parts = append(parts, theme.DiffRemoved.Render(fmt.Sprintf("%d%s", s.Removed, diffRemovedGlyph)))
 	}
 	if len(parts) == 0 {
 		return theme.DiffEqual.Render("all equal")
