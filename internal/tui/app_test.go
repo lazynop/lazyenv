@@ -283,6 +283,14 @@ func TestConfigErrorScreenCutsWhatDoesNotFit(t *testing.T) {
 	assert.Contains(t, view, "…", "the cut errors end in an ellipsis")
 	assert.Contains(t, view, "see lazyenv --check-config", "the hint points to the full list")
 	assert.NotContains(t, view, "color5", "the last errors are cut")
+	var rows []string
+	for _, row := range strings.Split(view, "\n") {
+		rows = append(rows, strings.Trim(row, " │╭╮╰╯─"))
+	}
+	title := slices.Index(rows, "Configuration Error")
+	hint := slices.IndexFunc(rows, func(row string) bool { return strings.HasPrefix(row, "Press any key") })
+	require.Less(t, title, hint)
+	assert.NotContains(t, rows[title:hint], "", "the blank rows go before any error is cut")
 }
 
 func TestConfigErrorScreenAlsoShowsNotices(t *testing.T) {
