@@ -121,8 +121,7 @@ func (m *ThemePreviewModel) moveDown() {
 
 func (m ThemePreviewModel) handleMouseClick(msg tea.MouseClickMsg) ThemePreviewModel {
 	if msg.Button == tea.MouseLeft {
-		listWidth := max(m.width/3, config.FileListMinWidth)
-		if msg.X < listWidth {
+		if msg.X < m.listWidth() {
 			index := visibleIndex(msg.Y-panelContentOffsetY, m.scrollOffset(), m.listRows(), len(m.themes))
 			if index >= 0 {
 				m.cursor = index
@@ -133,19 +132,21 @@ func (m ThemePreviewModel) handleMouseClick(msg tea.MouseClickMsg) ThemePreviewM
 }
 
 func (m ThemePreviewModel) handleMouseWheel(msg tea.MouseWheelMsg) ThemePreviewModel {
-	listWidth := max(m.width/3, config.FileListMinWidth)
-	if msg.X < listWidth {
+	if msg.X < m.listWidth() {
 		wheelScroll(m.scrollLines, msg.Button == tea.MouseWheelUp, m.moveUp, m.moveDown)
 	}
 	return m
 }
 
+// scrollOffset returns the first theme the list shows: the list scrolls only
+// as far as the cursor needs.
 func (m ThemePreviewModel) scrollOffset() int {
-	contentHeight := m.listRows()
-	if m.cursor >= contentHeight {
-		return m.cursor - contentHeight + 1
-	}
-	return 0
+	return scrollOffset(m.cursor, 0, m.listRows(), len(m.themes))
+}
+
+// listWidth returns the width of the theme list panel, border included.
+func (m ThemePreviewModel) listWidth() int {
+	return max(m.width/3, config.FileListMinWidth)
 }
 
 // panelHeight is the height of both panels: the rows above the status bar.
@@ -177,7 +178,7 @@ func (m ThemePreviewModel) View() tea.View {
 		return m.newView(tooSmallView(m.width, m.height, title, muted), rc)
 	}
 
-	listWidth := max(m.width/3, config.FileListMinWidth)
+	listWidth := m.listWidth()
 	// A Lip Gloss Width includes the border, so the two panels split the
 	// terminal width between them.
 	showcaseWidth := m.width - listWidth
