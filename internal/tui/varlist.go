@@ -612,8 +612,10 @@ func (m *VarListModel) calcColumnWidths() (int, int) {
 		longestKey = max(longestKey, len(m.File.Vars[item.VarIdx].Key))
 	}
 	// The deleted vars drawn below share the key column.
-	for _, v := range m.File.DeletedVars {
-		longestKey = max(longestKey, len(v.Key))
+	if m.File != nil {
+		for _, v := range m.File.DeletedVars {
+			longestKey = max(longestKey, len(v.Key))
+		}
 	}
 	return columnLimits{
 		maxKey:   m.layout.VarListMaxKeyWidth,
@@ -624,7 +626,10 @@ func (m *VarListModel) calcColumnWidths() (int, int) {
 
 // note is the row drawn in place of the items when no item is shown.
 func (m *VarListModel) note() string {
-	if m.SearchQuery != "" {
+	switch {
+	case m.File == nil:
+		return "  Select a file"
+	case m.SearchQuery != "":
 		return fmt.Sprintf("  No matches for %q", m.SearchQuery)
 	}
 	return "  No variables"
@@ -681,12 +686,6 @@ func (m *VarListModel) viewTitle(theme Theme) string {
 // View renders the variable list panel.
 func (m *VarListModel) View(theme Theme) string {
 	title := m.viewTitle(theme)
-
-	if m.File == nil {
-		content := theme.MutedItem.Render("  Select a file")
-		return m.renderPanel(title, content, theme)
-	}
-
 	keyWidth, maxValWidth := m.calcColumnWidths()
 
 	lines := m.renderRows(keyWidth, maxValWidth, theme)
