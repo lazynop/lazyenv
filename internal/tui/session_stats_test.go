@@ -349,6 +349,22 @@ func TestStats_RenameBackToOrigin_WithEdits(t *testing.T) {
 	assert.Equal(t, []string{"/p/a — 0 added, 1 changed, 0 deleted"}, s.Summary())
 }
 
+func TestStats_RenameBackToOrigin_AfterReorder(t *testing.T) {
+	s := NewSessionStats()
+	s.RecordInitialLoad("/p/a", []model.EnvVar{
+		{Key: "FOO", Value: "1"},
+		{Key: "BAR", Value: "2"},
+	})
+	s.RecordRename("/p/a", "/p/b")
+	s.RecordSave("/p/b", []model.EnvVar{
+		{Key: "BAR", Value: "2"},
+		{Key: "FOO", Value: "1"},
+	})
+	s.RecordRename("/p/b", "/p/a")
+
+	assert.Equal(t, []string{"/p/a — reordered"}, s.Summary())
+}
+
 func TestStats_RenameThenDelete_ReportsOriginDeleted(t *testing.T) {
 	s := NewSessionStats()
 	s.RecordInitialLoad("/p/a", []model.EnvVar{{Key: "FOO", Value: "1"}})
