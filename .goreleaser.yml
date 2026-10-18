@@ -83,25 +83,27 @@ release:
     owner: lazynop
     name: lazyenv
 
-brews:
+homebrew_casks:
   - name: lazyenv
     repository:
       owner: lazynop
       name: homebrew-tap
       branch: main
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    directory: Formula
     homepage: https://lazynop.dev/lazyenv/
     description: "TUI for managing .env files"
-    license: "MIT"
     skip_upload: auto
     commit_author:
       name: goreleaserbot
       email: bot@goreleaser.com
-    install: |
-      bin.install "lazyenv"
-    test: |
-      system bin/"lazyenv", "--version"
+    # The binary is not signed or notarized: without this, macOS Gatekeeper
+    # quarantines it and refuses to run it.
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/lazyenv"]
+          end
 
 aurs:
   - name: lazyenv-bin
