@@ -247,20 +247,33 @@ func requireHelpStatesReached(t *testing.T) {
 	}
 }
 
+// reachedHelpStates holds the states openHelpState has reached once, checking
+// every key on the way: later opens press the same keys unchecked, since
+// checking one renders the screen twice.
+var reachedHelpStates = map[*helpState]bool{}
+
 // openHelpState loads helpKeysFixture from disk into an app the way the
 // program does, then presses state's keys and checks the state is reached:
-// each key acts without a warning, and the app ends in state's mode and meets
-// its precondition. A flash a key sets is cleared before the next key, as its
-// timeout would: it is told from a persistent prompt by the command it
-// returns, the clear's tick, where every persistent prompt returns none.
+// each key acts without a warning (checked on the state's first open), and
+// the app ends in state's mode and meets its precondition. A flash a key sets
+// is cleared before the next key, as its timeout would: it is told from a
+// persistent prompt by the command it returns, the clear's tick, where every
+// persistent prompt returns none.
 func openHelpState(t *testing.T, state *helpState) App {
 	t.Helper()
 	app := loadFixtureApp(t, config.DefaultConfig(), helpKeysFixture, 120, 24)
 	for _, k := range state.keys {
 		gen := app.statusBar.msgGen
-		next, cmd, acted := helpKeyActs(app, keyMsg(k))
-		require.True(t, acted, "pressing %s on the way to the %s does nothing", k, state.name)
-		app = next
+		var cmd tea.Cmd
+		if reachedHelpStates[state] {
+			var updated tea.Model
+			updated, cmd = app.Update(keyMsg(k))
+			app = updated.(App)
+		} else {
+			var acted bool
+			app, cmd, acted = helpKeyActs(app, keyMsg(k))
+			require.True(t, acted, "pressing %s on the way to the %s does nothing", k, state.name)
+		}
 		if cmd != nil && app.statusBar.msgGen != gen {
 			updated, _ := app.Update(ClearMessageMsg{gen: app.statusBar.msgGen})
 			app = updated.(App)
@@ -268,6 +281,7 @@ func openHelpState(t *testing.T, state *helpState) App {
 	}
 	require.Equal(t, state.mode, app.mode, "pressing %v does not reach the %s", state.keys, state.name)
 	require.True(t, state.ready == nil || state.ready(app), "pressing %v does not reach the %s", state.keys, state.name)
+	reachedHelpStates[state] = true
 	return app
 }
 
