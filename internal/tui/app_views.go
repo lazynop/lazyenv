@@ -12,6 +12,10 @@ import (
 const (
 	configErrorHint    = "Press any key to exit"
 	configErrorCutHint = "Press any key to exit · see lazyenv --check-config"
+
+	// configPathMaxRows caps the rows the config file's path takes on the
+	// error screen, so at least one error fits on the smallest terminal.
+	configPathMaxRows = 2
 )
 
 func (a App) viewConfigError() string {
@@ -27,6 +31,14 @@ func (a App) viewConfigError() string {
 	var path []string
 	if a.configPath != "" {
 		path = strings.Split(ansi.Wrap(a.configPath, room, ""), "\n")
+	}
+	if len(path) > configPathMaxRows {
+		// Keep the end, which names the file. The ellipsis takes one cell, and
+		// one more is left for a wide character that a row boundary would
+		// otherwise push onto an extra row.
+		keep := configPathMaxRows*room - 2
+		tail := ansi.TruncateLeft(a.configPath, ansi.StringWidth(a.configPath)-keep, "…")
+		path = strings.Split(ansi.Hardwrap(tail, room, false), "\n")
 	}
 	hint := configErrorHint
 

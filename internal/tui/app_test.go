@@ -347,6 +347,43 @@ func TestConfigErrorScreenCutsAnErrorTallerThanTheTerminal(t *testing.T) {
 	assert.True(t, strings.HasPrefix(rows[slices.Index(rows, ".lazyenvrc")+1], "config error: toml:"), "the first error starts the list")
 }
 
+func TestConfigErrorScreenCutsAPathTooLong(t *testing.T) {
+	cfg := config.DefaultConfig()
+	cfg.Dir = t.TempDir()
+	path := "/home/user/" + strings.Repeat("a-deeply-nested-directory/", 12) + "lazyenv/config.toml"
+	app := NewApp(cfg, StartupMessages{ConfigPath: path, ConfigErrors: []string{`invalid sort value: "random"`}})
+
+	updated, _ := app.Update(tea.WindowSizeMsg{Width: MinTerminalWidth, Height: MinTerminalHeight})
+	view := updated.(App).View().Content
+
+	assert.LessOrEqual(t, lipgloss.Height(view), MinTerminalHeight)
+	rows := configErrorRows(view)
+	title := slices.Index(rows, "Configuration Error")
+	require.NotEqual(t, -1, title)
+	assert.True(t, strings.HasPrefix(rows[title+1], "…"), "the path loses its start: %q", rows[title+1])
+	assert.True(t, strings.HasSuffix(rows[title+2], "lazyenv/config.toml"), "the path keeps its end: %q", rows[title+2])
+	assert.Equal(t, "", rows[title+3], "the path takes two rows")
+	assert.Contains(t, rows, `invalid sort value: "random"`, "the error still shows")
+}
+
+func TestConfigErrorScreenCutsAWidePathToItsRows(t *testing.T) {
+	cfg := config.DefaultConfig()
+	cfg.Dir = t.TempDir()
+	path := "/home/user/" + strings.Repeat("設定ファイル", 20) + "/config.toml"
+	for pad := range 2 { // the wide characters land on the row boundary either way
+		app := NewApp(cfg, StartupMessages{ConfigPath: strings.Repeat("x", pad) + path, ConfigErrors: []string{`invalid sort value: "random"`}})
+
+		updated, _ := app.Update(tea.WindowSizeMsg{Width: MinTerminalWidth, Height: MinTerminalHeight})
+		rows := configErrorRows(updated.(App).View().Content)
+
+		title := slices.Index(rows, "Configuration Error")
+		require.NotEqual(t, -1, title)
+		assert.True(t, strings.HasPrefix(rows[title+1], "…"), "pad %d: the path loses its start: %q", pad, rows[title+1])
+		assert.True(t, strings.HasSuffix(rows[title+2], "/config.toml"), "pad %d: the path ends on its second row: %q", pad, rows[title+2])
+		assert.Equal(t, "", rows[title+3], "pad %d: the path takes two rows", pad)
+	}
+}
+
 func TestConfigErrorScreenAlsoShowsNotices(t *testing.T) {
 	cfg := config.DefaultConfig()
 	cfg.Dir = t.TempDir()
