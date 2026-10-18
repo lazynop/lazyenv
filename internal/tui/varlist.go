@@ -253,33 +253,49 @@ func (m *VarListModel) SetCursor(index int) {
 
 // IndexAt returns the index in displayItems of the item drawn on screen row y,
 // the panel being drawn from the top of the screen, or -1 for a row that draws
-// no item. The peek line maps to the item at the cursor, which it belongs to.
+// no item: a deleted var, which no cursor reaches, draws none. The peek line
+// maps to the item at the cursor, which it belongs to.
 func (m *VarListModel) IndexAt(y int) int {
 	rows := m.drawnRows()
 	row := y - panelContentOffsetY
-	if row < 0 || row >= len(rows) {
+	if row < 0 || row >= len(rows) || rows[row].kind == deletedRow {
 		return -1
 	}
-	return rows[row].item
+	return rows[row].index
 }
 
-// drawnRow is a row the list draws: the index in displayItems of the item it
-// shows, and whether it is the peek line under that item.
+// drawnRowKind is what a row of the var list draws.
+type drawnRowKind int
+
+const (
+	itemRow    drawnRowKind = iota // a display item: a var or a group header
+	peekRow                        // the peek line under the item at the cursor
+	deletedRow                     // a deleted var, below the last item
+)
+
+// drawnRow is a row the list draws: its kind and the index of what it shows,
+// in displayItems for an item or a peek line (the item it belongs to), in
+// File.DeletedVars for a deleted var.
 type drawnRow struct {
-	item int
-	peek bool
+	kind  drawnRowKind
+	index int
 }
 
 // drawnRows returns the rows the list draws from Offset down: the items that
-// fit (visibleLines), and the peek line under the cursor's when one is drawn.
-// renderRows draws them and IndexAt maps clicks through them, so both follow
-// one layout.
+// fit (visibleLines), the peek line under the cursor's when one is drawn, then
+// the deleted vars the rows left hold. renderRows draws them and IndexAt maps
+// clicks through them, so both follow one layout.
 func (m *VarListModel) drawnRows() []drawnRow {
 	var rows []drawnRow
 	for i := m.Offset; i < min(m.Offset+m.visibleLines(), len(m.displayItems)); i++ {
-		rows = append(rows, drawnRow{item: i})
+		rows = append(rows, drawnRow{itemRow, i})
 		if i == m.Cursor && m.drawsPeekLine() {
-			rows = append(rows, drawnRow{item: i, peek: true})
+			rows = append(rows, drawnRow{peekRow, i})
+		}
+	}
+	if m.File != nil {
+		for i := range min(len(m.File.DeletedVars), m.contentRows()-len(rows)) {
+			rows = append(rows, drawnRow{deletedRow, i})
 		}
 	}
 	return rows
@@ -525,21 +541,12 @@ func (m *VarListModel) renderPeekLine(v *model.EnvVar, keyWidth, maxValWidth int
 	return theme.MutedItem.Render(fmt.Sprintf("  %s  %s", padRight("", keyWidth), truncate(text, maxValWidth)))
 }
 
-// renderDeletedVars renders the deleted variables section in the panel rows
-// the currentLines already drawn leave.
-func (m *VarListModel) renderDeletedVars(keyWidth, maxValWidth int, currentLines int, theme Theme) []string {
-	var lines []string
-	for _, dv := range m.File.DeletedVars {
-		if currentLines+len(lines) >= m.contentRows() {
-			break
-		}
-		key := padRight(truncate(dv.Key, keyWidth), keyWidth)
-		value := m.formatValue(&dv, maxValWidth)
-		marker := theme.DeletedMarker.Render("-")
-		line := theme.MutedItem.Render(fmt.Sprintf("  %s  %s", key, value)) + marker + " "
-		lines = append(lines, line)
-	}
-	return lines
+// renderDeletedLine renders a deleted variable, drawn below the list until
+// the file is saved.
+func (m *VarListModel) renderDeletedLine(dv *model.EnvVar, keyWidth, maxValWidth int, theme Theme) string {
+	key := padRight(truncate(dv.Key, keyWidth), keyWidth)
+	value := m.formatValue(dv, maxValWidth)
+	return theme.MutedItem.Render(fmt.Sprintf("  %s  %s", key, value)) + theme.DeletedMarker.Render("-") + " "
 }
 
 // contentRows returns how many rows the panel has inside its chrome.
@@ -588,18 +595,24 @@ func (m *VarListModel) calcColumnWidths() (int, int) {
 	}.split(longestKey, m.Width)
 }
 
-// renderRows renders all visible rows (vars + headers) plus peek lines.
+// renderRows renders the rows drawnRows lays out: items, the peek line and
+// deleted vars.
 func (m *VarListModel) renderRows(keyWidth, maxValWidth int, theme Theme) []string {
 	var lines []string
 	for _, row := range m.drawnRows() {
-		item := m.displayItems[row.item]
-		switch {
-		case item.Kind == displayItemHeader:
-			lines = append(lines, m.renderHeaderLine(row.item, m.groups[item.GroupIdx], theme))
-		case row.peek:
-			lines = append(lines, m.renderPeekLine(&m.File.Vars[item.VarIdx], keyWidth, maxValWidth, theme))
-		default: // displayItemVar
-			lines = append(lines, m.renderVarLine(row.item, &m.File.Vars[item.VarIdx], keyWidth, maxValWidth, theme))
+		switch row.kind {
+		case itemRow:
+			item := m.displayItems[row.index]
+			if item.Kind == displayItemHeader {
+				lines = append(lines, m.renderHeaderLine(row.index, m.groups[item.GroupIdx], theme))
+			} else {
+				lines = append(lines, m.renderVarLine(row.index, &m.File.Vars[item.VarIdx], keyWidth, maxValWidth, theme))
+			}
+		case peekRow:
+			v := &m.File.Vars[m.displayItems[row.index].VarIdx]
+			lines = append(lines, m.renderPeekLine(v, keyWidth, maxValWidth, theme))
+		case deletedRow:
+			lines = append(lines, m.renderDeletedLine(&m.File.DeletedVars[row.index], keyWidth, maxValWidth, theme))
 		}
 	}
 	return lines
@@ -644,7 +657,6 @@ func (m *VarListModel) View(theme Theme) string {
 	keyWidth, maxValWidth := m.calcColumnWidths()
 
 	lines := m.renderRows(keyWidth, maxValWidth, theme)
-	lines = append(lines, m.renderDeletedVars(keyWidth, maxValWidth, len(lines), theme)...)
 
 	return m.renderPanel(title, strings.Join(lines, "\n"), theme)
 }

@@ -272,6 +272,21 @@ func TestMouseClickVarList_SelectsTheVarDrawnAtTheRow(t *testing.T) {
 	}
 }
 
+// TestMouseClickVarList_OnADeletedVarKeepsTheCursor clicks the row of a
+// deleted var, drawn below the last var: no cursor reaches it, so the cursor
+// stays put.
+func TestMouseClickVarList_OnADeletedVarKeepsTheCursor(t *testing.T) {
+	f := makeTestFile(".env", "A", "B", "GONE")
+	f.DeleteVar(2)
+	app := press(resize(newTestApp([]*model.EnvFile{f}), 80, 24), "right", "j") // B
+	row := rowDrawing(t, app.View().Content, "GONE")
+
+	updated, _ := app.Update(tea.MouseClickMsg{X: 40, Y: row, Button: tea.MouseLeft})
+
+	clicked := updated.(App)
+	assert.Equal(t, "B", clicked.varList.SelectedVar().Key)
+}
+
 // TestMouseClickVarList_OutsideTheDrawnRowsKeepsTheCursor scrolls a var list
 // four rows tall to its middle, then clicks its title row and its bottom
 // border: they draw no var, though vars sit just off screen on either side,
