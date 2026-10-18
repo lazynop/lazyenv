@@ -56,6 +56,7 @@ func TestMainViewCursorStaysOnTheActiveFile(t *testing.T) {
 		for _, second := range inputs {
 			for _, followUps := range cursorFollowUps {
 				t.Run(fmt.Sprintf("%s then %s then %v", first.name, second.name, followUps), func(t *testing.T) {
+					t.Parallel() // each case owns its temp dir and App
 					app := newApp(t)
 					sent := []cursorInput{first, second}
 					for _, k := range followUps {
