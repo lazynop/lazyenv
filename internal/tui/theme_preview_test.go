@@ -14,7 +14,7 @@ import (
 )
 
 func TestNewThemePreview(t *testing.T) {
-	m := NewThemePreview(false, config.DefaultMouseScrollLines)
+	m := NewThemePreview(config.DefaultConfig())
 
 	assert.NotEmpty(t, m.themes, "themes list should be populated")
 	assert.NotEmpty(t, m.searchPaths, "searchPaths should be populated")
@@ -27,7 +27,7 @@ func TestNewThemePreview(t *testing.T) {
 }
 
 func TestThemePreviewNavigateDown(t *testing.T) {
-	m := NewThemePreview(false, config.DefaultMouseScrollLines)
+	m := NewThemePreview(config.DefaultConfig())
 	require.Greater(t, len(m.themes), 1, "need at least 2 themes to test navigation")
 
 	// "j" key moves cursor down
@@ -42,7 +42,7 @@ func TestThemePreviewNavigateDown(t *testing.T) {
 }
 
 func TestThemePreviewNavigateUp(t *testing.T) {
-	m := NewThemePreview(false, config.DefaultMouseScrollLines)
+	m := NewThemePreview(config.DefaultConfig())
 	require.Greater(t, len(m.themes), 1, "need at least 2 themes to test navigation")
 
 	// Move down first
@@ -64,7 +64,7 @@ func TestThemePreviewNavigateUp(t *testing.T) {
 }
 
 func TestThemePreviewCursorDoesNotGoBelowZero(t *testing.T) {
-	m := NewThemePreview(false, config.DefaultMouseScrollLines)
+	m := NewThemePreview(config.DefaultConfig())
 	assert.Equal(t, 0, m.cursor)
 
 	// Pressing up at top should not go below 0
@@ -78,7 +78,7 @@ func TestThemePreviewCursorDoesNotGoBelowZero(t *testing.T) {
 }
 
 func TestThemePreviewCursorDoesNotExceedMax(t *testing.T) {
-	m := NewThemePreview(false, config.DefaultMouseScrollLines)
+	m := NewThemePreview(config.DefaultConfig())
 	maxIdx := len(m.themes) - 1
 
 	// Move to the end
@@ -90,7 +90,7 @@ func TestThemePreviewCursorDoesNotExceedMax(t *testing.T) {
 }
 
 func TestThemePreviewSelectWithEnter(t *testing.T) {
-	m := NewThemePreview(false, config.DefaultMouseScrollLines)
+	m := NewThemePreview(config.DefaultConfig())
 	expectedTheme := m.themes[0]
 
 	updated, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
@@ -104,7 +104,7 @@ func TestThemePreviewSelectWithEnter(t *testing.T) {
 }
 
 func TestThemePreviewSelectWithEnterAfterNavigation(t *testing.T) {
-	m := NewThemePreview(false, config.DefaultMouseScrollLines)
+	m := NewThemePreview(config.DefaultConfig())
 	require.Greater(t, len(m.themes), 1)
 
 	// Navigate to index 1
@@ -122,7 +122,7 @@ func TestThemePreviewSelectWithEnterAfterNavigation(t *testing.T) {
 }
 
 func TestThemePreviewQuitWithQ(t *testing.T) {
-	m := NewThemePreview(false, config.DefaultMouseScrollLines)
+	m := NewThemePreview(config.DefaultConfig())
 
 	updated, cmd := m.Update(keyMsg("q"))
 	m = updated.(ThemePreviewModel)
@@ -134,7 +134,7 @@ func TestThemePreviewQuitWithQ(t *testing.T) {
 }
 
 func TestThemePreviewQuitWithEsc(t *testing.T) {
-	m := NewThemePreview(false, config.DefaultMouseScrollLines)
+	m := NewThemePreview(config.DefaultConfig())
 
 	updated, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
 	m = updated.(ThemePreviewModel)
@@ -146,7 +146,7 @@ func TestThemePreviewQuitWithEsc(t *testing.T) {
 }
 
 func TestThemePreviewWindowSizeMsg(t *testing.T) {
-	m := NewThemePreview(false, config.DefaultMouseScrollLines)
+	m := NewThemePreview(config.DefaultConfig())
 	assert.Equal(t, 0, m.width)
 	assert.Equal(t, 0, m.height)
 
@@ -159,7 +159,7 @@ func TestThemePreviewWindowSizeMsg(t *testing.T) {
 }
 
 func TestThemePreviewViewEmptyWhenWidthZero(t *testing.T) {
-	m := NewThemePreview(false, config.DefaultMouseScrollLines)
+	m := NewThemePreview(config.DefaultConfig())
 	// No WindowSizeMsg sent — width stays 0
 
 	view := m.View()
@@ -213,7 +213,7 @@ func TestResolveThemeColorsFromRealTheme(t *testing.T) {
 }
 
 func TestThemePreviewSelectedMethod(t *testing.T) {
-	m := NewThemePreview(false, config.DefaultMouseScrollLines)
+	m := NewThemePreview(config.DefaultConfig())
 	assert.Equal(t, "", m.Selected())
 
 	// After Enter, Selected() should return the theme name
@@ -223,7 +223,7 @@ func TestThemePreviewSelectedMethod(t *testing.T) {
 }
 
 func TestThemePreviewMouseClick(t *testing.T) {
-	m := NewThemePreview(false, config.DefaultMouseScrollLines)
+	m := NewThemePreview(config.DefaultConfig())
 	require.Greater(t, len(m.themes), 5, "need at least 5 themes")
 
 	// Send WindowSizeMsg first so width/height are set
@@ -243,7 +243,7 @@ func TestThemePreviewMouseClick(t *testing.T) {
 // the status bar: they draw no theme, though themes sit just off screen on
 // either side, so the cursor stays put.
 func TestThemePreviewMouseClickOutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
-	updated, _ := NewThemePreview(false, config.DefaultMouseScrollLines).Update(tea.WindowSizeMsg{Width: 80, Height: MinTerminalHeight})
+	updated, _ := NewThemePreview(config.DefaultConfig()).Update(tea.WindowSizeMsg{Width: 80, Height: MinTerminalHeight})
 	m := updated.(ThemePreviewModel)
 	require.Greater(t, len(m.themes), 12, "need themes below the scrolled list")
 	for range 10 {
@@ -262,7 +262,9 @@ func TestThemePreviewMouseClickOutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 // moves the cursor by mouse-scroll-lines themes, and 0 turns the wheel off.
 func TestThemePreviewMouseWheel(t *testing.T) {
 	for _, lines := range []int{0, 1, 3} {
-		updated, _ := NewThemePreview(false, lines).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+		cfg := config.DefaultConfig()
+		cfg.Layout.MouseScrollLines = lines
+		updated, _ := NewThemePreview(cfg).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 		m := updated.(ThemePreviewModel)
 		require.Greater(t, len(m.themes), 3, "need at least 4 themes")
 
@@ -276,7 +278,7 @@ func TestThemePreviewMouseWheel(t *testing.T) {
 }
 
 func TestThemePreviewScrollOffset(t *testing.T) {
-	m := NewThemePreview(false, config.DefaultMouseScrollLines)
+	m := NewThemePreview(config.DefaultConfig())
 
 	// Set height so contentHeight = max(24-4, 1) = 20
 	updated, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
@@ -307,7 +309,7 @@ func TestThemePreviewFitsSmallTerminals(t *testing.T) {
 	// over on the right.
 	for _, width := range []int{MinTerminalWidth, 80, 120} {
 		for height := MinTerminalHeight; height <= 40; height++ {
-			m := NewThemePreview(true, config.DefaultMouseScrollLines)
+			m := NewThemePreview(config.DefaultConfig())
 			m.searchPaths = []string{".lazyenvrc", "/home/user/.config/lazyenv/config.toml", "/home/user/.lazyenvrc"}
 			updated, _ := m.Update(tea.WindowSizeMsg{Width: width, Height: height})
 			rows := strings.Split(stripAnsi(updated.(ThemePreviewModel).View().Content), "\n")
@@ -323,12 +325,12 @@ func TestThemePreviewFitsSmallTerminals(t *testing.T) {
 }
 
 func TestThemePreviewInitReturnsNil(t *testing.T) {
-	m := NewThemePreview(false, config.DefaultMouseScrollLines)
+	m := NewThemePreview(config.DefaultConfig())
 	assert.Nil(t, m.Init(), "theme preview has no startup command")
 }
 
 func TestThemePreviewCurrentColors(t *testing.T) {
-	m := NewThemePreview(false, config.DefaultMouseScrollLines)
+	m := NewThemePreview(config.DefaultConfig())
 	assert.NotEqual(t, themes.Colors{}, m.currentColors(),
 		"current theme must resolve to a non-zero palette")
 }
@@ -337,7 +339,7 @@ func TestThemePreviewCurrentColors(t *testing.T) {
 // render* helper (list, showcase, config box, status bar), which the width==0
 // early-return test never reaches.
 func TestThemePreviewViewRendersAllPanels(t *testing.T) {
-	m := NewThemePreview(false, config.DefaultMouseScrollLines)
+	m := NewThemePreview(config.DefaultConfig())
 	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	m = updated.(ThemePreviewModel)
 
@@ -353,7 +355,9 @@ func TestThemePreviewViewRendersAllPanels(t *testing.T) {
 }
 
 func TestThemePreviewViewRendersWithMouseDisabled(t *testing.T) {
-	m := NewThemePreview(true, config.DefaultMouseScrollLines) // noMouse path
+	cfg := config.DefaultConfig()
+	cfg.NoMouse = true
+	m := NewThemePreview(cfg)
 	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
 	m = updated.(ThemePreviewModel)
 
@@ -364,7 +368,7 @@ func TestThemePreviewViewRendersWithMouseDisabled(t *testing.T) {
 // draws the notice that fits the terminal, ignores navigation, and quits on
 // Ctrl+C.
 func TestThemePreviewTooSmallTerminal(t *testing.T) {
-	updated, _ := NewThemePreview(false, config.DefaultMouseScrollLines).Update(tea.WindowSizeMsg{Width: 40, Height: 8})
+	updated, _ := NewThemePreview(config.DefaultConfig()).Update(tea.WindowSizeMsg{Width: 40, Height: 8})
 	m := updated.(ThemePreviewModel)
 
 	view := m.View().Content

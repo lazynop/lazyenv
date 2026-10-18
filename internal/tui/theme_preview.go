@@ -58,13 +58,13 @@ type ThemePreviewModel struct {
 }
 
 // NewThemePreview returns a new theme preview model, with the mouse settings
-// from the config.
-func NewThemePreview(noMouse bool, mouseScrollLines int) ThemePreviewModel {
+// from cfg.
+func NewThemePreview(cfg config.Config) ThemePreviewModel {
 	return ThemePreviewModel{
 		themes:      config.ThemeNames(),
 		searchPaths: config.ConfigSearchPaths(".", ""),
-		noMouse:     noMouse,
-		scrollLines: mouseScrollLines,
+		noMouse:     cfg.NoMouse,
+		scrollLines: cfg.Layout.MouseScrollLines,
 	}
 }
 
@@ -343,8 +343,8 @@ func (m ThemePreviewModel) renderStatusBar(rc resolvedColors) string {
 
 // RunThemePreview runs the interactive theme preview and returns the selected theme name.
 // Returns "" if the user quit without selecting.
-func RunThemePreview(noMouse bool, mouseScrollLines int) (string, error) {
-	m := NewThemePreview(noMouse, mouseScrollLines)
+func RunThemePreview(cfg config.Config) (string, error) {
+	m := NewThemePreview(cfg)
 	p := tea.NewProgram(m)
 	result, err := p.Run()
 	if err != nil {
