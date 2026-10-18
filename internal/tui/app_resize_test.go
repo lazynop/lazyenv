@@ -96,14 +96,16 @@ func TestStartupFocusesTheFileList(t *testing.T) {
 	assert.False(t, app.varList.Focused)
 }
 
-// TestMatrixRendersInATinyTerminal opens the matrix in a one-column terminal:
-// it renders without panicking.
+// TestMatrixRendersInATinyTerminal opens the matrix in a one-column terminal,
+// narrower than its padding: it renders without panicking. The App draws the
+// too-small notice there instead, so the matrix is rendered directly.
 func TestMatrixRendersInATinyTerminal(t *testing.T) {
 	updated, _ := newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.prod", "B")}).Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 	app := press(updated.(App), "m")
 	updated, _ = app.Update(tea.WindowSizeMsg{Width: 1, Height: 24})
+	app = updated.(App)
 
-	assert.NotPanics(t, func() { _ = updated.(App).View() })
+	assert.NotPanics(t, func() { _ = app.matrixView.View(app.theme) })
 }
 
 // TestTooSmallTerminalShowsANotice shrinks the terminal below the minimum, in
