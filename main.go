@@ -109,48 +109,54 @@ func applySessionSummaryOverride(cfg *config.Config) {
 	}
 }
 
-func checkConfig() {
+// checkConfig lists the config search paths and validates the file found, and
+// returns the exit status: 1 when the file was rejected.
+func checkConfig(stdout, stderr io.Writer) int {
 	r := config.LoadFull(".", cli.Config)
 	paths := config.ConfigSearchPaths(".", cli.Config)
 
-	fmt.Println("Search paths (highest priority first):")
+	fmt.Fprintln(stdout, "Search paths (highest priority first):")
 	for _, p := range paths {
 		if p == r.Path {
-			fmt.Printf("  ✓ %s\n", p)
+			fmt.Fprintf(stdout, "  ✓ %s\n", p)
 		} else {
-			fmt.Printf("  · %s\n", p)
+			fmt.Fprintf(stdout, "  · %s\n", p)
 		}
 	}
-	fmt.Println()
+	fmt.Fprintln(stdout)
 
 	if r.Path == "" {
-		fmt.Println("No configuration file found (defaults will be used).")
-		return
+		fmt.Fprintln(stdout, "No configuration file found (defaults will be used).")
+		return 0
 	}
 
 	if len(r.Errors) == 0 {
-		fmt.Printf("Config OK: %s\n", r.Path)
-		return
+		fmt.Fprintf(stdout, "Config OK: %s\n", r.Path)
+		return 0
 	}
 
-	fmt.Fprintf(os.Stderr, "Config errors in %s:\n", r.Path)
-	for _, e := range r.Errors {
-		fmt.Fprintf(os.Stderr, "  ✗ %s\n", e)
+	writeConfigErrors(stderr, r.Path, r.Errors)
+	return 1
+}
+
+// writeConfigErrors lists the reasons the config file at path was rejected.
+func writeConfigErrors(w io.Writer, path string, errs []string) {
+	fmt.Fprintf(w, "Config errors in %s:\n", path)
+	for _, e := range errs {
+		fmt.Fprintf(w, "  ✗ %s\n", e)
 	}
-	os.Exit(1)
 }
 
 // showConfig writes cfg to stdout as TOML, after reporting on stderr why the
-// config file was rejected and the notices from the CLI flags, and returns the
-// exit status: 1 when the file was rejected.
-func showConfig(stdout, stderr io.Writer, cfg config.Config, configErrors, notices []string) int {
-	if len(configErrors) > 0 {
-		fmt.Fprintln(stderr, "Config file rejected; showing the defaults with the command-line flags applied:")
-		for _, e := range configErrors {
-			fmt.Fprintf(stderr, "  ✗ %s\n", e)
-		}
+// config file at configPath was rejected and the notices from the CLI flags,
+// and returns the exit status: 1 when the file was rejected.
+func showConfig(stdout, stderr io.Writer, cfg config.Config, configPath string, startup tui.StartupMessages) int {
+	rejected := len(startup.ConfigErrors) > 0
+	if rejected {
+		writeConfigErrors(stderr, configPath, startup.ConfigErrors)
+		fmt.Fprintln(stderr, "Showing the defaults with the command-line flags applied.")
 	}
-	for _, n := range notices {
+	for _, n := range startup.Notices {
 		fmt.Fprintf(stderr, "Notice: %s\n", n)
 	}
 	enc := toml.NewEncoder(stdout)
@@ -159,7 +165,7 @@ func showConfig(stdout, stderr io.Writer, cfg config.Config, configErrors, notic
 		fmt.Fprintf(stderr, "Error encoding config: %v\n", err)
 		return 1
 	}
-	if len(configErrors) > 0 {
+	if rejected {
 		return 1
 	}
 	return 0
@@ -177,14 +183,14 @@ func main() {
 	}
 
 	if cli.CheckConfig {
-		checkConfig()
-		return
+		os.Exit(checkConfig(os.Stdout, os.Stderr))
 	}
 
-	cfg, configErrors := config.Load(".", cli.Config)
+	loaded := config.LoadFull(".", cli.Config)
+	cfg := loaded.Config
 
 	cfg.Dir = cli.Path
-	notices := applyCLIOverrides(&cfg)
+	startup := tui.StartupMessages{ConfigErrors: loaded.Errors, Notices: applyCLIOverrides(&cfg)}
 	config.FinalizeColors(&cfg)
 
 	if cli.ListThemes {
@@ -207,10 +213,10 @@ func main() {
 	}
 
 	if cli.ShowConfig {
-		os.Exit(showConfig(os.Stdout, os.Stderr, cfg, configErrors, notices))
+		os.Exit(showConfig(os.Stdout, os.Stderr, cfg, loaded.Path, startup))
 	}
 
-	app := tui.NewApp(cfg, tui.StartupMessages{ConfigErrors: configErrors, Notices: notices})
+	app := tui.NewApp(cfg, startup)
 
 	p := tea.NewProgram(app)
 	finalModel, err := p.Run()

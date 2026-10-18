@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lazynop/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/tui"
 )
 
 func TestVersionIsDevSentinel(t *testing.T) {
@@ -43,10 +44,14 @@ func TestShowConfigReportsRejectedFile(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	cfg := config.DefaultConfig()
 
-	status := showConfig(&stdout, &stderr, cfg, []string{`invalid sort value: "random"`}, nil)
+	startup := tui.StartupMessages{ConfigErrors: []string{`invalid sort value: "random"`}}
+
+	status := showConfig(&stdout, &stderr, cfg, ".lazyenvrc", startup)
 
 	assert.Equal(t, 1, status)
+	assert.Contains(t, stderr.String(), "Config errors in .lazyenvrc:")
 	assert.Contains(t, stderr.String(), `✗ invalid sort value: "random"`)
+	assert.Contains(t, stderr.String(), "Showing the defaults with the command-line flags applied.")
 	assert.Contains(t, stdout.String(), `sort = 'position'`, "the defaults are still printed")
 }
 
@@ -54,18 +59,26 @@ func TestShowConfigReportsNoticesWithoutFailing(t *testing.T) {
 	var stdout, stderr bytes.Buffer
 	cfg := config.DefaultConfig()
 
-	status := showConfig(&stdout, &stderr, cfg, nil, []string{`unknown theme "nope" (see --list-themes)`})
+	startup := tui.StartupMessages{Notices: []string{`unknown theme "nope" (see --list-themes)`}}
+
+	status := showConfig(&stdout, &stderr, cfg, ".lazyenvrc", startup)
 
 	assert.Equal(t, 0, status, "a notice adjusts the run, it does not reject the file")
 	assert.Contains(t, stderr.String(), `unknown theme "nope" (see --list-themes)`)
-	assert.NotContains(t, stderr.String(), "rejected")
+	assert.NotContains(t, stderr.String(), "Config errors")
+	assert.NotContains(t, stderr.String(), "Showing the defaults")
 }
 
 func TestShowConfigReportsBeforeTheTOML(t *testing.T) {
 	var terminal bytes.Buffer
 	cfg := config.DefaultConfig()
 
-	showConfig(&terminal, &terminal, cfg, []string{`invalid sort value: "random"`}, []string{`unknown theme "nope" (see --list-themes)`})
+	startup := tui.StartupMessages{
+		ConfigErrors: []string{`invalid sort value: "random"`},
+		Notices:      []string{`unknown theme "nope" (see --list-themes)`},
+	}
+
+	showConfig(&terminal, &terminal, cfg, ".lazyenvrc", startup)
 
 	out := terminal.String()
 	tomlStart := strings.Index(out, "sort = ")
