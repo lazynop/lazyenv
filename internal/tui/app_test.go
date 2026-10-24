@@ -385,8 +385,8 @@ func TestConfigErrorScreenAlsoShowsNotices(t *testing.T) {
 }
 
 // TestMinimumTerminalFitsBothPanelMinimums checks that the smallest terminal
-// the panels are drawn in holds the file list and the variables panel at their
-// minimums, so updateLayout keeps both there.
+// the panels are drawn in is wide enough for the file list and the variables
+// panel side by side at their minimums.
 func TestMinimumTerminalFitsBothPanelMinimums(t *testing.T) {
 	assert.GreaterOrEqual(t, MinTerminalWidth, config.FileListMinWidth+config.VarListMinWidth)
 }

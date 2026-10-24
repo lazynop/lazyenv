@@ -529,9 +529,9 @@ func (m *VarListModel) renderVarLine(rowIdx int, v *model.EnvVar, keyWidth, maxV
 
 // renderHeaderLine renders a group header row (▾ PREFIX (N) or ▸ PREFIX (N)).
 //
-// When the cursor is on this row and the panel is focused, the entire line is
-// re-rendered as a single CursorItem block (ANSI-stripped first) to avoid
-// nesting reset codes from inner Render() calls.
+// When the cursor is on this row and the panel is focused, the line is
+// formatted from its plain parts and rendered as one CursorItem block, so no
+// inner Render() reset cuts the cursor highlight.
 func (m *VarListModel) renderHeaderLine(rowIdx int, group model.VarGroup, theme Theme) string {
 	arrow := expandedGroupGlyph
 	if m.collapsed[group.Prefix] {

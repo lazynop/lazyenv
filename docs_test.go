@@ -251,12 +251,18 @@ func TestDocsStateCurrentCounts(t *testing.T) {
 }
 
 // TestDocsStateTheVarListMinimum checks that each place describing
-// file-list-width states the width the TUI leaves the variables panel.
+// file-list-width, --help included, states the width the TUI leaves the
+// variables panel.
 func TestDocsStateTheVarListMinimum(t *testing.T) {
+	flag, _ := reflect.TypeOf(cli).FieldByName("FileListWidth")
+	surfaces := map[string]string{"the --file-list-width help": flag.Tag.Get("help")}
 	for _, path := range []string{"docs/configuration.md", "docs/usage.md", "examples/config/full.toml"} {
-		m := varListMinRe.FindStringSubmatch(readFile(t, path))
-		if assert.NotNil(t, m, "%s should state how wide file-list-width can get", path) {
-			assert.Equal(t, strconv.Itoa(config.VarListMinWidth), m[1], "%s states the wrong width the variables panel keeps", path)
+		surfaces[path] = readFile(t, path)
+	}
+	for _, name := range slices.Sorted(maps.Keys(surfaces)) {
+		m := varListMinRe.FindStringSubmatch(surfaces[name])
+		if assert.NotNil(t, m, "%s should state how wide file-list-width can get", name) {
+			assert.Equal(t, strconv.Itoa(config.VarListMinWidth), m[1], "%s states the wrong width the variables panel keeps", name)
 		}
 	}
 }
