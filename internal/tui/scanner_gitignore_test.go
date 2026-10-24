@@ -59,6 +59,28 @@ func TestCheckGitIgnoreAllIgnored(t *testing.T) {
 	}
 }
 
+// git quotes a path holding a control character or a non-ASCII byte when it
+// prints paths one per line (core.quotePath): such a file covered by
+// .gitignore still counts as covered.
+func TestCheckGitIgnoreUnusualNames(t *testing.T) {
+	dir := setupScanDir(t, map[string]string{
+		".env.café":  "FOO=bar\n",
+		".env.\nx":   "FOO=bar\n",
+		".gitignore": ".env*\n",
+	})
+	initGitRepo(t, dir)
+
+	files, err := ScanDir(dir, false, config.DefaultConfig().Files, config.SecretsConfig{})
+	require.NoError(t, err)
+	require.Len(t, files, 2)
+
+	CheckGitIgnore(files)
+
+	for _, f := range files {
+		assert.False(t, f.GitWarning, "%q should be covered by .env*", f.Name)
+	}
+}
+
 func TestCheckGitIgnoreNotAGitRepo(t *testing.T) {
 	dir := setupScanDir(t, map[string]string{
 		".env": "FOO=bar\n",
