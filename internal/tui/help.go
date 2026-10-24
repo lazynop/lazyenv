@@ -183,7 +183,11 @@ type HelpViewModel struct {
 // mouse wheel scrolls it, so the help names the wheel only then.
 func NewHelpViewModel(keys KeyMap, wheel bool) HelpViewModel {
 	return HelpViewModel{
-		text:   helpText(helpContents(keys, wheel)),
+		text: helpText(helpContents(keys, wheel)),
+		// The footer is a reminder that fits one row at MinTerminalWidth: it
+		// names the line and page scroll keys and the first key of each close
+		// binding, and leaves Home/End and the other close keys (Ctrl+C by
+		// default) to the "This help" section.
 		scroll: strings.Join(slices.Concat(pairColumns(keys.Up, keys.Down), pairColumns(keys.PageUp, keys.PageDown)), " "),
 		close:  strings.Join([]string{shortKeys(keys.Escape), shortKeys(keys.Help), shortKeys(keys.Quit)}, " "),
 	}
