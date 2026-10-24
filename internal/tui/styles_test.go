@@ -12,7 +12,6 @@ func TestBuildThemeDefaults(t *testing.T) {
 	theme := BuildTheme(true, config.ColorConfig{})
 	assert.NotNil(t, theme.ColorPrimary)
 	assert.NotNil(t, theme.ColorFg)
-	assert.NotNil(t, theme.ColorBorder)
 }
 
 func TestBuildThemeWithColorOverrides(t *testing.T) {
@@ -29,7 +28,6 @@ func TestBuildThemeWithColorOverrides(t *testing.T) {
 	theme := BuildTheme(true, colors)
 	assert.NotNil(t, theme.ColorPrimary)
 	assert.NotNil(t, theme.ColorFg)
-	assert.NotNil(t, theme.ColorBorder)
 }
 
 func TestBuildThemeLightMode(t *testing.T) {

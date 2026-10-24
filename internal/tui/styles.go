@@ -54,7 +54,6 @@ type Theme struct {
 	ColorMuted   color.Color
 	ColorFg      color.Color
 	ColorBg      color.Color // nil when no theme bg; used by View.BackgroundColor
-	ColorBorder  color.Color
 }
 
 // BuildTheme returns a theme based on the terminal background and optional color overrides.
@@ -165,13 +164,12 @@ func BuildTheme(isDark bool, colors config.ColorConfig) Theme {
 		ColorMuted:   colorMuted,
 		ColorFg:      colorFg,
 		ColorBg:      colorBg,
-		ColorBorder:  colorBorder,
 	}
 }
 
-// renderPanel draws a main-view panel, the file list or the var list: title
-// and content inside the border, which takes the primary color while the
-// panel is focused.
+// renderPanel draws a bordered panel (the file list, the var list, each side
+// of the compare view): title and content inside the border, which takes the
+// primary color while the panel is focused.
 func renderPanel(width, height int, focused bool, title, content string, theme Theme) string {
 	style := theme.Panel.
 		Width(width).

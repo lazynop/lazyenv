@@ -285,15 +285,9 @@ func (m *DiffViewModel) View(theme Theme) string {
 	leftContent := strings.Join(leftLines, "\n")
 	rightContent := strings.Join(rightLines, "\n")
 
-	panel := lipgloss.NewStyle().
-		Width(halfWidth).
-		Height(m.Height).
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(theme.ColorBorder)
-
 	return lipgloss.JoinHorizontal(lipgloss.Top,
-		panel.Render(fmt.Sprintf("%s\n%s", leftTitle, leftContent)),
-		panel.Render(fmt.Sprintf("%s\n%s", rightTitle, rightContent)))
+		renderPanel(halfWidth, m.Height, false, leftTitle, leftContent, theme),
+		renderPanel(halfWidth, m.Height, false, rightTitle, rightContent, theme))
 }
 
 // titleName is f's name as a panel title room columns wide shows it, followed
