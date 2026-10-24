@@ -10,7 +10,7 @@ import (
 	"github.com/lazynop/lazyenv/internal/util"
 )
 
-// This file holds the text helpers every view draws its values with.
+// This file holds the text helpers every view draws its text with.
 
 // displayText returns value as the panel shows it: masked when masked is
 // set, and flattened to a single row.
@@ -21,10 +21,10 @@ func displayText(value string, masked bool) string {
 	return flattenText(value)
 }
 
-// flattenText returns s drawable on one panel row: line breaks and tabs
-// become width-1 arrows, and every other control character a visible
-// stand-in, so a value can neither break the panel layout nor send the
-// terminal a control sequence (clear the screen, write the clipboard).
+// flattenText returns s drawable on one row: line breaks and tabs become
+// width-1 arrows, and every other control character a visible stand-in, so
+// text read from disk (a value, a file name) can neither break the layout nor
+// send the terminal a control sequence (clear the screen, write the clipboard).
 // strings.Map also replaces invalid UTF-8, which could carry raw C1 bytes, and
 // allocates nothing when s needs no change.
 func flattenText(s string) string { return strings.Map(flattenRune, s) }

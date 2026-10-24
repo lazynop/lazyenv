@@ -838,8 +838,8 @@ var fileInputLabels = map[AppMode]string{
 const minInputWidth = 10
 
 // layoutInputBar returns label as an input bar one terminal row wide draws it,
-// flattened, since it can name a file, and cut when it would leave in fewer
-// than minInputWidth columns, and the width left for in's value.
+// and the width left for in's value. The label is flattened, since it can name
+// a file, and cut when it would leave in fewer than minInputWidth columns.
 func (a App) layoutInputBar(label string, in *textinput.Model) (string, int) {
 	room := a.inputBarRoom()
 	inputChrome := lipgloss.Width(in.Prompt) + inputCursorWidth
