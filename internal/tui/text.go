@@ -18,16 +18,16 @@ func displayText(value string, masked bool) string {
 	if masked {
 		value = util.MaskValue(value)
 	}
-	return flattenValue(value)
+	return flattenText(value)
 }
 
-// flattenValue returns s drawable on one panel row: line breaks and tabs
+// flattenText returns s drawable on one panel row: line breaks and tabs
 // become width-1 arrows, and every other control character a visible
 // stand-in, so a value can neither break the panel layout nor send the
 // terminal a control sequence (clear the screen, write the clipboard).
 // strings.Map also replaces invalid UTF-8, which could carry raw C1 bytes, and
 // allocates nothing when s needs no change.
-func flattenValue(s string) string { return strings.Map(flattenRune, s) }
+func flattenText(s string) string { return strings.Map(flattenRune, s) }
 
 func flattenRune(r rune) rune {
 	switch {

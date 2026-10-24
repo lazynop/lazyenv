@@ -22,7 +22,7 @@ func TestSecretsMaskOnlyThroughDisplayText(t *testing.T) {
 		"draw a variable value with displayText(value, masked), so every view masks it the same way")
 }
 
-func TestFlattenValue(t *testing.T) {
+func TestFlattenText(t *testing.T) {
 	tests := []struct {
 		name string
 		in   string
@@ -42,7 +42,7 @@ func TestFlattenValue(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, flattenValue(tt.in))
+			assert.Equal(t, tt.want, flattenText(tt.in))
 		})
 	}
 }
@@ -72,7 +72,7 @@ func TestTruncate(t *testing.T) {
 		{"bullets_three_cols_keeps_ellipsis", "•••••", 3, "•.."},
 		{"bullets_no_tofu_at_7_cols", "••••••••", 7, "•••••.."},
 
-		// ── Arrow glyphs from flattenValue (U+21B5, U+21E5, U+21A9) ──
+		// ── Arrow glyphs from flattenText (U+21B5, U+21E5, U+21A9) ──
 		{"arrow_truncate", "line1↵line2", 7, "line1.."},
 		{"tab_arrow_truncate", "a⇥b⇥c⇥d", 5, "a⇥b.."},
 

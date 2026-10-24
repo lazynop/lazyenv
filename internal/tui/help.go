@@ -110,14 +110,14 @@ func helpContents(keys KeyMap, wheel bool) []helpSection {
 			glyph(collapsedGroupGlyph, "Collapsed group"),
 			glyph(expandedGroupGlyph, "Expanded group"),
 		}},
-		// Each value glyph is what flattenValue draws for the character.
+		// Each value glyph is what flattenText draws for the character.
 		{"Value Indicators", []helpRow{
-			glyph(flattenValue("\n"), "Line break"),
-			glyph(flattenValue("\t"), "Tab"),
-			glyph(flattenValue("\r"), "Carriage return"),
-			glyph(flattenValue("\x00")+" … "+flattenValue("\x1f"), "Other control character ("+flattenValue("\x1b")+" for Escape)"),
-			glyph(flattenValue("\x7f"), "Delete character"),
-			glyph(flattenValue("\x80"), "Invalid byte or C1 control character"),
+			glyph(flattenText("\n"), "Line break"),
+			glyph(flattenText("\t"), "Tab"),
+			glyph(flattenText("\r"), "Carriage return"),
+			glyph(flattenText("\x00")+" … "+flattenText("\x1f"), "Other control character ("+flattenText("\x1b")+" for Escape)"),
+			glyph(flattenText("\x7f"), "Delete character"),
+			glyph(flattenText("\x80"), "Invalid byte or C1 control character"),
 		}},
 		{"Compare Indicators", []helpRow{
 			glyph(diffEqualGlyph, "Same value in both files"),
