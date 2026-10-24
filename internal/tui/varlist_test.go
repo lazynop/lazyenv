@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -44,6 +45,20 @@ func TestVarListMoveDownBound(t *testing.T) {
 	vl.MoveDown()
 	vl.MoveDown()
 	assert.Equal(t, 1, vl.Cursor, "should not exceed last index")
+}
+
+// TestNoMatchesNoteCutsTheQueryAsQuoted searches a panel at its minimum width
+// for quotes, which the note escapes: the query is cut by the columns it is
+// drawn in, so the note fills the panel's width, no more, and its quotes close.
+func TestNoMatchesNoteCutsTheQueryAsQuoted(t *testing.T) {
+	vl := NewVarListModel(config.DefaultConfig().Layout)
+	vl.SetFile(makeTestFile(".env", "A"))
+	vl.Width = config.VarListMinWidth
+	vl.SetSearch(strings.Repeat(`"`, 30))
+
+	note := vl.note()
+	assert.Equal(t, vl.contentCols(), lipgloss.Width(note), "the note should fill the panel's width, no more: %s", note)
+	assert.True(t, strings.HasSuffix(note, `.."`), "the cut query should keep its closing quote: %s", note)
 }
 
 func TestVarListSelectedVarNoFile(t *testing.T) {

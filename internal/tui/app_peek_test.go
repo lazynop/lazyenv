@@ -535,9 +535,9 @@ func TestDeletingTheLastVarListsItUnderTheNote(t *testing.T) {
 }
 
 // TestALongNoMatchesNoteKeepsItsRow searches, for text no var matches, a file
-// whose vars are deleted but one, the query wider than the panel: the note is
-// cut to its one row, so the deleted vars listed below keep the panel inside
-// the terminal.
+// whose vars are deleted but one, the query wider than the panel: the query is
+// cut so the note keeps to its one row and its closing quote, and the deleted
+// vars listed below keep the panel inside the terminal.
 func TestALongNoMatchesNoteKeepsItsRow(t *testing.T) {
 	keys := []string{"KEEP"}
 	for i := range 11 {
@@ -555,5 +555,6 @@ func TestALongNoMatchesNoteKeepsItsRow(t *testing.T) {
 	rows := strings.Split(stripAnsi(view), "\n")
 	note := slices.IndexFunc(rows, func(row string) bool { return strings.Contains(row, "No matches for") })
 	require.GreaterOrEqual(t, note, 0, "the panel should say nothing matches")
+	assert.True(t, strings.HasSuffix(strings.TrimRight(rows[note], "│ "), `.."`), "the cut query should keep its closing quote: %s", rows[note])
 	assert.Contains(t, rows[note+1], "GONE00", "the deleted vars should follow the note's one row")
 }

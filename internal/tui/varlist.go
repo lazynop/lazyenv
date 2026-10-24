@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 
 	"charm.land/lipgloss/v2"
@@ -637,7 +638,12 @@ func (m *VarListModel) note() string {
 	case m.File == nil:
 		return "  Select a file"
 	case m.SearchQuery != "":
-		return fmt.Sprintf("  No matches for %q", m.SearchQuery)
+		// The query gives way to the quotes around it, so they close on a
+		// long query too. Its escapes, as %q writes them, take their columns.
+		quoted := strconv.Quote(m.SearchQuery)
+		const format = `  No matches for "%s"`
+		room := m.contentCols() - lipgloss.Width(fmt.Sprintf(format, ""))
+		return fmt.Sprintf(format, truncate(quoted[1:len(quoted)-1], room))
 	}
 	return "  No variables"
 }
