@@ -638,8 +638,9 @@ func (m *VarListModel) note() string {
 	case m.File == nil:
 		return "  Select a file"
 	case m.SearchQuery != "":
-		// The query gives way to the quotes around it, so they close on a
-		// long query too. Its escapes, as %q writes them, take their columns.
+		// The query gives way to the quotes around it, so they close on a long
+		// query too. Its escapes, as strconv.Quote writes them, take their
+		// columns.
 		quoted := strconv.Quote(m.SearchQuery)
 		const format = `  No matches for "%s"`
 		room := m.contentCols() - lipgloss.Width(fmt.Sprintf(format, ""))
