@@ -698,20 +698,7 @@ func (m *VarListModel) View(theme Theme) string {
 
 	lines := m.renderRows(keyWidth, maxValWidth, theme)
 
-	return m.renderPanel(title, strings.Join(lines, "\n"), theme)
-}
-
-func (m *VarListModel) renderPanel(title, content string, theme Theme) string {
-	style := theme.VarPanel.
-		Width(m.Width).
-		Height(m.Height)
-
-	if m.Focused {
-		style = style.BorderForeground(theme.ColorPrimary)
-	}
-
-	inner := fmt.Sprintf("%s\n%s", title, content)
-	return style.Render(inner)
+	return renderPanel(m.Width, m.Height, m.Focused, title, strings.Join(lines, "\n"), theme)
 }
 
 // stripAnsi removes ANSI escape sequences from s.

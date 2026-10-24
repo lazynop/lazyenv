@@ -135,7 +135,7 @@ func (m *FileListModel) View(theme Theme) string {
 
 	if len(m.Files) == 0 {
 		content := theme.MutedItem.Render("  No .env files")
-		return m.renderPanel(title, content, theme)
+		return renderPanel(m.Width, m.Height, m.Focused, title, content, theme)
 	}
 
 	var lines []string
@@ -214,18 +214,5 @@ func (m *FileListModel) View(theme Theme) string {
 	}
 
 	content := strings.Join(lines, "\n")
-	return m.renderPanel(title, content, theme)
-}
-
-func (m *FileListModel) renderPanel(title, content string, theme Theme) string {
-	style := theme.FilePanel.
-		Width(m.Width).
-		Height(m.Height)
-
-	if m.Focused {
-		style = style.BorderForeground(theme.ColorPrimary)
-	}
-
-	inner := fmt.Sprintf("%s\n%s", title, content)
-	return style.Render(inner)
+	return renderPanel(m.Width, m.Height, m.Focused, title, content, theme)
 }

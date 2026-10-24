@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"image/color"
 
 	"charm.land/lipgloss/v2"
@@ -11,8 +12,7 @@ import (
 // Theme holds all Lip Gloss styles.
 type Theme struct {
 	// Panel styles
-	FilePanel        lipgloss.Style
-	VarPanel         lipgloss.Style
+	Panel            lipgloss.Style
 	PanelTitle       lipgloss.Style
 	StatusBar        lipgloss.Style
 	StatusBarKey     lipgloss.Style
@@ -87,10 +87,7 @@ func BuildTheme(isDark bool, colors config.ColorConfig) Theme {
 	}
 
 	return Theme{
-		FilePanel: lipgloss.NewStyle().
-			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(colorBorder),
-		VarPanel: lipgloss.NewStyle().
+		Panel: lipgloss.NewStyle().
 			BorderStyle(lipgloss.RoundedBorder()).
 			BorderForeground(colorBorder),
 		PanelTitle: lipgloss.NewStyle().
@@ -170,4 +167,20 @@ func BuildTheme(isDark bool, colors config.ColorConfig) Theme {
 		ColorBg:      colorBg,
 		ColorBorder:  colorBorder,
 	}
+}
+
+// renderPanel draws a main-view panel, the file list or the var list: title
+// and content inside the border, which takes the primary color while the
+// panel is focused.
+func renderPanel(width, height int, focused bool, title, content string, theme Theme) string {
+	style := theme.Panel.
+		Width(width).
+		Height(height)
+
+	if focused {
+		style = style.BorderForeground(theme.ColorPrimary)
+	}
+
+	inner := fmt.Sprintf("%s\n%s", title, content)
+	return style.Render(inner)
 }
