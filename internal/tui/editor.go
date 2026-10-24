@@ -53,13 +53,17 @@ func NewEditorModel() EditorModel {
 
 // StartEdit begins editing an existing variable's value and reports whether it
 // did. It refuses a value the bar would not show as it is, leaving the editor
-// as it was: confirming any change would write the bar's copy back.
+// as it was: SetValue sanitizes what it loads (line breaks and tabs become
+// spaces, other control characters are dropped), and confirming any change
+// would write that copy back.
 func (m *EditorModel) StartEdit(v *model.EnvVar, idx int) bool {
-	if !m.showsAsIs(v.Value) {
+	input := m.input
+	input.SetValue(v.Value)
+	if input.Value() != v.Value {
 		return false
 	}
-	m.input.SetValue(v.Value)
-	m.shown = m.input.Value()
+	m.input = input
+	m.shown = v.Value
 	m.input.CursorEnd()
 	m.varIndex = idx
 	m.isAdd = false
@@ -67,15 +71,6 @@ func (m *EditorModel) StartEdit(v *model.EnvVar, idx int) bool {
 	m.label = fmt.Sprintf("Edit %s: ", v.Key)
 	m.input.Placeholder = "new value"
 	return true
-}
-
-// showsAsIs reports whether the bar shows value as it is. SetValue sanitizes
-// what it loads (line breaks and tabs become spaces, other control characters
-// are dropped), so the bar's input loads value into a copy of itself to tell.
-func (m *EditorModel) showsAsIs(value string) bool {
-	probe := m.input
-	probe.SetValue(value)
-	return probe.Value() == value
 }
 
 // StartEditKey begins editing an existing variable's key name.
