@@ -695,7 +695,7 @@ func (m *VarListModel) viewTitle(theme Theme) string {
 	const sep = " "
 	// The name gives way to the count, so the title keeps its one row.
 	room := m.contentCols() - theme.PanelTitle.GetHorizontalFrameSize() - lipgloss.Width(sep+count)
-	return theme.PanelTitle.Render(truncate(flattenText(m.File.Name), room)) + sep + theme.MutedItem.Render(count)
+	return theme.PanelTitle.Render(fitName(m.File.Name, room)) + sep + theme.MutedItem.Render(count)
 }
 
 // View renders the variable list panel.

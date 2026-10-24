@@ -66,6 +66,12 @@ func truncate(s string, maxCols int) string {
 	return ansi.Truncate(s, maxCols, "..")
 }
 
+// fitName fits a file name into maxCols display columns as truncate does,
+// flattened first: a name can hold any byte but a slash or NUL.
+func fitName(name string, maxCols int) string {
+	return truncate(flattenText(name), maxCols)
+}
+
 // wrapRows wraps s to width columns, at spaces where it can, and returns its
 // rows.
 func wrapRows(s string, width int) []string {

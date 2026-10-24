@@ -157,7 +157,7 @@ func (m *FileListModel) View(theme Theme) string {
 		}
 		// Space for name: inner - indicator - warn - gap(1 min) - varCount - modified
 		nameMax := max(inner-2-warnLen-1-len(varCount)-modLen, 1)
-		name := truncate(flattenText(f.Name), nameMax)
+		name := fitName(f.Name, nameMax)
 		// Gap fills remaining space to push varCount to the right
 		gap := max(inner-2-warnLen-lipgloss.Width(name)-len(varCount)-modLen, 1)
 

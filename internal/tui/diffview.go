@@ -298,7 +298,7 @@ func titleName(f *model.EnvFile, room int) string {
 	if f.Modified {
 		mark = modifiedFileGlyph
 	}
-	return truncate(flattenText(f.Name), room-lipgloss.Width(mark)) + mark
+	return fitName(f.Name, room-lipgloss.Width(mark)) + mark
 }
 
 // renderDiffEntry renders a single diff entry, returning the left and right

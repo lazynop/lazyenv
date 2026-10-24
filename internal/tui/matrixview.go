@@ -236,7 +236,7 @@ func (m *MatrixModel) renderHeaderRow(endCol int, theme Theme) string {
 	var hdr strings.Builder
 	hdr.WriteString(padRight("KEY", m.layout.MatrixKeyWidth))
 	for ci := m.offsetCol; ci < endCol; ci++ {
-		name := truncate(flattenText(m.fileNames[ci]), m.layout.MatrixColWidth-2)
+		name := fitName(m.fileNames[ci], m.layout.MatrixColWidth-2)
 		if ci == m.cursorCol {
 			hdr.WriteString(theme.SelectedItem.Render(padRight(name, m.layout.MatrixColWidth)))
 		} else {
