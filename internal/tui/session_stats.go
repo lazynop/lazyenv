@@ -307,7 +307,8 @@ func sharedKeys(order []string, other map[string]string) []string {
 }
 
 // Format returns the stdout-ready summary block (with trailing newline), or ""
-// when there is nothing to report.
+// when there is nothing to report. Each line is flattened, since the paths it
+// names can hold any control character.
 func (s *SessionStats) Format() string {
 	lines := s.Summary()
 	if len(lines) == 0 {
@@ -317,7 +318,7 @@ func (s *SessionStats) Format() string {
 	b.WriteString("Session summary:\n")
 	for _, line := range lines {
 		b.WriteString("  ")
-		b.WriteString(line)
+		b.WriteString(flattenText(line))
 		b.WriteByte('\n')
 	}
 	return b.String()

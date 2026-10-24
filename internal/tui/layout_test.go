@@ -33,15 +33,20 @@ var layoutSecrets = []string{"hunter2", "ghp_x7Kq9", "stg-pass"}
 // layoutFiles returns two files whose secrets are detected by key name
 // (API_TOKEN) and by value (GREETING), with more vars than any panel shows.
 func layoutFiles() []*model.EnvFile {
-	var env strings.Builder
-	env.WriteString("API_TOKEN=hunter2\nGREETING=ghp_x7Kq9\nHOST=localhost\nEMPTY=\n")
+	return layoutFilesNamed(".env", ".env.local")
+}
+
+// layoutFilesNamed returns layoutFiles under the names env and local.
+func layoutFilesNamed(env, local string) []*model.EnvFile {
+	var vars strings.Builder
+	vars.WriteString("API_TOKEN=hunter2\nGREETING=ghp_x7Kq9\nHOST=localhost\nEMPTY=\n")
 	for i := range 30 {
-		fmt.Fprintf(&env, "VAR_%02d=value_%02d\n", i, i)
+		fmt.Fprintf(&vars, "VAR_%02d=value_%02d\n", i, i)
 	}
-	local := "API_TOKEN=stg-pass\nHOST=example.com\nVAR_00=value_00\nONLY_LOCAL=1\n"
+	localVars := "API_TOKEN=stg-pass\nHOST=example.com\nVAR_00=value_00\nONLY_LOCAL=1\n"
 	return []*model.EnvFile{
-		parser.ParseBytes(".env", []byte(env.String()), config.SecretsConfig{}),
-		parser.ParseBytes(".env.local", []byte(local), config.SecretsConfig{}),
+		parser.ParseBytes(env, []byte(vars.String()), config.SecretsConfig{}),
+		parser.ParseBytes(local, []byte(localVars), config.SecretsConfig{}),
 	}
 }
 
@@ -51,25 +56,34 @@ type viewScenario struct {
 	name   string
 	mode   AppMode // -1 for a screen outside App
 	render func(t *testing.T, width, height int, reveal bool) string
+	setup  func(app App) App // drives an App over files to the screen; nil for a screen drawn without files
 }
 
-// appScenario sizes a fresh App over layoutFiles, drives it with setup and
-// renders it, failing unless setup reached mode.
+// appScenario renders the screen setup drives an App over layoutFiles to.
 func appScenario(name string, mode AppMode, setup func(app App) App) viewScenario {
-	return viewScenario{name, mode, func(t *testing.T, width, height int, reveal bool) string {
+	sc := viewScenario{name: name, mode: mode, setup: setup}
+	sc.render = func(t *testing.T, width, height int, reveal bool) string {
 		t.Helper()
-		app := resize(newTestApp(layoutFiles()), width, height)
-		app.varList.SetShowSecrets(reveal)
-		app = setup(app)
-		require.Equal(t, mode, app.mode, "%s: setup should reach the mode", name)
-		return app.View().Content
-	}}
+		return sc.renderOver(t, layoutFiles(), width, height, reveal)
+	}
+	return sc
+}
+
+// renderOver sizes a fresh App over files, drives it with the scenario's setup
+// and renders it, failing unless setup reached the scenario's mode.
+func (sc viewScenario) renderOver(t *testing.T, files []*model.EnvFile, width, height int, reveal bool) string {
+	t.Helper()
+	app := resize(newTestApp(files), width, height)
+	app.varList.SetShowSecrets(reveal)
+	app = sc.setup(app)
+	require.Equal(t, sc.mode, app.mode, "%s: setup should reach the mode", sc.name)
+	return app.View().Content
 }
 
 // configErrorScenario sizes an App that startup sends to the config error
 // screen and renders it.
 func configErrorScenario(name string, startup StartupMessages) viewScenario {
-	return viewScenario{name, ModeConfigError, func(t *testing.T, width, height int, _ bool) string {
+	return viewScenario{name: name, mode: ModeConfigError, render: func(t *testing.T, width, height int, _ bool) string {
 		t.Helper()
 		app := resize(NewApp(config.DefaultConfig(), startup), width, height)
 		require.Equal(t, ModeConfigError, app.mode, "%s: startup should reach the mode", name)
@@ -168,7 +182,7 @@ var viewScenarios = []viewScenario{
 		ConfigPath:   "/home/user/projects/a-rather-long-project-name/configuration/lazyenv/config.toml",
 		ConfigErrors: []string{`invalid sort value: "random"`, `invalid colors.primary: "teal" (expected hex like #RRGGBB or ANSI 0-255)`},
 	}),
-	{"theme preview", -1, func(t *testing.T, width, height int, _ bool) string {
+	{name: "theme preview", mode: -1, render: func(t *testing.T, width, height int, _ bool) string {
 		m := NewThemePreview(config.DefaultConfig())
 		m.searchPaths = []string{".lazyenvrc", "/home/user/.config/lazyenv/config.toml", "/home/user/.lazyenvrc"}
 		updated, _ := m.Update(tea.WindowSizeMsg{Width: width, Height: height})
@@ -265,6 +279,35 @@ func TestLayoutSecretsAreDrawnWhole(t *testing.T) {
 	}
 	for _, secret := range layoutSecrets {
 		assert.True(t, drawn[secret], "%q is never drawn, even revealed", secret)
+	}
+}
+
+// TestFileNamesAreDrawnFlat renders every screen drawn over files across the
+// grid twice: over files whose names hold a line break and an escape sequence,
+// as a name can hold any byte but / and NUL, and over files named with the
+// stand-ins drawn for those characters. The two renders must match: no name
+// takes a second row or sends the terminal a sequence.
+func TestFileNamesAreDrawnFlat(t *testing.T) {
+	const raw, flat = "\n\x1b]0;x\x07", "↵␛]0;x␇"
+	// These modes open an input holding a name derived from the active file's
+	// as on disk, which the text input sanitizes its own way (a line break
+	// becomes a space), so only the sequence is checked there.
+	prefillsName := map[AppMode]bool{ModeDuplicateFile: true, ModeRenameFile: true, ModeTemplateFile: true}
+	for _, sc := range viewScenarios {
+		if sc.setup == nil {
+			continue
+		}
+		for _, width := range gridWidths {
+			for _, height := range gridHeights {
+				at := fmt.Sprintf("%s at %dx%d", sc.name, width, height)
+				got := sc.renderOver(t, layoutFilesNamed(".env"+raw, ".env.local"+raw), width, height, false)
+				assert.NotContains(t, got, "\x1b]", "%s: a file name sent the terminal a sequence", at)
+				if !prefillsName[sc.mode] {
+					want := sc.renderOver(t, layoutFilesNamed(".env"+flat, ".env.local"+flat), width, height, false)
+					assert.Equal(t, want, got, "%s: a file name is drawn unflattened", at)
+				}
+			}
+		}
 	}
 }
 

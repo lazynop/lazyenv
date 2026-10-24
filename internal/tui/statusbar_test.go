@@ -20,6 +20,22 @@ func TestStatusBarSetClearMessage(t *testing.T) {
 	assert.Equal(t, "", sb.Message)
 }
 
+// TestStatusBarMessagesAreFlattened sets messages naming a file whose name
+// holds a line break and an escape sequence, as a name can hold any byte but /
+// and NUL: each kind of message keeps one row and sends the terminal no
+// sequence.
+func TestStatusBarMessagesAreFlattened(t *testing.T) {
+	for name, set := range map[string]func(*StatusBarModel, string){
+		"message": (*StatusBarModel).SetMessage,
+		"warning": (*StatusBarModel).SetWarning,
+		"alert":   (*StatusBarModel).SetAlert,
+	} {
+		sb := NewStatusBarModel()
+		set(&sb, "Saved .env\n\x1b]0;x\x07")
+		assert.Equal(t, "Saved .env↵␛]0;x␇", sb.Message, name)
+	}
+}
+
 func TestStatusBarViewNormal(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120

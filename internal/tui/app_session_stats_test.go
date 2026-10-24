@@ -227,6 +227,19 @@ func TestApp_SessionStats_EndToEnd(t *testing.T) {
 	assert.Equal(t, want, app.SessionSummary())
 }
 
+// A file name can hold any byte but / and NUL: the summary printed on exit
+// draws a line break and an escape sequence in one as stand-ins, so each file
+// keeps its one row and the terminal gets no sequence.
+func TestApp_SessionStats_SummaryFlattensFileNames(t *testing.T) {
+	app, _, dir, _ := setupStatsFixture(t, ".env\n\x1b]0;x\x07", "FOO=1\n")
+
+	app.varList.File.UpdateVar(0, "2", false)
+	app, _ = app.handleSave()
+
+	assert.Equal(t, "Session summary:\n"+
+		"  "+dir+"/.env↵␛]0;x␇ — 0 added, 1 changed, 0 deleted\n", app.SessionSummary())
+}
+
 func TestApp_SessionStats_Delete(t *testing.T) {
 	app, _, _, path := setupStatsFixture(t, ".env", "FOO=1\n")
 

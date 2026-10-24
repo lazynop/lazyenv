@@ -48,12 +48,14 @@ func (m *StatusBarModel) SetAlert(msg string) {
 	m.setMessage(msg, messageAlert)
 }
 
-// setMessage sets the message and its kind. Each call bumps a generation
-// counter so a clear scheduled for an earlier message cannot wipe a newer one.
-// This keeps persistent prompts (menus, confirmations) on screen even if a
-// previous transient flash's auto-clear timer fires while they are showing.
+// setMessage sets the message and its kind. The message is flattened, since it
+// can name a file, whose name can hold any control character. Each call bumps
+// a generation counter so a clear scheduled for an earlier message cannot wipe
+// a newer one. This keeps persistent prompts (menus, confirmations) on screen
+// even if a previous transient flash's auto-clear timer fires while they are
+// showing.
 func (m *StatusBarModel) setMessage(msg string, kind messageKind) {
-	m.Message = msg
+	m.Message = flattenText(msg)
 	m.kind = kind
 	m.msgGen++
 }
@@ -85,7 +87,7 @@ func (m *StatusBarModel) View(theme Theme, keys KeyMap, mode AppMode, focus Focu
 		right = theme.EmptyWarning.Render("[READ-ONLY]")
 	}
 	if fileName != "" {
-		fileInfo := theme.MutedItem.Render(fmt.Sprintf("%s  %d vars", fileName, varCount))
+		fileInfo := theme.MutedItem.Render(fmt.Sprintf("%s  %d vars", flattenText(fileName), varCount))
 		if right != "" {
 			right = right + "  " + fileInfo
 		} else {
