@@ -23,9 +23,10 @@ type EditorResult struct {
 	IsAdd       bool
 	IsRenameKey bool
 	AddStep     addStep
-	// Untouched is set for a value edit confirmed as the bar showed it. The
-	// bar can't show every value as is (it turns line breaks into spaces and
-	// drops control characters), so writing it back could change the value.
+	// Untouched is set for a value edit confirmed as the bar showed it. Writing
+	// that value back would mark the variable and its file modified with
+	// nothing changed, and the next save would rebuild the variable's line
+	// instead of keeping it as written.
 	Untouched bool
 }
 
@@ -50,8 +51,13 @@ func NewEditorModel() EditorModel {
 	}
 }
 
-// StartEdit begins editing an existing variable's value.
-func (m *EditorModel) StartEdit(v *model.EnvVar, idx int) {
+// StartEdit begins editing an existing variable's value and reports whether it
+// did. It refuses a value the bar would not show as it is, leaving the editor
+// as it was: confirming any change would write the bar's copy back.
+func (m *EditorModel) StartEdit(v *model.EnvVar, idx int) bool {
+	if !m.showsAsIs(v.Value) {
+		return false
+	}
 	m.input.SetValue(v.Value)
 	m.shown = m.input.Value()
 	m.input.CursorEnd()
@@ -60,6 +66,16 @@ func (m *EditorModel) StartEdit(v *model.EnvVar, idx int) {
 	m.isRenameKey = false
 	m.label = fmt.Sprintf("Edit %s: ", v.Key)
 	m.input.Placeholder = "new value"
+	return true
+}
+
+// showsAsIs reports whether the bar shows value as it is. SetValue sanitizes
+// what it loads (line breaks and tabs become spaces, other control characters
+// are dropped), so the bar's input loads value into a copy of itself to tell.
+func (m *EditorModel) showsAsIs(value string) bool {
+	probe := m.input
+	probe.SetValue(value)
+	return probe.Value() == value
 }
 
 // StartEditKey begins editing an existing variable's key name.

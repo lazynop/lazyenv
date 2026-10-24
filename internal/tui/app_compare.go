@@ -157,8 +157,10 @@ func (a App) startCompareEdit(file *model.EnvFile) (tea.Model, tea.Cmd) {
 		return a, a.flashWarning(e.Key + " not in " + file.Name)
 	}
 
+	if !a.editor.StartEdit(&file.Vars[varIdx], varIdx) {
+		return a, a.flashWarning(uneditableValueWarning)
+	}
 	a.compareEditFile = file
-	a.editor.StartEdit(&file.Vars[varIdx], varIdx)
 	a.editor.label = fmt.Sprintf("Edit %s in %s: ", e.Key, file.Name)
 	a.mode = ModeEditingCompare
 	return a, a.editor.input.Focus()
