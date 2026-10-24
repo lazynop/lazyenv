@@ -294,14 +294,16 @@ func TestMouseClickVarList_UnderALongFileName(t *testing.T) {
 // TestMouseClickVarList_UnderALongGroupHeader groups two vars under a prefix
 // wider than the var panel: the prefix gives way to the count, so the header
 // keeps its one row and the first var is drawn on the row a click maps to it.
+// Cut, both keys read the same: the first var's value tells its row apart.
 func TestMouseClickVarList_UnderALongGroupHeader(t *testing.T) {
 	prefix := strings.Repeat("LONGPREFIX", 8)
 	f := makeTestFile(".env", prefix+"_HOST", prefix+"_PORT")
+	f.Vars[0].Value = "host"
 	app := press(onVars(resize(newTestApp([]*model.EnvFile{f}), 80, 24)), "g", "j") // the second var
 	rows := strings.Split(stripAnsi(app.View().Content), "\n")
 	require.Contains(t, rows[panelContentOffsetY], "(2)", "the header row ends in the count")
 	firstVar := panelContentOffsetY + 1
-	require.Contains(t, rows[firstVar], "val_", "the first var follows the header")
+	require.Contains(t, rows[firstVar], "host", "the first var follows the header")
 
 	updated, _ := app.Update(tea.MouseClickMsg{X: 40, Y: firstVar, Button: tea.MouseLeft})
 
