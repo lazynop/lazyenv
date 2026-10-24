@@ -254,7 +254,8 @@ func TestDocsStateCurrentCounts(t *testing.T) {
 // file-list-width, --help included, states the width the TUI leaves the
 // variables panel.
 func TestDocsStateTheVarListMinimum(t *testing.T) {
-	flag, _ := reflect.TypeOf(cli).FieldByName("FileListWidth")
+	flag, ok := reflect.TypeOf(cli).FieldByName("FileListWidth")
+	require.True(t, ok, "cli has no FileListWidth field to read the --file-list-width help from")
 	surfaces := map[string]string{"the --file-list-width help": flag.Tag.Get("help")}
 	for _, path := range []string{"docs/configuration.md", "docs/usage.md", "examples/config/full.toml"} {
 		surfaces[path] = readFile(t, path)
