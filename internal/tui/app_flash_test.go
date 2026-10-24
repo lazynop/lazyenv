@@ -329,6 +329,14 @@ func TestRefusedActionsFlashWarning(t *testing.T) {
 			app.focus = FocusVars
 			return press(app, "e")
 		}, "Read-only mode"},
+		{"edit a value with a line break", func(t *testing.T) App {
+			f := parser.ParseBytes(".env", []byte(`CERT="line1\nline2"`+"\n"), config.SecretsConfig{})
+			return press(newTestApp([]*model.EnvFile{f}), "right", "e")
+		}, "line breaks or control characters"},
+		{"edit a value with a line break in compare", func(t *testing.T) App {
+			f := parser.ParseBytes(".env", []byte(`CERT="line1\nline2"`+"\n"), config.SecretsConfig{})
+			return press(enterCompareMode(t, f, makeTestFile(".env.prod", "CERT")), "e")
+		}, "line breaks or control characters"},
 		{"create a file outside the patterns", func(t *testing.T) App {
 			app := newTestApp(nil)
 			app.config.Dir = t.TempDir()

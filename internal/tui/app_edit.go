@@ -47,6 +47,10 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	}
 }
 
+// uneditableValueWarning is the warning shown when the edit bar refuses a value
+// it would not show as it is (see EditorModel.StartEdit).
+const uneditableValueWarning = "Value holds line breaks or control characters: can't edit it here"
+
 // commitValueEdit writes the value confirmed in the edit bar to its var in f,
 // unless the edit was untouched, and reports the change.
 func (a *App) commitValueEdit(f *model.EnvFile, result EditorResult) tea.Cmd {

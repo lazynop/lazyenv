@@ -11,8 +11,8 @@ import (
 func TestEditorStartEdit(t *testing.T) {
 	e := NewEditorModel()
 	v := &model.EnvVar{Key: "DB_HOST", Value: "localhost"}
-	e.StartEdit(v, 3)
 
+	assert.True(t, e.StartEdit(v, 3), "a plain value opens the bar")
 	assert.Equal(t, 3, e.varIndex)
 	assert.False(t, e.isAdd)
 	assert.Equal(t, "Edit DB_HOST: ", e.label)
