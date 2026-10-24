@@ -158,33 +158,6 @@ func TestDeleteNewVarNotTracked(t *testing.T) {
 	assert.Empty(t, ef.DeletedVars, "newly added vars should not appear in DeletedVars")
 }
 
-func TestReAddDeletedVarRemovesFromDeleted(t *testing.T) {
-	ef := newTestFile(
-		EnvVar{Key: "FOO", Value: "original"},
-	)
-
-	ef.DeleteVar(0)
-	require.Len(t, ef.DeletedVars, 1)
-
-	ef.AddVar("FOO", "new_value", false)
-	assert.Empty(t, ef.DeletedVars, "re-adding should remove from DeletedVars")
-}
-
-func TestReAddDeletedVarPreservesOriginalValue(t *testing.T) {
-	ef := newTestFile(
-		EnvVar{Key: "FOO", Value: "original"},
-	)
-
-	ef.DeleteVar(0)
-	ef.AddVar("FOO", "new_value", false)
-
-	require.Len(t, ef.Vars, 1)
-	assert.Equal(t, "new_value", ef.Vars[0].Value)
-	assert.Equal(t, "original", ef.Vars[0].OriginalValue, "peek should show the original value")
-	assert.False(t, ef.Vars[0].IsNew, "re-added var should be treated as modified, not new")
-	assert.True(t, ef.Vars[0].Modified)
-}
-
 func TestDeleteVarOutOfBounds(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
 
@@ -213,6 +186,166 @@ func TestRenameVarSetsIsSecret(t *testing.T) {
 
 	ef.RenameVar(0, "PLAIN", false)
 	assert.False(t, ef.Vars[0].IsSecret)
+}
+
+// revivals are the ways a variable revives API_KEY, deleted from the file
+// deletedAPIKeyFile returns: adding the key again, renaming BAR onto it, or
+// renaming onto it a variable added this session.
+var revivals = map[string]func(ef *EnvFile){
+	"add":    func(ef *EnvFile) { ef.AddVar("API_KEY", "2", true) },
+	"rename": func(ef *EnvFile) { ef.RenameVar(0, "API_KEY", true) }, // BAR
+	"rename a var added this session": func(ef *EnvFile) {
+		ef.AddVar("NEW", "2", false)
+		ef.RenameVar(ef.LastIndexOfKey("NEW"), "API_KEY", true)
+	},
+}
+
+// deletedAPIKeyFile returns a file that held API_KEY=1, a secret, and BAR=2,
+// with API_KEY deleted.
+func deletedAPIKeyFile() *EnvFile {
+	ef := newTestFile(
+		EnvVar{Key: "API_KEY", Value: "1", IsSecret: true},
+		EnvVar{Key: "BAR", Value: "2"},
+	)
+	ef.DeleteVar(0)
+	return ef
+}
+
+// deletedVars returns the variables ef lists as deleted, in order, each as
+// KEY=value.
+func deletedVars(ef *EnvFile) []string {
+	var deleted []string
+	for _, d := range ef.DeletedVars {
+		deleted = append(deleted, d.Key+"="+d.Value)
+	}
+	return deleted
+}
+
+// TestTakingADeletedKeyRevivesIt gives a key deleted this session back to a
+// variable: the deleted entry goes, and the variable takes the deleted one's
+// original and is no longer new, as the deleted one was not.
+func TestTakingADeletedKeyRevivesIt(t *testing.T) {
+	for name, revive := range revivals {
+		t.Run(name, func(t *testing.T) {
+			ef := deletedAPIKeyFile()
+
+			revive(ef)
+
+			assert.Empty(t, ef.DeletedVars, "the key should leave the deleted vars")
+			v := ef.VarByKey("API_KEY")
+			require.NotNil(t, v)
+			assert.Equal(t, "2", v.Value)
+			assert.Equal(t, "1", v.OriginalValue, "the original should be the deleted var's")
+			assert.True(t, v.OriginalIsSecret, "the original should keep the deleted var's secret status")
+			assert.False(t, v.IsNew, "the var should no longer be new")
+			assert.True(t, v.Modified)
+		})
+	}
+}
+
+// TestRenamingARevivedVarOffItsKeyUndoesTheRevival renames the variable that
+// revived a deleted key to another key, then to a third one: the deleted
+// variable is listed again, once, and the variable gets back the original it
+// had before the revival.
+func TestRenamingARevivedVarOffItsKeyUndoesTheRevival(t *testing.T) {
+	want := map[string]struct {
+		original string
+		isNew    bool
+	}{
+		"add":                             {original: "", isNew: true},
+		"rename":                          {original: "2", isNew: false},
+		"rename a var added this session": {original: "", isNew: true},
+	}
+	for name, revive := range revivals {
+		t.Run(name, func(t *testing.T) {
+			ef := deletedAPIKeyFile()
+			revive(ef)
+			idx := ef.LastIndexOfKey("API_KEY")
+
+			ef.RenameVar(idx, "BAZ", false)
+			ef.RenameVar(idx, "QUX", false)
+
+			assert.Equal(t, []string{"API_KEY=1"}, deletedVars(ef), "the deleted var should be listed again, once")
+			v := ef.Vars[idx]
+			assert.Equal(t, want[name].original, v.OriginalValue, "the var should get back its own original")
+			assert.False(t, v.OriginalIsSecret)
+			assert.Equal(t, want[name].isNew, v.IsNew)
+		})
+	}
+}
+
+// TestDeletingARevivedVarUndoesTheRevival deletes the variable that revived a
+// deleted key: the variable deleted first is listed again with its value, and
+// the reviving one is listed after it only if it was not added this session.
+func TestDeletingARevivedVarUndoesTheRevival(t *testing.T) {
+	want := map[string][]string{
+		"add":                             {"API_KEY=1"},
+		"rename":                          {"API_KEY=1", "API_KEY=2"},
+		"rename a var added this session": {"API_KEY=1"},
+	}
+	for name, revive := range revivals {
+		t.Run(name, func(t *testing.T) {
+			ef := deletedAPIKeyFile()
+			revive(ef)
+
+			ef.DeleteVar(ef.LastIndexOfKey("API_KEY"))
+
+			assert.Equal(t, want[name], deletedVars(ef))
+		})
+	}
+}
+
+// TestUndoingARevivalListsTheDeletedVarInItsPlace deletes FOO, then BAZ,
+// renames BAR to FOO and back: FOO is listed again before BAZ, where it was.
+func TestUndoingARevivalListsTheDeletedVarInItsPlace(t *testing.T) {
+	ef := newTestFile(
+		EnvVar{Key: "FOO", Value: "1"},
+		EnvVar{Key: "BAZ", Value: "3"},
+		EnvVar{Key: "BAR", Value: "2"},
+	)
+	ef.DeleteVar(0) // FOO
+	ef.DeleteVar(0) // BAZ
+
+	ef.RenameVar(0, "FOO", false) // BAR
+	ef.RenameVar(0, "BAR", false)
+
+	assert.Equal(t, []string{"FOO=1", "BAZ=3"}, deletedVars(ef))
+}
+
+// TestUndoingRevivalsInReverseOrderListsBothDeletedVars deletes FOO, then BAZ,
+// renames X to BAZ and Y to FOO, then X and Y back, the first undone revival
+// being BAZ's, whose place is past the end of the emptied DeletedVars: both
+// are listed again, in their order.
+func TestUndoingRevivalsInReverseOrderListsBothDeletedVars(t *testing.T) {
+	ef := newTestFile(
+		EnvVar{Key: "FOO", Value: "1"},
+		EnvVar{Key: "BAZ", Value: "3"},
+		EnvVar{Key: "X", Value: "4"},
+		EnvVar{Key: "Y", Value: "5"},
+	)
+	ef.DeleteVar(0)               // FOO
+	ef.DeleteVar(0)               // BAZ
+	ef.RenameVar(0, "BAZ", false) // X
+	ef.RenameVar(1, "FOO", false) // Y
+	require.Empty(t, ef.DeletedVars)
+
+	ef.RenameVar(0, "X", false)
+	ef.RenameVar(1, "Y", false)
+
+	assert.Equal(t, []string{"FOO=1", "BAZ=3"}, deletedVars(ef))
+}
+
+// TestRenameVarOntoAKeyNotDeletedKeepsItsOwnOriginal renames a variable onto a
+// key no deleted variable holds, while another key is deleted: the variable's
+// original is its own value, and the deleted variable stays.
+func TestRenameVarOntoAKeyNotDeletedKeepsItsOwnOriginal(t *testing.T) {
+	ef := deletedAPIKeyFile()
+
+	ef.RenameVar(0, "BAZ", false) // BAR
+
+	assert.Equal(t, "2", ef.Vars[0].OriginalValue)
+	assert.False(t, ef.Vars[0].OriginalIsSecret)
+	assert.Equal(t, []string{"API_KEY=1"}, deletedVars(ef))
 }
 
 func TestRenameVarOutOfBounds(t *testing.T) {

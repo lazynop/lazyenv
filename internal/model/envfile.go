@@ -41,6 +41,19 @@ type EnvVar struct {
 	// OriginalIsSecret is IsSecret as it was for OriginalValue, so the
 	// original stays masked after the var stops being a secret.
 	OriginalIsSecret bool
+	// revival is set while the var holds a key it revived (see reviveDeleted).
+	revival *revival
+}
+
+// revival is a variable deleted this session whose key another variable took,
+// with what that variable had before taking it, so renaming or deleting the
+// variable can undo it.
+type revival struct {
+	deleted          EnvVar
+	index            int // where deleted sat in DeletedVars
+	originalValue    string
+	originalIsSecret bool
+	isNew            bool
 }
 
 // EnvFile represents a parsed .env file.
@@ -76,14 +89,18 @@ func (ef *EnvFile) UpdateVar(idx int, newValue string, isSecret bool) {
 }
 
 // RenameVar updates the key of a variable by index. isSecret is whether the
-// variable is a secret with its new key, as for UpdateVar.
+// variable is a secret with its new key, as for UpdateVar. Renaming a variable
+// onto a key deleted this session revives the key (see reviveDeleted), and
+// renaming it off that key lists the key as deleted again (see undoRevival).
 func (ef *EnvFile) RenameVar(idx int, newKey string, isSecret bool) {
 	if idx < 0 || idx >= len(ef.Vars) {
 		return
 	}
 	ef.markModified(idx)
+	ef.undoRevival(idx)
 	ef.Vars[idx].Key = newKey
 	ef.Vars[idx].IsSecret = isSecret
+	ef.reviveDeleted(idx)
 }
 
 // markModified flags the variable at idx and the file as changed, saving the
@@ -104,7 +121,41 @@ func (v EnvVar) original() (string, bool) {
 	return v.Value, v.IsSecret
 }
 
-// AddVar appends a new variable to the file.
+// reviveDeleted makes the variable at idx, whose key was just set, take the
+// place of a variable deleted this session under that key. The deleted one
+// leaves DeletedVars. The variable takes its original value and secret status,
+// which peek shows, and is no longer new, as the deleted one was not: DeleteVar
+// lists no new variable.
+func (ef *EnvFile) reviveDeleted(idx int) {
+	v := &ef.Vars[idx]
+	i := slices.IndexFunc(ef.DeletedVars, func(d EnvVar) bool { return d.Key == v.Key })
+	if i < 0 {
+		return
+	}
+	d := ef.DeletedVars[i]
+	v.revival = &revival{deleted: d, index: i, originalValue: v.OriginalValue, originalIsSecret: v.OriginalIsSecret, isNew: v.IsNew}
+	v.OriginalValue, v.OriginalIsSecret = d.original()
+	v.IsNew = false
+	ef.DeletedVars = slices.Delete(ef.DeletedVars, i, i+1)
+}
+
+// undoRevival reverses reviveDeleted for the variable at idx, before a rename
+// or a delete takes it off the key it revived: the deleted variable is listed
+// again where it was, and the variable gets back its original and whether it
+// is new.
+func (ef *EnvFile) undoRevival(idx int) {
+	v := &ef.Vars[idx]
+	r := v.revival
+	if r == nil {
+		return
+	}
+	ef.DeletedVars = slices.Insert(ef.DeletedVars, min(r.index, len(ef.DeletedVars)), r.deleted)
+	v.OriginalValue, v.OriginalIsSecret, v.IsNew = r.originalValue, r.originalIsSecret, r.isNew
+	v.revival = nil
+}
+
+// AddVar appends a new variable to the file. A key deleted this session is
+// revived (see reviveDeleted).
 func (ef *EnvFile) AddVar(key, value string, isSecret bool) {
 	v := EnvVar{
 		Key:        key,
@@ -123,25 +174,17 @@ func (ef *EnvFile) AddVar(key, value string, isSecret bool) {
 		Content: key + "=" + value,
 		VarIdx:  varIdx,
 	})
-	// Remove from DeletedVars if re-adding a previously deleted key,
-	// and preserve the original value for peek.
-	for i, d := range ef.DeletedVars {
-		if d.Key == key {
-			last := &ef.Vars[varIdx]
-			last.OriginalValue, last.OriginalIsSecret = d.original()
-			last.IsNew = false // was deleted then re-added: treat as modified
-			ef.DeletedVars = append(ef.DeletedVars[:i], ef.DeletedVars[i+1:]...)
-			break
-		}
-	}
+	ef.reviveDeleted(varIdx)
 	ef.Modified = true
 }
 
-// DeleteVar removes a variable by index.
+// DeleteVar removes a variable by index. Deleting a variable that revived a
+// key lists the key's deleted variable again (see undoRevival).
 func (ef *EnvFile) DeleteVar(idx int) {
 	if idx < 0 || idx >= len(ef.Vars) {
 		return
 	}
+	ef.undoRevival(idx)
 	// Track deleted var for UI display (skip if it was newly added this session).
 	if !ef.Vars[idx].IsNew {
 		ef.DeletedVars = append(ef.DeletedVars, ef.Vars[idx])

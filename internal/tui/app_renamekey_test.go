@@ -1,10 +1,13 @@
 package tui
 
 import (
+	"os"
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/lazynop/lazyenv/internal/model"
 )
@@ -173,4 +176,77 @@ func TestRenameKey_ThenAddDoesNotConfuseFlows(t *testing.T) {
 	// Should be in add-value step, not confirmRenameKey
 	assert.Equal(t, ModeEditing, app.mode)
 	assert.Contains(t, app.editor.label, "NEW_VAR")
+}
+
+// renameKey renames the var under the cursor of app's var list to name, by
+// keys.
+func renameKey(app App, name string) App {
+	app = press(app, "E", "ctrl+u")
+	return press(app, append(strings.Split(name, ""), "enter")...)
+}
+
+// renameOntoDeleted deletes the var under the cursor of app's var list, the
+// one named deleted, and renames the var the cursor moves onto to that name,
+// by keys.
+func renameOntoDeleted(app App, deleted string) App {
+	return renameKey(press(app, "d", "y"), deleted)
+}
+
+// TestRenameKey_OntoADeletedKeyRevivesIt deletes FOO and renames BAR to FOO:
+// the var list shows one FOO row, with BAR's value, and no deleted row, and
+// peek shows FOO's value as the original.
+func TestRenameKey_OntoADeletedKeyRevivesIt(t *testing.T) {
+	app := onVars(resize(newTestApp([]*model.EnvFile{makeTestFile(".env", "FOO", "BAR")}), 80, 24))
+
+	app = press(renameOntoDeleted(app, "FOO"), "p")
+
+	require.Equal(t, ModeNormal, app.mode)
+	view := stripAnsi(app.View().Content)
+	assert.Equal(t, 1, strings.Count(view, "FOO  val_"), "the var list should show one FOO row and no deleted one")
+	assert.Contains(t, view, "FOO  val_BAR")
+	assert.Contains(t, view, "was: val_FOO", "peek should show the deleted var's value as the original")
+}
+
+// TestRenameKey_BackOffARevivedKeyListsItAsDeletedAgain deletes FOO, renames
+// BAR to FOO, then back to BAR, as when undoing a typo: the var list shows FOO
+// deleted again, and peek shows BAR's own value as its original.
+func TestRenameKey_BackOffARevivedKeyListsItAsDeletedAgain(t *testing.T) {
+	app := onVars(resize(newTestApp([]*model.EnvFile{makeTestFile(".env", "FOO", "BAR")}), 80, 24))
+
+	app = press(renameKey(renameOntoDeleted(app, "FOO"), "BAR"), "p")
+
+	require.Equal(t, ModeNormal, app.mode)
+	view := stripAnsi(app.View().Content)
+	assert.Contains(t, view, "BAR  val_BAR")
+	assert.Contains(t, view, "was: val_BAR", "peek should show BAR's own value as the original")
+	assert.Contains(t, view, "FOO  val_FOO", "the var list should show FOO deleted again")
+}
+
+// TestRenameKey_OntoADeletedSecretKeepsItsOriginalMasked deletes GREETING, a
+// secret by its value only, and renames BAR to GREETING: BAR's plain value
+// stays in clear, and peek shows the original masked.
+func TestRenameKey_OntoADeletedSecretKeepsItsOriginalMasked(t *testing.T) {
+	f := makeTestFile(".env", "GREETING", "BAR")
+	f.Vars[0].Value, f.Vars[0].IsSecret = "ghp_abc123", true
+	app := onVars(resize(newTestApp([]*model.EnvFile{f}), 80, 24))
+
+	app = press(renameOntoDeleted(app, "GREETING"), "p")
+
+	require.Equal(t, ModeNormal, app.mode)
+	view := stripAnsi(app.View().Content)
+	assert.Contains(t, view, "GREETING  val_BAR", "the renamed plain value should stay in clear")
+	assert.Contains(t, view, "was: ••••••••", "peek should mask the original of a deleted secret")
+	assert.NotContains(t, view, "ghp_abc123", "peek must not reveal the original of a deleted secret")
+}
+
+// TestRenameKey_OntoADeletedKeySavesTheRenamedValue deletes FOO, renames BAR
+// to FOO and saves: the file holds FOO with BAR's value, and no BAR.
+func TestRenameKey_OntoADeletedKeySavesTheRenamedValue(t *testing.T) {
+	app, path := newTestAppWithDiskFile(t, "FOO=1\nBAR=2\n")
+
+	press(renameOntoDeleted(app, "FOO"), "w")
+
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.Equal(t, "FOO=2\n", string(data))
 }
