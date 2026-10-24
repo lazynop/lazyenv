@@ -545,7 +545,7 @@ func (m *VarListModel) renderHeaderLine(rowIdx int, group model.VarGroup, theme 
 	const format = "  %s %s %s" // arrow, label, count
 	// The label gives way to the arrow and the count, so the header keeps its
 	// one row.
-	label = truncate(label, m.Width-panelBorderWidth-lipgloss.Width(fmt.Sprintf(format, arrow, "", countStr)))
+	label = truncate(label, m.contentCols()-lipgloss.Width(fmt.Sprintf(format, arrow, "", countStr)))
 
 	if rowIdx == m.Cursor && m.Focused {
 		return theme.CursorItem.Render(fmt.Sprintf(format, arrow, label, countStr))
@@ -577,6 +577,11 @@ func (m *VarListModel) renderDeletedLine(dv *model.EnvVar, keyWidth, maxValWidth
 // contentRows returns how many rows the panel has inside its chrome.
 func (m *VarListModel) contentRows() int {
 	return max(m.Height-panelChromeHeight, 1)
+}
+
+// contentCols returns how many columns the panel has inside its borders.
+func (m *VarListModel) contentCols() int {
+	return m.Width - panelBorderWidth
 }
 
 // visibleLines returns how many display items fit in the viewport, leaving a
@@ -655,7 +660,7 @@ func (m *VarListModel) renderRows(keyWidth, maxValWidth int, theme Theme) []stri
 			lines = append(lines, m.renderPeekLine(v, keyWidth, maxValWidth, theme))
 		case noteRow:
 			// Cut to its one row, which drawnRows counts it as.
-			lines = append(lines, theme.MutedItem.Render(truncate(m.note(), m.Width-panelBorderWidth)))
+			lines = append(lines, theme.MutedItem.Render(truncate(m.note(), m.contentCols())))
 		case deletedRow:
 			lines = append(lines, m.renderDeletedLine(&m.File.DeletedVars[row.index], keyWidth, maxValWidth, theme))
 		}
@@ -682,7 +687,7 @@ func (m *VarListModel) viewTitle(theme Theme) string {
 	count = fmt.Sprintf("(%s vars)", count)
 	const sep = " "
 	// The name gives way to the count, so the title keeps its one row.
-	room := m.Width - panelBorderWidth - theme.PanelTitle.GetHorizontalFrameSize() - lipgloss.Width(sep+count)
+	room := m.contentCols() - theme.PanelTitle.GetHorizontalFrameSize() - lipgloss.Width(sep+count)
 	return theme.PanelTitle.Render(truncate(m.File.Name, room)) + sep + theme.MutedItem.Render(count)
 }
 
