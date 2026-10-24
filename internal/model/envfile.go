@@ -192,7 +192,7 @@ func (ef *EnvFile) DeleteVar(idx int) {
 	// Find and remove the corresponding RawLine
 	for i, line := range ef.Lines {
 		if line.Type == LineVariable && line.VarIdx == idx {
-			ef.Lines = append(ef.Lines[:i], ef.Lines[i+1:]...)
+			ef.Lines = slices.Delete(ef.Lines, i, i+1)
 			break
 		}
 	}
@@ -202,7 +202,7 @@ func (ef *EnvFile) DeleteVar(idx int) {
 			ef.Lines[i].VarIdx--
 		}
 	}
-	ef.Vars = append(ef.Vars[:idx], ef.Vars[idx+1:]...)
+	ef.Vars = slices.Delete(ef.Vars, idx, idx+1)
 	ef.Modified = true
 }
 
