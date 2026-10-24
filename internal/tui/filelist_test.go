@@ -130,14 +130,17 @@ func TestFileListSetFilesResetsCursor(t *testing.T) {
 	assert.Equal(t, 0, fl.Selected)
 }
 
+// TestFileListViewEmpty draws an empty file list at its minimum width: the
+// note fits its one row.
 func TestFileListViewEmpty(t *testing.T) {
 	var fl FileListModel
-	fl.Width = 30
+	fl.Width = config.FileListMinWidth
 	fl.Height = 10
 
 	theme := BuildTheme(true, config.ColorConfig{})
-	view := fl.View(theme)
-	assert.Contains(t, view, "No .env files found")
+	rows := strings.Split(stripAnsi(fl.View(theme)), "\n")
+	assert.Equal(t, "No .env files", strings.Trim(rows[panelContentOffsetY], "│ "))
+	assert.Empty(t, strings.Trim(rows[panelContentOffsetY+1], "│ "), "the note should keep to its one row")
 }
 
 func TestFileListViewTruncatesLongNames(t *testing.T) {

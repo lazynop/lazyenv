@@ -134,7 +134,7 @@ func (m *FileListModel) View(theme Theme) string {
 	title := theme.PanelTitle.Render("Files") + " " + theme.MutedItem.Render(fmt.Sprintf("(%d)", len(m.Files)))
 
 	if len(m.Files) == 0 {
-		content := theme.MutedItem.Render("  No .env files found")
+		content := theme.MutedItem.Render("  No .env files")
 		return m.renderPanel(title, content, theme)
 	}
 
