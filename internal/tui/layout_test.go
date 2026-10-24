@@ -50,23 +50,28 @@ func layoutFilesNamed(env, local string) []*model.EnvFile {
 	}
 }
 
-// viewScenario renders one screen of the TUI at a terminal size, with secrets
-// revealed or masked.
+// viewScenario is one screen of the TUI: one an App draws over files, reached
+// by setup, or one drawn without files by draw.
 type viewScenario struct {
-	name   string
-	mode   AppMode // -1 for a screen outside App
-	render func(t *testing.T, width, height int, reveal bool) string
-	setup  func(app App) App // drives an App over files to the screen; nil for a screen drawn without files
+	name  string
+	mode  AppMode                                      // -1 for a screen outside App
+	setup func(app App) App                            // drives an App over files to the screen
+	draw  func(t *testing.T, width, height int) string // draws the screen when there is no setup
 }
 
-// appScenario renders the screen setup drives an App over layoutFiles to.
+// appScenario is the screen setup drives an App over files to.
 func appScenario(name string, mode AppMode, setup func(app App) App) viewScenario {
-	sc := viewScenario{name: name, mode: mode, setup: setup}
-	sc.render = func(t *testing.T, width, height int, reveal bool) string {
-		t.Helper()
-		return sc.renderOver(t, layoutFiles(), width, height, reveal)
+	return viewScenario{name: name, mode: mode, setup: setup}
+}
+
+// render renders the scenario's screen at a terminal size, over layoutFiles
+// when it has a setup, with secrets revealed or masked.
+func (sc viewScenario) render(t *testing.T, width, height int, reveal bool) string {
+	t.Helper()
+	if sc.setup == nil {
+		return sc.draw(t, width, height)
 	}
-	return sc
+	return sc.renderOver(t, layoutFiles(), width, height, reveal)
 }
 
 // renderOver sizes a fresh App over files, drives it with the scenario's setup
@@ -83,7 +88,7 @@ func (sc viewScenario) renderOver(t *testing.T, files []*model.EnvFile, width, h
 // configErrorScenario sizes an App that startup sends to the config error
 // screen and renders it.
 func configErrorScenario(name string, startup StartupMessages) viewScenario {
-	return viewScenario{name: name, mode: ModeConfigError, render: func(t *testing.T, width, height int, _ bool) string {
+	return viewScenario{name: name, mode: ModeConfigError, draw: func(t *testing.T, width, height int) string {
 		t.Helper()
 		app := resize(NewApp(config.DefaultConfig(), startup), width, height)
 		require.Equal(t, ModeConfigError, app.mode, "%s: startup should reach the mode", name)
@@ -182,7 +187,7 @@ var viewScenarios = []viewScenario{
 		ConfigPath:   "/home/user/projects/a-rather-long-project-name/configuration/lazyenv/config.toml",
 		ConfigErrors: []string{`invalid sort value: "random"`, `invalid colors.primary: "teal" (expected hex like #RRGGBB or ANSI 0-255)`},
 	}),
-	{name: "theme preview", mode: -1, render: func(t *testing.T, width, height int, _ bool) string {
+	{name: "theme preview", mode: -1, draw: func(t *testing.T, width, height int) string {
 		m := NewThemePreview(config.DefaultConfig())
 		m.searchPaths = []string{".lazyenvrc", "/home/user/.config/lazyenv/config.toml", "/home/user/.lazyenvrc"}
 		updated, _ := m.Update(tea.WindowSizeMsg{Width: width, Height: height})
