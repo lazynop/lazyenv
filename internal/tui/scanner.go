@@ -97,16 +97,17 @@ func CheckGitIgnore(files []*model.EnvFile) {
 		paths[i] = f.Path
 	}
 
-	// The paths go both ways NUL-terminated (-z, which needs --stdin): one per
-	// line, git would quote a path holding a control character or a non-ASCII
-	// byte.
+	// -z, which needs --stdin, has git take and print the paths split by NUL:
+	// one per line, it would quote a path holding a control character, or a
+	// non-ASCII byte while core.quotePath is on (the default).
+	const nul = "\x00"
 	cmd := exec.Command("git", "check-ignore", "-z", "--stdin")
 	cmd.Dir = dir
-	cmd.Stdin = strings.NewReader(strings.Join(paths, "\x00"))
+	cmd.Stdin = strings.NewReader(strings.Join(paths, nul))
 	output, _ := cmd.Output()
 
 	ignored := make(map[string]bool)
-	for path := range strings.SplitSeq(string(output), "\x00") {
+	for path := range strings.SplitSeq(string(output), nul) {
 		if path != "" {
 			ignored[path] = true
 		}
