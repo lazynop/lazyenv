@@ -633,7 +633,9 @@ func (a App) handleNormalVarEdit(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bool)
 		v := a.varList.SelectedVar()
 		if v != nil {
 			idx := a.varList.SelectedVarIndex()
-			a.editor.StartEdit(v, idx)
+			if !a.editor.StartEdit(v, idx) {
+				return a, a.flashWarning(uneditableValueWarning), true
+			}
 			a.mode = ModeEditing
 			return a, a.editor.input.Focus(), true
 		}
