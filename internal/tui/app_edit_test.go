@@ -74,22 +74,44 @@ func assertMaskedInView(t *testing.T, view, value string, masked bool) {
 	}
 }
 
+// valueEdits are the keys that start editing the value of the variable under
+// the cursor, from the main view on .env and .env.prod: in the var list, and on
+// either side of the compare view.
+var valueEdits = []struct {
+	name   string
+	keys   []string
+	label  string  // the edit bar's label for CERT
+	mode   AppMode // the mode the keys leave the app in when the bar stays closed
+	edited int     // index of the file whose value the keys edit
+}{
+	{"var list e", []string{"right", "e"}, "Edit CERT: ", ModeNormal, 0},
+	{"compare e", []string{"c", "j", "enter", "e"}, "Edit CERT in .env: ", ModeComparing, 0},
+	{"compare E", []string{"c", "j", "enter", "E"}, "Edit CERT in .env.prod: ", ModeComparing, 1},
+}
+
+// valueEditApp returns an app on .env and .env.prod, each holding CERT=plain
+// but the file at index edited, which holds line instead.
+func valueEditApp(edited int, line string) (App, []*model.EnvFile) {
+	lines := []string{"CERT=plain", "CERT=plain"}
+	lines[edited] = line
+	files := []*model.EnvFile{
+		parser.ParseBytes(".env", []byte(lines[0]+"\n"), config.SecretsConfig{}),
+		parser.ParseBytes(".env.prod", []byte(lines[1]+"\n"), config.SecretsConfig{}),
+	}
+	return resize(newTestApp(files), 120, 40), files
+}
+
 // TestConfirmingAnUntouchedEditKeepsTheValue opens the edit bar on a value and
 // confirms it without typing: the value and the file stay unchanged.
 func TestConfirmingAnUntouchedEditKeepsTheValue(t *testing.T) {
-	for name, open := range map[string][]string{
-		"var list": {"right", "e"},
-		"compare":  {"c", "j", "enter", "e"},
-	} {
-		t.Run(name, func(t *testing.T) {
-			f := parser.ParseBytes(".env", []byte("HOST=localhost\n"), config.SecretsConfig{})
-			other := parser.ParseBytes(".env.prod", []byte("HOST=x\n"), config.SecretsConfig{})
-			app := resize(newTestApp([]*model.EnvFile{f, other}), 80, 24)
+	for _, edit := range valueEdits {
+		t.Run(edit.name, func(t *testing.T) {
+			app, files := valueEditApp(edit.edited, "CERT=plain")
 
-			press(app, append(open, "enter")...)
+			press(press(app, edit.keys...), "enter")
 
-			assert.Equal(t, "localhost", f.Vars[0].Value)
-			assert.False(t, f.Modified, "an untouched edit must not modify the file")
+			assert.Equal(t, "plain", files[edit.edited].Vars[0].Value)
+			assert.False(t, files[edit.edited].Modified, "an untouched edit must not modify the file")
 		})
 	}
 }
@@ -98,38 +120,26 @@ func TestConfirmingAnUntouchedEditKeepsTheValue(t *testing.T) {
 // control characters: the bar opens on the value, and typing then confirming
 // changes it.
 func TestEditOpensTheBarOnAPlainValue(t *testing.T) {
-	opens := []struct {
-		name   string
-		keys   []string
-		label  string
-		edited int // index of the file the key edits
-	}{
-		{"var list e", []string{"right", "e"}, "Edit HOST: ", 0},
-		{"compare e", []string{"c", "j", "enter", "e"}, "Edit HOST in .env: ", 0},
-		{"compare E", []string{"c", "j", "enter", "E"}, "Edit HOST in .env.prod: ", 1},
-	}
-	for _, open := range opens {
-		t.Run(open.name, func(t *testing.T) {
-			files := []*model.EnvFile{
-				parser.ParseBytes(".env", []byte("HOST=localhost\n"), config.SecretsConfig{}),
-				parser.ParseBytes(".env.prod", []byte("HOST=localhost\n"), config.SecretsConfig{}),
-			}
-			app := press(resize(newTestApp(files), 120, 40), open.keys...)
-			require.Contains(t, stripAnsi(app.View().Content), open.label+"> localhost")
+	for _, edit := range valueEdits {
+		t.Run(edit.name, func(t *testing.T) {
+			app, files := valueEditApp(edit.edited, "CERT=plain")
+			app = press(app, edit.keys...)
+			require.Contains(t, stripAnsi(app.View().Content), edit.label+"> plain")
 
 			view := stripAnsi(press(app, "z", "enter").View().Content)
 
-			assert.Contains(t, view, "Modified HOST")
-			assert.Contains(t, view, "localhostz")
-			assert.Equal(t, "localhostz", files[open.edited].Vars[0].Value)
-			assert.True(t, files[open.edited].Modified)
+			assert.Contains(t, view, "Modified CERT")
+			assert.Contains(t, view, "plainz")
+			assert.Equal(t, "plainz", files[edit.edited].Vars[0].Value)
+			assert.True(t, files[edit.edited].Modified)
 		})
 	}
 }
 
 // TestEditRefusesAValueTheBarCannotShow presses an edit key on a value the edit
-// bar would not show as it is: the bar stays closed, the status bar warns, and
-// the value and the file stay unchanged.
+// bar would not show as it is, then types and confirms as on an open bar: the
+// bar stays closed, the status bar warns, and the value and the files stay
+// unchanged.
 func TestEditRefusesAValueTheBarCannotShow(t *testing.T) {
 	values := []struct{ name, line, value string }{
 		{"line break", `CERT="line1\nline2"`, "line1\nline2"},
@@ -137,29 +147,22 @@ func TestEditRefusesAValueTheBarCannotShow(t *testing.T) {
 		{"escape", "CERT=a\x1bb", "a\x1bb"},
 		{"invalid byte", "CERT=a\xffb", "a\xffb"},
 	}
-	opens := []struct {
-		name string
-		keys []string
-		mode AppMode
-	}{
-		{"var list e", []string{"right", "e"}, ModeNormal},
-		{"compare e", []string{"c", "j", "enter", "e"}, ModeComparing},
-		{"compare E", []string{"c", "j", "enter", "E"}, ModeComparing},
-	}
 	for _, v := range values {
-		for _, open := range opens {
-			t.Run(v.name+"/"+open.name, func(t *testing.T) {
-				f := parser.ParseBytes(".env", []byte(v.line+"\n"), config.SecretsConfig{})
-				other := parser.ParseBytes(".env.prod", []byte(v.line+"\n"), config.SecretsConfig{})
-				app := press(resize(newTestApp([]*model.EnvFile{f, other}), 120, 40), open.keys...)
+		for _, edit := range valueEdits {
+			t.Run(v.name+"/"+edit.name, func(t *testing.T) {
+				app, files := valueEditApp(edit.edited, v.line)
+				app = press(app, edit.keys...)
 
 				view := stripAnsi(app.View().Content)
-				assert.Equal(t, open.mode, app.mode, "the edit bar must not open")
+				assert.Equal(t, edit.mode, app.mode, "the edit bar must not open")
 				assert.NotContains(t, view, "Edit CERT")
 				assert.Contains(t, view, "Value holds line breaks or control characters: can't edit it here")
-				for _, file := range []*model.EnvFile{f, other} {
-					assert.Equal(t, v.value, file.Vars[0].Value)
-					assert.False(t, file.Modified, "a refused edit must not modify %s", file.Name)
+
+				press(app, "z", "enter")
+
+				assert.Equal(t, v.value, files[edit.edited].Vars[0].Value)
+				for _, f := range files {
+					assert.False(t, f.Modified, "a refused edit must not modify %s", f.Name)
 				}
 			})
 		}
