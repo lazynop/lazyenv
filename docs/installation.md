@@ -14,7 +14,7 @@ Download the latest binary for your platform from [GitHub Releases](https://gith
 brew install lazynop/tap/lazyenv
 ```
 
-lazyenv ships as a cask. On Linux, casks need Homebrew 4.5 or later.
+lazyenv ships as a cask, which needs Homebrew 6.0.13 or later.
 
 ## AUR (Arch Linux)
 
