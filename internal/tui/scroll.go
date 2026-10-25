@@ -70,8 +70,15 @@ func (s *scrollCursor) pageMove(visible, total, pages int) {
 // the cursor stays where it is.
 func (s *scrollCursor) moveTo(index, total int) {
 	if total > 0 {
-		s.Cursor = max(0, min(index, total-1))
+		s.Cursor = index
+		s.clamp(total)
 	}
+}
+
+// clamp brings the cursor back within total positions, as after the list
+// shrinks; with none, onto the first.
+func (s *scrollCursor) clamp(total int) {
+	s.Cursor = max(min(s.Cursor, total-1), 0)
 }
 
 // follow scrolls a viewport of visible rows over total rows just enough to

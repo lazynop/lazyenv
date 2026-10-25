@@ -48,9 +48,9 @@ type displayItem struct {
 
 // VarListModel manages the variable list panel.
 type VarListModel struct {
+	scrollCursor // Cursor and Offset over displayItems
+
 	File        *model.EnvFile
-	Cursor      int
-	Offset      int // scroll offset
 	Height      int
 	Width       int
 	Focused     bool
@@ -79,8 +79,7 @@ func NewVarListModel(layout config.LayoutConfig) VarListModel {
 // SetFile sets the active file and recomputes display rows.
 func (m *VarListModel) SetFile(f *model.EnvFile) {
 	m.File = f
-	m.Cursor = 0
-	m.Offset = 0
+	m.scrollCursor = scrollCursor{}
 	m.Peeking = false
 	m.recomputeDisplay()
 }
@@ -189,12 +188,7 @@ func (m *VarListModel) isOriginalMasked(v *model.EnvVar) bool {
 }
 
 func (m *VarListModel) clampCursor() {
-	if m.Cursor >= len(m.displayItems) {
-		m.Cursor = max(0, len(m.displayItems)-1)
-	}
-	if m.Cursor < 0 {
-		m.Cursor = 0
-	}
+	m.clamp(len(m.displayItems))
 	// Keep the scroll offset within the (possibly shrunken) list, and the
 	// cursor row (now perhaps modified, with a peek line) inside the viewport.
 	m.ensureCursorVisible()
@@ -220,7 +214,7 @@ func (m *VarListModel) ensureCursorVisible() {
 	if m.File != nil {
 		rows += len(m.File.DeletedVars)
 	}
-	m.Offset = scrollOffset(m.Cursor, m.Offset, visible, rows)
+	m.follow(visible, rows)
 	if m.Cursor == len(m.displayItems)-1 {
 		m.Offset = max(m.Offset, min(m.Cursor, rows-visible))
 	}
@@ -228,29 +222,25 @@ func (m *VarListModel) ensureCursorVisible() {
 
 // MoveUp moves the cursor up.
 func (m *VarListModel) MoveUp() {
-	if m.Cursor > 0 {
-		m.Cursor--
-		m.ensureCursorVisible()
-	}
+	m.prev()
+	m.ensureCursorVisible()
 }
 
 // MoveDown moves the cursor down.
 func (m *VarListModel) MoveDown() {
-	if m.Cursor < len(m.displayItems)-1 {
-		m.Cursor++
-		m.ensureCursorVisible()
-	}
+	m.next(len(m.displayItems))
+	m.ensureCursorVisible()
 }
 
 // PageUp scrolls up a page, the cursor moving with the view (pageMove).
 func (m *VarListModel) PageUp() {
-	m.Cursor, m.Offset = pageMove(m.Cursor, m.Offset, m.visibleLines(), len(m.displayItems), -1)
+	m.pageMove(m.visibleLines(), len(m.displayItems), -1)
 	m.ensureCursorVisible()
 }
 
 // PageDown scrolls down a page, the cursor moving with the view (pageMove).
 func (m *VarListModel) PageDown() {
-	m.Cursor, m.Offset = pageMove(m.Cursor, m.Offset, m.visibleLines(), len(m.displayItems), 1)
+	m.pageMove(m.visibleLines(), len(m.displayItems), 1)
 	m.ensureCursorVisible()
 }
 
@@ -280,10 +270,7 @@ func (m *VarListModel) TogglePeek() {
 // SetCursor positions the cursor at the given displayItems index with bounds
 // checking and adjusts the scroll offset to keep it visible.
 func (m *VarListModel) SetCursor(index int) {
-	if len(m.displayItems) == 0 {
-		return
-	}
-	m.Cursor = max(0, min(index, len(m.displayItems)-1))
+	m.moveTo(index, len(m.displayItems))
 	m.ensureCursorVisible()
 }
 
