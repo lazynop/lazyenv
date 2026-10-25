@@ -156,8 +156,8 @@ func TestPageKeysMoveTheMatrixRowCursor(t *testing.T) {
 	require.Equal(t, ModeMatrix, app.mode)
 	require.Equal(t, 1, app.matrixView.cols.Cursor)
 	matrixCursorItem := func(a App) string {
-		cell, _ := a.matrixView.cursorCell()
-		return cell.key
+		cell, _ := a.matrixView.CursorCell()
+		return cell.Key
 	}
 	for _, step := range pageSteps(pageKeys, matrixContentOffsetY) {
 		app = pressPageStep(t, app, step, matrixCursorItem)

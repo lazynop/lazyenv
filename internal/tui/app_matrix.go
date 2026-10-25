@@ -54,25 +54,25 @@ func (a App) handleMatrixEdit(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a, cmd
 	}
 
-	cell, ok := a.matrixView.cursorCell()
+	cell, ok := a.matrixView.CursorCell()
 	if !ok {
 		return a, nil
 	}
 
 	switch {
 	case key.Matches(msg, a.keys.Add):
-		if cell.present {
+		if cell.Present {
 			return a, a.flashWarning("Variable already exists")
 		}
 		cmd := a.matrixView.StartEdit()
 		a.mode = ModeMatrixEditing
 		return a, cmd
 	case key.Matches(msg, a.keys.Delete):
-		if !cell.present {
+		if !cell.Present {
 			return a, a.flashWarning("Variable not present in this file")
 		}
 		a.mode = ModeConfirmMatrixDelete
-		a.statusBar.SetAlert(fmt.Sprintf("Delete %s from %s? %s", cell.key, cell.file.Name, yesNo(a.keys)))
+		a.statusBar.SetAlert(fmt.Sprintf("Delete %s from %s? %s", cell.Key, cell.File.Name, yesNo(a.keys)))
 	}
 	return a, nil
 }

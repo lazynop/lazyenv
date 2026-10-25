@@ -136,23 +136,23 @@ func (m *MatrixModel) CellAt(x, y int) (row, col int) {
 	return row, col
 }
 
-// matrixCell is a cell of the matrix: the key of its row, the file of its
+// MatrixCell is a cell of the matrix: the key of its row, the file of its
 // column, and whether the file holds the key.
-type matrixCell struct {
-	key     string
-	file    *model.EnvFile
-	present bool
+type MatrixCell struct {
+	Key     string
+	File    *model.EnvFile
+	Present bool
 }
 
-// cursorCell returns the cell under the cursor, or false when the matrix has
+// CursorCell returns the cell under the cursor, or false when the matrix has
 // no keys.
-func (m *MatrixModel) cursorCell() (matrixCell, bool) {
+func (m *MatrixModel) CursorCell() (MatrixCell, bool) {
 	if len(m.entries) == 0 {
-		return matrixCell{}, false
+		return MatrixCell{}, false
 	}
 	entry := m.entries[m.rows.Cursor]
 	col := m.cols.Cursor
-	return matrixCell{key: entry.Key, file: m.files[col], present: entry.Present[col]}, true
+	return MatrixCell{Key: entry.Key, File: m.files[col], Present: entry.Present[col]}, true
 }
 
 // SetSize sizes the matrix and scrolls the cursor cell back into it.
@@ -200,12 +200,12 @@ func (m *MatrixModel) ToggleSort() {
 
 // StartEdit begins inline editing for the current cell (if missing).
 func (m *MatrixModel) StartEdit() tea.Cmd {
-	cell, ok := m.cursorCell()
-	if !ok || cell.present {
+	cell, ok := m.CursorCell()
+	if !ok || cell.Present {
 		return nil
 	}
 	m.editing = true
-	m.editKey = cell.key
+	m.editKey = cell.Key
 	m.editFile = m.cols.Cursor
 	m.editor.SetValue("")
 	m.editor.Placeholder = "value"
@@ -234,15 +234,15 @@ func (m *MatrixModel) ConfirmEdit() *model.EnvFile {
 // Returns the deleted key and the file it was deleted from, or a nil file if
 // nothing was deleted.
 func (m *MatrixModel) DeleteAtCursor() (string, *model.EnvFile) {
-	cell, ok := m.cursorCell()
-	if !ok || !cell.present {
+	cell, ok := m.CursorCell()
+	if !ok || !cell.Present {
 		return "", nil
 	}
-	if i := cell.file.LastIndexOfKey(cell.key); i >= 0 {
-		cell.file.DeleteVar(i)
+	if i := cell.File.LastIndexOfKey(cell.Key); i >= 0 {
+		cell.File.DeleteVar(i)
 	}
 	m.recompute()
-	return cell.key, cell.file
+	return cell.Key, cell.File
 }
 
 // CancelEdit cancels inline editing.

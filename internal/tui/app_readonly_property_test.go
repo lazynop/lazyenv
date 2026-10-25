@@ -154,8 +154,8 @@ func readDirContents(t *testing.T, dir string) map[string]string {
 // matrixCellPresent reports whether the variable under the matrix cursor
 // exists in the file under it: delete needs a present cell, add a missing one.
 func matrixCellPresent(m MatrixModel) bool {
-	cell, _ := m.cursorCell()
-	return cell.present
+	cell, _ := m.CursorCell()
+	return cell.Present
 }
 
 // loadedFiles returns every EnvFile the app holds in memory.

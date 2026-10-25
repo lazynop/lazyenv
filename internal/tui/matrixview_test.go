@@ -170,10 +170,10 @@ func TestMatrixStartEditMissing(t *testing.T) {
 	m.MoveDown()  // rows.Cursor = 1 (B)
 	m.MoveRight() // cols.Cursor = 1 (f2)
 
-	cell, ok := m.cursorCell()
+	cell, ok := m.CursorCell()
 	require.True(t, ok)
-	require.Equal(t, "B", cell.key)
-	require.False(t, cell.present, "B should be missing in f2")
+	require.Equal(t, "B", cell.Key)
+	require.False(t, cell.Present, "B should be missing in f2")
 
 	cmd := m.StartEdit()
 
