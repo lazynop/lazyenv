@@ -17,18 +17,19 @@ import (
 )
 
 const (
+	internalModelPath  = "github.com/lazynop/lazyenv/internal/model"
 	internalParserPath = "github.com/lazynop/lazyenv/internal/parser"
 	internalUtilPath   = "github.com/lazynop/lazyenv/internal/util"
 	bubbleteaPath      = "charm.land/bubbletea/v2"
 )
 
 // sourceRef is a reference, in this package's non-test source, to a function
-// of an imported package or of this one.
+// or type of an imported package or of this one.
 type sourceRef struct {
 	file  string // file name, relative to the package directory
 	line  int
 	owner string // enclosing top-level function, "" at package level
-	name  string // "pkg.Func" (pkg being the last element of the import path), or "Func"
+	name  string // "pkg.Name" (pkg being the last element of the import path), or "Name"
 }
 
 func (r sourceRef) String() string {
@@ -40,6 +41,22 @@ func (r sourceRef) String() string {
 // under; with importPath "", every call to one of this package's own funcs. It
 // walks the AST, so comments and strings never match.
 func sourceRefs(t *testing.T, importPath string, funcs ...string) []sourceRef {
+	t.Helper()
+	return sourceMatches(t, importPath, func(n ast.Node, local string) *ast.Ident {
+		if fn := refIdent(n, local); fn != nil && slices.Contains(funcs, fn.Name) {
+			return fn
+		}
+		return nil
+	})
+}
+
+// sourceMatches returns a sourceRef for every node, in this package's non-test
+// .go files, that match accepts. match gets the node and local, the name its
+// file imports the package at importPath under, and returns the identifier of
+// that package the node names, or nil to pass over the node. Files that do not
+// import the package are skipped; with importPath "", every file is walked
+// with local "", and the identifiers are this package's own.
+func sourceMatches(t *testing.T, importPath string, match func(n ast.Node, local string) *ast.Ident) []sourceRef {
 	t.Helper()
 	names, err := filepath.Glob("*.go")
 	require.NoError(t, err)
@@ -64,17 +81,17 @@ func sourceRefs(t *testing.T, importPath string, funcs ...string) []sourceRef {
 				owner = fn.Name.Name
 			}
 			ast.Inspect(decl, func(n ast.Node) bool {
-				fn := refIdent(n, local)
-				if fn == nil || !slices.Contains(funcs, fn.Name) {
+				id := match(n, local)
+				if id == nil {
 					return true
 				}
-				qualified := fn.Name
+				qualified := id.Name
 				if importPath != "" {
-					qualified = path.Base(importPath) + "." + fn.Name
+					qualified = path.Base(importPath) + "." + id.Name
 				}
 				refs = append(refs, sourceRef{
 					file:  name,
-					line:  fset.Position(fn.Pos()).Line,
+					line:  fset.Position(id.Pos()).Line,
 					owner: owner,
 					name:  qualified,
 				})

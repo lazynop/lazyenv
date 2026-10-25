@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"go/ast"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -103,4 +104,33 @@ func TestParseFileOnlyThroughReparse(t *testing.T) {
 	assertRefsAllowed(t, sourceRefs(t, internalParserPath, "ParseFile"), parseFileAllowed,
 		"re-parse an in-memory file with reparse (app_reparse.go) so its runtime state survives; "+
 			"a load with no in-memory predecessor goes in parseFileAllowed")
+}
+
+// TestEnvFilesComeFromTheParser fails on a model.EnvFile built in this
+// package's non-test files: by a composite literal, new or a var declaration.
+// A file built by hand lacks what the parser sets up, such as each variable's
+// flags, derived from its key and value with the [secrets] config.
+func TestEnvFilesComeFromTheParser(t *testing.T) {
+	assert.Empty(t, sourceMatches(t, internalModelPath, envFileBuild),
+		"get an EnvFile from parser.ParseFile or parser.ParseBytes (reparse for a file already in memory), never build one")
+}
+
+// envFileBuild returns the EnvFile identifier of a model.EnvFile that n
+// builds, local being the file's name for the model package, or nil.
+func envFileBuild(n ast.Node, local string) *ast.Ident {
+	var typ ast.Expr
+	switch n := n.(type) {
+	case *ast.CompositeLit:
+		typ = n.Type
+	case *ast.CallExpr:
+		if fn, ok := n.Fun.(*ast.Ident); ok && fn.Name == "new" && len(n.Args) == 1 {
+			typ = n.Args[0]
+		}
+	case *ast.ValueSpec:
+		typ = n.Type
+	}
+	if !isSelector(typ, local, "EnvFile") {
+		return nil
+	}
+	return typ.(*ast.SelectorExpr).Sel
 }
