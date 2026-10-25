@@ -35,6 +35,35 @@ test-cover:
     go test -race -coverprofile=coverage.out ./...
     go tool cover -func=coverage.out
 
+# Mutation-test FILE: replace OLD (it must occur once) with NEW, run the tests matching RUN, restore FILE. Exit 0 killed, 1 survived, 2 no mutant
+[no-exit-message]
+mutant $file $old $new $run=".":
+    #!/usr/bin/env bash
+    set -uo pipefail
+    count=$(perl -0777 -ne 'print scalar(() = /\Q$ENV{old}\E/g)' "$file") || exit 2
+    if [ "$count" != 1 ]; then
+        echo "OLD occurs $count times in $file: it must occur exactly once" >&2
+        exit 2
+    fi
+    backup=$(mktemp)
+    cp "$file" "$backup"
+    # Restore FILE however the run ends, Ctrl+C included
+    trap 'cp "$backup" "$file"; rm -f "$backup"' EXIT
+    trap 'exit 130' INT TERM
+    perl -0777 -pi -e 's/\Q$ENV{old}\E/$ENV{new}/' "$file"
+    if out=$(go test ./... -run "$run" 2>&1); then
+        echo "survived: no test matching $run failed"
+        exit 1
+    fi
+    killers=$(grep -o '^--- FAIL: [^ ]*' <<<"$out" | cut -d' ' -f3 | sort -u)
+    if [ -z "$killers" ]; then
+        echo "no mutant: the change broke the build or the test run, not a test" >&2
+        echo "$out" >&2
+        exit 2
+    fi
+    echo "killed by:"
+    sed 's/^/  /' <<<"$killers"
+
 # Run static analysis
 vet:
     @go vet ./...
