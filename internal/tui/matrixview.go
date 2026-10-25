@@ -217,29 +217,32 @@ func (m *MatrixModel) EditBar() (string, *textinput.Model) {
 	return fmt.Sprintf("  Add %s to %s: ", m.editKey, m.fileNames[m.editFile]), &m.editor
 }
 
-// ConfirmEdit adds the variable to the target file.
-func (m *MatrixModel) ConfirmEdit() {
+// ConfirmEdit adds the variable to the target file and returns that file, or
+// nil when no edit is open.
+func (m *MatrixModel) ConfirmEdit() *model.EnvFile {
 	if !m.editing {
-		return
+		return nil
 	}
 	f := m.files[m.editFile]
 	f.AddVar(m.editKey, m.editor.Value())
 	m.editing = false
 	m.recompute()
+	return f
 }
 
 // DeleteAtCursor deletes the variable at the current cursor position.
-// Returns the deleted key name and file name, or empty strings if nothing was deleted.
-func (m *MatrixModel) DeleteAtCursor() (string, string) {
+// Returns the deleted key and the file it was deleted from, or a nil file if
+// nothing was deleted.
+func (m *MatrixModel) DeleteAtCursor() (string, *model.EnvFile) {
 	cell, ok := m.cursorCell()
 	if !ok || !cell.present {
-		return "", ""
+		return "", nil
 	}
 	if i := cell.file.LastIndexOfKey(cell.key); i >= 0 {
 		cell.file.DeleteVar(i)
 	}
 	m.recompute()
-	return cell.key, cell.file.Name
+	return cell.key, cell.file
 }
 
 // CancelEdit cancels inline editing.
