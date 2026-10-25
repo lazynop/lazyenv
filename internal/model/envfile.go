@@ -82,20 +82,20 @@ type RawLine struct {
 }
 
 // UpdateVar updates the value of a variable by index, and the flags that
-// follow from it (see deriveFlags).
+// follow from it (see deriveVarFlags).
 func (ef *EnvFile) UpdateVar(idx int, newValue string) {
 	if idx < 0 || idx >= len(ef.Vars) {
 		return
 	}
 	ef.markModified(idx)
 	ef.Vars[idx].Value = newValue
-	ef.deriveFlags(idx)
+	ef.deriveVarFlags(idx)
 }
 
 // RenameVar updates the key of a variable by index, and the flags that follow
-// from it (see deriveFlags and markDuplicates). Renaming a variable onto a key
-// deleted this session revives the key (see reviveDeleted), and renaming it
-// off that key lists the key as deleted again (see undoRevival).
+// from it (see deriveVarFlags and markDuplicates). Renaming a variable onto a
+// key deleted this session revives the key (see reviveDeleted), and renaming
+// it off that key lists the key as deleted again (see undoRevival).
 func (ef *EnvFile) RenameVar(idx int, newKey string) {
 	if idx < 0 || idx >= len(ef.Vars) {
 		return
@@ -103,24 +103,33 @@ func (ef *EnvFile) RenameVar(idx int, newKey string) {
 	ef.markModified(idx)
 	ef.undoRevival(idx)
 	ef.Vars[idx].Key = newKey
-	ef.deriveFlags(idx)
+	ef.deriveVarFlags(idx)
 	ef.markDuplicates()
 	ef.reviveDeleted(idx)
 }
 
-// deriveFlags sets the flags of the variable at idx that follow from its key
-// and value, as the parser does: whether it is empty, a secret under the
-// file's [secrets] config, or a placeholder. The variable then looks as it will
-// once a save re-parses the file.
-func (ef *EnvFile) deriveFlags(idx int) {
+// DeriveFlags sets every flag that follows from the variables' keys and values
+// (see deriveVarFlags and markDuplicates). The parser calls it once it has read
+// them all; the methods that change a variable keep them up to date, so a
+// variable looks as it will once a save re-parses the file.
+func (ef *EnvFile) DeriveFlags() {
+	for i := range ef.Vars {
+		ef.deriveVarFlags(i)
+	}
+	ef.markDuplicates()
+}
+
+// deriveVarFlags sets the flags of the variable at idx that follow from its
+// key and value: whether it is empty, a secret under the file's [secrets]
+// config, or a placeholder.
+func (ef *EnvFile) deriveVarFlags(idx int) {
 	v := &ef.Vars[idx]
 	v.IsEmpty = v.Value == ""
 	v.IsSecret = util.IsSecret(v.Key, v.Value, ef.Secrets)
 	v.IsPlaceholder = util.IsPlaceholderValue(v.Value)
 }
 
-// markDuplicates flags every variable whose key another variable shares, as
-// the parser does.
+// markDuplicates flags every variable whose key another variable shares.
 func (ef *EnvFile) markDuplicates() {
 	count := make(map[string]int, len(ef.Vars))
 	for _, v := range ef.Vars {
@@ -183,7 +192,7 @@ func (ef *EnvFile) undoRevival(idx int) {
 }
 
 // AddVar appends a new variable to the file, with the flags that follow from
-// its key and value (see deriveFlags and markDuplicates). A key deleted this
+// its key and value (see deriveVarFlags and markDuplicates). A key deleted this
 // session is revived (see reviveDeleted).
 func (ef *EnvFile) AddVar(key, value string) {
 	v := EnvVar{
@@ -201,7 +210,7 @@ func (ef *EnvFile) AddVar(key, value string) {
 		Content: key + "=" + value,
 		VarIdx:  varIdx,
 	})
-	ef.deriveFlags(varIdx)
+	ef.deriveVarFlags(varIdx)
 	ef.markDuplicates()
 	ef.reviveDeleted(varIdx)
 	ef.Modified = true

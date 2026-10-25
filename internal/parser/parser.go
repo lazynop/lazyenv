@@ -6,7 +6,6 @@ import (
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
-	"github.com/lazynop/lazyenv/internal/util"
 )
 
 // basename returns the last path component of a file path, supporting both
@@ -53,8 +52,6 @@ func ParseBytes(name string, data []byte, secrets config.SecretsConfig) *model.E
 		lines = lines[:len(lines)-1]
 	}
 
-	keySeen := make(map[string]bool)
-
 	i := 0
 	for i < len(lines) {
 		line := lines[i]
@@ -97,20 +94,13 @@ func ParseBytes(name string, data []byte, secrets config.SecretsConfig) *model.E
 			continue
 		}
 
-		isDuplicate := keySeen[key]
-		keySeen[key] = true
-
 		v := model.EnvVar{
-			Key:           key,
-			Value:         value,
-			Comment:       comment,
-			LineNum:       lineNum,
-			QuoteStyle:    quoteStyle,
-			HasExport:     hasExport,
-			IsSecret:      util.IsSecret(key, value, secrets),
-			IsEmpty:       value == "",
-			IsPlaceholder: util.IsPlaceholderValue(value),
-			IsDuplicate:   isDuplicate,
+			Key:        key,
+			Value:      value,
+			Comment:    comment,
+			LineNum:    lineNum,
+			QuoteStyle: quoteStyle,
+			HasExport:  hasExport,
 		}
 
 		varIdx := len(ef.Vars)
@@ -121,18 +111,10 @@ func ParseBytes(name string, data []byte, secrets config.SecretsConfig) *model.E
 			VarIdx:  varIdx,
 		})
 
-		// Mark earlier occurrences as duplicate too
-		if isDuplicate {
-			for j := range varIdx {
-				if ef.Vars[j].Key == key {
-					ef.Vars[j].IsDuplicate = true
-				}
-			}
-		}
-
 		i += consumed
 	}
 
+	ef.DeriveFlags()
 	return ef
 }
 
