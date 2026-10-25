@@ -41,13 +41,12 @@ type DiffViewModel struct {
 	ShowSecrets bool
 	Stats       DiffStats
 
-	layout  config.LayoutConfig
-	secrets config.SecretsConfig // the config Reset re-parses both files with
+	layout config.LayoutConfig
 }
 
 // NewDiffViewModel creates a new diff view model.
-func NewDiffViewModel(layout config.LayoutConfig, secrets config.SecretsConfig) DiffViewModel {
-	return DiffViewModel{layout: layout, secrets: secrets}
+func NewDiffViewModel(layout config.LayoutConfig) DiffViewModel {
+	return DiffViewModel{layout: layout}
 }
 
 // SetFiles computes the diff between two files.
@@ -232,8 +231,8 @@ func (m *DiffViewModel) CopyToLeft() string {
 // Reset re-parses both files from disk, discarding in-memory edits.
 // Returns error message on failure, empty string on success.
 func (m *DiffViewModel) Reset() string {
-	newA, errA := reparse(m.FileA, m.secrets)
-	newB, errB := reparse(m.FileB, m.secrets)
+	newA, errA := reparse(m.FileA)
+	newB, errB := reparse(m.FileB)
 	if errA != nil {
 		return "Failed to reload " + m.FileA.Name
 	}

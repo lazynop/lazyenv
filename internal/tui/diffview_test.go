@@ -32,7 +32,7 @@ func TestDiffViewRenderEntryFlattensControlChars(t *testing.T) {
 	a.Vars[0].Value = "left1\nleft2\tcol\rend"
 	b.Vars[0].Value = "right1\nright2"
 
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.SetFiles(a, b)
 	theme := BuildTheme(true, config.ColorConfig{})
 
@@ -55,7 +55,7 @@ func TestDiffViewRenderEntryFlattensControlChars(t *testing.T) {
 
 func TestDiffViewSetFiles(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.SetFiles(a, b)
 
 	assert.Equal(t, a, dv.FileA)
@@ -66,7 +66,7 @@ func TestDiffViewSetFiles(t *testing.T) {
 
 func TestDiffViewStats(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.SetFiles(a, b)
 
 	assert.Equal(t, 1, dv.Stats.Equal, "SHARED is equal")
@@ -77,7 +77,7 @@ func TestDiffViewStats(t *testing.T) {
 
 func TestDiffViewMoveUpDown(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -103,7 +103,7 @@ func TestDiffViewMoveUpDown(t *testing.T) {
 
 func TestDiffViewMoveDownBound(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -116,7 +116,7 @@ func TestDiffViewMoveDownBound(t *testing.T) {
 
 func TestDiffViewToggleFilter(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.SetFiles(a, b)
 
 	totalBefore := len(dv.Entries)
@@ -139,7 +139,7 @@ func TestDiffViewToggleFilter(t *testing.T) {
 
 func TestDiffViewCopyToRightChanged(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -162,7 +162,7 @@ func TestDiffViewCopyToRightChanged(t *testing.T) {
 
 func TestDiffViewCopyToRightAdded(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -185,7 +185,7 @@ func TestDiffViewCopyToRightAdded(t *testing.T) {
 
 func TestDiffViewCopyToRightRemoved(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -207,7 +207,7 @@ func TestDiffViewCopyToRightRemoved(t *testing.T) {
 
 func TestDiffViewCopyToLeftChanged(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -230,7 +230,7 @@ func TestDiffViewCopyToLeftChanged(t *testing.T) {
 
 func TestDiffViewCopyToLeftRemoved(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -252,7 +252,7 @@ func TestDiffViewCopyToLeftRemoved(t *testing.T) {
 
 func TestDiffViewCopyToLeftAdded(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -274,7 +274,7 @@ func TestDiffViewCopyToLeftAdded(t *testing.T) {
 
 func TestDiffViewCopyEqualNoOp(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -295,7 +295,7 @@ func TestDiffViewCopyEqualNoOp(t *testing.T) {
 
 func TestDiffViewNextPrevDiff(t *testing.T) {
 	a, b := makeDiffFiles()
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
@@ -318,7 +318,7 @@ func TestDiffViewNextPrevDiff(t *testing.T) {
 }
 
 func TestDiffViewCopyOutOfBounds(t *testing.T) {
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Cursor = -1
 	assert.Equal(t, "", dv.CopyToRight())
 	assert.Equal(t, "", dv.CopyToLeft())
@@ -330,7 +330,7 @@ func TestDiffViewTruncatesLongKeys(t *testing.T) {
 	b := makeTestFile(".env.prod", longKey)
 	b.Vars[0].Value = "different"
 
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Width = 100
 	dv.Height = 20
 	dv.SetFiles(a, b)
@@ -355,7 +355,7 @@ func TestDiffViewNarrowWidthKeepsEachEntryOnOneRow(t *testing.T) {
 	height := panelChromeHeight + 4 // fewer rows than entries: a wrapped entry has no spare row to hide in
 
 	assertNoRowWraps(t, 40, 100, height, []string{"≠"}, func(width int) string {
-		dv := NewDiffViewModel(layout, config.SecretsConfig{})
+		dv := NewDiffViewModel(layout)
 		dv.Width = width
 		dv.Height = height
 		dv.SetFiles(a, b)
@@ -394,7 +394,7 @@ func TestDiffViewResetPreservesGitWarning(t *testing.T) {
 	require.NoError(t, err)
 	fB.GitWarning = true
 
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.SetFiles(fA, fB)
 
 	// Modify and then reset
@@ -415,7 +415,7 @@ func TestDiffViewScrolling(t *testing.T) {
 	a := makeTestFile(".env", keys...)
 	b := makeTestFile(".env.prod") // empty — all will be "added"
 
-	dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.Height = 12 // visible = 12 - 4 = 8
 	dv.SetFiles(a, b)
 

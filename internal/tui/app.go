@@ -159,7 +159,7 @@ func NewApp(cfg config.Config, startup StartupMessages) App {
 		fileList:      NewFileListModel(),
 		varList:       varList,
 		statusBar:     sb,
-		diffView:      NewDiffViewModel(cfg.Layout, cfg.Secrets),
+		diffView:      NewDiffViewModel(cfg.Layout),
 		helpView:      NewHelpViewModel(keys, !cfg.NoMouse && cfg.Layout.MouseScrollLines > 0),
 		matrixView:    NewMatrixModel(nil, cfg.Layout),
 		editor:        NewEditorModel(),

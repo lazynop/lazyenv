@@ -1,22 +1,22 @@
 package tui
 
 import (
-	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 // reparse re-reads f from disk and returns the EnvFile that replaces it in
-// memory. parser.ParseFile knows only what is on disk, so reparse carries over
-// the state set at runtime (GitWarning, from CheckGitIgnore). Unsaved edit
-// state (Modified, DeletedVars, per-variable edit flags) is dropped: the
-// result matches the disk.
+// memory. parser.ParseFile knows only what is on disk, so reparse hands it the
+// [secrets] config f was parsed with and carries over the state set at
+// runtime (GitWarning, from CheckGitIgnore). Unsaved edit state (Modified,
+// DeletedVars, per-variable edit flags) is dropped: the result matches the
+// disk.
 //
 // Every re-parse of a file already held in memory goes through here;
 // TestParseFileOnlyThroughReparse fails on a direct parser.ParseFile call
 // elsewhere in this package.
-func reparse(f *model.EnvFile, secrets config.SecretsConfig) (*model.EnvFile, error) {
-	refreshed, err := parser.ParseFile(f.Path, secrets)
+func reparse(f *model.EnvFile) (*model.EnvFile, error) {
+	refreshed, err := parser.ParseFile(f.Path, f.Secrets)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func reparse(f *model.EnvFile, secrets config.SecretsConfig) (*model.EnvFile, er
 // refreshFile re-parses f from disk and swaps the result in for f wherever the
 // App holds it (see replaceFile).
 func (a *App) refreshFile(f *model.EnvFile) (*model.EnvFile, error) {
-	refreshed, err := reparse(f, a.config.Secrets)
+	refreshed, err := reparse(f)
 	if err != nil {
 		return nil, err
 	}

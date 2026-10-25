@@ -34,7 +34,7 @@ func TestBorderedPanelsFillEveryInnerRow(t *testing.T) {
 			return fl.View(theme)
 		}},
 		{"compare", "val_E", func() string {
-			dv := NewDiffViewModel(config.DefaultConfig().Layout, config.SecretsConfig{})
+			dv := NewDiffViewModel(config.DefaultConfig().Layout)
 			dv.Width, dv.Height = 80, height
 			dv.SetFiles(makeTestFile(".env", keys...), makeTestFile(".env.local", keys...))
 			return dv.View(theme)

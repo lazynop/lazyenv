@@ -22,22 +22,22 @@ type reparseFieldFate int
 const (
 	reparseReadsFromDisk reparseFieldFate = iota // the parser fills it in
 	reparseDropsEdit                             // unsaved edit state, cleared
-	reparseCarriesOver                           // runtime-only, copied from the old file
+	reparseCarriesOver                           // kept from the old file, which the disk does not hold
 )
 
 // envFileFieldFates classifies every model.EnvFile field. A new field fails
 // TestReparseClassifiesEveryEnvFileField until it is listed here; a field
-// marked reparseCarriesOver must also be copied in reparse (app_reparse.go).
+// marked reparseCarriesOver must also be kept by reparse (app_reparse.go).
 var envFileFieldFates = map[string]reparseFieldFate{
 	"Path":            reparseReadsFromDisk,
 	"Name":            reparseReadsFromDisk,
 	"Vars":            reparseReadsFromDisk,
 	"Lines":           reparseReadsFromDisk,
 	"TrailingNewline": reparseReadsFromDisk,
-	"Secrets":         reparseReadsFromDisk,
 	"DeletedVars":     reparseDropsEdit,
 	"Modified":        reparseDropsEdit,
 	"GitWarning":      reparseCarriesOver,
+	"Secrets":         reparseCarriesOver,
 }
 
 // parseFileAllowed lists the functions that may call parser.ParseFile
@@ -68,16 +68,16 @@ func TestReparseClassifiesEveryEnvFileField(t *testing.T) {
 func TestReparseKeepsRuntimeStateAndDropsEdits(t *testing.T) {
 	path := filepath.Join(t.TempDir(), ".env")
 	require.NoError(t, os.WriteFile(path, []byte("FOO=bar\nBAZ=qux\n"), 0o644))
-	old, err := parser.ParseFile(path, config.SecretsConfig{})
+	// Every reparseCarriesOver field needs a non-zero value: a custom [secrets]
+	// config, and the runtime-only state.
+	old, err := parser.ParseFile(path, config.SecretsConfig{ExtraPatterns: []string{"_HOST"}})
 	require.NoError(t, err)
-
-	// Runtime-only state: every reparseCarriesOver field needs a non-zero value.
 	old.GitWarning = true
 	// Unsaved edits, which the re-parse discards.
 	old.UpdateVar(0, "edited")
 	old.DeleteVar(1)
 
-	refreshed, err := reparse(old, config.SecretsConfig{})
+	refreshed, err := reparse(old)
 	require.NoError(t, err)
 
 	oldV, newV := reflect.ValueOf(old).Elem(), reflect.ValueOf(refreshed).Elem()
