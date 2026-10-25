@@ -210,6 +210,40 @@ func TestChangesDetectPlaceholders(t *testing.T) {
 	assert.True(t, ef.Vars[2].IsPlaceholder, "an added placeholder should have it")
 }
 
+// TestChangesMarkDuplicates renames, adds or deletes a variable of a file
+// holding A twice and B: a variable is a duplicate exactly when another one
+// shares its key.
+func TestChangesMarkDuplicates(t *testing.T) {
+	tests := []struct {
+		name   string
+		change func(ef *EnvFile)
+		want   []bool // IsDuplicate of each variable, in order
+	}{
+		{"rename one of two A away", func(ef *EnvFile) { ef.RenameVar(0, "C") }, []bool{false, false, false}},
+		{"rename B onto A", func(ef *EnvFile) { ef.RenameVar(2, "A") }, []bool{true, true, true}},
+		{"add a third A", func(ef *EnvFile) { ef.AddVar("A", "4") }, []bool{true, true, false, true}},
+		{"add a second B", func(ef *EnvFile) { ef.AddVar("B", "4") }, []bool{true, true, true, true}},
+		{"delete one of two A", func(ef *EnvFile) { ef.DeleteVar(0) }, []bool{false, false}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ef := newTestFile(
+				EnvVar{Key: "A", Value: "1", IsDuplicate: true},
+				EnvVar{Key: "A", Value: "2", IsDuplicate: true},
+				EnvVar{Key: "B", Value: "3"},
+			)
+
+			tt.change(ef)
+
+			var got []bool
+			for _, v := range ef.Vars {
+				got = append(got, v.IsDuplicate)
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 // TestChangesDetectSecretsWithTheFileConfig changes the variables of a file
 // whose [secrets] config makes keys ending in _HOST secrets and keys starting
 // with PUBLIC_ never secrets: each changed variable is a secret as that config

@@ -93,9 +93,9 @@ func (ef *EnvFile) UpdateVar(idx int, newValue string) {
 }
 
 // RenameVar updates the key of a variable by index, and the flags that follow
-// from it (see deriveFlags). Renaming a variable onto a key deleted this
-// session revives the key (see reviveDeleted), and renaming it off that key
-// lists the key as deleted again (see undoRevival).
+// from it (see deriveFlags and markDuplicates). Renaming a variable onto a key
+// deleted this session revives the key (see reviveDeleted), and renaming it
+// off that key lists the key as deleted again (see undoRevival).
 func (ef *EnvFile) RenameVar(idx int, newKey string) {
 	if idx < 0 || idx >= len(ef.Vars) {
 		return
@@ -104,6 +104,7 @@ func (ef *EnvFile) RenameVar(idx int, newKey string) {
 	ef.undoRevival(idx)
 	ef.Vars[idx].Key = newKey
 	ef.deriveFlags(idx)
+	ef.markDuplicates()
 	ef.reviveDeleted(idx)
 }
 
@@ -116,6 +117,18 @@ func (ef *EnvFile) deriveFlags(idx int) {
 	v.IsEmpty = v.Value == ""
 	v.IsSecret = util.IsSecret(v.Key, v.Value, ef.Secrets)
 	v.IsPlaceholder = util.IsPlaceholderValue(v.Value)
+}
+
+// markDuplicates flags every variable whose key another variable shares, as
+// the parser does.
+func (ef *EnvFile) markDuplicates() {
+	count := make(map[string]int, len(ef.Vars))
+	for _, v := range ef.Vars {
+		count[v.Key]++
+	}
+	for i := range ef.Vars {
+		ef.Vars[i].IsDuplicate = count[ef.Vars[i].Key] > 1
+	}
 }
 
 // markModified flags the variable at idx and the file as changed, saving the
@@ -170,8 +183,8 @@ func (ef *EnvFile) undoRevival(idx int) {
 }
 
 // AddVar appends a new variable to the file, with the flags that follow from
-// its key and value (see deriveFlags). A key deleted this session is revived
-// (see reviveDeleted).
+// its key and value (see deriveFlags and markDuplicates). A key deleted this
+// session is revived (see reviveDeleted).
 func (ef *EnvFile) AddVar(key, value string) {
 	v := EnvVar{
 		Key:        key,
@@ -189,12 +202,14 @@ func (ef *EnvFile) AddVar(key, value string) {
 		VarIdx:  varIdx,
 	})
 	ef.deriveFlags(varIdx)
+	ef.markDuplicates()
 	ef.reviveDeleted(varIdx)
 	ef.Modified = true
 }
 
-// DeleteVar removes a variable by index. Deleting a variable that revived a
-// key lists the key's deleted variable again (see undoRevival).
+// DeleteVar removes a variable by index, and the duplicate flag of the
+// variables that shared its key (see markDuplicates). Deleting a variable that
+// revived a key lists the key's deleted variable again (see undoRevival).
 func (ef *EnvFile) DeleteVar(idx int) {
 	if idx < 0 || idx >= len(ef.Vars) {
 		return
@@ -218,6 +233,7 @@ func (ef *EnvFile) DeleteVar(idx int) {
 		}
 	}
 	ef.Vars = slices.Delete(ef.Vars, idx, idx+1)
+	ef.markDuplicates()
 	ef.Modified = true
 }
 

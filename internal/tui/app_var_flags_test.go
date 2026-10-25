@@ -230,3 +230,42 @@ func TestPlaceholderMarkerFollowsChanges(t *testing.T) {
 		})
 	}
 }
+
+// TestDuplicateMarkerFollowsChanges renames or deletes one of two variables
+// sharing a key: neither row shows the duplicate marker any more, before a
+// save and after it.
+func TestDuplicateMarkerFollowsChanges(t *testing.T) {
+	tests := []struct {
+		name          string
+		keys          []string
+		marked, saved map[string][]string // each key's row markers after the keys, then after a save
+	}{
+		{
+			"one renamed", renameVarKeys(0, "C"),
+			map[string][]string{"A": {""}, "C": {modifiedVarGlyph}},
+			map[string][]string{"A": {""}, "C": {""}},
+		},
+		{
+			"one deleted", []string{"right", "d", "y"},
+			map[string][]string{"A": {"", deletedVarGlyph}},
+			map[string][]string{"A": {""}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app := loadFixtureApp(t, config.DefaultConfig(), map[string]string{".env": "A=1\nA=2\nB=3\n"}, 120, 40)
+			require.Equal(t, []string{duplicateKeyGlyph, duplicateKeyGlyph}, varRowMarkers(t, stripAnsi(app.View().Content), "A"))
+
+			app = press(app, tt.keys...)
+			for key, markers := range tt.marked {
+				assert.Equal(t, markers, varRowMarkers(t, stripAnsi(app.View().Content), key), key)
+			}
+
+			app = press(app, "w")
+			require.Contains(t, app.statusBar.Message, "Saved .env")
+			for key, markers := range tt.saved {
+				assert.Equal(t, markers, varRowMarkers(t, stripAnsi(app.View().Content), key), key)
+			}
+		})
+	}
+}
