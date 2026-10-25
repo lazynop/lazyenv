@@ -4,8 +4,6 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
-
-	"github.com/lazynop/lazyenv/internal/util"
 )
 
 func (a App) confirmRenameKey(result EditorResult) (tea.Model, tea.Cmd) {
@@ -26,7 +24,7 @@ func (a App) confirmRenameKey(result EditorResult) (tea.Model, tea.Cmd) {
 		return a, a.flashWarning(problem)
 	}
 
-	f.RenameVar(idx, newKey, util.IsSecret(newKey, f.Vars[idx].Value, a.config.Secrets))
+	f.RenameVar(idx, newKey)
 	a.varList.Refresh()
 	return a, a.flashMessage("Renamed " + oldKey + " → " + newKey)
 }

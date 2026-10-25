@@ -165,7 +165,7 @@ func TestVarListRefreshAfterAdd(t *testing.T) {
 	vl.SetFile(f)
 	assert.Equal(t, 1, len(vl.displayItems))
 
-	f.AddVar("BAR", "val", false)
+	f.AddVar("BAR", "val")
 	vl.Refresh()
 	assert.Equal(t, 2, len(vl.displayItems))
 }
@@ -660,7 +660,7 @@ func TestVarListGrouping_RefreshAfterAddRecomputesGroups(t *testing.T) {
 
 	// Adding DB_PORT must form a real DB group; PORT then sits under the
 	// trailing UNGROUPED header.
-	f.AddVar("DB_PORT", "5432", false)
+	f.AddVar("DB_PORT", "5432")
 	vl.Refresh()
 	assert.Equal(t, 2, countHeaders(vl.displayItems))
 	assert.Equal(t, "DB", vl.groups[vl.displayItems[0].GroupIdx].Prefix)
@@ -722,7 +722,7 @@ func TestVarListGrouping_RefreshPreservesAlphaOrder(t *testing.T) {
 
 	// Add AWS_SECRET — promotes AWS to a real group. After Refresh, alpha
 	// order must be AWS, DB, REDIS.
-	f.AddVar("AWS_SECRET", "shh", true)
+	f.AddVar("AWS_SECRET", "shh")
 	vl.Refresh()
 
 	require.GreaterOrEqual(t, len(vl.groups), 3)
@@ -785,8 +785,8 @@ func TestVarListNarrowWidthKeepsPeekLineOnOneRow(t *testing.T) {
 	keys := []string{"UPSTREAM_SERVICE_CIRCUIT_BREAKER_THRESHOLD", "DATABASE_URL", "REDIS_URL", "SENTRY_DSN"}
 	f := makeTestFile(".env", keys...)
 	f.Vars[0].Value = strings.Repeat("x", 200)
-	f.UpdateVar(0, "new_value", false)  // "↳ was:" line
-	f.AddVar("NEW_VAR", "value", false) // "↳ new variable" line
+	f.UpdateVar(0, "new_value")  // "↳ was:" line
+	f.AddVar("NEW_VAR", "value") // "↳ new variable" line
 	theme := BuildTheme(true, config.ColorConfig{})
 	layout := config.DefaultConfig().Layout
 	layout.VarListPadding = 1       // raised to config.VarListMinPadding, the tightest rows get

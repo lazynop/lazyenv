@@ -398,7 +398,7 @@ func TestDiffViewResetPreservesGitWarning(t *testing.T) {
 	dv.SetFiles(fA, fB)
 
 	// Modify and then reset
-	fA.UpdateVar(0, "changed", false)
+	fA.UpdateVar(0, "changed")
 	errMsg := dv.Reset()
 	assert.Empty(t, errMsg)
 

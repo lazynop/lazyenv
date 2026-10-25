@@ -8,7 +8,6 @@ import (
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
-	"github.com/lazynop/lazyenv/internal/util"
 )
 
 // The compare view's status marks, which the help lists under Compare
@@ -182,11 +181,11 @@ func (m *DiffViewModel) CopyToRight() string {
 	case model.DiffChanged:
 		// Update existing key in B with A's value
 		if i := m.FileB.LastIndexOfKey(e.Key); i >= 0 {
-			m.FileB.UpdateVar(i, e.ValueA, util.IsSecret(e.Key, e.ValueA, m.secrets))
+			m.FileB.UpdateVar(i, e.ValueA)
 		}
 	case model.DiffAdded:
 		// Key only in A, add to B
-		m.FileB.AddVar(e.Key, e.ValueA, util.IsSecret(e.Key, e.ValueA, m.secrets))
+		m.FileB.AddVar(e.Key, e.ValueA)
 	case model.DiffRemoved:
 		// Key only in B — copying "right" means overwrite with nothing;
 		// more useful: delete from B so they match (both gone)
@@ -214,11 +213,11 @@ func (m *DiffViewModel) CopyToLeft() string {
 	case model.DiffChanged:
 		// Update existing key in A with B's value
 		if i := m.FileA.LastIndexOfKey(e.Key); i >= 0 {
-			m.FileA.UpdateVar(i, e.ValueB, util.IsSecret(e.Key, e.ValueB, m.secrets))
+			m.FileA.UpdateVar(i, e.ValueB)
 		}
 	case model.DiffRemoved:
 		// Key only in B, add to A
-		m.FileA.AddVar(e.Key, e.ValueB, util.IsSecret(e.Key, e.ValueB, m.secrets))
+		m.FileA.AddVar(e.Key, e.ValueB)
 	case model.DiffAdded:
 		// Key only in A — delete from A
 		if i := m.FileA.LastIndexOfKey(e.Key); i >= 0 {

@@ -10,7 +10,6 @@ import (
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
-	"github.com/lazynop/lazyenv/internal/util"
 )
 
 // The matrix's cell marks, which the help lists under Matrix Indicators.
@@ -203,7 +202,7 @@ func (m *MatrixModel) ConfirmEdit() {
 		return
 	}
 	f := m.files[m.editFile]
-	f.AddVar(m.editKey, m.editor.Value(), util.IsSecret(m.editKey, m.editor.Value(), m.secrets))
+	f.AddVar(m.editKey, m.editor.Value())
 	m.editing = false
 	m.recompute()
 }

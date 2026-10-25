@@ -259,7 +259,7 @@ func TestMouseClickVarList_SelectsTheVarDrawnAtTheRow(t *testing.T) {
 	} {
 		t.Run(tt.click, func(t *testing.T) {
 			f := makeTestFile(".env", "ALPHA", "BRAVO", "CHARLIE", "DELTA")
-			f.UpdateVar(0, "edited", false)
+			f.UpdateVar(0, "edited")
 			app := press(resize(newTestApp([]*model.EnvFile{f}), 80, 24), "right", "p")
 			row := rowDrawing(t, app.View().Content, tt.click)
 

@@ -6,6 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/lazynop/lazyenv/internal/config"
 )
 
 func newTestFile(vars ...EnvVar) *EnvFile {
@@ -28,7 +30,7 @@ func TestUpdateVar(t *testing.T) {
 		EnvVar{Key: "BAR", Value: "keep"},
 	)
 
-	ef.UpdateVar(0, "new", false)
+	ef.UpdateVar(0, "new")
 
 	assert.Equal(t, "new", ef.Vars[0].Value)
 	assert.True(t, ef.Vars[0].Modified)
@@ -41,8 +43,8 @@ func TestUpdateVar(t *testing.T) {
 func TestUpdateVarPreservesOriginalOnSecondEdit(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "original"})
 
-	ef.UpdateVar(0, "first_edit", false)
-	ef.UpdateVar(0, "second_edit", false)
+	ef.UpdateVar(0, "first_edit")
+	ef.UpdateVar(0, "second_edit")
 
 	assert.Equal(t, "second_edit", ef.Vars[0].Value)
 	assert.Equal(t, "original", ef.Vars[0].OriginalValue, "OriginalValue should not change on subsequent edits")
@@ -51,26 +53,26 @@ func TestUpdateVarPreservesOriginalOnSecondEdit(t *testing.T) {
 func TestUpdateVarSetsIsEmpty(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "val"})
 
-	ef.UpdateVar(0, "", false)
+	ef.UpdateVar(0, "")
 
 	assert.True(t, ef.Vars[0].IsEmpty)
 }
 
-func TestUpdateVarSetsIsSecret(t *testing.T) {
+func TestUpdateVarDetectsASecretValue(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
 
-	ef.UpdateVar(0, "ghp_abc123", true)
-	assert.True(t, ef.Vars[0].IsSecret, "IsSecret should be set from parameter")
+	ef.UpdateVar(0, "ghp_abc123")
+	assert.True(t, ef.Vars[0].IsSecret, "a token should be a secret")
 
-	ef.UpdateVar(0, "plain", false)
+	ef.UpdateVar(0, "plain")
 	assert.False(t, ef.Vars[0].IsSecret)
 }
 
 func TestUpdateVarOutOfBounds(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
 
-	ef.UpdateVar(-1, "nope", false)
-	ef.UpdateVar(99, "nope", false)
+	ef.UpdateVar(-1, "nope")
+	ef.UpdateVar(99, "nope")
 
 	assert.Equal(t, "bar", ef.Vars[0].Value)
 	assert.False(t, ef.Modified)
@@ -79,7 +81,7 @@ func TestUpdateVarOutOfBounds(t *testing.T) {
 func TestAddVar(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
 
-	ef.AddVar("NEW", "val", false)
+	ef.AddVar("NEW", "val")
 
 	require.Len(t, ef.Vars, 2)
 	assert.Equal(t, "NEW", ef.Vars[1].Key)
@@ -93,20 +95,23 @@ func TestAddVar(t *testing.T) {
 	assert.Equal(t, 1, ef.Lines[1].VarIdx)
 }
 
-func TestAddVarSetsIsSecret(t *testing.T) {
+func TestAddVarDetectsASecret(t *testing.T) {
 	ef := newTestFile()
 
-	ef.AddVar("SECRET_KEY", "val", true)
-	assert.True(t, ef.Vars[0].IsSecret, "IsSecret should be set from parameter")
+	ef.AddVar("SECRET_KEY", "val")
+	assert.True(t, ef.Vars[0].IsSecret, "a secret key should be a secret")
 
-	ef.AddVar("NORMAL", "val", false)
-	assert.False(t, ef.Vars[1].IsSecret)
+	ef.AddVar("TOKENLESS", "ghp_abc123")
+	assert.True(t, ef.Vars[1].IsSecret, "a token should be a secret")
+
+	ef.AddVar("NORMAL", "val")
+	assert.False(t, ef.Vars[2].IsSecret)
 }
 
 func TestAddVarEmpty(t *testing.T) {
 	ef := newTestFile()
 
-	ef.AddVar("KEY", "", false)
+	ef.AddVar("KEY", "")
 
 	require.Len(t, ef.Vars, 1)
 	assert.True(t, ef.Vars[0].IsEmpty)
@@ -150,7 +155,7 @@ func TestDeleteVarTracksDeleted(t *testing.T) {
 
 func TestDeleteNewVarNotTracked(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "1"})
-	ef.AddVar("NEW", "val", false)
+	ef.AddVar("NEW", "val")
 	require.Len(t, ef.Vars, 2)
 
 	ef.DeleteVar(1) // delete the newly added var
@@ -171,32 +176,68 @@ func TestDeleteVarOutOfBounds(t *testing.T) {
 func TestRenameVar(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
 
-	ef.RenameVar(0, "BAZ", false)
+	ef.RenameVar(0, "BAZ")
 
 	assert.Equal(t, "BAZ", ef.Vars[0].Key)
 	assert.True(t, ef.Vars[0].Modified, "renamed var must be marked modified")
 	assert.True(t, ef.Modified, "file must be marked modified")
 }
 
-func TestRenameVarSetsIsSecret(t *testing.T) {
+func TestRenameVarDetectsASecretKey(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
 
-	ef.RenameVar(0, "API_TOKEN", true)
-	assert.True(t, ef.Vars[0].IsSecret, "IsSecret should be set from parameter")
+	ef.RenameVar(0, "API_TOKEN")
+	assert.True(t, ef.Vars[0].IsSecret, "a secret key should be a secret")
 
-	ef.RenameVar(0, "PLAIN", false)
+	ef.RenameVar(0, "PLAIN")
 	assert.False(t, ef.Vars[0].IsSecret)
+}
+
+// TestChangesDetectSecretsWithTheFileConfig changes the variables of a file
+// whose [secrets] config makes keys ending in _HOST secrets and keys starting
+// with PUBLIC_ never secrets: each changed variable is a secret as that config
+// judges it, the other way round from the built-in rules.
+func TestChangesDetectSecretsWithTheFileConfig(t *testing.T) {
+	tests := []struct {
+		name   string
+		change func(ef *EnvFile) // changes the var that then has key want
+		want   string
+		secret bool
+	}{
+		{"edit, secret key", func(ef *EnvFile) { ef.UpdateVar(0, "alpha") }, "DB_HOST", true},
+		{"edit, safe key", func(ef *EnvFile) { ef.UpdateVar(1, "ghp_abc123") }, "PUBLIC_TOKEN", false},
+		{"rename to a secret key", func(ef *EnvFile) { ef.RenameVar(2, "API_HOST") }, "API_HOST", true},
+		{"rename to a safe key", func(ef *EnvFile) { ef.RenameVar(1, "PUBLIC_KEY") }, "PUBLIC_KEY", false},
+		{"add, secret key", func(ef *EnvFile) { ef.AddVar("CACHE_HOST", "alpha") }, "CACHE_HOST", true},
+		{"add, safe key", func(ef *EnvFile) { ef.AddVar("PUBLIC_KEY", "ghp_abc123") }, "PUBLIC_KEY", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ef := newTestFile(
+				EnvVar{Key: "DB_HOST", Value: "localhost"},
+				EnvVar{Key: "PUBLIC_TOKEN", Value: "ghp_xyz789"},
+				EnvVar{Key: "GREETING", Value: "hello"},
+			)
+			ef.Secrets = config.SecretsConfig{ExtraPatterns: []string{"_HOST"}, SafePatterns: []string{"PUBLIC_"}}
+
+			tt.change(ef)
+
+			v := ef.VarByKey(tt.want)
+			require.NotNil(t, v)
+			assert.Equal(t, tt.secret, v.IsSecret)
+		})
+	}
 }
 
 // revivals are the ways a variable revives API_KEY, deleted from the file
 // deletedAPIKeyFile returns: adding the key again, renaming BAR onto it, or
 // renaming onto it a variable added this session.
 var revivals = map[string]func(ef *EnvFile){
-	"add":    func(ef *EnvFile) { ef.AddVar("API_KEY", "2", true) },
-	"rename": func(ef *EnvFile) { ef.RenameVar(0, "API_KEY", true) }, // BAR
+	"add":    func(ef *EnvFile) { ef.AddVar("API_KEY", "2") },
+	"rename": func(ef *EnvFile) { ef.RenameVar(0, "API_KEY") }, // BAR
 	"rename a var added this session": func(ef *EnvFile) {
-		ef.AddVar("NEW", "2", false)
-		ef.RenameVar(ef.LastIndexOfKey("NEW"), "API_KEY", true)
+		ef.AddVar("NEW", "2")
+		ef.RenameVar(ef.LastIndexOfKey("NEW"), "API_KEY")
 	},
 }
 
@@ -262,8 +303,8 @@ func TestRenamingARevivedVarOffItsKeyUndoesTheRevival(t *testing.T) {
 			revive(ef)
 			idx := ef.LastIndexOfKey("API_KEY")
 
-			ef.RenameVar(idx, "BAZ", false)
-			ef.RenameVar(idx, "QUX", false)
+			ef.RenameVar(idx, "BAZ")
+			ef.RenameVar(idx, "QUX")
 
 			assert.Equal(t, []string{"API_KEY=1"}, deletedVars(ef), "the deleted var should be listed again, once")
 			v := ef.Vars[idx]
@@ -306,8 +347,8 @@ func TestUndoingARevivalListsTheDeletedVarInItsPlace(t *testing.T) {
 	ef.DeleteVar(0) // FOO
 	ef.DeleteVar(0) // BAZ
 
-	ef.RenameVar(0, "FOO", false) // BAR
-	ef.RenameVar(0, "BAR", false)
+	ef.RenameVar(0, "FOO") // BAR
+	ef.RenameVar(0, "BAR")
 
 	assert.Equal(t, []string{"FOO=1", "BAZ=3"}, deletedVars(ef))
 }
@@ -323,14 +364,14 @@ func TestUndoingRevivalsInReverseOrderListsBothDeletedVars(t *testing.T) {
 		EnvVar{Key: "X", Value: "4"},
 		EnvVar{Key: "Y", Value: "5"},
 	)
-	ef.DeleteVar(0)               // FOO
-	ef.DeleteVar(0)               // BAZ
-	ef.RenameVar(0, "BAZ", false) // X
-	ef.RenameVar(1, "FOO", false) // Y
+	ef.DeleteVar(0)        // FOO
+	ef.DeleteVar(0)        // BAZ
+	ef.RenameVar(0, "BAZ") // X
+	ef.RenameVar(1, "FOO") // Y
 	require.Empty(t, ef.DeletedVars)
 
-	ef.RenameVar(0, "X", false)
-	ef.RenameVar(1, "Y", false)
+	ef.RenameVar(0, "X")
+	ef.RenameVar(1, "Y")
 
 	assert.Equal(t, []string{"FOO=1", "BAZ=3"}, deletedVars(ef))
 }
@@ -341,7 +382,7 @@ func TestUndoingRevivalsInReverseOrderListsBothDeletedVars(t *testing.T) {
 func TestRenameVarOntoAKeyNotDeletedKeepsItsOwnOriginal(t *testing.T) {
 	ef := deletedAPIKeyFile()
 
-	ef.RenameVar(0, "BAZ", false) // BAR
+	ef.RenameVar(0, "BAZ") // BAR
 
 	assert.Equal(t, "2", ef.Vars[0].OriginalValue)
 	assert.False(t, ef.Vars[0].OriginalIsSecret)
@@ -351,8 +392,8 @@ func TestRenameVarOntoAKeyNotDeletedKeepsItsOwnOriginal(t *testing.T) {
 func TestRenameVarOutOfBounds(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
 
-	ef.RenameVar(-1, "X", false)
-	ef.RenameVar(99, "X", false)
+	ef.RenameVar(-1, "X")
+	ef.RenameVar(99, "X")
 
 	assert.Equal(t, "FOO", ef.Vars[0].Key, "out-of-range index must be a no-op")
 	assert.False(t, ef.Modified, "no-op rename must not mark the file modified")

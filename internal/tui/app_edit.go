@@ -8,7 +8,6 @@ import (
 
 	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/lazynop/lazyenv/internal/parser"
-	"github.com/lazynop/lazyenv/internal/util"
 )
 
 func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
@@ -35,7 +34,7 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				a.mode = ModeEditing
 				return a, a.editor.input.Focus()
 			}
-			a.varList.File.AddVar(a.editor.addKey, result.Value, util.IsSecret(a.editor.addKey, result.Value, a.config.Secrets))
+			a.varList.File.AddVar(a.editor.addKey, result.Value)
 			a.varList.Refresh()
 			return a, a.flashMessage("Added " + a.editor.addKey)
 		}
@@ -58,7 +57,7 @@ func (a *App) commitValueEdit(f *model.EnvFile, result EditorResult) tea.Cmd {
 		return nil
 	}
 	varKey := f.Vars[result.VarIndex].Key
-	f.UpdateVar(result.VarIndex, result.Value, util.IsSecret(varKey, result.Value, a.config.Secrets))
+	f.UpdateVar(result.VarIndex, result.Value)
 	a.refreshIfShown(f)
 	return a.flashMessage("Modified " + varKey)
 }

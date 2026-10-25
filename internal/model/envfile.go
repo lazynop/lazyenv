@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/lazynop/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/util"
 )
 
 // LineType categorizes a raw line in an env file.
@@ -80,32 +81,40 @@ type RawLine struct {
 	VarIdx  int    // index into Vars if Type == LineVariable, else -1
 }
 
-// UpdateVar updates the value of a variable by index. isSecret is whether the
-// variable is a secret with its new value: the caller runs the detection,
-// which needs the secrets config.
-func (ef *EnvFile) UpdateVar(idx int, newValue string, isSecret bool) {
+// UpdateVar updates the value of a variable by index, and the flags that
+// follow from it (see deriveFlags).
+func (ef *EnvFile) UpdateVar(idx int, newValue string) {
 	if idx < 0 || idx >= len(ef.Vars) {
 		return
 	}
 	ef.markModified(idx)
 	ef.Vars[idx].Value = newValue
-	ef.Vars[idx].IsEmpty = newValue == ""
-	ef.Vars[idx].IsSecret = isSecret
+	ef.deriveFlags(idx)
 }
 
-// RenameVar updates the key of a variable by index. isSecret is whether the
-// variable is a secret with its new key, as for UpdateVar. Renaming a variable
-// onto a key deleted this session revives the key (see reviveDeleted), and
-// renaming it off that key lists the key as deleted again (see undoRevival).
-func (ef *EnvFile) RenameVar(idx int, newKey string, isSecret bool) {
+// RenameVar updates the key of a variable by index, and the flags that follow
+// from it (see deriveFlags). Renaming a variable onto a key deleted this
+// session revives the key (see reviveDeleted), and renaming it off that key
+// lists the key as deleted again (see undoRevival).
+func (ef *EnvFile) RenameVar(idx int, newKey string) {
 	if idx < 0 || idx >= len(ef.Vars) {
 		return
 	}
 	ef.markModified(idx)
 	ef.undoRevival(idx)
 	ef.Vars[idx].Key = newKey
-	ef.Vars[idx].IsSecret = isSecret
+	ef.deriveFlags(idx)
 	ef.reviveDeleted(idx)
+}
+
+// deriveFlags sets the flags of the variable at idx that follow from its key
+// and value, as the parser does: whether it is empty, and whether it is a
+// secret under the file's [secrets] config. The variable then looks as it will
+// once a save re-parses the file.
+func (ef *EnvFile) deriveFlags(idx int) {
+	v := &ef.Vars[idx]
+	v.IsEmpty = v.Value == ""
+	v.IsSecret = util.IsSecret(v.Key, v.Value, ef.Secrets)
 }
 
 // markModified flags the variable at idx and the file as changed, saving the
@@ -159,16 +168,15 @@ func (ef *EnvFile) undoRevival(idx int) {
 	v.revival = nil
 }
 
-// AddVar appends a new variable to the file. A key deleted this session is
-// revived (see reviveDeleted).
-func (ef *EnvFile) AddVar(key, value string, isSecret bool) {
+// AddVar appends a new variable to the file, with the flags that follow from
+// its key and value (see deriveFlags). A key deleted this session is revived
+// (see reviveDeleted).
+func (ef *EnvFile) AddVar(key, value string) {
 	v := EnvVar{
 		Key:        key,
 		Value:      value,
 		LineNum:    len(ef.Lines) + 1,
 		QuoteStyle: QuoteNone,
-		IsSecret:   isSecret,
-		IsEmpty:    value == "",
 		Modified:   true,
 		IsNew:      true,
 	}
@@ -179,6 +187,7 @@ func (ef *EnvFile) AddVar(key, value string, isSecret bool) {
 		Content: key + "=" + value,
 		VarIdx:  varIdx,
 	})
+	ef.deriveFlags(varIdx)
 	ef.reviveDeleted(varIdx)
 	ef.Modified = true
 }

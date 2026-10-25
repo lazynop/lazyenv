@@ -123,13 +123,13 @@ var viewScenarios = []viewScenario{
 	appScenario("normal", ModeNormal, func(app App) App { return app }),
 	appScenario("vars", ModeNormal, onVars),
 	appScenario("peek edited secret", ModeNormal, func(app App) App {
-		app.fileList.Files[0].UpdateVar(0, "edited", true) // API_TOKEN
+		app.fileList.Files[0].UpdateVar(0, "edited") // API_TOKEN
 		app.varList.Refresh()
 		return press(onVars(app), "p")
 	}),
 	appScenario("peek secret renamed to a plain key", ModeNormal, func(app App) App {
 		app = onVars(app)
-		app.fileList.Files[0].UpdateVar(0, "x", true) // API_TOKEN
+		app.fileList.Files[0].UpdateVar(0, "x") // API_TOKEN
 		app.mode = ModeEditing
 		app.editor.StartEditKey(&app.fileList.Files[0].Vars[0], 0)
 		app.editor.input.SetValue("PLAIN")
@@ -143,7 +143,7 @@ var viewScenarios = []viewScenario{
 	appScenario("peek secret re-added with a plain value", ModeNormal, func(app App) App {
 		f := app.fileList.Files[0]
 		f.DeleteVar(1)
-		f.AddVar("GREETING", "hello", false)
+		f.AddVar("GREETING", "hello")
 		app.varList.Refresh()
 		app = onVars(app)
 		app.varList.SetCursor(len(f.Vars) - 1)

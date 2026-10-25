@@ -100,8 +100,8 @@ func TestApp_SessionStats_Duplicate(t *testing.T) {
 // edits are neither in the new file nor in its baseline.
 func TestApp_SessionStats_DuplicateOfUnsavedSource(t *testing.T) {
 	app, ef, dir, srcPath := setupStatsFixture(t, ".env", "FOO=1\nBAR=2\n")
-	ef.UpdateVar(0, "99", false)
-	ef.AddVar("BAZ", "3", false)
+	ef.UpdateVar(0, "99")
+	ef.AddVar("BAZ", "3")
 
 	app.fileOpSource = ef
 	app.fileInput.SetValue(".env.copy")
@@ -145,7 +145,7 @@ func TestApp_SessionStats_Rename(t *testing.T) {
 		newPath + " (renamed from " + oldPath + ") — 0 added, 0 changed, 0 deleted",
 	}, app.sessionStats.Summary())
 
-	app.varList.File.AddVar("BAR", "2", false)
+	app.varList.File.AddVar("BAR", "2")
 	app, _ = app.handleSave()
 
 	assert.Equal(t, []string{
@@ -174,7 +174,7 @@ func TestApp_SessionStats_EndToEnd(t *testing.T) {
 	app = out.(App)
 
 	// 1. Edit .env.local (change FOO 1 → 99) and save.
-	app.varList.File.UpdateVar(0, "99", false)
+	app.varList.File.UpdateVar(0, "99")
 	app, _ = app.handleSave()
 
 	// 2. Duplicate .env.staging → .env.backup.
@@ -189,7 +189,7 @@ func TestApp_SessionStats_EndToEnd(t *testing.T) {
 	app.mode = ModeCreateFile
 	m, _ = app.confirmCreateFile()
 	app = m.(App)
-	app.varList.File.AddVar("NEW", "val", false)
+	app.varList.File.AddVar("NEW", "val")
 	app, _ = app.handleSave()
 
 	// 4. Rename .env.local → .env.dev.
@@ -233,7 +233,7 @@ func TestApp_SessionStats_EndToEnd(t *testing.T) {
 func TestApp_SessionStats_SummaryFlattensFileNames(t *testing.T) {
 	app, _, dir, _ := setupStatsFixture(t, ".env\n\x1b]0;x\x07", "FOO=1\n")
 
-	app.varList.File.UpdateVar(0, "2", false)
+	app.varList.File.UpdateVar(0, "2")
 	app, _ = app.handleSave()
 
 	assert.Equal(t, "Session summary:\n"+
@@ -261,7 +261,7 @@ func TestApp_SessionStats_Reorder(t *testing.T) {
 func TestApp_SessionStats_HandleSave(t *testing.T) {
 	app, _, _, path := setupStatsFixture(t, ".env", "FOO=1\n")
 
-	app.varList.File.UpdateVar(0, "99", false)
+	app.varList.File.UpdateVar(0, "99")
 	app, _ = app.handleSave()
 
 	assert.Equal(t, []string{path + " — 0 added, 1 changed, 0 deleted"}, app.sessionStats.Summary())

@@ -257,7 +257,7 @@ func TestFileListViewVarCountUpdatesAfterAdd(t *testing.T) {
 	view := fl.View(theme)
 	assert.Contains(t, view, "1")
 
-	f.AddVar("BAR", "val", false)
+	f.AddVar("BAR", "val")
 	view = fl.View(theme)
 	assert.Contains(t, view, "2")
 }

@@ -405,7 +405,7 @@ func TestCompareSaveUsesKeyMap(t *testing.T) {
 	app := enterCompareMode(t, fA, fB)
 
 	// Modify file A so handleCompareSave actually has work to do.
-	app.diffView.FileA.UpdateVar(0, "changed", false)
+	app.diffView.FileA.UpdateVar(0, "changed")
 	require.True(t, app.diffView.FileA.Modified)
 
 	app.keys.Save = key.NewBinding(key.WithKeys("Z"))
