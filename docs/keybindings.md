@@ -4,30 +4,29 @@ Keybindings are context-sensitive: each screen only responds to the keys listed 
 
 ## Main view — File list (left panel)
 
-| Key             | Action                                            |
-| --------------- | ------------------------------------------------- |
-| `↑` / `k`       | Move up and show that file's variables            |
-| `↓` / `j`       | Move down and show that file's variables          |
-| `PgUp` / `PgDn` | Scroll up / down a page and show the variables of the file the cursor lands on |
-| `Home` / `End`  | Jump to the first / last file and show its variables |
-| `→` / `l`       | Switch focus to variable panel                    |
-| `Enter`         | Select file and switch focus to variable panel    |
-| `N`             | Create new `.env` file in the scan directory      |
-| `C`             | Duplicate selected file with a new name           |
-| `D`             | Delete file from disk (with confirmation)         |
-| `R`             | Rename selected file                              |
-| `T`             | Create template from selected file (keys only)    |
-| `c`             | Start compare: pick a second file (requires 2+ files) |
-| `m`             | Open completeness matrix (requires 2+ files)      |
-| `w`             | Save current file                                 |
-| `r`             | Reset current file (discard unsaved changes)      |
-| `Ctrl+S`        | Toggle secret masking                             |
-| `o`             | Toggle sort order (position / alphabetical)       |
-| `O`             | Reorder variables on disk (alphabetical / grouped) |
-| `g`             | Toggle prefix grouping in the variable list       |
-| `/`             | Search variables by name or value                 |
-| `?`             | Show help screen                                  |
-| `q` / `Ctrl+C`  | Quit                                              |
+| Key                 | Action                                            |
+| ------------------- | ------------------------------------------------- |
+| `↑` / `k`           | Move up and show that file's variables            |
+| `↓` / `j`           | Move down and show that file's variables          |
+| `PgUp` / `PgDn`     | Scroll up / down a page and show the variables of the file the cursor lands on |
+| `Home` / `End`      | Jump to the first / last file and show its variables |
+| `→` / `l` / `Enter` | Switch focus to variable panel                    |
+| `N`                 | Create new `.env` file in the scan directory      |
+| `C`                 | Duplicate selected file with a new name           |
+| `D`                 | Delete file from disk (with confirmation)         |
+| `R`                 | Rename selected file                              |
+| `T`                 | Create template from selected file (keys only)    |
+| `c`                 | Start compare: pick a second file (requires 2+ files) |
+| `m`                 | Open completeness matrix (requires 2+ files)      |
+| `w`                 | Save current file                                 |
+| `r`                 | Reset current file (discard unsaved changes)      |
+| `Ctrl+S`            | Toggle secret masking                             |
+| `o`                 | Toggle sort order (position / alphabetical)       |
+| `O`                 | Reorder variables on disk (alphabetical / grouped) |
+| `g`                 | Toggle prefix grouping in the variable list       |
+| `/`                 | Search variables by name or value                 |
+| `?`                 | Show help screen                                  |
+| `q` / `Ctrl+C`      | Quit                                              |
 
 ## Main view — Variable list (right panel)
 

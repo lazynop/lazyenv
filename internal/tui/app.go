@@ -356,8 +356,7 @@ func (a App) handleNormalKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 // match them.
 func filesPanelHelp(keys KeyMap) helpSection {
 	return helpSection{"Files panel", []helpRow{
-		alternatives("Switch to the variables panel", keys.Right),
-		alternatives("Select file and switch to the variables panel", keys.Enter),
+		alternatives("Switch to the variables panel", keys.Right, keys.Enter),
 		alternatives("Create new .env file", keys.CreateFile),
 		alternatives("Duplicate file with new name", keys.DuplicateFile),
 		alternatives("Delete file from disk (with confirmation)", keys.DeleteFile),

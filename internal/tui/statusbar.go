@@ -158,7 +158,7 @@ func modeHints(theme Theme, keys KeyMap, mode AppMode, focus Focus, diffStats st
 			}, " ")
 		}
 		return strings.Join([]string{
-			formatHint(theme, "select", keys.Enter),
+			formatHint(theme, "vars", keys.Enter),
 			formatHint(theme, "compare", keys.Compare),
 			formatHint(theme, "matrix", keys.Matrix),
 			formatHint(theme, "sort", keys.ToggleSort),
