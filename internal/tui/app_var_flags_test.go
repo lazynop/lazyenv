@@ -20,11 +20,11 @@ var customSecrets = config.SecretsConfig{
 	SafePatterns:  []string{"PUBLIC_"},
 }
 
-// customSecretsFixture is two files to change under customSecrets. CACHE_HOST
-// and GREETING, a token under a plain key, are only in .env.prod; PUBLIC_TOKEN
-// is only in .env.
+// customSecretsFixture is two files to change under customSecrets. PUBLIC_TOKEN,
+// NOTE, a plain var, and MEMO, a token under a plain key, are only in .env;
+// CACHE_HOST and GREETING, a token under a plain key, only in .env.prod.
 var customSecretsFixture = map[string]string{
-	".env":      "DB_HOST=alpha\nPUBLIC_TOKEN=ghp_first1\n",
+	".env":      "DB_HOST=alpha\nPUBLIC_TOKEN=ghp_first1\nNOTE=hello\nMEMO=ghp_memo44\n",
 	".env.prod": "DB_HOST=beta\nCACHE_HOST=delta\nGREETING=ghp_second2\n",
 }
 
@@ -37,7 +37,7 @@ type shownValue struct {
 // customSecretsLoaded is how the var list shows the values of each file of
 // customSecretsFixture, loaded under customSecrets.
 var customSecretsLoaded = map[string][]shownValue{
-	".env":      {{"alpha", true}, {"ghp_first1", false}},
+	".env":      {{"alpha", true}, {"ghp_first1", false}, {"hello", false}, {"ghp_memo44", true}},
 	".env.prod": {{"beta", true}, {"delta", true}, {"ghp_second2", true}},
 }
 
@@ -119,21 +119,22 @@ func TestCustomSecretsConfigMasksChangedValues(t *testing.T) {
 	}{
 		{"edit, secret key", editValueKeys(0, "gamma"), ".env", shownValue{"gamma", true}},
 		{"edit, safe key", editValueKeys(1, "ghp_third3"), ".env", shownValue{"ghp_third3", false}},
-		{"rename to a secret key", renameVarKeys(0, "API_HOST"), ".env", shownValue{"alpha", true}},
-		{"rename to a safe key", renameVarKeys(1, "PUBLIC_KEY"), ".env", shownValue{"ghp_first1", false}},
+		{"edit to a token", editValueKeys(2, "ghp_third3"), ".env", shownValue{"ghp_third3", true}},
+		{"rename to a secret key", renameVarKeys(2, "API_HOST"), ".env", shownValue{"hello", true}},
+		{"rename to a safe key", renameVarKeys(3, "PUBLIC_MEMO"), ".env", shownValue{"ghp_memo44", false}},
 		{"add, secret key", addVarKeys("CACHE_HOST", "gamma"), ".env", shownValue{"gamma", true}},
 		{"add, safe key", addVarKeys("PUBLIC_KEY", "ghp_third3"), ".env", shownValue{"ghp_third3", false}},
 		{"add a token", addVarKeys("GREETING", "ghp_third3"), ".env", shownValue{"ghp_third3", true}},
-		// Compare entries: DB_HOST changed, PUBLIC_TOKEN only in .env,
-		// CACHE_HOST and GREETING only in .env.prod.
+		// Compare entries: DB_HOST changed, PUBLIC_TOKEN, NOTE and MEMO only
+		// in .env, CACHE_HOST and GREETING only in .env.prod.
 		{"compare copy right, changed", compareCopyKeys(0, "l"), ".env.prod", shownValue{"alpha", true}},
 		{"compare copy right, added", compareCopyKeys(1, "l"), ".env.prod", shownValue{"ghp_first1", false}},
 		{"compare copy left, changed", compareCopyKeys(0, "h"), ".env", shownValue{"beta", true}},
-		{"compare copy left, removed", compareCopyKeys(2, "h"), ".env", shownValue{"delta", true}},
-		{"compare copy of a token", compareCopyKeys(3, "h"), ".env", shownValue{"ghp_second2", true}},
-		// Matrix rows: CACHE_HOST, DB_HOST, GREETING, PUBLIC_TOKEN.
+		{"compare copy left, removed", compareCopyKeys(4, "h"), ".env", shownValue{"delta", true}},
+		{"compare copy of a token", compareCopyKeys(5, "h"), ".env", shownValue{"ghp_second2", true}},
+		// Matrix rows: CACHE_HOST, DB_HOST, GREETING, MEMO, NOTE, PUBLIC_TOKEN.
 		{"matrix add, secret key", matrixAddKeys(0, 0, "gamma"), ".env", shownValue{"gamma", true}},
-		{"matrix add, safe key", matrixAddKeys(3, 1, "ghp_third3"), ".env.prod", shownValue{"ghp_third3", false}},
+		{"matrix add, safe key", matrixAddKeys(5, 1, "ghp_third3"), ".env.prod", shownValue{"ghp_third3", false}},
 		{"matrix add of a token", matrixAddKeys(2, 0, "ghp_third3"), ".env", shownValue{"ghp_third3", true}},
 	}
 	for _, tt := range tests {
