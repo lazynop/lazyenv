@@ -81,10 +81,10 @@ func (a App) handleConfirmMatrixDeleteKey(msg tea.KeyPressMsg) (tea.Model, tea.C
 	switch {
 	case key.Matches(msg, a.keys.Confirm):
 		a.mode = ModeMatrix
-		key, file := a.matrixView.DeleteAtCursor()
+		deleted, file := a.matrixView.DeleteAtCursor()
 		if file != nil {
 			a.refreshIfShown(file)
-			return a, a.flashMessage("Deleted " + key + " from " + file.Name)
+			return a, a.flashMessage("Deleted " + deleted + " from " + file.Name)
 		}
 		return a, nil
 	case key.Matches(msg, a.keys.Deny), key.Matches(msg, a.keys.Escape):
