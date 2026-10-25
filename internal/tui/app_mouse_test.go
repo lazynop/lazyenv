@@ -659,3 +659,25 @@ func TestMouseWheelMatrixMode_Scrolls(t *testing.T) {
 	app = updated.(App)
 	assert.Greater(t, app.matrixView.cursorRow, 0, "wheel down should scroll the matrix rows")
 }
+
+// TestMouseOnTheActiveFileKeepsTheVarList clicks the active file, and turns
+// the wheel over the file list past its end, where the active file stays as
+// it is: the var list keeps its cursor, scroll and peek, as it does under the
+// keys (TestFileKeysThatKeepTheActiveFileKeepTheVarList).
+func TestMouseOnTheActiveFileKeepsTheVarList(t *testing.T) {
+	for _, tt := range []struct {
+		name   string
+		prefix string // of the active file's variables
+		msg    tea.Msg
+	}{
+		{"click on the first file", "FIRST", tea.MouseClickMsg{X: 1, Y: panelContentOffsetY, Button: tea.MouseLeft}},
+		{"wheel up on the first file", "FIRST", tea.MouseWheelMsg{X: 1, Y: panelContentOffsetY, Button: tea.MouseWheelUp}},
+		{"click on the last file", "LAST", tea.MouseClickMsg{X: 1, Y: panelContentOffsetY + 1, Button: tea.MouseLeft}},
+		{"wheel down on the last file", "LAST", tea.MouseWheelMsg{X: 1, Y: panelContentOffsetY + 1, Button: tea.MouseWheelDown}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			updated, _ := varListAtTheEnd(t, tt.prefix).Update(tt.msg)
+			assertVarListKeptAtTheEnd(t, updated.(App), tt.prefix)
+		})
+	}
+}

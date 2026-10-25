@@ -11,12 +11,14 @@ import (
 )
 
 // The property: in the main view the file list's cursor sits on the active
-// file (FileListModel.Cursor == Selected), so the highlighted file is the one
-// the var list shows. Modes that move the cursor without changing the active
-// file (the compare picker, the matrix) must put it back on the way out. Every
-// pair of inputs from the main view is tried, then the keys that leave or
-// answer a mode, checking the property after each input that lands in the
-// main view. Bindings come from KeyMap by reflection, so a new one is covered.
+// file (FileListModel.Cursor == Selected) and the var list shows that file, so
+// the highlighted file is the one the var list shows; selectCursorFile relies
+// on it to reload the var list only on another file. Modes that move the
+// cursor without changing the active file (the compare picker, the matrix)
+// must put it back on the way out. Every pair of inputs from the main view is
+// tried, then the keys that leave or answer a mode, checking the property
+// after each input that lands in the main view. Bindings come from KeyMap by
+// reflection, so a new one is covered.
 
 // cursorInput is one input the property test sends: a key press or a wheel tick.
 type cursorInput struct {
@@ -68,6 +70,8 @@ func TestMainViewCursorStaysOnTheActiveFile(t *testing.T) {
 						if app.mode == ModeNormal {
 							require.Equal(t, app.fileList.Selected, app.fileList.Cursor,
 								"after %v the cursor is off the active file", names(sent[:i+1]))
+							require.Same(t, app.fileList.SelectedFile(), app.varList.File,
+								"after %v the var list shows another file than the active one", names(sent[:i+1]))
 						}
 					}
 				})
