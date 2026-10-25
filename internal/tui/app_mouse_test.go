@@ -164,13 +164,13 @@ func TestDiffViewSetCursorEmpty(t *testing.T) {
 
 func TestMatrixSetCursor(t *testing.T) {
 	m := MatrixModel{
-		entries:   make([]model.MatrixEntry, 5),
-		fileNames: []string{"a", "b", "c"},
-		Height:    20,
-		Width:     80,
-		layout:    config.DefaultConfig().Layout,
+		entries: make([]model.MatrixEntry, 5),
+		files:   []*model.EnvFile{makeTestFile("a"), makeTestFile("b"), makeTestFile("c")},
+		Height:  20,
+		Width:   80,
+		layout:  config.DefaultConfig().Layout,
 	}
-	// Populate Present slices to match fileNames length
+	// Populate Present slices to match the number of files
 	for i := range m.entries {
 		m.entries[i].Present = make([]bool, 3)
 	}
@@ -186,7 +186,7 @@ func TestMatrixSetCursor(t *testing.T) {
 
 	m.SetCursor(99, 99)
 	assert.Equal(t, 4, m.rows.Cursor, "rows.Cursor should clamp to len(entries)-1 = 4")
-	assert.Equal(t, 2, m.cols.Cursor, "cols.Cursor should clamp to len(fileNames)-1 = 2")
+	assert.Equal(t, 2, m.cols.Cursor, "cols.Cursor should clamp to len(files)-1 = 2")
 }
 
 func TestMatrixSetCursorEmpty(t *testing.T) {
@@ -195,7 +195,7 @@ func TestMatrixSetCursorEmpty(t *testing.T) {
 		Width:  80,
 		layout: config.DefaultConfig().Layout,
 	}
-	// No entries, no fileNames — should not panic
+	// No entries, no files — should not panic
 	assert.NotPanics(t, func() {
 		m.SetCursor(0, 0)
 		m.SetCursor(5, 5)
@@ -560,11 +560,11 @@ func newMatrixTestApp(t *testing.T) App {
 	app = resize(app, 120, 40)
 	app.mode = ModeMatrix
 	mv := MatrixModel{
-		entries:   make([]model.MatrixEntry, 5),
-		fileNames: []string{"a", "b", "c"},
-		Height:    20,
-		Width:     120,
-		layout:    config.DefaultConfig().Layout,
+		entries: make([]model.MatrixEntry, 5),
+		files:   []*model.EnvFile{makeTestFile("a"), makeTestFile("b"), makeTestFile("c")},
+		Height:  20,
+		Width:   120,
+		layout:  config.DefaultConfig().Layout,
 	}
 	for i := range mv.entries {
 		mv.entries[i].Present = make([]bool, 3)

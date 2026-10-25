@@ -8,9 +8,8 @@ import (
 )
 
 func TestComputeMatrixEmpty(t *testing.T) {
-	entries, names := ComputeMatrix(nil)
+	entries := ComputeMatrix(nil)
 	assert.Empty(t, entries)
-	assert.Empty(t, names)
 }
 
 func TestComputeMatrixSingleFile(t *testing.T) {
@@ -19,8 +18,7 @@ func TestComputeMatrixSingleFile(t *testing.T) {
 		EnvVar{Key: "B", Value: "2"},
 	)
 	f.Name = "one.env"
-	entries, names := ComputeMatrix([]*EnvFile{f})
-	assert.Equal(t, []string{"one.env"}, names)
+	entries := ComputeMatrix([]*EnvFile{f})
 	require.Len(t, entries, 2)
 	// alphabetical order
 	assert.Equal(t, "A", entries[0].Key)
@@ -40,8 +38,7 @@ func TestComputeMatrixMultipleFiles(t *testing.T) {
 		EnvVar{Key: "REDIS_URL", Value: "redis://x"},
 	)
 	f2.Name = ".env.prod"
-	entries, names := ComputeMatrix([]*EnvFile{f1, f2})
-	assert.Equal(t, []string{".env", ".env.prod"}, names)
+	entries := ComputeMatrix([]*EnvFile{f1, f2})
 	require.Len(t, entries, 3)
 
 	// alphabetical: API_KEY, DB_HOST, REDIS_URL
@@ -64,7 +61,7 @@ func TestComputeMatrixDuplicateKeys(t *testing.T) {
 		EnvVar{Key: "A", Value: "second"},
 	)
 	f.Name = "dup.env"
-	entries, _ := ComputeMatrix([]*EnvFile{f})
+	entries := ComputeMatrix([]*EnvFile{f})
 	require.Len(t, entries, 1)
 	assert.Equal(t, "A", entries[0].Key)
 	assert.Equal(t, []string{"second"}, entries[0].Values)

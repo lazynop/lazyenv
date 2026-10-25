@@ -20,9 +20,8 @@ const (
 
 // MatrixModel manages the completeness matrix view.
 type MatrixModel struct {
-	files     []*model.EnvFile
-	entries   []model.MatrixEntry
-	fileNames []string
+	files   []*model.EnvFile
+	entries []model.MatrixEntry
 
 	rows scrollCursor // over the keys (rows)
 	cols scrollCursor // over the files (columns)
@@ -42,19 +41,18 @@ type MatrixModel struct {
 
 // NewMatrixModel creates a matrix model from the loaded files.
 func NewMatrixModel(files []*model.EnvFile, layout config.LayoutConfig) MatrixModel {
-	entries, names := model.ComputeMatrix(files)
+	entries := model.ComputeMatrix(files)
 	ti := textinput.New() // no CharLimit, like the value editor
 	return MatrixModel{
-		files:     files,
-		entries:   entries,
-		fileNames: names,
-		layout:    layout,
-		editor:    ti,
+		files:   files,
+		entries: entries,
+		layout:  layout,
+		editor:  ti,
 	}
 }
 
 func (m *MatrixModel) recompute() {
-	m.entries, m.fileNames = model.ComputeMatrix(m.files)
+	m.entries = model.ComputeMatrix(m.files)
 	model.SortEntries(m.entries, m.sortMode)
 	m.rows.clamp(len(m.entries))
 }
@@ -102,14 +100,14 @@ func (m *MatrixModel) MoveLeft() {
 
 // MoveRight moves the column cursor right.
 func (m *MatrixModel) MoveRight() {
-	m.cols.next(len(m.fileNames))
+	m.cols.next(len(m.files))
 	m.ensureHorizontalVisible()
 }
 
 // SetCursor positions the cursor at the given row and column with bounds checking.
 func (m *MatrixModel) SetCursor(row, col int) {
 	m.rows.moveTo(row, len(m.entries))
-	m.cols.moveTo(col, len(m.fileNames))
+	m.cols.moveTo(col, len(m.files))
 	m.ensureVisible()
 	m.ensureHorizontalVisible()
 }
@@ -129,7 +127,7 @@ func (m *MatrixModel) CellAt(x, y int) (row, col int) {
 	col = m.cols.Cursor
 	// The matrix is drawn after its left padding.
 	if x -= matrixPaddingWidth/2 + m.layout.MatrixKeyWidth; x >= 0 {
-		if c := visibleIndex(x/m.layout.MatrixColWidth, m.cols.Offset, m.visibleCols(), len(m.fileNames)); c >= 0 {
+		if c := visibleIndex(x/m.layout.MatrixColWidth, m.cols.Offset, m.visibleCols(), len(m.files)); c >= 0 {
 			col = c
 		}
 	}
@@ -171,12 +169,12 @@ func (m *MatrixModel) ensureHorizontalVisible() {
 	if visibleCols < 1 {
 		return
 	}
-	m.cols.follow(visibleCols, len(m.fileNames))
+	m.cols.follow(visibleCols, len(m.files))
 }
 
 func (m *MatrixModel) counterWidth() int {
-	// " X/Y" where X and Y have the same digit count as len(fileNames)
-	digits := len(fmt.Sprintf("%d", len(m.fileNames)))
+	// " X/Y" where X and Y have the same digit count as len(files)
+	digits := len(fmt.Sprintf("%d", len(m.files)))
 	return 1 + digits + 1 + digits // space + digits + slash + digits
 }
 
@@ -185,7 +183,7 @@ func (m *MatrixModel) visibleCols() int {
 	if m.layout.MatrixColWidth <= 0 || available < m.layout.MatrixColWidth { // no layout: a zero MatrixModel
 		return 1
 	}
-	return min(available/m.layout.MatrixColWidth, len(m.fileNames))
+	return min(available/m.layout.MatrixColWidth, len(m.files))
 }
 
 // ToggleSort toggles between alphabetical and completeness sorting.
@@ -214,7 +212,7 @@ func (m *MatrixModel) StartEdit() tea.Cmd {
 
 // EditBar returns the label and the text input of the bar that adds a value.
 func (m *MatrixModel) EditBar() (string, *textinput.Model) {
-	return fmt.Sprintf("  Add %s to %s: ", m.editKey, m.fileNames[m.editFile]), &m.editor
+	return fmt.Sprintf("  Add %s to %s: ", m.editKey, m.files[m.editFile].Name), &m.editor
 }
 
 // ConfirmEdit adds the variable to the target file and returns that file, or
@@ -254,7 +252,7 @@ func (m *MatrixModel) renderHeaderRow(endCol int, theme Theme) string {
 	var hdr strings.Builder
 	hdr.WriteString(padRight("KEY", m.layout.MatrixKeyWidth))
 	for ci := m.cols.Offset; ci < endCol; ci++ {
-		name := fitName(m.fileNames[ci], m.layout.MatrixColWidth-2)
+		name := fitName(m.files[ci].Name, m.layout.MatrixColWidth-2)
 		if ci == m.cols.Cursor {
 			hdr.WriteString(theme.SelectedItem.Render(padRight(name, m.layout.MatrixColWidth)))
 		} else {
@@ -328,7 +326,7 @@ func (m *MatrixModel) View(theme Theme) string {
 	var b strings.Builder
 
 	visCols := m.visibleCols()
-	endCol := min(m.cols.Offset+visCols, len(m.fileNames))
+	endCol := min(m.cols.Offset+visCols, len(m.files))
 
 	// Header row
 	b.WriteString(m.renderHeaderRow(endCol, theme))
@@ -349,7 +347,7 @@ func (m *MatrixModel) View(theme Theme) string {
 
 	// Stats footer
 	missing := 0
-	total := len(m.entries) * len(m.fileNames)
+	total := len(m.entries) * len(m.files)
 	for _, e := range m.entries {
 		for _, p := range e.Present {
 			if !p {

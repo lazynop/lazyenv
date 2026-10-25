@@ -18,16 +18,11 @@ type MatrixEntry struct {
 }
 
 // ComputeMatrix builds a completeness matrix from the given files.
-// Returns entries sorted alphabetically and file names in input order.
+// Returns entries sorted alphabetically.
 // For duplicate keys within a file, the last occurrence wins (shell semantics).
-func ComputeMatrix(files []*EnvFile) ([]MatrixEntry, []string) {
+func ComputeMatrix(files []*EnvFile) []MatrixEntry {
 	if len(files) == 0 {
-		return nil, nil
-	}
-
-	names := make([]string, len(files))
-	for i, f := range files {
-		names[i] = f.Name
+		return nil
 	}
 
 	// Collect unique keys and last-occurrence values per file.
@@ -63,7 +58,7 @@ func ComputeMatrix(files []*EnvFile) ([]MatrixEntry, []string) {
 	}
 
 	SortEntries(entries, SortAlpha)
-	return entries, names
+	return entries
 }
 
 // SortEntries sorts matrix entries in place by the given mode.

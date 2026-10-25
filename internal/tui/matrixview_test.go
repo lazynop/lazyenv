@@ -32,7 +32,7 @@ func TestNewMatrixModel(t *testing.T) {
 
 	// Union of keys: DB, HOST, PORT, SECRET = 4 (sorted alpha)
 	assert.Equal(t, 4, len(m.entries), "should have 4 unique keys")
-	assert.Equal(t, []string{".env", ".env.local"}, m.fileNames)
+	assert.Equal(t, []*model.EnvFile{f1, f2}, m.files, "the columns should be the files, in order")
 	assert.Equal(t, 0, m.rows.Cursor, "initial rows.Cursor should be 0")
 	assert.Equal(t, 0, m.cols.Cursor, "initial cols.Cursor should be 0")
 }
