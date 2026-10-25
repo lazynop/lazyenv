@@ -188,6 +188,16 @@ func TestSecretDetection(t *testing.T) {
 	assert.False(t, ef.Vars[2].IsSecret, "NORMAL should not be secret")
 }
 
+// TestParseKeepsTheSecretsConfig parses with a custom [secrets] config: the
+// file keeps the config its variables were judged with.
+func TestParseKeepsTheSecretsConfig(t *testing.T) {
+	secrets := config.SecretsConfig{ExtraPatterns: []string{"_HOST"}, SafePatterns: []string{"PUBLIC_"}}
+
+	ef := ParseBytes(".env", []byte("DB_HOST=localhost\n"), secrets)
+
+	assert.Equal(t, secrets, ef.Secrets)
+}
+
 func TestPlaceholderDetection(t *testing.T) {
 	ef := ParseBytes(".env", []byte("A=changeme\nB=TODO\nC=your_api_key_here\nD=real_value\n"), config.SecretsConfig{})
 

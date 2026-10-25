@@ -34,6 +34,7 @@ var envFileFieldFates = map[string]reparseFieldFate{
 	"Vars":            reparseReadsFromDisk,
 	"Lines":           reparseReadsFromDisk,
 	"TrailingNewline": reparseReadsFromDisk,
+	"Secrets":         reparseReadsFromDisk,
 	"DeletedVars":     reparseDropsEdit,
 	"Modified":        reparseDropsEdit,
 	"GitWarning":      reparseCarriesOver,

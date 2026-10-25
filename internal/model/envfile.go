@@ -3,6 +3,8 @@ package model
 import (
 	"slices"
 	"sort"
+
+	"github.com/lazynop/lazyenv/internal/config"
 )
 
 // LineType categorizes a raw line in an env file.
@@ -66,6 +68,9 @@ type EnvFile struct {
 	Modified        bool
 	GitWarning      bool // true if file is NOT covered by .gitignore
 	TrailingNewline bool // true if the source file ended with a newline
+	// Secrets is the [secrets] config the parser judged the variables with.
+	// Its zero value means the built-in rules.
+	Secrets config.SecretsConfig
 }
 
 // RawLine preserves original content for round-trip writing.

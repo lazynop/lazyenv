@@ -32,7 +32,8 @@ func ParseFile(path string, secrets config.SecretsConfig) (*model.EnvFile, error
 // ParseBytes parses .env content from raw bytes.
 func ParseBytes(name string, data []byte, secrets config.SecretsConfig) *model.EnvFile {
 	ef := &model.EnvFile{
-		Name: name,
+		Name:    name,
+		Secrets: secrets,
 	}
 
 	content := string(data)
