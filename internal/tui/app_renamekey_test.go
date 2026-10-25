@@ -2,6 +2,7 @@ package tui
 
 import (
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
@@ -181,8 +182,13 @@ func TestRenameKey_ThenAddDoesNotConfuseFlows(t *testing.T) {
 // renameKey renames the var under the cursor of app's var list to name, by
 // keys.
 func renameKey(app App, name string) App {
-	app = press(app, "E", "ctrl+u")
-	return press(app, append(strings.Split(name, ""), "enter")...)
+	return press(app, renameKeys(name)...)
+}
+
+// renameKeys returns the keys that rename the var under the cursor of the var
+// list to name.
+func renameKeys(name string) []string {
+	return slices.Concat([]string{"E", "ctrl+u"}, typing(name), []string{"enter"})
 }
 
 // renameOntoDeleted deletes the var under the cursor of app's var list, the
