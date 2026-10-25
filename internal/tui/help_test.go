@@ -24,9 +24,19 @@ func openHelpWith(cfg config.Config, width, height int) App {
 	return press(resize(NewApp(cfg, StartupMessages{}), width, height), "?")
 }
 
-// scrollPastTheEnd is more down presses than the help has rows to scroll at
-// any size the layout tests render, the 60x10 minimum included.
-const scrollPastTheEnd = 150
+// helpLines is how many lines the text of app's help wraps to at app's width,
+// one per screen row. The help never scrolls more lines than it holds, so
+// that many down presses bring its last line on screen at app's size, however
+// long the help grows.
+func helpLines(app App) int {
+	return len(app.helpView.lines)
+}
+
+// scrollHelpToTheEnd presses down helpLines times, bringing the last line of
+// app's help on screen.
+func scrollHelpToTheEnd(app App) App {
+	return press(app, slices.Repeat([]string{"down"}, helpLines(app))...)
+}
 
 // helpLastRow is the description on the last row of the help.
 const helpLastRow = "Jump to the top/bottom"
@@ -51,11 +61,7 @@ func TestHelpScrollsDownToItsLastRow(t *testing.T) {
 	assert.Contains(t, helpScreen(app), "lazyenv — TUI for managing .env files")
 	assert.NotContains(t, helpScreen(app), helpLastRow)
 
-	for range scrollPastTheEnd {
-		app = press(app, "down")
-	}
-
-	screen := helpScreen(app)
+	screen := helpScreen(scrollHelpToTheEnd(app))
 	assert.Equal(t, 24, lipgloss.Height(screen))
 	assert.Contains(t, screen, helpLastRow, "the last row is reachable")
 	assert.NotContains(t, screen, "lazyenv — TUI for managing .env files")
@@ -67,9 +73,7 @@ func TestHelpScrollStopsAtBothEnds(t *testing.T) {
 	top := helpScreen(app)
 	assert.Equal(t, top, helpScreen(press(app, "up")), "up at the top does nothing")
 
-	for range scrollPastTheEnd {
-		app = press(app, "j")
-	}
+	app = press(app, down(helpLines(app))...)
 	bottom := helpScreen(app)
 	assert.Equal(t, bottom, helpScreen(press(app, "j")), "down at the bottom does nothing")
 	assert.NotEqual(t, bottom, helpScreen(press(app, "k")), "up from the bottom scrolls back")
@@ -107,10 +111,7 @@ func TestHelpHintsAtScrollingOnlyWhenItOverflows(t *testing.T) {
 }
 
 func TestHelpGrowingTheTerminalScrollsBackToFit(t *testing.T) {
-	app := openHelp(80, 24)
-	for range scrollPastTheEnd {
-		app = press(app, "down")
-	}
+	app := scrollHelpToTheEnd(openHelp(80, 24))
 
 	app = resize(app, 120, 200)
 
@@ -175,11 +176,7 @@ func TestHelpIndentsWrappedRowsUnderTheirDescription(t *testing.T) {
 		assert.Equal(t, descCol, nextCol, "the continuation of %q starts under its description", description)
 	}
 
-	app := openHelp(MinTerminalWidth, MinTerminalHeight)
-	for range scrollPastTheEnd {
-		app = press(app, "down")
-	}
-	screen := helpScreen(app)
+	screen := helpScreen(scrollHelpToTheEnd(openHelp(MinTerminalWidth, MinTerminalHeight)))
 	assert.Contains(t, screen, helpLastRow, "scrolling counts the wrapped rows")
 }
 
@@ -342,7 +339,7 @@ func TestHelpJumpsToTheEndsWithHomeAndEnd(t *testing.T) {
 	top := helpScreen(app)
 
 	end := press(app, "end")
-	assert.Equal(t, helpScreen(press(app, slices.Repeat([]string{"down"}, scrollPastTheEnd)...)), helpScreen(end),
+	assert.Equal(t, helpScreen(scrollHelpToTheEnd(app)), helpScreen(end),
 		"End shows the last row")
 	assert.Equal(t, helpScreen(end), helpScreen(press(end, "pgdown")), "PgDn at the end does nothing")
 	assert.Equal(t, top, helpScreen(press(end, "home")), "Home shows the first row")
@@ -367,7 +364,7 @@ func helpTopRow(app App) string {
 
 func TestHelpKeepsItsTopRowWhenTheWidthChanges(t *testing.T) {
 	app := openHelp(120, 24)
-	for range scrollPastTheEnd {
+	for range helpLines(app) {
 		if helpTopRow(app) == "Compare view" {
 			break
 		}
