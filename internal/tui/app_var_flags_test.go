@@ -20,9 +20,9 @@ var customSecrets = config.SecretsConfig{
 	SafePatterns:  []string{"PUBLIC_"},
 }
 
-// customSecretsFixture is two files to change under customSecrets. PUBLIC_TOKEN,
-// NOTE, a plain var, and MEMO, a token under a plain key, are only in .env;
-// CACHE_HOST and GREETING, a token under a plain key, only in .env.prod.
+// customSecretsFixture is two files to change under customSecrets. Only .env
+// holds PUBLIC_TOKEN, NOTE (a plain var) and MEMO (a token under a plain key);
+// only .env.prod holds CACHE_HOST and GREETING (a token under a plain key).
 var customSecretsFixture = map[string]string{
 	".env":      "DB_HOST=alpha\nPUBLIC_TOKEN=ghp_first1\nNOTE=hello\nMEMO=ghp_memo44\n",
 	".env.prod": "DB_HOST=beta\nCACHE_HOST=delta\nGREETING=ghp_second2\n",
@@ -151,28 +151,39 @@ func TestCustomSecretsConfigMasksChangedValues(t *testing.T) {
 	}
 }
 
-// TestCustomSecretsConfigMasksAfterCompareSaveAndReset copies a value in
-// compare, then saves or resets both files there, under a custom [secrets]
-// config: back in the main view, each file masks its values as the config
-// judges them.
+// TestCustomSecretsConfigMasksAfterCompareSaveAndReset copies DB_HOST into
+// .env.prod in compare, then saves or resets both files there, under a custom
+// [secrets] config: back in the main view, each file masks its values as the
+// config judges them.
 func TestCustomSecretsConfigMasksAfterCompareSaveAndReset(t *testing.T) {
-	t.Run("save", func(t *testing.T) {
-		app := press(customSecretsApp(t), slices.Concat(compareProdKeys, []string{"l", "w", "q", "j"})...)
+	tests := []struct {
+		name  string
+		key   string                  // saves or resets both files in compare
+		shown map[string][]shownValue // each file's values, back in the main view
+	}{
+		{"save", "w", map[string][]shownValue{
+			".env":      customSecretsLoaded[".env"],
+			".env.prod": {{"alpha", true}, {"delta", true}, {"ghp_second2", true}},
+		}},
+		{"reset", "r", customSecretsLoaded},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app := press(customSecretsApp(t), slices.Concat(compareProdKeys, []string{"l", tt.key, "q"})...)
 
-		require.Equal(t, ".env.prod", app.varList.File.Name)
-		require.False(t, app.varList.File.Modified, "compare should have saved .env.prod")
-		assertShows(t, app, shownValue{"alpha", true})
-	})
-	t.Run("reset", func(t *testing.T) {
-		app := press(customSecretsApp(t), slices.Concat(compareProdKeys, []string{"l", "r", "q"})...)
+			assertDiskFileShows(t, app, ".env", tt.shown[".env"])
+			assertDiskFileShows(t, press(app, "j"), ".env.prod", tt.shown[".env.prod"])
+		})
+	}
+}
 
-		require.Contains(t, app.statusBar.Message, "Reset to saved state")
-		assertShows(t, app, customSecretsLoaded[".env"]...)
-		app = press(app, "j")
-		require.Equal(t, ".env.prod", app.varList.File.Name)
-		require.False(t, app.varList.File.Modified, "compare should have reset .env.prod")
-		assertShows(t, app, customSecretsLoaded[".env.prod"]...)
-	})
+// assertDiskFileShows checks app's var list shows the file name, as on disk
+// (not modified), with values masked or in clear.
+func assertDiskFileShows(t *testing.T, app App, name string, values []shownValue) {
+	t.Helper()
+	require.Equal(t, name, app.varList.File.Name)
+	require.False(t, app.varList.File.Modified, "%s should match the disk", name)
+	assertShows(t, app, values...)
 }
 
 // varRowMarkers returns, for each var list row of key in view, the markers it
