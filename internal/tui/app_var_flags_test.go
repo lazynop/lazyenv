@@ -60,16 +60,6 @@ func assertShows(t *testing.T, app App, values ...shownValue) {
 	}
 }
 
-// typing returns the keys that type text.
-func typing(text string) []string {
-	return strings.Split(text, "")
-}
-
-// down returns the keys that move a cursor n rows down.
-func down(n int) []string {
-	return slices.Repeat([]string{"j"}, n)
-}
-
 // The key scripts below start in the main view on .env with the file list
 // focused, as loadFixtureApp leaves it, and end in the main view showing the
 // file they change.
@@ -89,14 +79,19 @@ func addVarKeys(name, value string) []string {
 	return slices.Concat([]string{"right", "a"}, typing(name), []string{"enter"}, typing(value), []string{"enter"})
 }
 
-// compareCopyKeys compares .env with .env.prod and copies the entry at row with
-// copyKey: "l" into .env.prod, "h" into .env.
-func compareCopyKeys(row int, copyKey string) []string {
-	target := 0
-	if copyKey == "l" {
-		target = 1
-	}
-	return slices.Concat([]string{"c", "j", "enter"}, down(row), []string{copyKey, "q"}, down(target))
+// compareProdKeys compares .env, on the left, with .env.prod.
+var compareProdKeys = []string{"c", "j", "enter"}
+
+// copyIntoEnvKeys compares .env with .env.prod and copies the entry at row
+// into .env.
+func copyIntoEnvKeys(row int) []string {
+	return slices.Concat(compareProdKeys, down(row), []string{"h", "q"})
+}
+
+// copyIntoProdKeys compares .env with .env.prod and copies the entry at row
+// into .env.prod, which it then shows.
+func copyIntoProdKeys(row int) []string {
+	return slices.Concat(compareProdKeys, down(row), []string{"l", "q", "j"})
 }
 
 // matrixAddKeys adds value from the matrix, under the key at row (keys sorted
@@ -127,11 +122,11 @@ func TestCustomSecretsConfigMasksChangedValues(t *testing.T) {
 		{"add a token", addVarKeys("GREETING", "ghp_third3"), ".env", shownValue{"ghp_third3", true}},
 		// Compare entries: DB_HOST changed, PUBLIC_TOKEN, NOTE and MEMO only
 		// in .env, CACHE_HOST and GREETING only in .env.prod.
-		{"compare copy right, changed", compareCopyKeys(0, "l"), ".env.prod", shownValue{"alpha", true}},
-		{"compare copy right, added", compareCopyKeys(1, "l"), ".env.prod", shownValue{"ghp_first1", false}},
-		{"compare copy left, changed", compareCopyKeys(0, "h"), ".env", shownValue{"beta", true}},
-		{"compare copy left, removed", compareCopyKeys(4, "h"), ".env", shownValue{"delta", true}},
-		{"compare copy of a token", compareCopyKeys(5, "h"), ".env", shownValue{"ghp_second2", true}},
+		{"compare copy right, changed", copyIntoProdKeys(0), ".env.prod", shownValue{"alpha", true}},
+		{"compare copy right, added", copyIntoProdKeys(1), ".env.prod", shownValue{"ghp_first1", false}},
+		{"compare copy left, changed", copyIntoEnvKeys(0), ".env", shownValue{"beta", true}},
+		{"compare copy left, removed", copyIntoEnvKeys(4), ".env", shownValue{"delta", true}},
+		{"compare copy of a token", copyIntoEnvKeys(5), ".env", shownValue{"ghp_second2", true}},
 		// Matrix rows: CACHE_HOST, DB_HOST, GREETING, MEMO, NOTE, PUBLIC_TOKEN.
 		{"matrix add, secret key", matrixAddKeys(0, 0, "gamma"), ".env", shownValue{"gamma", true}},
 		{"matrix add, safe key", matrixAddKeys(5, 1, "ghp_third3"), ".env.prod", shownValue{"ghp_third3", false}},
@@ -162,14 +157,14 @@ func TestCustomSecretsConfigMasksChangedValues(t *testing.T) {
 // judges them.
 func TestCustomSecretsConfigMasksAfterCompareSaveAndReset(t *testing.T) {
 	t.Run("save", func(t *testing.T) {
-		app := press(customSecretsApp(t), "c", "j", "enter", "l", "w", "q", "j")
+		app := press(customSecretsApp(t), slices.Concat(compareProdKeys, []string{"l", "w", "q", "j"})...)
 
 		require.Equal(t, ".env.prod", app.varList.File.Name)
 		require.False(t, app.varList.File.Modified, "compare should have saved .env.prod")
 		assertShows(t, app, shownValue{"alpha", true})
 	})
 	t.Run("reset", func(t *testing.T) {
-		app := press(customSecretsApp(t), "c", "j", "enter", "l", "r", "q")
+		app := press(customSecretsApp(t), slices.Concat(compareProdKeys, []string{"l", "r", "q"})...)
 
 		require.Contains(t, app.statusBar.Message, "Reset to saved state")
 		assertShows(t, app, customSecretsLoaded[".env"]...)

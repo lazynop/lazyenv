@@ -7,6 +7,7 @@ import (
 	goparser "go/parser"
 	"go/token"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 
@@ -103,6 +104,16 @@ func press(app App, keys ...string) App {
 		app = updated.(App)
 	}
 	return app
+}
+
+// typing returns the keys that type text, one character each.
+func typing(text string) []string {
+	return strings.Split(text, "")
+}
+
+// down returns the keys that move a cursor n rows down.
+func down(n int) []string {
+	return slices.Repeat([]string{"j"}, n)
 }
 
 // resize sends app the size of a terminal width columns wide and height rows
