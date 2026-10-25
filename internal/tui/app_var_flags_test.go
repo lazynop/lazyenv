@@ -60,21 +60,21 @@ func assertShows(t *testing.T, app App, values ...shownValue) {
 	}
 }
 
-// The key scripts below start in the main view on .env with the file list
-// focused, as loadFixtureApp leaves it, and end in the main view showing the
-// file they change.
+// The key scripts below start in the main view with the file list focused, on
+// .env as loadFixtureApp leaves it, and end in the main view showing the file
+// they change.
 
-// editValueKeys edits the value of .env's var at row to value.
+// editValueKeys edits the value of the shown file's var at row to value.
 func editValueKeys(row int, value string) []string {
 	return slices.Concat([]string{"right"}, down(row), []string{"e", "ctrl+u"}, typing(value), []string{"enter"})
 }
 
-// renameVarKeys renames .env's var at row to name.
+// renameVarKeys renames the shown file's var at row to name.
 func renameVarKeys(row int, name string) []string {
 	return slices.Concat([]string{"right"}, down(row), renameKeys(name))
 }
 
-// addVarKeys adds name=value to .env.
+// addVarKeys adds name=value to the shown file.
 func addVarKeys(name, value string) []string {
 	return slices.Concat([]string{"right", "a"}, typing(name), []string{"enter"}, typing(value), []string{"enter"})
 }
@@ -184,6 +184,21 @@ func assertDiskFileShows(t *testing.T, app App, name string, values []shownValue
 	require.Equal(t, name, app.varList.File.Name)
 	require.False(t, app.varList.File.Modified, "%s should match the disk", name)
 	assertShows(t, app, values...)
+}
+
+// TestCustomSecretsConfigMasksANewFile duplicates .env under a custom
+// [secrets] config, as every new file is read (finaliseNewFile): the copy
+// masks its values as the config judges them, and still does once a value is
+// edited and the copy saved.
+func TestCustomSecretsConfigMasksANewFile(t *testing.T) {
+	app := press(customSecretsApp(t), slices.Concat([]string{"C", "ctrl+u"}, typing(".env.copy"), []string{"enter"})...)
+	require.Equal(t, ".env.copy", app.varList.File.Name)
+	assertShows(t, app, customSecretsLoaded[".env"]...)
+
+	app = press(app, slices.Concat(editValueKeys(0, "gamma"), []string{"w"})...)
+
+	require.Contains(t, app.statusBar.Message, "Saved .env.copy")
+	assertShows(t, app, shownValue{"gamma", true})
 }
 
 // varRowMarkers returns, for each var list row of key in view, the markers it
