@@ -29,12 +29,12 @@ type DiffStats struct {
 
 // DiffViewModel manages the diff/compare view.
 type DiffViewModel struct {
+	scrollCursor // Cursor and Offset over Entries
+
 	FileA       *model.EnvFile
 	FileB       *model.EnvFile
 	allEntries  []model.DiffEntry
 	Entries     []model.DiffEntry // visible entries (after filtering)
-	Cursor      int
-	Offset      int
 	Width       int
 	Height      int
 	HideEqual   bool
@@ -84,9 +84,7 @@ func (m *DiffViewModel) recompute() {
 		m.Entries = append(m.Entries, e)
 	}
 
-	if m.Cursor >= len(m.Entries) {
-		m.Cursor = max(0, len(m.Entries)-1)
-	}
+	m.clamp(len(m.Entries))
 	m.ensureVisible()
 }
 
@@ -104,29 +102,25 @@ func (m *DiffViewModel) ToggleFilter() {
 
 // MoveUp moves the cursor up.
 func (m *DiffViewModel) MoveUp() {
-	if m.Cursor > 0 {
-		m.Cursor--
-		m.ensureVisible()
-	}
+	m.prev()
+	m.ensureVisible()
 }
 
 // MoveDown moves the cursor down.
 func (m *DiffViewModel) MoveDown() {
-	if m.Cursor < len(m.Entries)-1 {
-		m.Cursor++
-		m.ensureVisible()
-	}
+	m.next(len(m.Entries))
+	m.ensureVisible()
 }
 
 // PageUp scrolls up a page, the cursor moving with the view (pageMove).
 func (m *DiffViewModel) PageUp() {
-	m.Cursor, m.Offset = pageMove(m.Cursor, m.Offset, m.visibleLines(), len(m.Entries), -1)
+	m.pageMove(m.visibleLines(), len(m.Entries), -1)
 	m.ensureVisible()
 }
 
 // PageDown scrolls down a page, the cursor moving with the view (pageMove).
 func (m *DiffViewModel) PageDown() {
-	m.Cursor, m.Offset = pageMove(m.Cursor, m.Offset, m.visibleLines(), len(m.Entries), 1)
+	m.pageMove(m.visibleLines(), len(m.Entries), 1)
 	m.ensureVisible()
 }
 
@@ -142,10 +136,7 @@ func (m *DiffViewModel) MoveToLast() {
 
 // SetCursor positions the cursor at the given index with bounds checking.
 func (m *DiffViewModel) SetCursor(index int) {
-	if len(m.Entries) == 0 {
-		return
-	}
-	m.Cursor = max(0, min(index, len(m.Entries)-1))
+	m.moveTo(index, len(m.Entries))
 	m.ensureVisible()
 }
 
@@ -184,7 +175,7 @@ func (m *DiffViewModel) IndexAt(y int) int {
 
 // ensureVisible scrolls just enough to keep the cursor on screen.
 func (m *DiffViewModel) ensureVisible() {
-	m.Offset = scrollOffset(m.Cursor, m.Offset, m.visibleLines(), len(m.Entries))
+	m.follow(m.visibleLines(), len(m.Entries))
 }
 
 // CopyToRight copies the value of the selected entry from file A to file B.
