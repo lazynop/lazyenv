@@ -24,10 +24,9 @@ type MatrixModel struct {
 	entries   []model.MatrixEntry
 	fileNames []string
 
-	cursorRow int // selected key (row)
-	cursorCol int // selected file (column)
-	offsetRow int // vertical scroll offset
-	offsetCol int // horizontal scroll offset
+	rows      scrollCursor // over the keys (rows)
+	cursorCol int          // selected file (column)
+	offsetCol int          // horizontal scroll offset
 
 	sortMode model.SortMode
 
@@ -58,37 +57,31 @@ func NewMatrixModel(files []*model.EnvFile, layout config.LayoutConfig) MatrixMo
 func (m *MatrixModel) recompute() {
 	m.entries, m.fileNames = model.ComputeMatrix(m.files)
 	model.SortEntries(m.entries, m.sortMode)
-	if m.cursorRow >= len(m.entries) {
-		m.cursorRow = max(0, len(m.entries)-1)
-	}
+	m.rows.clamp(len(m.entries))
 }
 
 // MoveUp moves the cursor up.
 func (m *MatrixModel) MoveUp() {
-	if m.cursorRow > 0 {
-		m.cursorRow--
-	}
+	m.rows.prev()
 	m.ensureVisible()
 }
 
 // MoveDown moves the cursor down.
 func (m *MatrixModel) MoveDown() {
-	if m.cursorRow < len(m.entries)-1 {
-		m.cursorRow++
-	}
+	m.rows.next(len(m.entries))
 	m.ensureVisible()
 }
 
 // PageUp scrolls up a page, the row cursor moving with the view (pageMove).
 func (m *MatrixModel) PageUp() {
-	m.cursorRow, m.offsetRow = pageMove(m.cursorRow, m.offsetRow, m.visibleLines(), len(m.entries), -1)
+	m.rows.pageMove(m.visibleLines(), len(m.entries), -1)
 	m.ensureVisible()
 }
 
 // PageDown scrolls down a page, the row cursor moving with the view
 // (pageMove).
 func (m *MatrixModel) PageDown() {
-	m.cursorRow, m.offsetRow = pageMove(m.cursorRow, m.offsetRow, m.visibleLines(), len(m.entries), 1)
+	m.rows.pageMove(m.visibleLines(), len(m.entries), 1)
 	m.ensureVisible()
 }
 
@@ -120,9 +113,7 @@ func (m *MatrixModel) MoveRight() {
 
 // SetCursor positions the cursor at the given row and column with bounds checking.
 func (m *MatrixModel) SetCursor(row, col int) {
-	if len(m.entries) > 0 {
-		m.cursorRow = max(0, min(row, len(m.entries)-1))
-	}
+	m.rows.moveTo(row, len(m.entries))
 	if len(m.fileNames) > 0 {
 		m.cursorCol = max(0, min(col, len(m.fileNames)-1))
 	}
@@ -141,7 +132,7 @@ func (m *MatrixModel) visibleLines() int {
 // A click on the key column or the row counter right of the last column keeps
 // the cursor's column.
 func (m *MatrixModel) CellAt(x, y int) (row, col int) {
-	row = visibleIndex(y-matrixContentOffsetY, m.offsetRow, m.visibleLines(), len(m.entries))
+	row = visibleIndex(y-matrixContentOffsetY, m.rows.Offset, m.visibleLines(), len(m.entries))
 	col = m.cursorCol
 	// The matrix is drawn after its left padding.
 	if x -= matrixPaddingWidth/2 + m.layout.MatrixKeyWidth; x >= 0 {
@@ -160,7 +151,7 @@ func (m *MatrixModel) SetSize(width, height int) {
 }
 
 func (m *MatrixModel) ensureVisible() {
-	m.offsetRow = scrollOffset(m.cursorRow, m.offsetRow, m.visibleLines(), len(m.entries))
+	m.rows.follow(m.visibleLines(), len(m.entries))
 }
 
 func (m *MatrixModel) ensureHorizontalVisible() {
@@ -200,7 +191,7 @@ func (m *MatrixModel) StartEdit() tea.Cmd {
 	if len(m.entries) == 0 {
 		return nil
 	}
-	entry := m.entries[m.cursorRow]
+	entry := m.entries[m.rows.Cursor]
 	if entry.Present[m.cursorCol] {
 		return nil
 	}
@@ -234,7 +225,7 @@ func (m *MatrixModel) DeleteAtCursor() (string, string) {
 	if len(m.entries) == 0 {
 		return "", ""
 	}
-	entry := m.entries[m.cursorRow]
+	entry := m.entries[m.rows.Cursor]
 	if !entry.Present[m.cursorCol] {
 		return "", ""
 	}
@@ -272,7 +263,7 @@ func (m *MatrixModel) renderBodyRow(ri, endCol int, theme Theme) string {
 	// Key name
 	keyStr := truncate(entry.Key, m.layout.MatrixKeyWidth-2)
 	keyFormatted := padRight(keyStr, m.layout.MatrixKeyWidth)
-	if ri == m.cursorRow {
+	if ri == m.rows.Cursor {
 		keyFormatted = theme.SelectedItem.Render(keyFormatted)
 	} else {
 		keyFormatted = theme.NormalItem.Render(keyFormatted)
@@ -282,7 +273,7 @@ func (m *MatrixModel) renderBodyRow(ri, endCol int, theme Theme) string {
 	row.WriteString(keyFormatted)
 	for ci := m.offsetCol; ci < endCol; ci++ {
 		var cell string
-		if ri == m.cursorRow && ci == m.cursorCol {
+		if ri == m.rows.Cursor && ci == m.cursorCol {
 			// Highlight active cell
 			if entry.Present[ci] {
 				cell = theme.SelectedItem.Render(padRight(" "+presentGlyph, m.layout.MatrixColWidth))
@@ -342,9 +333,9 @@ func (m *MatrixModel) View(theme Theme) string {
 
 	// Body rows
 	visible := m.visibleLines()
-	endRow := min(m.offsetRow+visible, len(m.entries))
+	endRow := min(m.rows.Offset+visible, len(m.entries))
 
-	for ri := m.offsetRow; ri < endRow; ri++ {
+	for ri := m.rows.Offset; ri < endRow; ri++ {
 		b.WriteString(m.renderBodyRow(ri, endCol, theme))
 		b.WriteString("\n")
 	}

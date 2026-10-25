@@ -57,7 +57,7 @@ func (a App) handleMatrixEdit(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	if len(a.matrixView.entries) == 0 {
 		return a, nil
 	}
-	entry := a.matrixView.entries[a.matrixView.cursorRow]
+	entry := a.matrixView.entries[a.matrixView.rows.Cursor]
 	present := entry.Present[a.matrixView.cursorCol]
 
 	switch {

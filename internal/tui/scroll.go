@@ -25,17 +25,6 @@ func visibleIndex(row, offset, visible, total int) int {
 	return offset + row
 }
 
-// pageMove returns the cursor and offset of a viewport of visible rows over
-// total positions after a page move, down for pages 1 and up for -1. Both
-// move by the visible rows, so the cursor keeps its row on screen and the
-// view skips no row; the cursor stops at the first or last position, and the
-// view brings the offset back within its rows (scrollOffset) once it passes
-// an end.
-func pageMove(cursor, offset, visible, total, pages int) (newCursor, newOffset int) {
-	step := pages * visible
-	return max(min(cursor+step, total-1), 0), offset + step
-}
-
 // scrollCursor is a cursor over a list's positions and the scroll offset of
 // the viewport that follows it. Its moves take from the list the visible rows
 // and the number of positions they need, since both can change between moves;
@@ -61,9 +50,15 @@ func (s *scrollCursor) next(total int) {
 }
 
 // pageMove moves the cursor and the offset a page of visible rows over total
-// positions, down for pages 1 and up for -1 (pageMove).
+// positions, down for pages 1 and up for -1. Both move by the visible rows,
+// so the cursor keeps its row on screen and the view skips no row; the cursor
+// stops at the first or last position, and follow brings the offset back
+// within the rows once it passes an end.
 func (s *scrollCursor) pageMove(visible, total, pages int) {
-	s.Cursor, s.Offset = pageMove(s.Cursor, s.Offset, visible, total, pages)
+	step := pages * visible
+	s.Cursor += step
+	s.Offset += step
+	s.clamp(total)
 }
 
 // moveTo moves the cursor to index, kept within total positions; with none,

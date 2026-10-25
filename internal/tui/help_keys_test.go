@@ -79,7 +79,7 @@ var helpSectionStates = map[string]struct {
 	}},
 	"Matrix": {states: []*helpState{
 		{name: "matrix present cell", keys: []string{"m", "j"}, mode: ModeMatrix, ready: func(a App) bool {
-			return matrixCellPresent(a.matrixView) && a.matrixView.cursorRow > 0
+			return matrixCellPresent(a.matrixView) && a.matrixView.rows.Cursor > 0
 		}},
 		{name: "matrix missing cell", keys: []string{"m", "j", "j", "j", "l"}, mode: ModeMatrix, ready: func(a App) bool {
 			return !matrixCellPresent(a.matrixView) && a.matrixView.cursorCol > 0

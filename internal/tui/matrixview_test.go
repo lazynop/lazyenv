@@ -33,7 +33,7 @@ func TestNewMatrixModel(t *testing.T) {
 	// Union of keys: DB, HOST, PORT, SECRET = 4 (sorted alpha)
 	assert.Equal(t, 4, len(m.entries), "should have 4 unique keys")
 	assert.Equal(t, []string{".env", ".env.local"}, m.fileNames)
-	assert.Equal(t, 0, m.cursorRow, "initial cursorRow should be 0")
+	assert.Equal(t, 0, m.rows.Cursor, "initial rows.Cursor should be 0")
 	assert.Equal(t, 0, m.cursorCol, "initial cursorCol should be 0")
 }
 
@@ -46,17 +46,17 @@ func TestMatrixMoveDown(t *testing.T) {
 	m.Height = 40
 
 	// entries: A, B, C (3 keys total)
-	assert.Equal(t, 0, m.cursorRow)
+	assert.Equal(t, 0, m.rows.Cursor)
 
 	m.MoveDown()
-	assert.Equal(t, 1, m.cursorRow)
+	assert.Equal(t, 1, m.rows.Cursor)
 
 	m.MoveDown()
-	assert.Equal(t, 2, m.cursorRow)
+	assert.Equal(t, 2, m.rows.Cursor)
 
 	// At the bottom: should not go beyond
 	m.MoveDown()
-	assert.Equal(t, 2, m.cursorRow, "should stop at last row")
+	assert.Equal(t, 2, m.rows.Cursor, "should stop at last row")
 }
 
 func TestMatrixMoveUp(t *testing.T) {
@@ -69,18 +69,18 @@ func TestMatrixMoveUp(t *testing.T) {
 
 	// Start at 0, move up should stay at 0
 	m.MoveUp()
-	assert.Equal(t, 0, m.cursorRow, "should stop at 0")
+	assert.Equal(t, 0, m.rows.Cursor, "should stop at 0")
 
 	// Move to row 2, then up
 	m.MoveDown()
 	m.MoveDown()
-	assert.Equal(t, 2, m.cursorRow)
+	assert.Equal(t, 2, m.rows.Cursor)
 
 	m.MoveUp()
-	assert.Equal(t, 1, m.cursorRow)
+	assert.Equal(t, 1, m.rows.Cursor)
 
 	m.MoveUp()
-	assert.Equal(t, 0, m.cursorRow)
+	assert.Equal(t, 0, m.rows.Cursor)
 }
 
 func TestMatrixMoveRight(t *testing.T) {
@@ -167,11 +167,11 @@ func TestMatrixStartEditMissing(t *testing.T) {
 
 	// entries sorted alpha: A, B
 	// Navigate to row=1 (B), col=1 (f2) where B is missing
-	m.MoveDown()  // cursorRow = 1 (B)
+	m.MoveDown()  // rows.Cursor = 1 (B)
 	m.MoveRight() // cursorCol = 1 (f2)
 
-	require.Equal(t, "B", m.entries[m.cursorRow].Key)
-	require.False(t, m.entries[m.cursorRow].Present[m.cursorCol], "B should be missing in f2")
+	require.Equal(t, "B", m.entries[m.rows.Cursor].Key)
+	require.False(t, m.entries[m.rows.Cursor].Present[m.cursorCol], "B should be missing in f2")
 
 	cmd := m.StartEdit()
 

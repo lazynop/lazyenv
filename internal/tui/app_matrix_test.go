@@ -59,23 +59,23 @@ func TestMatrixNavigationInApp(t *testing.T) {
 	require.Equal(t, ModeMatrix, app.mode)
 
 	// Initial cursor position
-	assert.Equal(t, 0, app.matrixView.cursorRow)
+	assert.Equal(t, 0, app.matrixView.rows.Cursor)
 	assert.Equal(t, 0, app.matrixView.cursorCol)
 
 	// Move down with 'j'
 	updated, _ = app.Update(keyMsg("j"))
 	app = updated.(App)
-	assert.Equal(t, 1, app.matrixView.cursorRow, "j should move cursor down")
+	assert.Equal(t, 1, app.matrixView.rows.Cursor, "j should move cursor down")
 
 	// Move down again with 'j'
 	updated, _ = app.Update(keyMsg("j"))
 	app = updated.(App)
-	assert.Equal(t, 2, app.matrixView.cursorRow)
+	assert.Equal(t, 2, app.matrixView.rows.Cursor)
 
 	// Move up with 'k'
 	updated, _ = app.Update(keyMsg("k"))
 	app = updated.(App)
-	assert.Equal(t, 1, app.matrixView.cursorRow, "k should move cursor up")
+	assert.Equal(t, 1, app.matrixView.rows.Cursor, "k should move cursor up")
 
 	// Move right with 'l'
 	updated, _ = app.Update(keyMsg("l"))
@@ -122,7 +122,7 @@ func TestMatrixAddVariableFlow(t *testing.T) {
 	updated, _ = app.Update(keyMsg("l")) // right to f2
 	app = updated.(App)
 
-	require.Equal(t, 1, app.matrixView.cursorRow)
+	require.Equal(t, 1, app.matrixView.rows.Cursor)
 	require.Equal(t, 1, app.matrixView.cursorCol)
 	require.Equal(t, "B", app.matrixView.entries[1].Key)
 	require.False(t, app.matrixView.entries[1].Present[1], "B should be missing in f2")

@@ -176,16 +176,16 @@ func TestMatrixSetCursor(t *testing.T) {
 	}
 
 	m.SetCursor(3, 1)
-	assert.Equal(t, 3, m.cursorRow, "cursorRow should be set to 3")
+	assert.Equal(t, 3, m.rows.Cursor, "rows.Cursor should be set to 3")
 	assert.Equal(t, 1, m.cursorCol, "cursorCol should be set to 1")
 
 	// Bounds clamping
 	m.SetCursor(-1, -1)
-	assert.Equal(t, 0, m.cursorRow, "cursorRow should clamp to 0")
+	assert.Equal(t, 0, m.rows.Cursor, "rows.Cursor should clamp to 0")
 	assert.Equal(t, 0, m.cursorCol, "cursorCol should clamp to 0")
 
 	m.SetCursor(99, 99)
-	assert.Equal(t, 4, m.cursorRow, "cursorRow should clamp to len(entries)-1 = 4")
+	assert.Equal(t, 4, m.rows.Cursor, "rows.Cursor should clamp to len(entries)-1 = 4")
 	assert.Equal(t, 2, m.cursorCol, "cursorCol should clamp to len(fileNames)-1 = 2")
 }
 
@@ -200,7 +200,7 @@ func TestMatrixSetCursorEmpty(t *testing.T) {
 		m.SetCursor(0, 0)
 		m.SetCursor(5, 5)
 	})
-	assert.Equal(t, 0, m.cursorRow)
+	assert.Equal(t, 0, m.rows.Cursor)
 	assert.Equal(t, 0, m.cursorCol)
 }
 
@@ -581,13 +581,13 @@ func TestMouseClickMatrixMode_SetsCell(t *testing.T) {
 	// Data cell: row 2 (Y=4), column 1 (X one column band past the key column)
 	updated, _ := app.Update(tea.MouseClickMsg{X: matrixPaddingWidth/2 + kw + cw, Y: 4, Button: tea.MouseLeft})
 	app = updated.(App)
-	assert.Equal(t, 2, app.matrixView.cursorRow)
+	assert.Equal(t, 2, app.matrixView.rows.Cursor)
 	assert.Equal(t, 1, app.matrixView.cursorCol)
 
 	// Key-column click (X < keyWidth) keeps the column, only moves the row
 	updated, _ = app.Update(tea.MouseClickMsg{X: kw - 1, Y: 3, Button: tea.MouseLeft})
 	app = updated.(App)
-	assert.Equal(t, 1, app.matrixView.cursorRow)
+	assert.Equal(t, 1, app.matrixView.rows.Cursor)
 	assert.Equal(t, 1, app.matrixView.cursorCol, "key-column click keeps the current column")
 }
 
@@ -618,7 +618,7 @@ func TestMouseClickMatrixMode_OutsideTheDrawnCellsKeepsTheCursor(t *testing.T) {
 	}
 	app := press(resize(newTestApp([]*model.EnvFile{makeTestFile(".env.a", keys...), makeTestFile(".env.b", keys...)}), 80, 20), "m")
 	app = press(app, down(20)...)
-	require.Positive(t, app.matrixView.offsetRow)
+	require.Positive(t, app.matrixView.rows.Offset)
 	lines := strings.Split(stripAnsi(app.View().Content), "\n")
 	cursorRow := rowDrawing(t, app.View().Content, "K20")
 	counterX := strings.Index(lines[cursorRow], "2/2")
@@ -635,9 +635,9 @@ func TestMouseClickMatrixMode_OutsideTheDrawnCellsKeepsTheCursor(t *testing.T) {
 	} {
 		updated, _ := app.Update(tea.MouseClickMsg{X: click.x, Y: click.y, Button: tea.MouseLeft})
 		clicked := updated.(App).matrixView
-		assert.Equal(t, 20, clicked.cursorRow, "a click on the %s draws no key", click.name)
+		assert.Equal(t, 20, clicked.rows.Cursor, "a click on the %s draws no key", click.name)
 		assert.Equal(t, 0, clicked.cursorCol, "a click on the %s draws no file", click.name)
-		assert.Equal(t, app.matrixView.offsetRow, clicked.offsetRow, "a click on the %s scrolls nothing", click.name)
+		assert.Equal(t, app.matrixView.rows.Offset, clicked.rows.Offset, "a click on the %s scrolls nothing", click.name)
 	}
 }
 
@@ -649,7 +649,7 @@ func TestMouseClickMatrixMode_BelowTheLastKeyKeepsTheCursor(t *testing.T) {
 
 	updated, _ := app.Update(tea.MouseClickMsg{X: matrixPaddingWidth, Y: matrixContentOffsetY + len(app.matrixView.entries), Button: tea.MouseLeft})
 
-	assert.Equal(t, 0, updated.(App).matrixView.cursorRow)
+	assert.Equal(t, 0, updated.(App).matrixView.rows.Cursor)
 }
 
 func TestMouseWheelMatrixMode_Scrolls(t *testing.T) {
@@ -657,7 +657,7 @@ func TestMouseWheelMatrixMode_Scrolls(t *testing.T) {
 
 	updated, _ := app.Update(tea.MouseWheelMsg{X: 5, Y: 5, Button: tea.MouseWheelDown})
 	app = updated.(App)
-	assert.Greater(t, app.matrixView.cursorRow, 0, "wheel down should scroll the matrix rows")
+	assert.Greater(t, app.matrixView.rows.Cursor, 0, "wheel down should scroll the matrix rows")
 }
 
 // TestMouseOnTheActiveFileKeepsTheVarList clicks the active file, and turns
