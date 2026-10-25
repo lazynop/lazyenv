@@ -14,6 +14,8 @@ import (
 func matrixHelp(keys KeyMap) helpSection {
 	return helpSection{"Matrix", []helpRow{
 		pair("Move between variables", keys.Up, keys.Down),
+		pair("Scroll a page of variables", keys.PageUp, keys.PageDown),
+		pair("Jump to the first/last variable", keys.Home, keys.End),
 		pair("Move between files", keys.Left, keys.Right),
 		alternatives("Add missing variable to the file", keys.Add),
 		alternatives("Delete variable from the file (with confirmation)", keys.Delete),
@@ -24,13 +26,13 @@ func matrixHelp(keys KeyMap) helpSection {
 }
 
 func (a App) handleMatrixKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	if a.keys.navigate(msg, &a.matrixView) {
+		return a, nil
+	}
+
 	switch {
 	case key.Matches(msg, a.keys.Quit), key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
-	case key.Matches(msg, a.keys.Up):
-		a.matrixView.MoveUp()
-	case key.Matches(msg, a.keys.Down):
-		a.matrixView.MoveDown()
 	case key.Matches(msg, a.keys.Left):
 		a.matrixView.MoveLeft()
 	case key.Matches(msg, a.keys.Right):

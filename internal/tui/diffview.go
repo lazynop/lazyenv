@@ -118,6 +118,28 @@ func (m *DiffViewModel) MoveDown() {
 	}
 }
 
+// PageUp scrolls up a page, the cursor moving with the view (pageMove).
+func (m *DiffViewModel) PageUp() {
+	m.Cursor, m.Offset = pageMove(m.Cursor, m.Offset, m.visibleLines(), len(m.Entries), -1)
+	m.ensureVisible()
+}
+
+// PageDown scrolls down a page, the cursor moving with the view (pageMove).
+func (m *DiffViewModel) PageDown() {
+	m.Cursor, m.Offset = pageMove(m.Cursor, m.Offset, m.visibleLines(), len(m.Entries), 1)
+	m.ensureVisible()
+}
+
+// MoveToFirst moves the cursor to the first entry.
+func (m *DiffViewModel) MoveToFirst() {
+	m.SetCursor(0)
+}
+
+// MoveToLast moves the cursor to the last entry.
+func (m *DiffViewModel) MoveToLast() {
+	m.SetCursor(len(m.Entries) - 1)
+}
+
 // SetCursor positions the cursor at the given index with bounds checking.
 func (m *DiffViewModel) SetCursor(index int) {
 	if len(m.Entries) == 0 {

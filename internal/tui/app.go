@@ -384,14 +384,17 @@ func varsPanelHelp(keys KeyMap) helpSection {
 }
 
 // bothPanelsHelp is the help section of the keys one row describes whichever
-// panel has the focus, details aside: ↑/↓ navigate items in both, and also
-// load the file in the files panel. A key that acts in one panel only, or does
-// something in each that one row cannot describe for both, has its rows in
-// filesPanelHelp and varsPanelHelp instead. handleNormalKey,
-// handleNormalNavigation and handleNormalGlobalAction match them.
+// panel has the focus, details aside: ↑/↓, PgUp/PgDn and Home/End move
+// through the items in both, and also load the file in the files panel. A key
+// that acts in one panel only, or does something in each that one row cannot
+// describe for both, has its rows in filesPanelHelp and varsPanelHelp instead.
+// handleNormalKey, handleNormalNavigation and handleNormalGlobalAction match
+// them.
 func bothPanelsHelp(keys KeyMap) helpSection {
 	return helpSection{"Both panels", []helpRow{
 		pair("Navigate items", keys.Up, keys.Down),
+		pair("Scroll a page", keys.PageUp, keys.PageDown),
+		pair("Jump to the first/last item", keys.Home, keys.End),
 		alternatives("Save changes", keys.Save),
 		alternatives("Reset file (discard changes)", keys.Reset),
 		alternatives("Compare two files (diff view)", keys.Compare),
@@ -516,31 +519,15 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 }
 
 func (a App) handleNormalNavigation(msg tea.KeyPressMsg) (App, bool) {
+	if a.focus == FocusFiles && a.keys.navigate(msg, &a.fileList) {
+		a.selectCursorFile()
+		return a, true
+	}
+	if a.focus == FocusVars && a.keys.navigate(msg, &a.varList) {
+		return a, true
+	}
+
 	switch {
-	case key.Matches(msg, a.keys.Up):
-		if a.focus == FocusFiles {
-			a.fileList.MoveUp()
-			a.fileList.Select()
-			if f := a.fileList.SelectedFile(); f != nil {
-				a.varList.SetFile(f)
-			}
-		} else {
-			a.varList.MoveUp()
-		}
-		return a, true
-
-	case key.Matches(msg, a.keys.Down):
-		if a.focus == FocusFiles {
-			a.fileList.MoveDown()
-			a.fileList.Select()
-			if f := a.fileList.SelectedFile(); f != nil {
-				a.varList.SetFile(f)
-			}
-		} else {
-			a.varList.MoveDown()
-		}
-		return a, true
-
 	case key.Matches(msg, a.keys.Left):
 		a.setFocus(FocusFiles)
 		return a, true
@@ -563,15 +550,21 @@ func (a App) handleNormalNavigation(msg tea.KeyPressMsg) (App, bool) {
 func (a App) handleNormalEnter() App {
 	switch {
 	case a.focus == FocusFiles:
-		a.fileList.Select()
-		if f := a.fileList.SelectedFile(); f != nil {
-			a.varList.SetFile(f)
-		}
+		a.selectCursorFile()
 		a.setFocus(FocusVars)
 	case a.varList.IsHeaderAtCursor():
 		a.varList.ToggleCollapseAtCursor()
 	}
 	return a
+}
+
+// selectCursorFile makes the file at the file list's cursor the active one
+// and shows its variables.
+func (a *App) selectCursorFile() {
+	a.fileList.Select()
+	if f := a.fileList.SelectedFile(); f != nil {
+		a.varList.SetFile(f)
+	}
 }
 
 // setFocus moves the focus to the files or vars panel and tells each panel

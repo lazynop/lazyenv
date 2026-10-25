@@ -1,6 +1,6 @@
 # Keybindings
 
-Keybindings are context-sensitive: each screen only responds to the keys listed in its section. Navigation keys (`↑↓` / `jk`) are shared across most screens.
+Keybindings are context-sensitive: each screen only responds to the keys listed in its section. Navigation keys (`↑↓` / `jk`) are shared across most screens. In the file and variable lists, the diff view and the matrix, `PgUp` / `PgDn` move the cursor a page and scroll the view with it, so the cursor keeps its screen row; where the view cannot scroll a whole page, the cursor still moves a page, stopping at the first or last item.
 
 ## Main view — File list (left panel)
 
@@ -8,6 +8,8 @@ Keybindings are context-sensitive: each screen only responds to the keys listed 
 | -------------- | ------------------------------------------------- |
 | `↑` / `k`      | Move up and show that file's variables            |
 | `↓` / `j`      | Move down and show that file's variables          |
+| `PgUp` / `PgDn` | Scroll up / down a page and show the variables of the file the cursor lands on |
+| `Home` / `End` | Jump to the first / last file and show its variables |
 | `→` / `l`      | Switch focus to variable panel                    |
 | `Enter`        | Select file and switch focus to variable panel    |
 | `N`            | Create new `.env` file in the scan directory      |
@@ -33,6 +35,8 @@ Keybindings are context-sensitive: each screen only responds to the keys listed 
 | -------------- | -------------------------------------------- |
 | `↑` / `k`      | Move cursor up                               |
 | `↓` / `j`      | Move cursor down                             |
+| `PgUp` / `PgDn` | Scroll up / down a page                     |
+| `Home` / `End` | Jump to the first / last variable or group header |
 | `←` / `h`      | Switch focus to file panel                   |
 | `e`            | Edit selected variable value                 |
 | `E`            | Rename selected variable key                 |
@@ -74,6 +78,8 @@ Side-by-side diff between two `.env` files.
 | --------- | ---------------------------------------- |
 | `↑` / `k` | Move cursor up                           |
 | `↓` / `j` | Move cursor down                         |
+| `PgUp` / `PgDn` | Scroll up / down a page            |
+| `Home` / `End` | Jump to the first / last entry      |
 | `n`       | Jump to next difference                  |
 | `N`       | Jump to previous difference              |
 | `→` / `l` | Copy selected value to the right file; if the left file lacks the key, delete it from the right file |
@@ -95,6 +101,8 @@ Multi-file grid showing which variables exist in which files.
 | --------- | --------------------------------------------- |
 | `↑` / `k` | Move cursor up                                |
 | `↓` / `j` | Move cursor down                              |
+| `PgUp` / `PgDn` | Scroll up / down a page of variables    |
+| `Home` / `End` | Jump to the first / last variable        |
 | `←` / `h` | Move cursor left                              |
 | `→` / `l` | Move cursor right                             |
 | `a`       | Add missing variable to the file under cursor |

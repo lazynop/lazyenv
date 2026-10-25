@@ -242,6 +242,28 @@ func (m *VarListModel) MoveDown() {
 	}
 }
 
+// PageUp scrolls up a page, the cursor moving with the view (pageMove).
+func (m *VarListModel) PageUp() {
+	m.Cursor, m.Offset = pageMove(m.Cursor, m.Offset, m.visibleLines(), len(m.displayItems), -1)
+	m.ensureCursorVisible()
+}
+
+// PageDown scrolls down a page, the cursor moving with the view (pageMove).
+func (m *VarListModel) PageDown() {
+	m.Cursor, m.Offset = pageMove(m.Cursor, m.Offset, m.visibleLines(), len(m.displayItems), 1)
+	m.ensureCursorVisible()
+}
+
+// MoveToFirst moves the cursor to the first item.
+func (m *VarListModel) MoveToFirst() {
+	m.SetCursor(0)
+}
+
+// MoveToLast moves the cursor to the last item.
+func (m *VarListModel) MoveToLast() {
+	m.SetCursor(len(m.displayItems) - 1)
+}
+
 // SetFocused gives or takes the panel's focus, scrolling so the cursor row and
 // the peek line drawn under it while focused stay inside the viewport.
 func (m *VarListModel) SetFocused(focused bool) {

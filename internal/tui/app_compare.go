@@ -15,6 +15,8 @@ import (
 func compareHelp(keys KeyMap) helpSection {
 	return helpSection{"Compare view", []helpRow{
 		pair("Navigate entries", keys.Up, keys.Down),
+		pair("Scroll a page", keys.PageUp, keys.PageDown),
+		pair("Jump to the first/last entry", keys.Home, keys.End),
 		pair("Jump to next/prev difference", keys.NextDiff, keys.PrevDiff),
 		pair("Copy value to the left/right file; if the source file lacks the key, delete it there", keys.Left, keys.Right),
 		pair("Edit value in the left/right file", keys.Edit, keys.EditRight),
@@ -33,13 +35,13 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a.handleComparingEdit(msg)
 	}
 
+	if a.keys.navigate(msg, &a.diffView) {
+		return a, nil
+	}
+
 	switch {
 	case key.Matches(msg, a.keys.Quit), key.Matches(msg, a.keys.Escape):
 		a.exitCompare()
-	case key.Matches(msg, a.keys.Up):
-		a.diffView.MoveUp()
-	case key.Matches(msg, a.keys.Down):
-		a.diffView.MoveDown()
 	case key.Matches(msg, a.keys.NextDiff):
 		a.diffView.NextDiff()
 	case key.Matches(msg, a.keys.PrevDiff):

@@ -26,7 +26,7 @@ func openHelpWith(cfg config.Config, width, height int) App {
 
 // scrollPastTheEnd is more down presses than the help has rows to scroll at
 // any size the layout tests render, the 60x10 minimum included.
-const scrollPastTheEnd = 120
+const scrollPastTheEnd = 150
 
 // helpLastRow is the description on the last row of the help.
 const helpLastRow = "Jump to the top/bottom"

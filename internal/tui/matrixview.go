@@ -79,6 +79,29 @@ func (m *MatrixModel) MoveDown() {
 	m.ensureVisible()
 }
 
+// PageUp scrolls up a page, the row cursor moving with the view (pageMove).
+func (m *MatrixModel) PageUp() {
+	m.cursorRow, m.offsetRow = pageMove(m.cursorRow, m.offsetRow, m.visibleLines(), len(m.entries), -1)
+	m.ensureVisible()
+}
+
+// PageDown scrolls down a page, the row cursor moving with the view
+// (pageMove).
+func (m *MatrixModel) PageDown() {
+	m.cursorRow, m.offsetRow = pageMove(m.cursorRow, m.offsetRow, m.visibleLines(), len(m.entries), 1)
+	m.ensureVisible()
+}
+
+// MoveToFirst moves the cursor to the first row.
+func (m *MatrixModel) MoveToFirst() {
+	m.SetCursor(0, m.cursorCol)
+}
+
+// MoveToLast moves the cursor to the last row.
+func (m *MatrixModel) MoveToLast() {
+	m.SetCursor(len(m.entries)-1, m.cursorCol)
+}
+
 // MoveLeft moves the column cursor left.
 func (m *MatrixModel) MoveLeft() {
 	if m.cursorCol > 0 {
