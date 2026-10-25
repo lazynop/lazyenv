@@ -38,7 +38,7 @@ func pageMove(cursor, offset, visible, total, pages int) (newCursor, newOffset i
 
 // navigable is a view the navigation keys move through, a row at a time, a
 // page at a time, or to either end: a cursor over a list's positions, which
-// the view scrolls to follow.
+// the view scrolls to follow, or the help's text, which has no cursor.
 type navigable interface {
 	MoveUp()
 	MoveDown()

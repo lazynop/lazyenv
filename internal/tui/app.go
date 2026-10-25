@@ -320,7 +320,7 @@ func (a App) handleNormalKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a, tea.Quit
 	case key.Matches(msg, a.keys.Help):
 		a.mode = ModeHelp
-		a.helpView.ScrollToTop()
+		a.helpView.MoveToFirst()
 		return a, nil
 	}
 
@@ -695,21 +695,10 @@ func helpScreenHelp(keys KeyMap, wheel bool) helpSection {
 }
 
 func (a App) handleHelpKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	switch {
-	case key.Matches(msg, a.keys.Escape, a.keys.Help, a.keys.Quit):
+	if key.Matches(msg, a.keys.Escape, a.keys.Help, a.keys.Quit) {
 		a.mode = ModeNormal
-	case key.Matches(msg, a.keys.Up):
-		a.helpView.ScrollUp()
-	case key.Matches(msg, a.keys.Down):
-		a.helpView.ScrollDown()
-	case key.Matches(msg, a.keys.PageUp):
-		a.helpView.PageUp()
-	case key.Matches(msg, a.keys.PageDown):
-		a.helpView.PageDown()
-	case key.Matches(msg, a.keys.Home):
-		a.helpView.ScrollToTop()
-	case key.Matches(msg, a.keys.End):
-		a.helpView.ScrollToBottom()
+	} else {
+		a.keys.navigate(msg, &a.helpView)
 	}
 	return a, nil
 }

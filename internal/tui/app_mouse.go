@@ -102,7 +102,7 @@ func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 	case ModeMatrix:
 		wheelScroll(lines, up, a.matrixView.MoveUp, a.matrixView.MoveDown)
 	case ModeHelp:
-		wheelScroll(lines, up, a.helpView.ScrollUp, a.helpView.ScrollDown)
+		wheelScroll(lines, up, a.helpView.MoveUp, a.helpView.MoveDown)
 	case ModeEditing, ModeEditingCompare, ModeMatrixEditing, ModeConfirmDelete, ModeConfirmDeleteFile,
 		ModeConfirmMatrixDelete, ModeCreateFile, ModeDuplicateFile, ModeRenameFile, ModeTemplateFile,
 		ModeReorderMenu, ModeReorderConfirm, ModeConfigError:

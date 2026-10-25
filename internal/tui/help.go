@@ -256,13 +256,13 @@ func (m *HelpViewModel) scrollTo(offset int) {
 	m.offset = scrollOffset(offset, offset, m.visibleLines(), len(m.lines))
 }
 
-// ScrollToTop shows the text from its first row.
-func (m *HelpViewModel) ScrollToTop() {
+// MoveToFirst shows the text from its first row.
+func (m *HelpViewModel) MoveToFirst() {
 	m.scrollTo(0)
 }
 
-// ScrollToBottom shows the last row of the text at the bottom of the screen.
-func (m *HelpViewModel) ScrollToBottom() {
+// MoveToLast shows the last row of the text at the bottom of the screen.
+func (m *HelpViewModel) MoveToLast() {
 	m.scrollTo(len(m.lines))
 }
 
@@ -276,13 +276,13 @@ func (m *HelpViewModel) PageDown() {
 	m.scrollTo(m.offset + m.visibleLines())
 }
 
-// ScrollUp scrolls the text up one row.
-func (m *HelpViewModel) ScrollUp() {
+// MoveUp scrolls the text up one row.
+func (m *HelpViewModel) MoveUp() {
 	m.scrollTo(m.offset - 1)
 }
 
-// ScrollDown scrolls the text down one row.
-func (m *HelpViewModel) ScrollDown() {
+// MoveDown scrolls the text down one row.
+func (m *HelpViewModel) MoveDown() {
 	m.scrollTo(m.offset + 1)
 }
 
