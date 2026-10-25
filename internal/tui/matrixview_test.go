@@ -28,7 +28,7 @@ func TestNewMatrixModel(t *testing.T) {
 	f1 := makeTestFile(".env", "HOST", "PORT", "DB")
 	f2 := makeTestFile(".env.local", "HOST", "SECRET")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout, config.SecretsConfig{})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 
 	// Union of keys: DB, HOST, PORT, SECRET = 4 (sorted alpha)
 	assert.Equal(t, 4, len(m.entries), "should have 4 unique keys")
@@ -41,7 +41,7 @@ func TestMatrixMoveDown(t *testing.T) {
 	f1 := makeTestFile(".env", "A", "B", "C")
 	f2 := makeTestFile(".env.local", "A")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout, config.SecretsConfig{})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -63,7 +63,7 @@ func TestMatrixMoveUp(t *testing.T) {
 	f1 := makeTestFile(".env", "A", "B", "C")
 	f2 := makeTestFile(".env.local", "A")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout, config.SecretsConfig{})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -88,7 +88,7 @@ func TestMatrixMoveRight(t *testing.T) {
 	f2 := makeTestFile(".env.local", "A")
 	f3 := makeTestFile(".env.prod", "A")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2, f3}, config.DefaultConfig().Layout, config.SecretsConfig{})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2, f3}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -110,7 +110,7 @@ func TestMatrixMoveLeft(t *testing.T) {
 	f2 := makeTestFile(".env.local", "A")
 	f3 := makeTestFile(".env.prod", "A")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2, f3}, config.DefaultConfig().Layout, config.SecretsConfig{})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2, f3}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -135,7 +135,7 @@ func TestMatrixToggleSort(t *testing.T) {
 	f1 := makeTestFile(".env", "A", "B", "C")
 	f2 := makeTestFile(".env.local", "A", "C")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout, config.SecretsConfig{})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -161,7 +161,7 @@ func TestMatrixStartEditMissing(t *testing.T) {
 	f1 := makeTestFile(".env", "A", "B")
 	f2 := makeTestFile(".env.local", "A")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout, config.SecretsConfig{})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -186,7 +186,7 @@ func TestMatrixStartEditPresent(t *testing.T) {
 	f1 := makeTestFile(".env", "A", "B")
 	f2 := makeTestFile(".env.local", "A")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout, config.SecretsConfig{})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -203,7 +203,7 @@ func TestMatrixConfirmEdit(t *testing.T) {
 	f1 := makeTestFile(".env", "A", "B")
 	f2 := makeTestFile(".env.local", "A")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout, config.SecretsConfig{})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -239,7 +239,7 @@ func TestMatrixCancelEdit(t *testing.T) {
 	f1 := makeTestFile(".env", "A", "B")
 	f2 := makeTestFile(".env.local", "A")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout, config.SecretsConfig{})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -264,7 +264,7 @@ func TestMatrixViewContainsCheckAndCross(t *testing.T) {
 
 	// f2 needs at least one var to have a key in the union,
 	// but here A is only in f1, so A will be present in f1, absent in f2
-	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout, config.SecretsConfig{})
+	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -283,7 +283,7 @@ func TestMatrixViewFooterStaysOnTheSameRow(t *testing.T) {
 			keys[i] = fmt.Sprintf("K%02d", i)
 		}
 		files := []*model.EnvFile{makeTestFile(".env", keys...), makeTestFile(".env.local", keys...)}
-		m := NewMatrixModel(files, config.DefaultConfig().Layout, config.SecretsConfig{})
+		m := NewMatrixModel(files, config.DefaultConfig().Layout)
 		m.Width, m.Height = 70, 15
 		return strings.Split(stripAnsi(m.View(theme)), "\n")
 	}
@@ -306,7 +306,7 @@ func TestMatrixViewNarrowWidthKeepsEachRowOnOneRow(t *testing.T) {
 	// Narrower than 40 columns, the key column, one file column and the
 	// counter no longer fit on a row.
 	assertNoRowWraps(t, 40, 100, height, []string{"keys"}, func(width int) string {
-		m := NewMatrixModel(files, config.DefaultConfig().Layout, config.SecretsConfig{})
+		m := NewMatrixModel(files, config.DefaultConfig().Layout)
 		m.Width, m.Height = width, height
 		return m.View(theme)
 	})
@@ -328,7 +328,7 @@ func TestMatrixViewAlignsColumnsAfterANonASCIIFileName(t *testing.T) {
 	for _, name := range []string{".env.日本", ".env.cafe\u0301"} {
 		// KEY_A is only in the second file: its row reads ✗ then ✓.
 		files := []*model.EnvFile{makeTestFile(name), makeTestFile(".env", "KEY_A")}
-		m := NewMatrixModel(files, layout, config.SecretsConfig{})
+		m := NewMatrixModel(files, layout)
 		m.Width, m.Height = 80, 10
 		lines := strings.Split(stripAnsi(m.View(theme)), "\n")
 

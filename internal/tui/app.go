@@ -161,7 +161,7 @@ func NewApp(cfg config.Config, startup StartupMessages) App {
 		statusBar:     sb,
 		diffView:      NewDiffViewModel(cfg.Layout, cfg.Secrets),
 		helpView:      NewHelpViewModel(keys, !cfg.NoMouse && cfg.Layout.MouseScrollLines > 0),
-		matrixView:    NewMatrixModel(nil, cfg.Layout, cfg.Secrets),
+		matrixView:    NewMatrixModel(nil, cfg.Layout),
 		editor:        NewEditorModel(),
 		searchInput:   ti,
 		fileInput:     fi,
@@ -508,7 +508,7 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 		if len(a.fileList.Files) < 2 {
 			return a, a.flashWarning("Need at least 2 files for matrix")
 		}
-		a.matrixView = NewMatrixModel(a.fileList.Files, a.config.Layout, a.config.Secrets)
+		a.matrixView = NewMatrixModel(a.fileList.Files, a.config.Layout)
 		a.mode = ModeMatrix
 	}
 

@@ -31,8 +31,7 @@ type MatrixModel struct {
 
 	sortMode model.SortMode
 
-	layout  config.LayoutConfig
-	secrets config.SecretsConfig
+	layout config.LayoutConfig
 
 	Width  int
 	Height int
@@ -44,7 +43,7 @@ type MatrixModel struct {
 }
 
 // NewMatrixModel creates a matrix model from the loaded files.
-func NewMatrixModel(files []*model.EnvFile, layout config.LayoutConfig, secrets config.SecretsConfig) MatrixModel {
+func NewMatrixModel(files []*model.EnvFile, layout config.LayoutConfig) MatrixModel {
 	entries, names := model.ComputeMatrix(files)
 	ti := textinput.New() // no CharLimit, like the value editor
 	return MatrixModel{
@@ -52,7 +51,6 @@ func NewMatrixModel(files []*model.EnvFile, layout config.LayoutConfig, secrets 
 		entries:   entries,
 		fileNames: names,
 		layout:    layout,
-		secrets:   secrets,
 		editor:    ti,
 	}
 }

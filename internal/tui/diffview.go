@@ -42,7 +42,7 @@ type DiffViewModel struct {
 	Stats       DiffStats
 
 	layout  config.LayoutConfig
-	secrets config.SecretsConfig
+	secrets config.SecretsConfig // the config Reset re-parses both files with
 }
 
 // NewDiffViewModel creates a new diff view model.
