@@ -216,9 +216,9 @@ func (ef *EnvFile) AddVar(key, value string) {
 	ef.Modified = true
 }
 
-// DeleteVar removes a variable by index, and the duplicate flag of the
-// variables that shared its key (see markDuplicates). Deleting a variable that
-// revived a key lists the key's deleted variable again (see undoRevival).
+// DeleteVar removes a variable by index, and recomputes which variables are
+// duplicates (see markDuplicates). Deleting a variable that revived a key
+// lists the key's deleted variable again (see undoRevival).
 func (ef *EnvFile) DeleteVar(idx int) {
 	if idx < 0 || idx >= len(ef.Vars) {
 		return

@@ -40,7 +40,7 @@ Distinct indicators show the state of each variable:
 | `○` | Empty value |
 | `…` | Placeholder value |
 
-The duplicate, empty and placeholder markers follow every change (an edit, a rename, an add or a delete, a copy in compare or the matrix), so a variable shows them as it will after saving.
+The duplicate, empty and placeholder markers follow every change (an edit, a rename, an add or a delete, in the var list, compare or the matrix), so a variable shows them as it will after saving.
 
 Indicators are color-coded and [fully configurable](configuration.md#colors).
 
