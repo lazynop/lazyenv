@@ -186,6 +186,31 @@ func TestMatrixDeleteVariableConfirm(t *testing.T) {
 	assert.True(t, f1.Modified)
 }
 
+// TestMatrixDeleteFlashNamesTheFile deletes the second variable from the
+// second file, neither of which is the first row or the file the var list
+// shows: the variable leaves that file, and the flash names the key and the
+// file.
+func TestMatrixDeleteFlashNamesTheFile(t *testing.T) {
+	local := makeTestFile(".env.local", "A", "B")
+	app := press(newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), local}), "m", "j", "l", "d", "y")
+	require.Equal(t, ModeMatrix, app.mode)
+	assert.Nil(t, local.VarByKey("B"), "B should be deleted from .env.local")
+	assert.Equal(t, "Deleted B from .env.local", app.statusBar.Message)
+}
+
+// TestMatrixEditKeysWithoutVariables presses a and d in a matrix over files
+// without variables, where no cell sits under the cursor: the matrix stays as
+// it is, with no edit bar, no prompt and no message.
+func TestMatrixEditKeysWithoutVariables(t *testing.T) {
+	app := press(newTestApp([]*model.EnvFile{makeTestFile(".env"), makeTestFile(".env.local")}), "m")
+	require.Equal(t, ModeMatrix, app.mode)
+	for _, k := range []string{"a", "d"} {
+		pressed := press(app, k)
+		assert.Equal(t, ModeMatrix, pressed.mode, "%s should leave the matrix as it is", k)
+		assert.Empty(t, pressed.statusBar.Message, "%s should show no message", k)
+	}
+}
+
 func TestMatrixDeleteVariableDeny(t *testing.T) {
 	f1 := makeTestFile(".env", "A", "B")
 	f2 := makeTestFile(".env.local", "A")
