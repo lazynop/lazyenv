@@ -161,3 +161,58 @@ func TestPageKeysMoveTheMatrixRowCursor(t *testing.T) {
 		assert.Equal(t, 1, app.matrixView.cursorCol, "after %s, the column cursor should stay on the second file", step.key)
 	}
 }
+
+// varListAtTheEnd returns an app at 80x24 over two files of 30 variables,
+// FIRST_00 to FIRST_29 and LAST_00 to LAST_29, with the file whose variables
+// start with prefix active: its var list has the cursor on the last
+// variable, scrolled to the end, and peek on, and the focus is back on the
+// files panel.
+func varListAtTheEnd(t *testing.T, prefix string) App {
+	t.Helper()
+	files := []*model.EnvFile{
+		makeTestFile(".env.first", numbered("FIRST_", 30)...),
+		makeTestFile(".env.last", numbered("LAST_", 30)...),
+	}
+	app := resize(newTestApp(files), 80, 24)
+	if prefix == "LAST" {
+		app = press(app, "j")
+	}
+	app = press(app, "l", "end", "p", "h")
+	require.Equal(t, prefix+"_29", varCursorItem(app))
+	require.True(t, app.varList.Peeking)
+	return app
+}
+
+// assertVarListKeptAtTheEnd checks that the var list varListAtTheEnd set up
+// for the file whose variables start with prefix kept its cursor, its scroll
+// (prefix_12 on the first row) and its peek, rather than starting the file
+// over from the top.
+func assertVarListKeptAtTheEnd(t *testing.T, app App, prefix string) {
+	t.Helper()
+	assert.Equal(t, prefix+"_29", varCursorItem(app), "the var list's cursor should stay on the last variable")
+	assert.Contains(t, screenRow(t, app, panelContentOffsetY), prefix+"_12", "the var list should stay scrolled to its end")
+	assert.True(t, app.varList.Peeking, "the var list should keep peek on")
+}
+
+// TestFileKeysThatKeepTheActiveFileKeepTheVarList presses, at either end of
+// the file list, the keys that leave the active file as it is, Enter
+// included: the var list keeps its cursor, scroll and peek.
+func TestFileKeysThatKeepTheActiveFileKeepTheVarList(t *testing.T) {
+	for _, tt := range []struct {
+		prefix string // of the active file's variables
+		key    string
+	}{
+		{"FIRST", "up"},
+		{"FIRST", "pgup"},
+		{"FIRST", "home"},
+		{"FIRST", "enter"},
+		{"LAST", "down"},
+		{"LAST", "pgdown"},
+		{"LAST", "end"},
+	} {
+		t.Run(tt.prefix+" "+tt.key, func(t *testing.T) {
+			app := press(varListAtTheEnd(t, tt.prefix), tt.key)
+			assertVarListKeptAtTheEnd(t, app, tt.prefix)
+		})
+	}
+}

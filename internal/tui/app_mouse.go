@@ -32,11 +32,8 @@ func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 		a.setFocus(FocusFiles)
 		index := a.fileList.IndexAt(msg.Y)
 		if index >= 0 {
-			prev := a.fileList.SelectedFile()
-			a.fileList.SetCursor(index)
-			if f := a.fileList.SelectedFile(); f != nil && f != prev {
-				a.varList.SetFile(f)
-			}
+			a.fileList.MoveCursorTo(index)
+			a.selectCursorFile()
 		}
 	} else {
 		// Click on var list panel. The row maps to an item as drawn when
@@ -114,12 +111,8 @@ func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 }
 
 func (a App) scrollFileList(up bool) App {
-	prev := a.fileList.SelectedFile()
 	wheelScroll(a.config.Layout.MouseScrollLines, up, a.fileList.MoveUp, a.fileList.MoveDown)
-	a.fileList.Select()
-	if f := a.fileList.SelectedFile(); f != nil && f != prev {
-		a.varList.SetFile(f)
-	}
+	a.selectCursorFile()
 	return a
 }
 

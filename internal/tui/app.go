@@ -559,10 +559,12 @@ func (a App) handleNormalEnter() App {
 }
 
 // selectCursorFile makes the file at the file list's cursor the active one
-// and shows its variables.
+// and shows its variables. The var list starts over from the top only on a
+// file it was not showing: a key, a click or the wheel that leaves the active
+// file as it is keeps the var list's cursor and scroll.
 func (a *App) selectCursorFile() {
 	a.fileList.Select()
-	if f := a.fileList.SelectedFile(); f != nil {
+	if f := a.fileList.SelectedFile(); f != nil && f != a.varList.File {
 		a.varList.SetFile(f)
 	}
 }
