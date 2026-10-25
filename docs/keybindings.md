@@ -4,59 +4,59 @@ Keybindings are context-sensitive: each screen only responds to the keys listed 
 
 ## Main view — File list (left panel)
 
-| Key            | Action                                            |
-| -------------- | ------------------------------------------------- |
-| `↑` / `k`      | Move up and show that file's variables            |
-| `↓` / `j`      | Move down and show that file's variables          |
+| Key             | Action                                            |
+| --------------- | ------------------------------------------------- |
+| `↑` / `k`       | Move up and show that file's variables            |
+| `↓` / `j`       | Move down and show that file's variables          |
 | `PgUp` / `PgDn` | Scroll up / down a page and show the variables of the file the cursor lands on |
-| `Home` / `End` | Jump to the first / last file and show its variables |
-| `→` / `l`      | Switch focus to variable panel                    |
-| `Enter`        | Select file and switch focus to variable panel    |
-| `N`            | Create new `.env` file in the scan directory      |
-| `C`            | Duplicate selected file with a new name           |
-| `D`            | Delete file from disk (with confirmation)         |
-| `R`            | Rename selected file                              |
-| `T`            | Create template from selected file (keys only)    |
-| `c`            | Start compare: pick a second file (requires 2+ files) |
-| `m`            | Open completeness matrix (requires 2+ files)      |
-| `w`            | Save current file                                 |
-| `r`            | Reset current file (discard unsaved changes)      |
-| `Ctrl+S`       | Toggle secret masking                             |
-| `o`            | Toggle sort order (position / alphabetical)       |
-| `O`            | Reorder variables on disk (alphabetical / grouped) |
-| `g`            | Toggle prefix grouping in the variable list       |
-| `/`            | Search variables by name or value                 |
-| `?`            | Show help screen                                  |
-| `q` / `Ctrl+C` | Quit                                              |
+| `Home` / `End`  | Jump to the first / last file and show its variables |
+| `→` / `l`       | Switch focus to variable panel                    |
+| `Enter`         | Select file and switch focus to variable panel    |
+| `N`             | Create new `.env` file in the scan directory      |
+| `C`             | Duplicate selected file with a new name           |
+| `D`             | Delete file from disk (with confirmation)         |
+| `R`             | Rename selected file                              |
+| `T`             | Create template from selected file (keys only)    |
+| `c`             | Start compare: pick a second file (requires 2+ files) |
+| `m`             | Open completeness matrix (requires 2+ files)      |
+| `w`             | Save current file                                 |
+| `r`             | Reset current file (discard unsaved changes)      |
+| `Ctrl+S`        | Toggle secret masking                             |
+| `o`             | Toggle sort order (position / alphabetical)       |
+| `O`             | Reorder variables on disk (alphabetical / grouped) |
+| `g`             | Toggle prefix grouping in the variable list       |
+| `/`             | Search variables by name or value                 |
+| `?`             | Show help screen                                  |
+| `q` / `Ctrl+C`  | Quit                                              |
 
 ## Main view — Variable list (right panel)
 
-| Key            | Action                                       |
-| -------------- | -------------------------------------------- |
-| `↑` / `k`      | Move cursor up                               |
-| `↓` / `j`      | Move cursor down                             |
-| `PgUp` / `PgDn` | Scroll up / down a page                     |
-| `Home` / `End` | Jump to the first / last variable or group header |
-| `←` / `h`      | Switch focus to file panel                   |
-| `e`            | Edit selected variable value                 |
-| `E`            | Rename selected variable key                 |
-| `a`            | Add new variable                             |
-| `d`            | Delete selected variable (with confirmation) |
-| `y`            | Copy value to clipboard (OSC 52)             |
-| `Y`            | Copy `KEY=value` to clipboard (OSC 52)       |
-| `p`            | Toggle peek: show original value before edit |
-| `/`            | Search variables by name or value            |
-| `c`            | Start compare: pick a second file (requires 2+ files) |
-| `m`            | Open completeness matrix (requires 2+ files) |
-| `w`            | Save current file                            |
-| `r`            | Reset current file (discard unsaved changes) |
-| `Ctrl+S`       | Toggle secret masking                        |
-| `o`            | Toggle sort order (position / alphabetical)  |
-| `O`            | Reorder variables on disk (alphabetical / grouped) |
-| `g`            | Toggle prefix grouping (`DB_*`, `REDIS_*`, …) |
+| Key               | Action                                       |
+| ----------------- | -------------------------------------------- |
+| `↑` / `k`         | Move cursor up                               |
+| `↓` / `j`         | Move cursor down                             |
+| `PgUp` / `PgDn`   | Scroll up / down a page                      |
+| `Home` / `End`    | Jump to the first / last variable or group header |
+| `←` / `h`         | Switch focus to file panel                   |
+| `e`               | Edit selected variable value                 |
+| `E`               | Rename selected variable key                 |
+| `a`               | Add new variable                             |
+| `d`               | Delete selected variable (with confirmation) |
+| `y`               | Copy value to clipboard (OSC 52)             |
+| `Y`               | Copy `KEY=value` to clipboard (OSC 52)       |
+| `p`               | Toggle peek: show original value before edit |
+| `/`               | Search variables by name or value            |
+| `c`               | Start compare: pick a second file (requires 2+ files) |
+| `m`               | Open completeness matrix (requires 2+ files) |
+| `w`               | Save current file                            |
+| `r`               | Reset current file (discard unsaved changes) |
+| `Ctrl+S`          | Toggle secret masking                        |
+| `o`               | Toggle sort order (position / alphabetical)  |
+| `O`               | Reorder variables on disk (alphabetical / grouped) |
+| `g`               | Toggle prefix grouping (`DB_*`, `REDIS_*`, …) |
 | `Enter` / `Space` | Collapse/expand group (when cursor is on a group header) |
-| `?`            | Show help screen                             |
-| `q` / `Ctrl+C` | Quit                                         |
+| `?`               | Show help screen                             |
+| `q` / `Ctrl+C`    | Quit                                         |
 
 ## Compare — Pick the second file
 
@@ -74,42 +74,42 @@ After `c`, pick the file to compare the active file with.
 
 Side-by-side diff between two `.env` files.
 
-| Key       | Action                                   |
-| --------- | ---------------------------------------- |
-| `↑` / `k` | Move cursor up                           |
-| `↓` / `j` | Move cursor down                         |
-| `PgUp` / `PgDn` | Scroll up / down a page            |
-| `Home` / `End` | Jump to the first / last entry      |
-| `n`       | Jump to next difference                  |
-| `N`       | Jump to previous difference              |
-| `→` / `l` | Copy selected value to the right file; if the left file lacks the key, delete it from the right file |
-| `←` / `h` | Copy selected value to the left file; if the right file lacks the key, delete it from the left file  |
-| `e`       | Edit selected variable in the left file  |
-| `E`       | Edit selected variable in the right file |
-| `f`       | Toggle filter: show differences only     |
-| `w`       | Save both files (if modified)            |
-| `r`       | Reset both files to saved state          |
-| `Ctrl+S`  | Toggle secret masking                    |
-| `q` / `Ctrl+C` | Return to main view                 |
-| `Esc`     | Return to main view                      |
+| Key             | Action                                   |
+| --------------- | ---------------------------------------- |
+| `↑` / `k`       | Move cursor up                           |
+| `↓` / `j`       | Move cursor down                         |
+| `PgUp` / `PgDn` | Scroll up / down a page                  |
+| `Home` / `End`  | Jump to the first / last entry           |
+| `n`             | Jump to next difference                  |
+| `N`             | Jump to previous difference              |
+| `→` / `l`       | Copy selected value to the right file; if the left file lacks the key, delete it from the right file |
+| `←` / `h`       | Copy selected value to the left file; if the right file lacks the key, delete it from the left file |
+| `e`             | Edit selected variable in the left file  |
+| `E`             | Edit selected variable in the right file |
+| `f`             | Toggle filter: show differences only     |
+| `w`             | Save both files (if modified)            |
+| `r`             | Reset both files to saved state          |
+| `Ctrl+S`        | Toggle secret masking                    |
+| `q` / `Ctrl+C`  | Return to main view                      |
+| `Esc`           | Return to main view                      |
 
 ## Completeness matrix
 
 Multi-file grid showing which variables exist in which files.
 
-| Key       | Action                                        |
-| --------- | --------------------------------------------- |
-| `↑` / `k` | Move cursor up                                |
-| `↓` / `j` | Move cursor down                              |
-| `PgUp` / `PgDn` | Scroll up / down a page of variables    |
-| `Home` / `End` | Jump to the first / last variable        |
-| `←` / `h` | Move cursor left                              |
-| `→` / `l` | Move cursor right                             |
-| `a`       | Add missing variable to the file under cursor |
-| `d`       | Delete variable from the file under cursor (with confirmation) |
-| `o`       | Toggle sort (alphabetical / completeness)     |
-| `q` / `Ctrl+C` | Return to main view                      |
-| `Esc`     | Return to main view                           |
+| Key             | Action                                        |
+| --------------- | --------------------------------------------- |
+| `↑` / `k`       | Move cursor up                                |
+| `↓` / `j`       | Move cursor down                              |
+| `PgUp` / `PgDn` | Scroll up / down a page of variables          |
+| `Home` / `End`  | Jump to the first / last variable             |
+| `←` / `h`       | Move cursor left                              |
+| `→` / `l`       | Move cursor right                             |
+| `a`             | Add missing variable to the file under cursor |
+| `d`             | Delete variable from the file under cursor (with confirmation) |
+| `o`             | Toggle sort (alphabetical / completeness)     |
+| `q` / `Ctrl+C`  | Return to main view                           |
+| `Esc`           | Return to main view                           |
 
 ## Help screen (`?`)
 
