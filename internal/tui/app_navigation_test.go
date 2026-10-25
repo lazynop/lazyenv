@@ -154,11 +154,11 @@ func TestPageKeysMoveTheCompareCursor(t *testing.T) {
 func TestPageKeysMoveTheMatrixRowCursor(t *testing.T) {
 	app := press(resize(newTestApp(pageKeyFiles()), 80, 24), "m", "j", "l")
 	require.Equal(t, ModeMatrix, app.mode)
-	require.Equal(t, 1, app.matrixView.cursorCol)
+	require.Equal(t, 1, app.matrixView.cols.Cursor)
 	matrixCursorItem := func(a App) string { return a.matrixView.entries[a.matrixView.rows.Cursor].Key }
 	for _, step := range pageSteps(pageKeys, matrixContentOffsetY) {
 		app = pressPageStep(t, app, step, matrixCursorItem)
-		assert.Equal(t, 1, app.matrixView.cursorCol, "after %s, the column cursor should stay on the second file", step.key)
+		assert.Equal(t, 1, app.matrixView.cols.Cursor, "after %s, the column cursor should stay on the second file", step.key)
 	}
 }
 

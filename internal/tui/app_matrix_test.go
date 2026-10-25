@@ -60,7 +60,7 @@ func TestMatrixNavigationInApp(t *testing.T) {
 
 	// Initial cursor position
 	assert.Equal(t, 0, app.matrixView.rows.Cursor)
-	assert.Equal(t, 0, app.matrixView.cursorCol)
+	assert.Equal(t, 0, app.matrixView.cols.Cursor)
 
 	// Move down with 'j'
 	updated, _ = app.Update(keyMsg("j"))
@@ -80,12 +80,12 @@ func TestMatrixNavigationInApp(t *testing.T) {
 	// Move right with 'l'
 	updated, _ = app.Update(keyMsg("l"))
 	app = updated.(App)
-	assert.Equal(t, 1, app.matrixView.cursorCol, "l should move cursor right")
+	assert.Equal(t, 1, app.matrixView.cols.Cursor, "l should move cursor right")
 
 	// Move left with 'h'
 	updated, _ = app.Update(keyMsg("h"))
 	app = updated.(App)
-	assert.Equal(t, 0, app.matrixView.cursorCol, "h should move cursor left")
+	assert.Equal(t, 0, app.matrixView.cols.Cursor, "h should move cursor left")
 }
 
 func TestMatrixEscapeReturnsToNormal(t *testing.T) {
@@ -123,7 +123,7 @@ func TestMatrixAddVariableFlow(t *testing.T) {
 	app = updated.(App)
 
 	require.Equal(t, 1, app.matrixView.rows.Cursor)
-	require.Equal(t, 1, app.matrixView.cursorCol)
+	require.Equal(t, 1, app.matrixView.cols.Cursor)
 	require.Equal(t, "B", app.matrixView.entries[1].Key)
 	require.False(t, app.matrixView.entries[1].Present[1], "B should be missing in f2")
 

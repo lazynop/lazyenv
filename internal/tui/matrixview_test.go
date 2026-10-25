@@ -34,7 +34,7 @@ func TestNewMatrixModel(t *testing.T) {
 	assert.Equal(t, 4, len(m.entries), "should have 4 unique keys")
 	assert.Equal(t, []string{".env", ".env.local"}, m.fileNames)
 	assert.Equal(t, 0, m.rows.Cursor, "initial rows.Cursor should be 0")
-	assert.Equal(t, 0, m.cursorCol, "initial cursorCol should be 0")
+	assert.Equal(t, 0, m.cols.Cursor, "initial cols.Cursor should be 0")
 }
 
 func TestMatrixMoveDown(t *testing.T) {
@@ -92,17 +92,17 @@ func TestMatrixMoveRight(t *testing.T) {
 	m.Width = 120
 	m.Height = 40
 
-	assert.Equal(t, 0, m.cursorCol)
+	assert.Equal(t, 0, m.cols.Cursor)
 
 	m.MoveRight()
-	assert.Equal(t, 1, m.cursorCol)
+	assert.Equal(t, 1, m.cols.Cursor)
 
 	m.MoveRight()
-	assert.Equal(t, 2, m.cursorCol)
+	assert.Equal(t, 2, m.cols.Cursor)
 
 	// At the rightmost column: should not go beyond
 	m.MoveRight()
-	assert.Equal(t, 2, m.cursorCol, "should stop at last column")
+	assert.Equal(t, 2, m.cols.Cursor, "should stop at last column")
 }
 
 func TestMatrixMoveLeft(t *testing.T) {
@@ -116,18 +116,18 @@ func TestMatrixMoveLeft(t *testing.T) {
 
 	// At col 0, move left should stay at 0
 	m.MoveLeft()
-	assert.Equal(t, 0, m.cursorCol, "should stop at 0")
+	assert.Equal(t, 0, m.cols.Cursor, "should stop at 0")
 
 	// Move to col 2, then left
 	m.MoveRight()
 	m.MoveRight()
-	assert.Equal(t, 2, m.cursorCol)
+	assert.Equal(t, 2, m.cols.Cursor)
 
 	m.MoveLeft()
-	assert.Equal(t, 1, m.cursorCol)
+	assert.Equal(t, 1, m.cols.Cursor)
 
 	m.MoveLeft()
-	assert.Equal(t, 0, m.cursorCol)
+	assert.Equal(t, 0, m.cols.Cursor)
 }
 
 func TestMatrixToggleSort(t *testing.T) {
@@ -168,10 +168,10 @@ func TestMatrixStartEditMissing(t *testing.T) {
 	// entries sorted alpha: A, B
 	// Navigate to row=1 (B), col=1 (f2) where B is missing
 	m.MoveDown()  // rows.Cursor = 1 (B)
-	m.MoveRight() // cursorCol = 1 (f2)
+	m.MoveRight() // cols.Cursor = 1 (f2)
 
 	require.Equal(t, "B", m.entries[m.rows.Cursor].Key)
-	require.False(t, m.entries[m.rows.Cursor].Present[m.cursorCol], "B should be missing in f2")
+	require.False(t, m.entries[m.rows.Cursor].Present[m.cols.Cursor], "B should be missing in f2")
 
 	cmd := m.StartEdit()
 

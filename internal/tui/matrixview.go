@@ -24,9 +24,8 @@ type MatrixModel struct {
 	entries   []model.MatrixEntry
 	fileNames []string
 
-	rows      scrollCursor // over the keys (rows)
-	cursorCol int          // selected file (column)
-	offsetCol int          // horizontal scroll offset
+	rows scrollCursor // over the keys (rows)
+	cols scrollCursor // over the files (columns)
 
 	sortMode model.SortMode
 
@@ -87,36 +86,30 @@ func (m *MatrixModel) PageDown() {
 
 // MoveToFirst moves the cursor to the first row.
 func (m *MatrixModel) MoveToFirst() {
-	m.SetCursor(0, m.cursorCol)
+	m.SetCursor(0, m.cols.Cursor)
 }
 
 // MoveToLast moves the cursor to the last row.
 func (m *MatrixModel) MoveToLast() {
-	m.SetCursor(len(m.entries)-1, m.cursorCol)
+	m.SetCursor(len(m.entries)-1, m.cols.Cursor)
 }
 
 // MoveLeft moves the column cursor left.
 func (m *MatrixModel) MoveLeft() {
-	if m.cursorCol > 0 {
-		m.cursorCol--
-	}
+	m.cols.prev()
 	m.ensureHorizontalVisible()
 }
 
 // MoveRight moves the column cursor right.
 func (m *MatrixModel) MoveRight() {
-	if m.cursorCol < len(m.fileNames)-1 {
-		m.cursorCol++
-	}
+	m.cols.next(len(m.fileNames))
 	m.ensureHorizontalVisible()
 }
 
 // SetCursor positions the cursor at the given row and column with bounds checking.
 func (m *MatrixModel) SetCursor(row, col int) {
 	m.rows.moveTo(row, len(m.entries))
-	if len(m.fileNames) > 0 {
-		m.cursorCol = max(0, min(col, len(m.fileNames)-1))
-	}
+	m.cols.moveTo(col, len(m.fileNames))
 	m.ensureVisible()
 	m.ensureHorizontalVisible()
 }
@@ -133,10 +126,10 @@ func (m *MatrixModel) visibleLines() int {
 // the cursor's column.
 func (m *MatrixModel) CellAt(x, y int) (row, col int) {
 	row = visibleIndex(y-matrixContentOffsetY, m.rows.Offset, m.visibleLines(), len(m.entries))
-	col = m.cursorCol
+	col = m.cols.Cursor
 	// The matrix is drawn after its left padding.
 	if x -= matrixPaddingWidth/2 + m.layout.MatrixKeyWidth; x >= 0 {
-		if c := visibleIndex(x/m.layout.MatrixColWidth, m.offsetCol, m.visibleCols(), len(m.fileNames)); c >= 0 {
+		if c := visibleIndex(x/m.layout.MatrixColWidth, m.cols.Offset, m.visibleCols(), len(m.fileNames)); c >= 0 {
 			col = c
 		}
 	}
@@ -159,7 +152,7 @@ func (m *MatrixModel) ensureHorizontalVisible() {
 	if visibleCols < 1 {
 		return
 	}
-	m.offsetCol = scrollOffset(m.cursorCol, m.offsetCol, visibleCols, len(m.fileNames))
+	m.cols.follow(visibleCols, len(m.fileNames))
 }
 
 func (m *MatrixModel) counterWidth() int {
@@ -192,12 +185,12 @@ func (m *MatrixModel) StartEdit() tea.Cmd {
 		return nil
 	}
 	entry := m.entries[m.rows.Cursor]
-	if entry.Present[m.cursorCol] {
+	if entry.Present[m.cols.Cursor] {
 		return nil
 	}
 	m.editing = true
 	m.editKey = entry.Key
-	m.editFile = m.cursorCol
+	m.editFile = m.cols.Cursor
 	m.editor.SetValue("")
 	m.editor.Placeholder = "value"
 	return m.editor.Focus()
@@ -226,14 +219,14 @@ func (m *MatrixModel) DeleteAtCursor() (string, string) {
 		return "", ""
 	}
 	entry := m.entries[m.rows.Cursor]
-	if !entry.Present[m.cursorCol] {
+	if !entry.Present[m.cols.Cursor] {
 		return "", ""
 	}
-	f := m.files[m.cursorCol]
+	f := m.files[m.cols.Cursor]
 	if i := f.LastIndexOfKey(entry.Key); i >= 0 {
 		f.DeleteVar(i)
 	}
-	fileName := m.fileNames[m.cursorCol]
+	fileName := m.fileNames[m.cols.Cursor]
 	m.recompute()
 	return entry.Key, fileName
 }
@@ -246,9 +239,9 @@ func (m *MatrixModel) CancelEdit() {
 func (m *MatrixModel) renderHeaderRow(endCol int, theme Theme) string {
 	var hdr strings.Builder
 	hdr.WriteString(padRight("KEY", m.layout.MatrixKeyWidth))
-	for ci := m.offsetCol; ci < endCol; ci++ {
+	for ci := m.cols.Offset; ci < endCol; ci++ {
 		name := fitName(m.fileNames[ci], m.layout.MatrixColWidth-2)
-		if ci == m.cursorCol {
+		if ci == m.cols.Cursor {
 			hdr.WriteString(theme.SelectedItem.Render(padRight(name, m.layout.MatrixColWidth)))
 		} else {
 			hdr.WriteString(theme.HelpKey.Render(padRight(name, m.layout.MatrixColWidth)))
@@ -271,9 +264,9 @@ func (m *MatrixModel) renderBodyRow(ri, endCol int, theme Theme) string {
 
 	var row strings.Builder
 	row.WriteString(keyFormatted)
-	for ci := m.offsetCol; ci < endCol; ci++ {
+	for ci := m.cols.Offset; ci < endCol; ci++ {
 		var cell string
-		if ri == m.rows.Cursor && ci == m.cursorCol {
+		if ri == m.rows.Cursor && ci == m.cols.Cursor {
 			// Highlight active cell
 			if entry.Present[ci] {
 				cell = theme.SelectedItem.Render(padRight(" "+presentGlyph, m.layout.MatrixColWidth))
@@ -321,7 +314,7 @@ func (m *MatrixModel) View(theme Theme) string {
 	var b strings.Builder
 
 	visCols := m.visibleCols()
-	endCol := min(m.offsetCol+visCols, len(m.fileNames))
+	endCol := min(m.cols.Offset+visCols, len(m.fileNames))
 
 	// Header row
 	b.WriteString(m.renderHeaderRow(endCol, theme))
