@@ -136,6 +136,25 @@ func (m *MatrixModel) CellAt(x, y int) (row, col int) {
 	return row, col
 }
 
+// matrixCell is a cell of the matrix: the key of its row, the file of its
+// column, and whether the file holds the key.
+type matrixCell struct {
+	key     string
+	file    *model.EnvFile
+	present bool
+}
+
+// cursorCell returns the cell under the cursor, or false when the matrix has
+// no keys.
+func (m *MatrixModel) cursorCell() (matrixCell, bool) {
+	if len(m.entries) == 0 {
+		return matrixCell{}, false
+	}
+	entry := m.entries[m.rows.Cursor]
+	col := m.cols.Cursor
+	return matrixCell{key: entry.Key, file: m.files[col], present: entry.Present[col]}, true
+}
+
 // SetSize sizes the matrix and scrolls the cursor cell back into it.
 func (m *MatrixModel) SetSize(width, height int) {
 	m.Width, m.Height = width, height
@@ -181,15 +200,12 @@ func (m *MatrixModel) ToggleSort() {
 
 // StartEdit begins inline editing for the current cell (if missing).
 func (m *MatrixModel) StartEdit() tea.Cmd {
-	if len(m.entries) == 0 {
-		return nil
-	}
-	entry := m.entries[m.rows.Cursor]
-	if entry.Present[m.cols.Cursor] {
+	cell, ok := m.cursorCell()
+	if !ok || cell.present {
 		return nil
 	}
 	m.editing = true
-	m.editKey = entry.Key
+	m.editKey = cell.key
 	m.editFile = m.cols.Cursor
 	m.editor.SetValue("")
 	m.editor.Placeholder = "value"
@@ -215,20 +231,15 @@ func (m *MatrixModel) ConfirmEdit() {
 // DeleteAtCursor deletes the variable at the current cursor position.
 // Returns the deleted key name and file name, or empty strings if nothing was deleted.
 func (m *MatrixModel) DeleteAtCursor() (string, string) {
-	if len(m.entries) == 0 {
+	cell, ok := m.cursorCell()
+	if !ok || !cell.present {
 		return "", ""
 	}
-	entry := m.entries[m.rows.Cursor]
-	if !entry.Present[m.cols.Cursor] {
-		return "", ""
+	if i := cell.file.LastIndexOfKey(cell.key); i >= 0 {
+		cell.file.DeleteVar(i)
 	}
-	f := m.files[m.cols.Cursor]
-	if i := f.LastIndexOfKey(entry.Key); i >= 0 {
-		f.DeleteVar(i)
-	}
-	fileName := m.fileNames[m.cols.Cursor]
 	m.recompute()
-	return entry.Key, fileName
+	return cell.key, cell.file.Name
 }
 
 // CancelEdit cancels inline editing.
