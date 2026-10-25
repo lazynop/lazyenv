@@ -617,7 +617,7 @@ func TestMouseClickMatrixMode_OutsideTheDrawnCellsKeepsTheCursor(t *testing.T) {
 		keys[i] = fmt.Sprintf("K%02d", i)
 	}
 	app := press(resize(newTestApp([]*model.EnvFile{makeTestFile(".env.a", keys...), makeTestFile(".env.b", keys...)}), 80, 20), "m")
-	app = press(app, slices.Repeat([]string{"j"}, 20)...)
+	app = press(app, down(20)...)
 	require.Positive(t, app.matrixView.offsetRow)
 	lines := strings.Split(stripAnsi(app.View().Content), "\n")
 	cursorRow := rowDrawing(t, app.View().Content, "K20")

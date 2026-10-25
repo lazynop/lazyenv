@@ -32,16 +32,15 @@ func resizeFixture() []*model.EnvFile {
 // terminal, then shrinks the terminal: the cursor stays in view.
 func TestResizeKeepsTheCursorRowInView(t *testing.T) {
 	files := resizeFixture()
-	down := slices.Repeat([]string{"j"}, 20)
 	right := slices.Repeat([]string{"l"}, 20)
 	tests := []struct {
 		name, atCursor string
 		keys           []string
 	}{
-		{"var list", "K20", append([]string{"right"}, down...)},
-		{"file list", "● .env.20", down},
-		{"compare", "K20", append([]string{"c", "j", "enter"}, down...)},
-		{"matrix row", "K20", append([]string{"m"}, down...)},
+		{"var list", "K20", append([]string{"right"}, down(20)...)},
+		{"file list", "● .env.20", down(20)},
+		{"compare", "K20", append([]string{"c", "j", "enter"}, down(20)...)},
+		{"matrix row", "K20", append([]string{"m"}, down(20)...)},
 		{"matrix column", ".env.20", append([]string{"m"}, right...)},
 	}
 	for _, tt := range tests {
@@ -61,7 +60,7 @@ func TestResizeKeepsTheCursorRowInView(t *testing.T) {
 // scrolls back to show the rows above instead of leaving blank rows below.
 func TestGrowingTheTerminalScrollsBackToFillTheView(t *testing.T) {
 	files := resizeFixture()
-	end := slices.Repeat([]string{"j"}, 29)
+	end := down(29)
 	tests := []struct {
 		name, firstRow string
 		keys           []string
