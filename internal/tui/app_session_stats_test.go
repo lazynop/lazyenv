@@ -210,7 +210,7 @@ func TestApp_SessionStats_EndToEnd(t *testing.T) {
 	// 5. Delete .env.staging.
 	for i, f := range app.fileList.Files {
 		if f.Path == stagingPath {
-			app.fileList.SetCursor(i)
+			app.fileList.MoveCursorTo(i)
 			app.fileList.Selected = i
 			break
 		}

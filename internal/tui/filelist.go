@@ -84,19 +84,9 @@ func (m *FileListModel) MoveToLast() {
 	m.MoveCursorTo(len(m.Files) - 1)
 }
 
-// SetCursor positions the cursor at the given index with bounds checking and
-// selects the file there.
-func (m *FileListModel) SetCursor(index int) {
-	if len(m.Files) == 0 {
-		return
-	}
-	m.MoveCursorTo(index)
-	m.Select()
-}
-
 // MoveCursorTo positions the cursor at the given index with bounds checking,
 // keeping the selected file: compare-select points at a file without making it
-// the active one.
+// the active one, and in the main view App.selectCursorFile makes it active.
 func (m *FileListModel) MoveCursorTo(index int) {
 	if len(m.Files) == 0 {
 		return

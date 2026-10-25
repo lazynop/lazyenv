@@ -14,9 +14,9 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// --- FileListModel.SetCursor ---
+// --- FileListModel.MoveCursorTo ---
 
-func TestFileListSetCursor(t *testing.T) {
+func TestFileListMoveCursorTo(t *testing.T) {
 	files := make([]*model.EnvFile, 5)
 	for i := range files {
 		files[i] = &model.EnvFile{Name: fmt.Sprintf("file%d", i)}
@@ -25,27 +25,27 @@ func TestFileListSetCursor(t *testing.T) {
 	var fl FileListModel
 	fl.Files = files
 	fl.Height = 20
+	fl.Selected = 2
 
-	fl.SetCursor(3)
+	fl.MoveCursorTo(3)
 	assert.Equal(t, 3, fl.Cursor, "Cursor should be set to 3")
-	assert.Equal(t, 3, fl.Selected, "Selected should mirror Cursor after SetCursor")
+	assert.Equal(t, 2, fl.Selected, "MoveCursorTo should keep the selected file")
 
-	fl.SetCursor(-1)
-	assert.Equal(t, 0, fl.Cursor, "SetCursor(-1) should clamp to 0")
-	assert.Equal(t, 0, fl.Selected)
+	fl.MoveCursorTo(-1)
+	assert.Equal(t, 0, fl.Cursor, "MoveCursorTo(-1) should clamp to 0")
 
-	fl.SetCursor(99)
-	assert.Equal(t, 4, fl.Cursor, "SetCursor(99) should clamp to len-1 = 4")
-	assert.Equal(t, 4, fl.Selected)
+	fl.MoveCursorTo(99)
+	assert.Equal(t, 4, fl.Cursor, "MoveCursorTo(99) should clamp to len-1 = 4")
+	assert.Equal(t, 2, fl.Selected)
 }
 
-func TestFileListSetCursorEmpty(t *testing.T) {
+func TestFileListMoveCursorToEmpty(t *testing.T) {
 	var fl FileListModel
 	// Files is nil/empty — should not panic
 	assert.NotPanics(t, func() {
-		fl.SetCursor(0)
-		fl.SetCursor(-1)
-		fl.SetCursor(5)
+		fl.MoveCursorTo(0)
+		fl.MoveCursorTo(-1)
+		fl.MoveCursorTo(5)
 	})
 	assert.Equal(t, 0, fl.Cursor)
 	assert.Equal(t, 0, fl.Selected)

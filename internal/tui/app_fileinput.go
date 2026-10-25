@@ -102,8 +102,8 @@ func (a App) finaliseNewFile(path string, successMsg string) (tea.Model, tea.Cmd
 	}
 
 	a.fileList.Files = append(a.fileList.Files, ef)
-	a.fileList.SetCursor(len(a.fileList.Files) - 1)
-	a.varList.SetFile(ef)
+	a.fileList.MoveCursorTo(len(a.fileList.Files) - 1)
+	a.selectCursorFile()
 
 	return a, a.flashMessage(successMsg)
 }
