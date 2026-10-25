@@ -65,7 +65,7 @@ Caught by the build (`LookupTheme` converts one struct into the other): the same
 For a new view, window or `AppMode` with scrollable content:
 
 1. `internal/tui/app_mouse.go`: move the mode out of the no-op cases into its own case, with hit detection in `handleMouseClick()` and scrolling in `handleMouseWheel()`.
-2. The view's model: `SetCursor(index int)` for click positioning, and `SetSize(width, height int)`, called from `updateLayout`, which sizes it and scrolls its cursor back into view.
+2. The view's model: a setter for click positioning that bounds the cursor with `scrollCursor.moveTo` (step 3), like the var list's `SetCursor`, and `SetSize(width, height int)`, called from `updateLayout`, which sizes it and scrolls its cursor back into view.
 3. A cursor the keys move: a `scrollCursor` the model holds for the cursor and its scroll offset, the `navigable` methods on the model delegating to it, and the mode's key handler matching the navigation keys with `KeyMap.navigate`, so ↑/↓, PgUp/PgDn and Home/End move it as they do in the file and variable lists, the diff view and the matrix.
 4. `internal/tui/layout_test.go`: a scenario in `viewScenarios` that reaches the new mode or screen, then the golden file rewritten (§ Screen snapshots). Needed even when nothing scrolls.
 5. If the mode gets keys of its own, a help section for them next to its handler, listed in `helpContents`; then a state reaching the mode in `helpSectionStates` (`internal/tui/help_keys_test.go`), and the `docs/keybindings.md` section mapped to it in `helpDocSections` (`docs_test.go`).
