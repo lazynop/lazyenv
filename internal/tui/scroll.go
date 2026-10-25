@@ -36,6 +36,50 @@ func pageMove(cursor, offset, visible, total, pages int) (newCursor, newOffset i
 	return max(min(cursor+step, total-1), 0), offset + step
 }
 
+// scrollCursor is a cursor over a list's positions and the scroll offset of
+// the viewport that follows it. Its moves take from the list the visible rows
+// and the number of positions they need, since both can change between moves;
+// the list scrolls after each move with follow, adding any scrolling of its
+// own.
+type scrollCursor struct {
+	Cursor int // the position under the cursor
+	Offset int // the first row the viewport shows
+}
+
+// prev moves the cursor to the previous position, if there is one.
+func (s *scrollCursor) prev() {
+	if s.Cursor > 0 {
+		s.Cursor--
+	}
+}
+
+// next moves the cursor to the next of total positions, if there is one.
+func (s *scrollCursor) next(total int) {
+	if s.Cursor < total-1 {
+		s.Cursor++
+	}
+}
+
+// pageMove moves the cursor and the offset a page of visible rows over total
+// positions, down for pages 1 and up for -1 (pageMove).
+func (s *scrollCursor) pageMove(visible, total, pages int) {
+	s.Cursor, s.Offset = pageMove(s.Cursor, s.Offset, visible, total, pages)
+}
+
+// moveTo moves the cursor to index, kept within total positions; with none,
+// the cursor stays where it is.
+func (s *scrollCursor) moveTo(index, total int) {
+	if total > 0 {
+		s.Cursor = max(0, min(index, total-1))
+	}
+}
+
+// follow scrolls a viewport of visible rows over total rows just enough to
+// keep the cursor in it (scrollOffset).
+func (s *scrollCursor) follow(visible, total int) {
+	s.Offset = scrollOffset(s.Cursor, s.Offset, visible, total)
+}
+
 // navigable is a view the navigation keys move through, a row at a time, a
 // page at a time, or to either end: a cursor over a list's positions, which
 // the view scrolls to follow, or the help's text, which has no cursor.

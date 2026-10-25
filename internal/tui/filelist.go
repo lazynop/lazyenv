@@ -18,10 +18,10 @@ const (
 
 // FileListModel manages the file list panel.
 type FileListModel struct {
+	scrollCursor // Cursor and Offset over Files
+
 	Files    []*model.EnvFile
-	Cursor   int
 	Selected int // index of the selected (active) file
-	Offset   int // scroll offset
 	Height   int
 	Width    int
 	Focused  bool
@@ -29,10 +29,7 @@ type FileListModel struct {
 
 // NewFileListModel creates a new file list model.
 func NewFileListModel() FileListModel {
-	return FileListModel{
-		Selected: 0,
-		Cursor:   0,
-	}
+	return FileListModel{}
 }
 
 // SetFiles sets the file list.
@@ -48,29 +45,25 @@ func (m *FileListModel) SetFiles(files []*model.EnvFile) {
 
 // MoveUp moves the cursor up.
 func (m *FileListModel) MoveUp() {
-	if m.Cursor > 0 {
-		m.Cursor--
-		m.ensureCursorVisible()
-	}
+	m.prev()
+	m.ensureCursorVisible()
 }
 
 // MoveDown moves the cursor down.
 func (m *FileListModel) MoveDown() {
-	if m.Cursor < len(m.Files)-1 {
-		m.Cursor++
-		m.ensureCursorVisible()
-	}
+	m.next(len(m.Files))
+	m.ensureCursorVisible()
 }
 
 // PageUp scrolls up a page, the cursor moving with the view (pageMove).
 func (m *FileListModel) PageUp() {
-	m.Cursor, m.Offset = pageMove(m.Cursor, m.Offset, m.visibleLines(), len(m.Files), -1)
+	m.pageMove(m.visibleLines(), len(m.Files), -1)
 	m.ensureCursorVisible()
 }
 
 // PageDown scrolls down a page, the cursor moving with the view (pageMove).
 func (m *FileListModel) PageDown() {
-	m.Cursor, m.Offset = pageMove(m.Cursor, m.Offset, m.visibleLines(), len(m.Files), 1)
+	m.pageMove(m.visibleLines(), len(m.Files), 1)
 	m.ensureCursorVisible()
 }
 
@@ -88,10 +81,7 @@ func (m *FileListModel) MoveToLast() {
 // keeping the selected file: compare-select points at a file without making it
 // the active one, and in the main view App.selectCursorFile makes it active.
 func (m *FileListModel) MoveCursorTo(index int) {
-	if len(m.Files) == 0 {
-		return
-	}
-	m.Cursor = max(0, min(index, len(m.Files)-1))
+	m.moveTo(index, len(m.Files))
 	m.ensureCursorVisible()
 }
 
@@ -105,7 +95,7 @@ func (m *FileListModel) SetSize(width, height int) {
 // the viewport shows no blank rows while rows above it are scrolled off.
 func (m *FileListModel) ensureCursorVisible() {
 	if m.Height > panelChromeHeight { // not before the first layout
-		m.Offset = scrollOffset(m.Cursor, m.Offset, m.visibleLines(), len(m.Files))
+		m.follow(m.visibleLines(), len(m.Files))
 	}
 }
 
