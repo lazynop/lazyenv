@@ -193,6 +193,32 @@ func TestRenameVarDetectsASecretKey(t *testing.T) {
 	assert.False(t, ef.Vars[0].IsSecret)
 }
 
+// TestChangingASecretKeepsItsOriginalSecret changes a secret, not changed
+// before, so that it is no longer one: the variable is not a secret, but its
+// original keeps the status it had, so peek still masks it.
+func TestChangingASecretKeepsItsOriginalSecret(t *testing.T) {
+	tests := []struct {
+		name   string
+		secret EnvVar
+		change func(ef *EnvFile)
+	}{
+		{"value edited to a plain one", EnvVar{Key: "GREETING", Value: "ghp_abc123", IsSecret: true},
+			func(ef *EnvFile) { ef.UpdateVar(0, "hello") }},
+		{"renamed to a plain key", EnvVar{Key: "API_TOKEN", Value: "hunter2", IsSecret: true},
+			func(ef *EnvFile) { ef.RenameVar(0, "GREETING") }},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ef := newTestFile(tt.secret)
+
+			tt.change(ef)
+
+			assert.False(t, ef.Vars[0].IsSecret, "the changed var should no longer be a secret")
+			assert.True(t, ef.Vars[0].OriginalIsSecret, "its original should keep its secret status")
+		})
+	}
+}
+
 // TestChangesDetectPlaceholders edits and adds values: a variable is a
 // placeholder exactly when its new value is one.
 func TestChangesDetectPlaceholders(t *testing.T) {
