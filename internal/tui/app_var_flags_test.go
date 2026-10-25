@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/lazynop/lazyenv/internal/config"
@@ -70,7 +71,7 @@ func down(n int) []string {
 }
 
 // The key scripts below start in the main view on .env with the file list
-// focused, as customSecretsApp leaves it, and end in the main view showing the
+// focused, as loadFixtureApp leaves it, and end in the main view showing the
 // file they change.
 
 // editValueKeys edits the value of .env's var at row to value.
@@ -176,4 +177,56 @@ func TestCustomSecretsConfigMasksAfterCompareSaveAndReset(t *testing.T) {
 		require.False(t, app.varList.File.Modified, "compare should have reset .env.prod")
 		assertShows(t, app, customSecretsLoaded[".env.prod"]...)
 	})
+}
+
+// varRowMarkers returns, for each var list row of key in view, the markers it
+// shows after its value (new or modified, then duplicate, empty or
+// placeholder), "" for none. The rows' values must hold no space.
+func varRowMarkers(t *testing.T, view, key string) []string {
+	t.Helper()
+	var markers []string
+	for line := range strings.SplitSeq(view, "\n") {
+		panels := strings.Split(line, "│")
+		if len(panels) < 2 {
+			continue
+		}
+		// The var list is the last panel, drawn before the row's closing border.
+		fields := strings.Fields(panels[len(panels)-2])
+		if len(fields) >= 2 && fields[0] == key {
+			markers = append(markers, strings.Join(fields[2:], ""))
+		}
+	}
+	require.NotEmpty(t, markers, "no var list row for %s in:\n%s", key, view)
+	return markers
+}
+
+// TestPlaceholderMarkerFollowsChanges edits and adds values in the var list:
+// a var shows the placeholder marker exactly when its new value is a
+// placeholder, before a save and after it.
+func TestPlaceholderMarkerFollowsChanges(t *testing.T) {
+	tests := []struct {
+		name          string
+		keys          []string
+		key           string
+		marked, saved string // the row's markers after the keys, then after a save
+	}{
+		{"placeholder edited to a real value", editValueKeys(0, "https://api.example.com"), "API_URL", modifiedVarGlyph, ""},
+		{"value edited to a placeholder", editValueKeys(1, "changeme"), "GREETING", modifiedVarGlyph + placeholderGlyph, placeholderGlyph},
+		{"placeholder added", addVarKeys("NEW_VAR", "changeme"), "NEW_VAR", newVarGlyph + placeholderGlyph, placeholderGlyph},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app := loadFixtureApp(t, config.DefaultConfig(), map[string]string{
+				".env": "API_URL=changeme\nGREETING=hello\n",
+			}, 120, 40)
+			require.Equal(t, []string{placeholderGlyph}, varRowMarkers(t, stripAnsi(app.View().Content), "API_URL"))
+
+			app = press(app, tt.keys...)
+			assert.Equal(t, []string{tt.marked}, varRowMarkers(t, stripAnsi(app.View().Content), tt.key))
+
+			app = press(app, "w")
+			require.Contains(t, app.statusBar.Message, "Saved .env")
+			assert.Equal(t, []string{tt.saved}, varRowMarkers(t, stripAnsi(app.View().Content), tt.key))
+		})
+	}
 }

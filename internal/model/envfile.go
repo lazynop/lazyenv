@@ -108,13 +108,14 @@ func (ef *EnvFile) RenameVar(idx int, newKey string) {
 }
 
 // deriveFlags sets the flags of the variable at idx that follow from its key
-// and value, as the parser does: whether it is empty, and whether it is a
-// secret under the file's [secrets] config. The variable then looks as it will
+// and value, as the parser does: whether it is empty, a secret under the
+// file's [secrets] config, or a placeholder. The variable then looks as it will
 // once a save re-parses the file.
 func (ef *EnvFile) deriveFlags(idx int) {
 	v := &ef.Vars[idx]
 	v.IsEmpty = v.Value == ""
 	v.IsSecret = util.IsSecret(v.Key, v.Value, ef.Secrets)
+	v.IsPlaceholder = util.IsPlaceholderValue(v.Value)
 }
 
 // markModified flags the variable at idx and the file as changed, saving the

@@ -193,6 +193,23 @@ func TestRenameVarDetectsASecretKey(t *testing.T) {
 	assert.False(t, ef.Vars[0].IsSecret)
 }
 
+// TestChangesDetectPlaceholders edits and adds values: a variable is a
+// placeholder exactly when its new value is one.
+func TestChangesDetectPlaceholders(t *testing.T) {
+	ef := newTestFile(
+		EnvVar{Key: "API_URL", Value: "changeme", IsPlaceholder: true},
+		EnvVar{Key: "GREETING", Value: "hello"},
+	)
+
+	ef.UpdateVar(0, "https://api.example.com")
+	ef.UpdateVar(1, "changeme")
+	ef.AddVar("NEW_VAR", "TODO")
+
+	assert.False(t, ef.Vars[0].IsPlaceholder, "a real value should drop the placeholder flag")
+	assert.True(t, ef.Vars[1].IsPlaceholder, "a placeholder value should set it")
+	assert.True(t, ef.Vars[2].IsPlaceholder, "an added placeholder should have it")
+}
+
 // TestChangesDetectSecretsWithTheFileConfig changes the variables of a file
 // whose [secrets] config makes keys ending in _HOST secrets and keys starting
 // with PUBLIC_ never secrets: each changed variable is a secret as that config
