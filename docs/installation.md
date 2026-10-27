@@ -31,6 +31,14 @@ scoop bucket add lazynop https://github.com/lazynop/scoop-bucket
 scoop install lazyenv
 ```
 
+## mise (macOS, Linux & Windows)
+
+```bash
+mise use -g github:lazynop/lazyenv
+```
+
+This pins lazyenv to `latest` in mise's global config, so `mise upgrade` updates it.
+
 ## From source
 
 Requires Go 1.26+.

@@ -52,6 +52,12 @@ scoop bucket add lazynop https://github.com/lazynop/scoop-bucket
 scoop install lazyenv
 ```
 
+**mise** (macOS, Linux & Windows):
+
+```
+mise use -g github:lazynop/lazyenv
+```
+
 Or download a binary from [Releases](https://github.com/lazynop/lazyenv/releases), or install from source (requires Go 1.26+):
 
 ```
