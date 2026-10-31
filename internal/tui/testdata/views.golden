@@ -21,7 +21,7 @@
 │                  ││  VAR_13     value_13                                     │
 ╰──────────────────╯╰──────────────────────────────────────────────────────────╯
    [Enter]vars [c]compare [m]matrix [o]sort [g]group [w]save [r]reset [?]help
- [q]quit .env  34 vars
+   [q]quit                                                        .env  34 vars
 === vars
 ╭──────────────────╮╭──────────────────────────────────────────────────────────╮
 │ Files  (2)       ││ .env  (34 vars)                                          │
@@ -45,7 +45,7 @@
 │                  ││  VAR_13     value_13                                     │
 ╰──────────────────╯╰──────────────────────────────────────────────────────────╯
    [e]edit [E]rename [a]add [d]del [y]yank [p]peek [/]search [o]sort [g]group
- [w]save [r]reset [q]quit .env  34 vars
+   [w]save [r]reset [q]quit                                       .env  34 vars
 === peek edited secret
 ╭──────────────────╮╭──────────────────────────────────────────────────────────╮
 │ Files  (2)       ││ .env  (34 vars)                                          │
@@ -69,7 +69,7 @@
 │                  ││  VAR_12     value_12                                     │
 ╰──────────────────╯╰──────────────────────────────────────────────────────────╯
    [e]edit [E]rename [a]add [d]del [y]yank [p]peek [/]search [o]sort [g]group
- [w]save [r]reset [q]quit .env  34 vars
+   [w]save [r]reset [q]quit                                       .env  34 vars
 === peek secret renamed to a plain key
 ╭──────────────────╮╭──────────────────────────────────────────────────────────╮
 │ Files  (2)       ││ .env  (34 vars)                                          │
@@ -139,7 +139,7 @@
 │                  ││             ↳ was: ••••••••                              │
 ╰──────────────────╯╰──────────────────────────────────────────────────────────╯
    [e]edit [E]rename [a]add [d]del [y]yank [p]peek [/]search [o]sort [g]group
- [w]save [r]reset [q]quit .env  34 vars
+   [w]save [r]reset [q]quit                                       .env  34 vars
 === search
 ╭──────────────────╮╭──────────────────────────────────────────────────────────╮
 │ Files  (2)       ││ .env  (0/34 vars)                                        │
@@ -281,7 +281,7 @@
 │                  ││  VAR_13     value_13                                     │
 ╰──────────────────╯╰──────────────────────────────────────────────────────────╯
    Reorder 34 variables in .env (alphabetical)? This rewrites the file. (y/n)
- .env  34 vars
+                                                                  .env  34 vars
 === help
 
     lazyenv — TUI for managing .env files
@@ -497,7 +497,7 @@
 │  VAR_13      value_13               ││  VAR_13      (missing)            + │
 ╰─────────────────────────────────────╯╰─────────────────────────────────────╯
    [←/→]copy [e/E]edit L/R [n/N]next/prev diff [f]filter [Ctrl+S]secrets
- [w]save [r]reset [q]back │ 2≠ 31+ 1-
+   [w]save [r]reset [q]back │ 2≠ 31+ 1-
 === compare edit
 ╭─────────────────────────────────────╮╭─────────────────────────────────────╮
 │ .env                                ││ .env.local                          │

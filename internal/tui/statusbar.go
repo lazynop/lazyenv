@@ -81,30 +81,48 @@ func (m *StatusBarModel) View(theme Theme, keys KeyMap, mode AppMode, focus Focu
 		left = modeHints(theme, keys, mode, focus, diffStats)
 	}
 
-	// Right side: file info + read-only badge
+	// Right side: read-only badge + file info, the file name cut to what a
+	// row leaves beside the rest, so the side fits one row
+	textWidth := m.Width - theme.StatusBar.GetHorizontalFrameSize() - statusBarMarginWidth
 	right := ""
 	if m.ReadOnly {
 		right = theme.EmptyWarning.Render("[READ-ONLY]")
 	}
 	if fileName != "" {
-		fileInfo := theme.MutedItem.Render(fmt.Sprintf("%s  %d vars", flattenText(fileName), varCount))
 		if right != "" {
-			right = right + "  " + fileInfo
-		} else {
-			right = fileInfo
+			right += "  "
 		}
+		count := fmt.Sprintf("  %d vars", varCount)
+		name := fitName(fileName, textWidth-lipgloss.Width(right)-lipgloss.Width(count))
+		right += theme.MutedItem.Render(name + count)
 	}
-
-	// Layout
-	leftWidth := lipgloss.Width(left)
-	rightWidth := lipgloss.Width(right)
-	gap := max(m.Width-leftWidth-rightWidth-4, 1)
-
-	bar := fmt.Sprintf("  %s%s%s  ", left, strings.Repeat(" ", gap), right)
 
 	return theme.StatusBar.
 		Width(m.Width).
-		Render(bar)
+		Render(statusRows(left, right, textWidth))
+}
+
+// statusRows lays the status bar's left side out in rows of textWidth columns,
+// each after the bar's margin, wrapped on its own, and its right side whole
+// and right-aligned on the last row, or on a row of its own below when the
+// last row has no room left for it.
+func statusRows(left, right string, textWidth int) string {
+	rows := wrapRows(left, textWidth)
+	if right != "" {
+		last := rows[len(rows)-1]
+		gap := textWidth - lipgloss.Width(last) - lipgloss.Width(right)
+		if gap < 1 && last != "" {
+			last = ""
+			gap = textWidth - lipgloss.Width(right)
+			rows = append(rows, last)
+		}
+		rows[len(rows)-1] = last + strings.Repeat(" ", max(gap, 0)) + right
+	}
+	margin := strings.Repeat(" ", statusBarMarginWidth)
+	for i, row := range rows {
+		rows[i] = margin + row
+	}
+	return strings.Join(rows, "\n")
 }
 
 // messageStyle returns the style Message renders in, picked by its kind.

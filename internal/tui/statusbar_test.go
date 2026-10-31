@@ -1,9 +1,12 @@
 package tui
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"charm.land/bubbles/v2/key"
+	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/lazynop/lazyenv/internal/config"
@@ -137,6 +140,64 @@ func TestStatusBarReadOnlyBadge(t *testing.T) {
 	view := sb.View(theme, DefaultKeyMap(), ModeNormal, FocusFiles, ".env", 5)
 	assert.Contains(t, view, "READ-ONLY")
 	assert.Contains(t, view, ".env")
+}
+
+// TestStatusBarKeepsTheFileInfoWholeOnTheLastRow renders the bar over a file
+// at every width from the minimum up to one where it fits a row, with either
+// panel focused, read-only or not. Wherever the bar wraps, the file info (the
+// read-only badge, the file name and its variable count) stays whole on the
+// last row, right-aligned as on a single row, and every row keeps the bar's
+// left margin; the words read as on a single row, so no hint is lost.
+func TestStatusBarKeepsTheFileInfoWholeOnTheLastRow(t *testing.T) {
+	theme := BuildTheme(true, config.ColorConfig{})
+	for _, focus := range []Focus{FocusFiles, FocusVars} {
+		for _, readOnly := range []bool{false, true} {
+			info := ".env.test  16 vars"
+			if readOnly {
+				info = "[READ-ONLY]  " + info
+			}
+			render := func(width int) []string {
+				sb := NewStatusBarModel()
+				sb.Width = width
+				sb.ReadOnly = readOnly
+				view := sb.View(theme, DefaultKeyMap(), ModeNormal, focus, ".env.test", 16)
+				return strings.Split(stripAnsi(view), "\n")
+			}
+			words := strings.Fields(strings.Join(render(200), " "))
+			for width := MinTerminalWidth; width <= 140; width++ {
+				at := fmt.Sprintf("focus %d, read-only %v, width %d", focus, readOnly, width)
+				rows := render(width)
+				last := strings.TrimRight(rows[len(rows)-1], " ")
+				assert.True(t, strings.HasSuffix(last, info), "%s: the last row %q does not end with %q", at, last, info)
+				assert.Equal(t, width-1, lipgloss.Width(last), "%s: the file info is not right-aligned", at)
+				for _, row := range rows {
+					assert.True(t, strings.HasPrefix(row, "   "), "%s: row %q lost the left margin", at, row)
+					assert.LessOrEqual(t, lipgloss.Width(row), width, "%s: row %q is wider than the bar", at, row)
+				}
+				assert.Equal(t, words, strings.Fields(strings.Join(rows, " ")), "%s: the words differ from a single row's", at)
+			}
+		}
+	}
+}
+
+// TestStatusBarFitsALongFileNameIntoItsRow renders the bar over a file whose
+// name is wider than the bar: the name is cut to fill the last row, so the
+// read-only badge and the variable count still show beside it.
+func TestStatusBarFitsALongFileNameIntoItsRow(t *testing.T) {
+	theme := BuildTheme(true, config.ColorConfig{})
+	name := ".env." + strings.Repeat("x", 200)
+	for _, width := range []int{MinTerminalWidth, 80, 120} {
+		sb := NewStatusBarModel()
+		sb.Width = width
+		sb.ReadOnly = true
+		rows := strings.Split(stripAnsi(sb.View(theme, DefaultKeyMap(), ModeNormal, FocusFiles, name, 16)), "\n")
+		last := strings.TrimRight(rows[len(rows)-1], " ")
+		assert.Regexp(t, `^   \[READ-ONLY\]  \.env\.x+\.\.  16 vars$`, last, "width %d", width)
+		assert.Equal(t, width-1, lipgloss.Width(last), "width %d: the file info is not right-aligned", width)
+		for _, row := range rows[:len(rows)-1] {
+			assert.NotContains(t, row, ".env.", "width %d: the name starts on an earlier row", width)
+		}
+	}
 }
 
 func TestStatusBarNoReadOnlyBadge(t *testing.T) {
