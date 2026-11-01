@@ -83,7 +83,7 @@ func (m *StatusBarModel) View(theme Theme, keys KeyMap, mode AppMode, focus Focu
 
 	// Right side: read-only badge + file info, the file name cut to what a
 	// row leaves beside the rest, so the side fits one row
-	textWidth := m.Width - theme.StatusBar.GetHorizontalFrameSize() - statusBarMarginWidth
+	textWidth := barRoom(theme, m.Width)
 	right := ""
 	if m.ReadOnly {
 		right = theme.EmptyWarning.Render("[READ-ONLY]")
@@ -102,10 +102,15 @@ func (m *StatusBarModel) View(theme Theme, keys KeyMap, mode AppMode, focus Focu
 		Render(statusRows(left, right, textWidth))
 }
 
+// barRoom is the columns of text a bar width columns wide holds inside the
+// padding of Theme.StatusBar, which draws the status bar and the input bar.
+func barRoom(theme Theme, width int) int {
+	return width - theme.StatusBar.GetHorizontalFrameSize()
+}
+
 // statusRows lays the status bar's left side out in rows of textWidth columns,
-// each after the bar's margin, wrapped on its own, and its right side whole
-// and right-aligned on the last row, or on a row of its own below when the
-// last row has no room left for it.
+// wrapped on its own, and its right side whole and right-aligned on the last
+// row, or on a row of its own below when the last row has no room left for it.
 func statusRows(left, right string, textWidth int) string {
 	rows := wrapRows(left, textWidth)
 	if right != "" {
@@ -114,10 +119,6 @@ func statusRows(left, right string, textWidth int) string {
 			rows = append(rows, "")
 		}
 		rows[len(rows)-1] = padRight(rows[len(rows)-1], room) + right
-	}
-	margin := strings.Repeat(" ", statusBarMarginWidth)
-	for i, row := range rows {
-		rows[i] = margin + row
 	}
 	return strings.Join(rows, "\n")
 }

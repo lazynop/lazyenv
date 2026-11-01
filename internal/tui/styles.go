@@ -95,7 +95,7 @@ func BuildTheme(isDark bool, colors config.ColorConfig) Theme {
 			Padding(0, 1),
 		StatusBar: lipgloss.NewStyle().
 			Foreground(colorMuted).
-			Padding(0, 1),
+			Padding(0, 1, 0, 1+statusBarMarginWidth),
 		StatusBarKey: lipgloss.NewStyle().
 			Bold(true).
 			Foreground(colorPrimary),

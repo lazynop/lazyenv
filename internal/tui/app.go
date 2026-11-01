@@ -797,9 +797,9 @@ func (a App) withBottom(body, status string) string {
 func (a *App) inputBar() (string, *textinput.Model) {
 	switch a.mode {
 	case ModeSearching:
-		return "  / ", &a.searchInput
+		return "/ ", &a.searchInput
 	case ModeEditing, ModeEditingCompare:
-		return "  " + a.editor.label, &a.editor.input
+		return a.editor.label, &a.editor.input
 	case ModeMatrixEditing:
 		return a.matrixView.EditBar()
 	}
@@ -812,10 +812,10 @@ func (a *App) inputBar() (string, *textinput.Model) {
 // fileInputLabels labels the input bar of each file-operation mode, the modes
 // activeFileInput serves.
 var fileInputLabels = map[AppMode]string{
-	ModeCreateFile:    "  New file: ",
-	ModeDuplicateFile: "  Duplicate as: ",
-	ModeRenameFile:    "  Rename: ",
-	ModeTemplateFile:  "  Template as: ",
+	ModeCreateFile:    "New file: ",
+	ModeDuplicateFile: "Duplicate as: ",
+	ModeRenameFile:    "Rename: ",
+	ModeTemplateFile:  "Template as: ",
 }
 
 // minInputWidth is the fewest columns an input bar keeps for the value of its
@@ -826,7 +826,7 @@ const minInputWidth = 10
 // and the width left for in's value. The label is flattened, since it can name
 // a file, and cut when it would leave in fewer than minInputWidth columns.
 func (a App) layoutInputBar(label string, in *textinput.Model) (string, int) {
-	room := a.inputBarRoom()
+	room := barRoom(a.theme, a.width)
 	inputChrome := lipgloss.Width(in.Prompt) + inputCursorWidth
 	label = truncate(flattenText(label), max(room-inputChrome-minInputWidth, 0))
 	return label, max(room-lipgloss.Width(label)-inputChrome, 1)
@@ -863,12 +863,7 @@ func (a App) inputBarView() string {
 	// textinput measures runes with go-runewidth, which counts some emoji
 	// (those with a variation selector) one column narrower than drawn: cut
 	// what overflows so the bar keeps its one row.
-	return a.theme.StatusBar.Width(a.width).Render(ansi.Truncate(label+in.View(), a.inputBarRoom(), ""))
-}
-
-// inputBarRoom is the columns inside an input bar as wide as the terminal.
-func (a App) inputBarRoom() int {
-	return a.width - a.theme.StatusBar.GetHorizontalFrameSize()
+	return a.theme.StatusBar.Width(a.width).Render(ansi.Truncate(label+in.View(), barRoom(a.theme, a.width), ""))
 }
 
 func (a *App) updateLayout() {

@@ -31,8 +31,9 @@ const (
 	// statusBarHeight is the status bar row at the bottom of the screen.
 	statusBarHeight = 1
 
-	// statusBarMarginWidth is the blank columns the status bar leaves inside
-	// its padding before each row of text.
+	// statusBarMarginWidth is the blank columns Theme.StatusBar, the style of
+	// the status bar and the input bar, adds to its left padding, so every
+	// row of either bar starts past them.
 	statusBarMarginWidth = 2
 
 	// bottomChromeHeight is the rows reserved below the body of the normal,
