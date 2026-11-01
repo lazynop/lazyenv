@@ -33,10 +33,8 @@ type MatrixModel struct {
 	Width  int
 	Height int
 
-	editing  bool
-	editKey  string // key being added
-	editFile int    // file index target
-	editor   textinput.Model
+	edit   MatrixCell // the missing cell being filled; File is nil with no edit open
+	editor textinput.Model
 }
 
 // NewMatrixModel creates a matrix model from the loaded files.
@@ -202,9 +200,7 @@ func (m *MatrixModel) StartEdit() tea.Cmd {
 	if !ok || cell.Present {
 		return nil
 	}
-	m.editing = true
-	m.editKey = cell.Key
-	m.editFile = m.cols.Cursor
+	m.edit = cell
 	m.editor.SetValue("")
 	m.editor.Placeholder = "value"
 	return m.editor.Focus()
@@ -212,18 +208,18 @@ func (m *MatrixModel) StartEdit() tea.Cmd {
 
 // EditBar returns the label and the text input of the bar that adds a value.
 func (m *MatrixModel) EditBar() (string, *textinput.Model) {
-	return fmt.Sprintf("  Add %s to %s: ", m.editKey, m.files[m.editFile].Name), &m.editor
+	return fmt.Sprintf("  Add %s to %s: ", m.edit.Key, m.edit.File.Name), &m.editor
 }
 
 // ConfirmEdit adds the variable to the target file and returns that file, or
 // nil when no edit is open.
 func (m *MatrixModel) ConfirmEdit() *model.EnvFile {
-	if !m.editing {
+	f := m.edit.File
+	if f == nil {
 		return nil
 	}
-	f := m.files[m.editFile]
-	f.AddVar(m.editKey, m.editor.Value())
-	m.editing = false
+	f.AddVar(m.edit.Key, m.editor.Value())
+	m.edit = MatrixCell{}
 	m.recompute()
 	return f
 }
@@ -245,7 +241,7 @@ func (m *MatrixModel) DeleteAtCursor() (string, *model.EnvFile) {
 
 // CancelEdit cancels inline editing.
 func (m *MatrixModel) CancelEdit() {
-	m.editing = false
+	m.edit = MatrixCell{}
 }
 
 func (m *MatrixModel) renderHeaderRow(endCol int, theme Theme) string {

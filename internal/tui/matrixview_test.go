@@ -177,9 +177,8 @@ func TestMatrixStartEditMissing(t *testing.T) {
 
 	cmd := m.StartEdit()
 
-	assert.True(t, m.editing, "editing should be true")
-	assert.Equal(t, "B", m.editKey)
-	assert.Equal(t, 1, m.editFile)
+	assert.Equal(t, "B", m.edit.Key)
+	assert.Same(t, f2, m.edit.File, "the edit should fill f2")
 	assert.NotNil(t, cmd, "StartEdit should return a focus command")
 }
 
@@ -198,7 +197,7 @@ func TestMatrixStartEditPresent(t *testing.T) {
 
 	_ = m.StartEdit()
 
-	assert.False(t, m.editing, "editing should NOT be set for present cell")
+	assert.Nil(t, m.edit.File, "no edit should open on a present cell")
 }
 
 func TestMatrixConfirmEdit(t *testing.T) {
@@ -213,14 +212,14 @@ func TestMatrixConfirmEdit(t *testing.T) {
 	m.MoveDown()
 	m.MoveRight()
 	m.StartEdit()
-	require.True(t, m.editing)
+	require.NotNil(t, m.edit.File)
 
 	// Simulate typing a value
 	m.editor.SetValue("new_value")
 
 	m.ConfirmEdit()
 
-	assert.False(t, m.editing, "editing should be false after confirm")
+	assert.Nil(t, m.edit.File, "the edit should close after confirm")
 
 	// The variable should have been added to f2
 	found := f2.VarByKey("B")
@@ -249,13 +248,13 @@ func TestMatrixCancelEdit(t *testing.T) {
 	m.MoveDown()
 	m.MoveRight()
 	m.StartEdit()
-	require.True(t, m.editing)
+	require.NotNil(t, m.edit.File)
 
 	origVarCount := len(f2.Vars)
 
 	m.CancelEdit()
 
-	assert.False(t, m.editing, "editing should be false after cancel")
+	assert.Nil(t, m.edit.File, "the edit should close after cancel")
 	assert.Equal(t, origVarCount, len(f2.Vars), "f2 should not have new vars after cancel")
 }
 
