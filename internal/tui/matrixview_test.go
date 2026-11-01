@@ -201,10 +201,12 @@ func TestMatrixStartEditPresent(t *testing.T) {
 }
 
 func TestMatrixConfirmEdit(t *testing.T) {
+	// f2, the only file missing B, is neither the first column nor the last
 	f1 := makeTestFile(".env", "A", "B")
 	f2 := makeTestFile(".env.local", "A")
+	f3 := makeTestFile(".env.prod", "A", "B")
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
+	m := NewMatrixModel([]*model.EnvFile{f1, f2, f3}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
@@ -217,7 +219,7 @@ func TestMatrixConfirmEdit(t *testing.T) {
 	// Simulate typing a value
 	m.editor.SetValue("new_value")
 
-	m.ConfirmEdit()
+	assert.Same(t, f2, m.ConfirmEdit(), "ConfirmEdit should return the file it added to")
 
 	assert.Nil(t, m.edit.File, "the edit should close after confirm")
 
