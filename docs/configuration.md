@@ -53,7 +53,7 @@ mouse-scroll-lines = 1
 
 | Key                        | Default | Description                                                                                 |
 | -------------------------- | ------- | ------------------------------------------------------------------------------------------- |
-| `var-list-max-key-width`   | `30`    | Maximum width for variable keys in the main panel. Longer keys are truncated with ellipsis. |
+| `var-list-max-key-width`   | `30`    | Maximum width for variable keys in the main panel. Longer keys are cut, ending in `..`.     |
 | `var-list-min-value-width` | `10`    | Minimum width for variable values, preventing them from becoming unreadably narrow.         |
 | `var-list-padding`         | `12`    | Horizontal space reserved for borders, markers, and spacing in variable list rows. Minimum `8`. |
 | `diff-max-key-width`       | `25`    | Maximum width for keys in the compare/diff view.                                            |
