@@ -199,6 +199,18 @@ func statusBarRows(theme Theme, width int, readOnly bool, focus Focus, fileName 
 	return strings.Split(stripAnsi(sb.View(theme, DefaultKeyMap(), ModeNormal, focus, fileName, 16)), "\n")
 }
 
+// TestStatusRowsPartsTheSidesByABlankColumn lays the right side out on the
+// left side's last row only with a blank column between them, and on a row of
+// its own otherwise; beside an empty left side it needs none, so a right side
+// as wide as the bar's text takes the one row, and one wider than the bar
+// stays whole on its row.
+func TestStatusRowsPartsTheSidesByABlankColumn(t *testing.T) {
+	assert.Equal(t, "x .env  4 vars", statusRows("x", ".env  4 vars", 14), "one column between the sides")
+	assert.Equal(t, "x\n .env  4 vars", statusRows("x", ".env  4 vars", 13), "no column between the sides")
+	assert.Equal(t, ".env  4 vars", statusRows("", ".env  4 vars", 12), "an empty left side")
+	assert.Equal(t, "x\n.env  4 vars", statusRows("x", ".env  4 vars", 5), "a right side wider than the bar")
+}
+
 func TestStatusBarNoReadOnlyBadge(t *testing.T) {
 	sb := NewStatusBarModel()
 	sb.Width = 120
