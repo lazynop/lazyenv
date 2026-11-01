@@ -140,6 +140,7 @@ func NewApp(cfg config.Config, startup StartupMessages) App {
 		varList.SortAlpha = true
 	}
 	varList.Grouping = cfg.Group
+	varList.ShowSecrets = cfg.ShowAll
 
 	sb := NewStatusBarModel()
 	sb.ReadOnly = cfg.ReadOnly
@@ -251,7 +252,6 @@ func (a App) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if len(msg.Files) > 0 {
 			a.varList.SetFile(msg.Files[0])
-			a.varList.SetShowSecrets(a.config.ShowAll)
 		}
 		return a, nil
 

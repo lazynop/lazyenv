@@ -90,6 +90,25 @@ func TestUpdateFilesLoadedMsgEmpty(t *testing.T) {
 	assert.Empty(t, app.fileList.Files)
 }
 
+// TestShowSecretsAppliesWhateverTheStartupScanFinds loads a directory holding
+// a file, then an empty one, with show-secrets on and off: the var list's
+// ShowSecrets, which its masking reads, follows the option, also when the
+// scan finds no file.
+func TestShowSecretsAppliesWhateverTheStartupScanFinds(t *testing.T) {
+	for _, fixture := range []map[string]string{{".env": "API_KEY=s3cret\n"}, {}} {
+		for _, show := range []bool{true, false} {
+			t.Run(fmt.Sprintf("%d files, show-secrets %v", len(fixture), show), func(t *testing.T) {
+				cfg := config.DefaultConfig()
+				cfg.ShowAll = show
+
+				app := loadFixtureApp(t, cfg, fixture, 120, 40)
+
+				assert.Equal(t, show, app.varList.ShowSecrets)
+			})
+		}
+	}
+}
+
 func TestUpdateClearMessageMsg(t *testing.T) {
 	app := newTestApp(nil)
 	app.statusBar.SetMessage("temporary")
