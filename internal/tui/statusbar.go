@@ -83,7 +83,7 @@ func (m *StatusBarModel) View(theme Theme, keys KeyMap, mode AppMode, focus Focu
 
 	// Right side: read-only badge + file info, the file name cut to what a
 	// row leaves beside the rest, so the side fits one row
-	textWidth := barRoom(theme.StatusBar, m.Width)
+	textWidth := theme.barRoom(m.Width)
 	right := ""
 	if m.ReadOnly {
 		right = theme.EmptyWarning.Render("[READ-ONLY]")
@@ -100,13 +100,6 @@ func (m *StatusBarModel) View(theme Theme, keys KeyMap, mode AppMode, focus Focu
 	return theme.StatusBar.
 		Width(m.Width).
 		Render(statusRows(left, right, textWidth))
-}
-
-// barRoom is the columns of text a bar width columns wide holds inside the
-// padding of bar, its style: Theme.StatusBar, which draws the status bar and
-// the input bar.
-func barRoom(bar lipgloss.Style, width int) int {
-	return width - bar.GetHorizontalFrameSize()
 }
 
 // statusRows lays the status bar's left side out in rows of textWidth columns,
