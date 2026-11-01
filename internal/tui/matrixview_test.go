@@ -156,29 +156,33 @@ func TestMatrixToggleSort(t *testing.T) {
 	assert.Equal(t, "A", m.entries[0].Key)
 }
 
-func TestMatrixStartEditMissing(t *testing.T) {
-	// f1 has A+B, f2 has only A => B is missing in f2
-	f1 := makeTestFile(".env", "A", "B")
-	f2 := makeTestFile(".env.local", "A")
-
-	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
+// newMissingCellMatrix builds a matrix over .env and .env.prod, holding A, B
+// and C, and .env.local between them, holding A and B, with the cursor on the
+// cell C misses in .env.local: row 2, column 1. The file there is neither the
+// first nor the last, nor the one at the row's index; newMissingCellMatrix
+// returns it with the matrix.
+func newMissingCellMatrix() (MatrixModel, *model.EnvFile) {
+	missing := makeTestFile(".env.local", "A", "B")
+	files := []*model.EnvFile{makeTestFile(".env", "A", "B", "C"), missing, makeTestFile(".env.prod", "A", "B", "C")}
+	m := NewMatrixModel(files, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
+	m.SetCursor(2, 1)
+	return m, missing
+}
 
-	// entries sorted alpha: A, B
-	// Navigate to row=1 (B), col=1 (f2) where B is missing
-	m.MoveDown()  // rows.Cursor = 1 (B)
-	m.MoveRight() // cols.Cursor = 1 (f2)
+func TestMatrixStartEditMissing(t *testing.T) {
+	m, missing := newMissingCellMatrix()
 
 	cell, ok := m.CursorCell()
 	require.True(t, ok)
-	require.Equal(t, "B", cell.Key)
-	require.False(t, cell.Present, "B should be missing in f2")
+	require.Equal(t, "C", cell.Key)
+	require.False(t, cell.Present, "C should be missing in .env.local")
 
 	cmd := m.StartEdit()
 
-	assert.Equal(t, "B", m.edit.Key)
-	assert.Same(t, f2, m.edit.File, "the edit should fill f2")
+	assert.Equal(t, "C", m.edit.Key)
+	assert.Same(t, missing, m.edit.File, "the edit should fill .env.local")
 	assert.NotNil(t, cmd, "StartEdit should return a focus command")
 }
 
@@ -201,63 +205,39 @@ func TestMatrixStartEditPresent(t *testing.T) {
 }
 
 func TestMatrixConfirmEdit(t *testing.T) {
-	// f2, the only file missing B, is neither the first column nor the last
-	f1 := makeTestFile(".env", "A", "B")
-	f2 := makeTestFile(".env.local", "A")
-	f3 := makeTestFile(".env.prod", "A", "B")
-
-	m := NewMatrixModel([]*model.EnvFile{f1, f2, f3}, config.DefaultConfig().Layout)
-	m.Width = 120
-	m.Height = 40
-
-	// Navigate to missing cell: row=1 (B), col=1 (f2)
-	m.MoveDown()
-	m.MoveRight()
+	m, missing := newMissingCellMatrix()
 	m.StartEdit()
 	require.NotNil(t, m.edit.File)
 
 	// Simulate typing a value
 	m.editor.SetValue("new_value")
 
-	assert.Same(t, f2, m.ConfirmEdit(), "ConfirmEdit should return the file it added to")
+	assert.Same(t, missing, m.ConfirmEdit(), "ConfirmEdit should return the file it added to")
 
 	assert.Nil(t, m.edit.File, "the edit should close after confirm")
 
-	// The variable should have been added to f2
-	found := f2.VarByKey("B")
-	require.NotNil(t, found, "B should exist in f2 after confirm")
+	// The variable should have been added to .env.local
+	found := missing.VarByKey("C")
+	require.NotNil(t, found, "C should exist in .env.local after confirm")
 	assert.Equal(t, "new_value", found.Value)
 
-	// Matrix should be recomputed: B should now be present everywhere
-	for _, e := range m.entries {
-		if e.Key == "B" {
-			for fi, p := range e.Present {
-				assert.True(t, p, "B should be present in file %d after confirm", fi)
-			}
-		}
-	}
+	// Matrix should be recomputed: C should now be present everywhere
+	require.Len(t, m.entries, 3)
+	require.Equal(t, "C", m.entries[2].Key)
+	assert.Equal(t, []bool{true, true, true}, m.entries[2].Present, "C should be present in every file after confirm")
 }
 
 func TestMatrixCancelEdit(t *testing.T) {
-	f1 := makeTestFile(".env", "A", "B")
-	f2 := makeTestFile(".env.local", "A")
-
-	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
-	m.Width = 120
-	m.Height = 40
-
-	// Navigate to missing cell and start editing
-	m.MoveDown()
-	m.MoveRight()
+	m, missing := newMissingCellMatrix()
 	m.StartEdit()
 	require.NotNil(t, m.edit.File)
 
-	origVarCount := len(f2.Vars)
+	origVarCount := len(missing.Vars)
 
 	m.CancelEdit()
 
 	assert.Nil(t, m.edit.File, "the edit should close after cancel")
-	assert.Equal(t, origVarCount, len(f2.Vars), "f2 should not have new vars after cancel")
+	assert.Equal(t, origVarCount, len(missing.Vars), ".env.local should not have new vars after cancel")
 }
 
 func TestMatrixViewContainsCheckAndCross(t *testing.T) {
