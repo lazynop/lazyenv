@@ -162,18 +162,10 @@ func TestDiffViewSetCursorEmpty(t *testing.T) {
 
 // --- MatrixModel.SetCursor ---
 
-// newFiveKeyMatrix builds a matrix of five keys, all in a, over the files a, b
-// and c, width columns wide and 20 rows high.
-func newFiveKeyMatrix(width int) MatrixModel {
-	files := []*model.EnvFile{makeTestFile("a", "K1", "K2", "K3", "K4", "K5"), makeTestFile("b"), makeTestFile("c")}
-	m := NewMatrixModel(files, config.DefaultConfig().Layout)
-	m.Width = width
-	m.Height = 20
-	return m
-}
-
 func TestMatrixSetCursor(t *testing.T) {
-	m := newFiveKeyMatrix(80)
+	m := NewMatrixModel(fiveKeyFiles(), config.DefaultConfig().Layout)
+	m.Width = 80
+	m.Height = 20
 
 	m.SetCursor(3, 1)
 	assert.Equal(t, 3, m.rows.Cursor, "rows.Cursor should be set to 3")
@@ -554,12 +546,16 @@ func TestMouseClickCompareSelectMode_IgnoresTheVarPanel(t *testing.T) {
 
 // --- Matrix mode: click sets a cell, wheel scrolls rows ---
 
+// fiveKeyFiles returns a, holding the keys K1 to K5, and the empty b and c.
+func fiveKeyFiles() []*model.EnvFile {
+	return []*model.EnvFile{makeTestFile("a", "K1", "K2", "K3", "K4", "K5"), makeTestFile("b"), makeTestFile("c")}
+}
+
+// newMatrixTestApp opens the matrix over fiveKeyFiles in a 120x40 terminal.
 func newMatrixTestApp(t *testing.T) App {
 	t.Helper()
-	app := newTestApp(nil)
-	app = resize(app, 120, 40)
-	app.mode = ModeMatrix
-	app.matrixView = newFiveKeyMatrix(120)
+	app := press(resize(newTestApp(fiveKeyFiles()), 120, 40), "m")
+	require.Equal(t, ModeMatrix, app.mode)
 	return app
 }
 
