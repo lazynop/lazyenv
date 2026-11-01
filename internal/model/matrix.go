@@ -13,44 +13,27 @@ const (
 // MatrixEntry represents one row in the completeness matrix.
 type MatrixEntry struct {
 	Key     string
-	Present []bool   // one element per file, in order
-	Values  []string // value in each file (empty string if absent)
+	Present []bool // one element per file, in order
 }
 
 // ComputeMatrix builds a completeness matrix from the given files.
 // Returns entries sorted alphabetically.
-// For duplicate keys within a file, the last occurrence wins (shell semantics).
 func ComputeMatrix(files []*EnvFile) []MatrixEntry {
-	// Collect unique keys and last-occurrence values per file.
-	type fileVal struct {
-		value   string
-		present bool
-	}
-	keyData := make(map[string][]fileVal)
-
+	present := make(map[string][]bool)
 	for fi, f := range files {
 		for _, v := range f.Vars {
-			fv, ok := keyData[v.Key]
+			p, ok := present[v.Key]
 			if !ok {
-				fv = make([]fileVal, len(files))
-				keyData[v.Key] = fv
+				p = make([]bool, len(files))
+				present[v.Key] = p
 			}
-			fv[fi] = fileVal{value: v.Value, present: true}
+			p[fi] = true
 		}
 	}
 
-	entries := make([]MatrixEntry, 0, len(keyData))
-	for k, fvs := range keyData {
-		e := MatrixEntry{
-			Key:     k,
-			Present: make([]bool, len(files)),
-			Values:  make([]string, len(files)),
-		}
-		for i, fv := range fvs {
-			e.Present[i] = fv.present
-			e.Values[i] = fv.value
-		}
-		entries = append(entries, e)
+	entries := make([]MatrixEntry, 0, len(present))
+	for k, p := range present {
+		entries = append(entries, MatrixEntry{Key: k, Present: p})
 	}
 
 	SortEntries(entries, SortAlpha)

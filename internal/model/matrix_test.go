@@ -24,7 +24,6 @@ func TestComputeMatrixSingleFile(t *testing.T) {
 	assert.Equal(t, "A", entries[0].Key)
 	assert.Equal(t, "B", entries[1].Key)
 	assert.Equal(t, []bool{true}, entries[0].Present)
-	assert.Equal(t, []string{"1"}, entries[0].Values)
 }
 
 func TestComputeMatrixMultipleFiles(t *testing.T) {
@@ -44,18 +43,16 @@ func TestComputeMatrixMultipleFiles(t *testing.T) {
 	// alphabetical: API_KEY, DB_HOST, REDIS_URL
 	assert.Equal(t, "API_KEY", entries[0].Key)
 	assert.Equal(t, []bool{true, false}, entries[0].Present)
-	assert.Equal(t, []string{"abc", ""}, entries[0].Values)
 
 	assert.Equal(t, "DB_HOST", entries[1].Key)
 	assert.Equal(t, []bool{true, true}, entries[1].Present)
 
 	assert.Equal(t, "REDIS_URL", entries[2].Key)
 	assert.Equal(t, []bool{false, true}, entries[2].Present)
-	assert.Equal(t, []string{"", "redis://x"}, entries[2].Values)
 }
 
 func TestComputeMatrixDuplicateKeys(t *testing.T) {
-	// When a file has duplicate keys, last value wins (shell semantics)
+	// A key a file holds twice is one row, present in that file
 	f := newTestFile(
 		EnvVar{Key: "A", Value: "first"},
 		EnvVar{Key: "A", Value: "second"},
@@ -64,7 +61,7 @@ func TestComputeMatrixDuplicateKeys(t *testing.T) {
 	entries := ComputeMatrix([]*EnvFile{f})
 	require.Len(t, entries, 1)
 	assert.Equal(t, "A", entries[0].Key)
-	assert.Equal(t, []string{"second"}, entries[0].Values)
+	assert.Equal(t, []bool{true}, entries[0].Present)
 }
 
 func TestSortByCompleteness(t *testing.T) {
