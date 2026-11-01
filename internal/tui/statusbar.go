@@ -111,7 +111,7 @@ func statusRows(left, right string, textWidth int) string {
 		room := textWidth - lipgloss.Width(right)
 		last := rows[len(rows)-1]
 		gap := room - lipgloss.Width(last)
-		if gap < 1 && last != "" {
+		if last != "" && gap <= 0 {
 			rows = append(rows, "")
 			last, gap = "", room
 		}
