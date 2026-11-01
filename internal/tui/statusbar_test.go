@@ -156,17 +156,10 @@ func TestStatusBarKeepsTheFileInfoWholeOnTheLastRow(t *testing.T) {
 			if readOnly {
 				info = "[READ-ONLY]  " + info
 			}
-			render := func(width int) []string {
-				sb := NewStatusBarModel()
-				sb.Width = width
-				sb.ReadOnly = readOnly
-				view := sb.View(theme, DefaultKeyMap(), ModeNormal, focus, ".env.test", 16)
-				return strings.Split(stripAnsi(view), "\n")
-			}
-			words := strings.Fields(strings.Join(render(200), " "))
+			words := strings.Fields(strings.Join(statusBarRows(theme, 200, readOnly, focus, ".env.test"), " "))
 			for width := MinTerminalWidth; width <= 140; width++ {
 				at := fmt.Sprintf("focus %d, read-only %v, width %d", focus, readOnly, width)
-				rows := render(width)
+				rows := statusBarRows(theme, width, readOnly, focus, ".env.test")
 				last := strings.TrimRight(rows[len(rows)-1], " ")
 				assert.True(t, strings.HasSuffix(last, info), "%s: the last row %q does not end with %q", at, last, info)
 				assert.Equal(t, width-1, lipgloss.Width(last), "%s: the file info is not right-aligned", at)
@@ -187,10 +180,7 @@ func TestStatusBarFitsALongFileNameIntoItsRow(t *testing.T) {
 	theme := BuildTheme(true, config.ColorConfig{})
 	name := ".env." + strings.Repeat("x", 200)
 	for _, width := range []int{MinTerminalWidth, 80, 120} {
-		sb := NewStatusBarModel()
-		sb.Width = width
-		sb.ReadOnly = true
-		rows := strings.Split(stripAnsi(sb.View(theme, DefaultKeyMap(), ModeNormal, FocusFiles, name, 16)), "\n")
+		rows := statusBarRows(theme, width, true, FocusFiles, name)
 		last := strings.TrimRight(rows[len(rows)-1], " ")
 		assert.Regexp(t, `^   \[READ-ONLY\]  \.env\.x+\.\.  16 vars$`, last, "width %d", width)
 		assert.Equal(t, width-1, lipgloss.Width(last), "width %d: the file info is not right-aligned", width)
@@ -198,6 +188,15 @@ func TestStatusBarFitsALongFileNameIntoItsRow(t *testing.T) {
 			assert.NotContains(t, row, ".env.", "width %d: the name starts on an earlier row", width)
 		}
 	}
+}
+
+// statusBarRows renders the normal mode's bar, width columns wide, over the
+// file fileName holding 16 variables, and returns its rows as plain text.
+func statusBarRows(theme Theme, width int, readOnly bool, focus Focus, fileName string) []string {
+	sb := NewStatusBarModel()
+	sb.Width = width
+	sb.ReadOnly = readOnly
+	return strings.Split(stripAnsi(sb.View(theme, DefaultKeyMap(), ModeNormal, focus, fileName, 16)), "\n")
 }
 
 func TestStatusBarNoReadOnlyBadge(t *testing.T) {
