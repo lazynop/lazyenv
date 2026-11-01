@@ -156,14 +156,16 @@ func TestMatrixToggleSort(t *testing.T) {
 	assert.Equal(t, "A", m.entries[0].Key)
 }
 
-// newMissingCellMatrix builds a matrix over .env and .env.prod, holding A, B
-// and C, and .env.local between them, holding A and B, with the cursor on the
-// cell C misses in .env.local: row 2, column 1. The file there is neither the
-// first nor the last, nor the one at the row's index; newMissingCellMatrix
-// returns it with the matrix.
+// newMissingCellMatrix builds a matrix over .env, .env.local and .env.prod,
+// which all hold A, B and D while only .env.prod holds C, and puts the cursor
+// on the gap C leaves in .env.local: row 2, column 1. The cursor's file,
+// .env.local, differs from every file a wrong pick would read: the first file,
+// which is also the first one lacking C, and the last file, which is also the
+// one at the row's index; the cursor's row is not the last.
+// newMissingCellMatrix returns .env.local with the matrix.
 func newMissingCellMatrix() (MatrixModel, *model.EnvFile) {
-	missing := makeTestFile(".env.local", "A", "B")
-	files := []*model.EnvFile{makeTestFile(".env", "A", "B", "C"), missing, makeTestFile(".env.prod", "A", "B", "C")}
+	missing := makeTestFile(".env.local", "A", "B", "D")
+	files := []*model.EnvFile{makeTestFile(".env", "A", "B", "D"), missing, makeTestFile(".env.prod", "A", "B", "C", "D")}
 	m := NewMatrixModel(files, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
@@ -221,10 +223,10 @@ func TestMatrixConfirmEdit(t *testing.T) {
 	require.NotNil(t, found, "C should exist in .env.local after confirm")
 	assert.Equal(t, "new_value", found.Value)
 
-	// Matrix should be recomputed: C should now be present everywhere
-	require.Len(t, m.entries, 3)
+	// Matrix should be recomputed: C should now be present in .env.local too
+	require.Len(t, m.entries, 4)
 	require.Equal(t, "C", m.entries[2].Key)
-	assert.Equal(t, []bool{true, true, true}, m.entries[2].Present, "C should be present in every file after confirm")
+	assert.Equal(t, []bool{false, true, true}, m.entries[2].Present, "C should be present in .env.local after confirm")
 }
 
 func TestMatrixCancelEdit(t *testing.T) {
