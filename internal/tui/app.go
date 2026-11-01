@@ -781,13 +781,13 @@ func (a App) screen() string {
 // below its body: status is cut to the rows the input bar leaves.
 func (a App) withBottom(body, status string) string {
 	parts := []string{body}
-	statusRows := bottomChromeHeight
+	maxStatusRows := bottomChromeHeight
 	if bar := a.inputBarView(); bar != "" {
 		parts = append(parts, bar)
-		statusRows -= lipgloss.Height(bar)
+		maxStatusRows -= lipgloss.Height(bar)
 	}
-	if rows := strings.Split(status, "\n"); len(rows) > statusRows {
-		status = strings.Join(rows[:statusRows], "\n")
+	if rows := strings.Split(status, "\n"); len(rows) > maxStatusRows {
+		status = strings.Join(rows[:maxStatusRows], "\n")
 	}
 	return lipgloss.JoinVertical(lipgloss.Left, append(parts, status)...)
 }
