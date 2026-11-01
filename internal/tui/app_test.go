@@ -424,10 +424,21 @@ func TestFileListWidthBeyondTheTerminalLeavesTheVarListItsMinimum(t *testing.T) 
 	assert.LessOrEqual(t, lipgloss.Width(app.View().Content), 80, "the screen should fit the terminal")
 }
 
+// TestFileListWidthBelowMinimumIsRaised sizes the file list on a terminal 120
+// wide, where auto gives 30: a width below the minimum, a negative one from
+// --file-list-width included, is raised to 20, and only 0 means auto.
 func TestFileListWidthBelowMinimumIsRaised(t *testing.T) {
-	app := newTestApp(nil)
-	app.config.Layout.FileListWidth = 5
+	for _, tc := range []struct{ width, want int }{
+		{0, 30},
+		{5, 20},
+		{-5, 20},
+	} {
+		t.Run(fmt.Sprint(tc.width), func(t *testing.T) {
+			app := newTestApp(nil)
+			app.config.Layout.FileListWidth = tc.width
 
-	app = resize(app, 120, 40)
-	assert.Equal(t, 20, app.fileList.Width)
+			app = resize(app, 120, 40)
+			assert.Equal(t, tc.want, app.fileList.Width)
+		})
+	}
 }

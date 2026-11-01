@@ -868,8 +868,10 @@ func (a App) inputBarView() string {
 }
 
 func (a *App) updateLayout() {
+	// 0 means auto. Any other width goes through the clamp below, a negative
+	// one too: --file-list-width passes it on as is, unlike the config file.
 	a.fileWidth = a.width / 4
-	if w := a.config.Layout.FileListWidth; w > 0 {
+	if w := a.config.Layout.FileListWidth; w != 0 {
 		a.fileWidth = w
 	}
 	// The file list leaves the variables panel its minimum, then keeps its
