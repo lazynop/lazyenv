@@ -188,22 +188,36 @@ func TestMatrixStartEditMissing(t *testing.T) {
 	assert.NotNil(t, cmd, "StartEdit should return a focus command")
 }
 
+// TestMatrixStartEditPresent puts the cursor on a present cell of a complete
+// row, A in .env.local, and of a row with a gap, B in .env: neither opens an
+// edit. Both sit off the diagonal, so in B's row the file at the row's index,
+// .env.local, lacks the key the cursor's file holds.
 func TestMatrixStartEditPresent(t *testing.T) {
-	// f1 has A+B, f2 has A => A is present in both
-	f1 := makeTestFile(".env", "A", "B")
-	f2 := makeTestFile(".env.local", "A")
+	for _, tc := range []struct {
+		name     string
+		row, col int
+		key      string
+	}{
+		{"complete row", 0, 1, "A"},
+		{"row with a gap", 1, 0, "B"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			m := NewMatrixModel([]*model.EnvFile{makeTestFile(".env", "A", "B"), makeTestFile(".env.local", "A")}, config.DefaultConfig().Layout)
+			m.Width = 120
+			m.Height = 40
+			m.SetCursor(tc.row, tc.col)
 
-	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
-	m.Width = 120
-	m.Height = 40
+			cell, ok := m.CursorCell()
+			require.True(t, ok)
+			require.Equal(t, tc.key, cell.Key)
+			require.True(t, cell.Present)
 
-	// cursor at (0, 0) = A in f1, which is present
-	require.Equal(t, "A", m.entries[0].Key)
-	require.True(t, m.entries[0].Present[0], "A should be present in f1")
+			cmd := m.StartEdit()
 
-	_ = m.StartEdit()
-
-	assert.Nil(t, m.edit.File, "no edit should open on a present cell")
+			assert.Nil(t, m.edit.File, "no edit should open on a present cell")
+			assert.Nil(t, cmd, "StartEdit should return no focus command")
+		})
+	}
 }
 
 func TestMatrixConfirmEdit(t *testing.T) {
