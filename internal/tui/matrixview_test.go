@@ -150,19 +150,17 @@ func TestMatrixToggleSort(t *testing.T) {
 
 	// Default: SortAlpha => A, B, C
 	assert.Equal(t, model.SortAlpha, m.sortMode)
-	assert.Equal(t, "A", m.entries[0].Key)
-	assert.Equal(t, "B", m.entries[1].Key)
-	assert.Equal(t, "C", m.entries[2].Key)
+	assert.Equal(t, []string{"A", "B", "C"}, matrixKeys(m.entries))
 
-	// Toggle to SortCompleteness: B (1 present) should come first, then A (2), C (2)
+	// Toggle to SortCompleteness: B (1 present) first, then A and C (2) alphabetically
 	m.ToggleSort()
 	assert.Equal(t, model.SortCompleteness, m.sortMode)
-	assert.Equal(t, "B", m.entries[0].Key, "B has fewest present, should be first")
+	assert.Equal(t, []string{"B", "A", "C"}, matrixKeys(m.entries), "B has fewest present, should be first")
 
 	// Toggle back to SortAlpha
 	m.ToggleSort()
 	assert.Equal(t, model.SortAlpha, m.sortMode)
-	assert.Equal(t, "A", m.entries[0].Key)
+	assert.Equal(t, []string{"A", "B", "C"}, matrixKeys(m.entries))
 }
 
 // newMissingCellMatrix builds a matrix over .env, .env.local and .env.prod,
