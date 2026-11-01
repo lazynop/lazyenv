@@ -173,6 +173,70 @@ func TestDeleteVarOutOfBounds(t *testing.T) {
 	assert.False(t, ef.Modified)
 }
 
+// TestDeleteKeyRemovesEveryOccurrence deletes A, held twice with different
+// values, on the first and the third of four lines: both A go, with their
+// lines, the one in effect listed first among the deleted, and the other
+// variables keep their lines in order.
+func TestDeleteKeyRemovesEveryOccurrence(t *testing.T) {
+	ef := newTestFile(
+		EnvVar{Key: "A", Value: "1"},
+		EnvVar{Key: "B", Value: "2"},
+		EnvVar{Key: "A", Value: "3"},
+		EnvVar{Key: "C", Value: "4"},
+	)
+
+	ef.DeleteKey("A")
+
+	assert.Len(t, ef.Vars, 2, "only B and C should be left")
+	assert.Equal(t, []string{"B=2", "C=4"}, lineVars(ef), "the A lines should go, the others stay in order")
+	assert.Equal(t, []string{"A=3", "A=1"}, deletedVars(ef), "the A in effect should be listed first")
+	assert.True(t, ef.Modified)
+}
+
+// TestDeleteKeyWithoutTheKeyLeavesTheFile deletes a key the file does not
+// hold: the file stays as it was, unmodified.
+func TestDeleteKeyWithoutTheKeyLeavesTheFile(t *testing.T) {
+	ef := newTestFile(EnvVar{Key: "A", Value: "1"})
+
+	ef.DeleteKey("B")
+
+	assert.Equal(t, []string{"A=1"}, lineVars(ef))
+	assert.Empty(t, ef.DeletedVars)
+	assert.False(t, ef.Modified)
+}
+
+// TestTakingAKeyBackAfterDeleteKeyRevivesTheVarInEffect deletes A, held twice,
+// then adds it again: the new A takes the original of the A in effect, the
+// last, and the other A stays listed as deleted.
+func TestTakingAKeyBackAfterDeleteKeyRevivesTheVarInEffect(t *testing.T) {
+	ef := newTestFile(
+		EnvVar{Key: "A", Value: "1"},
+		EnvVar{Key: "B", Value: "2"},
+		EnvVar{Key: "A", Value: "3"},
+	)
+	ef.DeleteKey("A")
+
+	ef.AddVar("A", "5")
+
+	v := ef.VarByKey("A")
+	require.NotNil(t, v)
+	assert.Equal(t, "3", v.OriginalValue, "the original should be the A in effect")
+	assert.Equal(t, []string{"A=1"}, deletedVars(ef))
+}
+
+// lineVars returns the variables ef's lines hold, in line order, each as
+// KEY=value, read through the lines' VarIdx.
+func lineVars(ef *EnvFile) []string {
+	var vars []string
+	for _, l := range ef.Lines {
+		if l.Type == LineVariable {
+			v := ef.Vars[l.VarIdx]
+			vars = append(vars, v.Key+"="+v.Value)
+		}
+	}
+	return vars
+}
+
 func TestRenameVar(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "FOO", Value: "bar"})
 

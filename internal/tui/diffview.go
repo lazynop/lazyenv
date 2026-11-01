@@ -201,9 +201,7 @@ func (m *DiffViewModel) CopyToRight() string {
 	case model.DiffRemoved:
 		// Key only in B — copying "right" means overwrite with nothing;
 		// more useful: delete from B so they match (both gone)
-		if i := m.FileB.LastIndexOfKey(e.Key); i >= 0 {
-			m.FileB.DeleteVar(i)
-		}
+		m.FileB.DeleteKey(e.Key)
 	}
 
 	m.Rediff()
@@ -232,9 +230,7 @@ func (m *DiffViewModel) CopyToLeft() string {
 		m.FileA.AddVar(e.Key, e.ValueB)
 	case model.DiffAdded:
 		// Key only in A — delete from A
-		if i := m.FileA.LastIndexOfKey(e.Key); i >= 0 {
-			m.FileA.DeleteVar(i)
-		}
+		m.FileA.DeleteKey(e.Key)
 	}
 
 	m.Rediff()

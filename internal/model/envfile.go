@@ -246,6 +246,18 @@ func (ef *EnvFile) DeleteVar(idx int) {
 	ef.Modified = true
 }
 
+// DeleteKey removes every variable with the given key (see DeleteVar). It
+// deletes from the last to the first, so the variable in effect (shell
+// semantics) is listed first among the deleted ones, and taking the key again
+// revives it (see reviveDeleted).
+func (ef *EnvFile) DeleteKey(key string) {
+	for i := len(ef.Vars) - 1; i >= 0; i-- {
+		if ef.Vars[i].Key == key {
+			ef.DeleteVar(i)
+		}
+	}
+}
+
 // LastIndexOfKey returns the index in Vars of the last variable with the
 // given key (shell semantics), or -1 when there is none.
 func (ef *EnvFile) LastIndexOfKey(key string) int {

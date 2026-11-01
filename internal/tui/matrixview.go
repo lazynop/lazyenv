@@ -241,7 +241,8 @@ func (m *MatrixModel) ConfirmEdit() *model.EnvFile {
 	return f
 }
 
-// DeleteAtCursor deletes the variable at the current cursor position.
+// DeleteAtCursor deletes the key under the cursor from the file under the
+// cursor, every occurrence of it (see EnvFile.DeleteKey).
 // Returns the deleted key and the file it was deleted from, or a nil file if
 // nothing was deleted. The cursor stays on the key while it keeps a row.
 func (m *MatrixModel) DeleteAtCursor() (string, *model.EnvFile) {
@@ -249,9 +250,7 @@ func (m *MatrixModel) DeleteAtCursor() (string, *model.EnvFile) {
 	if !ok || !cell.Present {
 		return "", nil
 	}
-	if i := cell.File.LastIndexOfKey(cell.Key); i >= 0 {
-		cell.File.DeleteVar(i)
-	}
+	cell.File.DeleteKey(cell.Key)
 	m.recompute(cell.Key)
 	return cell.Key, cell.File
 }

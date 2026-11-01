@@ -9,6 +9,7 @@ import (
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
+	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 // newTestApp creates an App ready for testing with the given files loaded.
@@ -196,6 +197,25 @@ func TestMatrixDeleteFlashNamesTheFile(t *testing.T) {
 	require.Equal(t, ModeMatrix, app.mode)
 	assert.Nil(t, local.VarByKey("B"), "B should be deleted from .env.local")
 	assert.Equal(t, "Deleted B from .env.local", app.statusBar.Message)
+}
+
+// TestMatrixDeleteRemovesEveryOccurrenceOfTheKey deletes D from .env.local,
+// which holds it twice with different values, around A (#76): no D is left
+// there, the cell shows ✗ and the flash holds, while .env, the file the var
+// list shows, keeps its own D.
+func TestMatrixDeleteRemovesEveryOccurrenceOfTheKey(t *testing.T) {
+	env := parser.ParseBytes(".env", []byte("A=0\nD=0\n"), config.SecretsConfig{})
+	local := parser.ParseBytes(".env.local", []byte("D=1\nA=2\nD=3\n"), config.SecretsConfig{})
+
+	app := press(newTestApp([]*model.EnvFile{env, local}), "m", "j", "l", "d", "y")
+
+	require.Equal(t, ModeMatrix, app.mode)
+	assert.Equal(t, "A=2\n", string(parser.Marshal(local)), "every D should leave .env.local")
+	assert.Equal(t, "A=0\nD=0\n", string(parser.Marshal(env)), ".env should keep its D")
+	cell, ok := app.matrixView.CursorCell()
+	require.True(t, ok)
+	assert.Equal(t, MatrixCell{Key: "D", File: local, Present: false}, cell, "the cell should show ✗")
+	assert.Equal(t, "Deleted D from .env.local", app.statusBar.Message)
 }
 
 // TestMatrixEditKeysWithoutVariables presses a and d in a matrix over files

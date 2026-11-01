@@ -3,6 +3,7 @@ package tui
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -163,6 +164,36 @@ func TestCompareCopyLeft(t *testing.T) {
 	updated, _ := app.Update(keyMsg("h"))
 	app = updated.(App)
 	assert.Contains(t, app.statusBar.Message, "SHARED")
+}
+
+// TestCompareCopyDeletesEveryOccurrenceOfTheKey copies D toward the file that
+// alone holds it, twice with different values around A (#76): every D leaves
+// that file, so neither file holds D and compare lists it no more, while A
+// stays in both.
+func TestCompareCopyDeletesEveryOccurrenceOfTheKey(t *testing.T) {
+	const holding, lacking = "D=1\nA=0\nD=3\n", "A=0\n"
+	for _, tc := range []struct {
+		name, copyKey, left, right string
+	}{
+		{"→ deletes it from the right", "l", lacking, holding},
+		{"← deletes it from the left", "h", holding, lacking},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			left := parser.ParseBytes(".env", []byte(tc.left), config.SecretsConfig{})
+			right := parser.ParseBytes(".env.prod", []byte(tc.right), config.SecretsConfig{})
+			app := enterCompareMode(t, left, right)
+			app.diffView.Cursor = slices.IndexFunc(app.diffView.Entries, func(e model.DiffEntry) bool { return e.Key == "D" })
+			require.GreaterOrEqual(t, app.diffView.Cursor, 0, "compare should list D")
+
+			app = press(app, tc.copyKey)
+
+			assert.Equal(t, lacking, string(parser.Marshal(left)), "the left file should hold A alone")
+			assert.Equal(t, lacking, string(parser.Marshal(right)), "the right file should hold A alone")
+			for _, e := range app.diffView.Entries {
+				assert.NotEqual(t, "D", e.Key, "compare should list D no more")
+			}
+		})
+	}
 }
 
 // TestCompareCopyMasksTheCopiedValueWhenItIsASecret copies a value in compare
