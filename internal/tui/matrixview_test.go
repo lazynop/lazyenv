@@ -222,6 +222,8 @@ func TestMatrixConfirmEdit(t *testing.T) {
 	found := missing.VarByKey("C")
 	require.NotNil(t, found, "C should exist in .env.local after confirm")
 	assert.Equal(t, "new_value", found.Value)
+	assert.Equal(t, makeTestFile(".env", "A", "B", "D"), m.files[0], ".env should stay as it was")
+	assert.Equal(t, makeTestFile(".env.prod", "A", "B", "C", "D"), m.files[2], ".env.prod should stay as it was")
 
 	// Matrix should be recomputed: C should now be present in .env.local too
 	require.Len(t, m.entries, 4)
