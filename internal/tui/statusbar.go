@@ -109,14 +109,11 @@ func (m *StatusBarModel) View(theme Theme, keys KeyMap, mode AppMode, focus Focu
 func statusRows(left, right string, textWidth int) string {
 	rows := wrapRows(left, textWidth)
 	if right != "" {
-		last := rows[len(rows)-1]
-		gap := textWidth - lipgloss.Width(last) - lipgloss.Width(right)
-		if gap < 1 && last != "" {
-			last = ""
-			gap = textWidth - lipgloss.Width(right)
-			rows = append(rows, last)
+		room := textWidth - lipgloss.Width(right)
+		if last := rows[len(rows)-1]; last != "" && lipgloss.Width(last) >= room {
+			rows = append(rows, "")
 		}
-		rows[len(rows)-1] = last + strings.Repeat(" ", max(gap, 0)) + right
+		rows[len(rows)-1] = padRight(rows[len(rows)-1], room) + right
 	}
 	margin := strings.Repeat(" ", statusBarMarginWidth)
 	for i, row := range rows {
