@@ -156,11 +156,13 @@ func TestMatrixToggleSort(t *testing.T) {
 	m.ToggleSort()
 	assert.Equal(t, model.SortCompleteness, m.sortMode)
 	assert.Equal(t, []string{"B", "A", "C"}, matrixKeys(m.entries), "B has fewest present, should be first")
+	assert.Equal(t, 1, m.rows.Cursor, "the cursor should follow A, its key, to row 1")
 
 	// Toggle back to SortAlpha
 	m.ToggleSort()
 	assert.Equal(t, model.SortAlpha, m.sortMode)
 	assert.Equal(t, []string{"A", "B", "C"}, matrixKeys(m.entries))
+	assert.Equal(t, 0, m.rows.Cursor, "the cursor should follow A back to row 0")
 }
 
 // newMissingCellMatrix builds a matrix over .env, .env.local and .env.prod,
@@ -255,22 +257,28 @@ func TestMatrixConfirmEdit(t *testing.T) {
 // TestMatrixConfirmEditResorts confirms an edit in each sort mode: M fills its
 // gap in .env while B and Z keep theirs, so the rows keep their alphabetical
 // order, or by completeness keep B and Z ahead of the rest, in an order that
-// is alphabetical neither way.
+// is alphabetical neither way. The cursor stays on M; only the completeness
+// case moves the rows, so only it sees the cursor follow M from row 1 to row
+// 3, which is neither the last row (Y's), M's alphabetical index (2), nor the
+// row of Z, now at row 1, or of B, at row 1 of the rows rebuilt
+// alphabetically. The view, two rows tall, scrolls just enough to show M: by
+// completeness M goes below it and lands on its last row, not its first.
 func TestMatrixConfirmEditResorts(t *testing.T) {
 	for _, tc := range []struct {
 		name          string
 		mode          model.SortMode
 		before, after []string
 		row           int // M's, before the confirm
+		offset        int // the view's, after the confirm
 	}{
-		{"alpha", model.SortAlpha, []string{"A", "B", "M", "Y", "Z"}, []string{"A", "B", "M", "Y", "Z"}, 2},
-		{"completeness", model.SortCompleteness, []string{"B", "M", "Z", "A", "Y"}, []string{"B", "Z", "A", "M", "Y"}, 1},
+		{"alpha", model.SortAlpha, []string{"A", "B", "M", "Y", "Z"}, []string{"A", "B", "M", "Y", "Z"}, 2, 1},
+		{"completeness", model.SortCompleteness, []string{"B", "M", "Z", "A", "Y"}, []string{"B", "Z", "A", "M", "Y"}, 1, 2},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			env := makeTestFile(".env", "A", "Y")
 			m := NewMatrixModel([]*model.EnvFile{env, makeTestFile(".env.local", "A", "B", "M", "Y", "Z")}, config.DefaultConfig().Layout)
 			m.Width = 120
-			m.Height = 40
+			m.Height = matrixChromeHeight + 2
 			if tc.mode != m.sortMode {
 				m.ToggleSort()
 			}
@@ -282,6 +290,9 @@ func TestMatrixConfirmEditResorts(t *testing.T) {
 			require.Same(t, env, m.ConfirmEdit())
 
 			assert.Equal(t, tc.after, matrixKeys(m.entries), "the rows should follow the sort mode after confirm")
+			cell, _ := m.CursorCell()
+			assert.Equal(t, "M", cell.Key, "the cursor should stay on M, the key it filled")
+			assert.Equal(t, tc.offset, m.rows.Offset, "the view should scroll just enough to show M")
 		})
 	}
 }
@@ -297,6 +308,61 @@ func TestMatrixCancelEdit(t *testing.T) {
 
 	assert.Nil(t, m.edit.File, "the edit should close after cancel")
 	assert.Equal(t, origVarCount, len(missing.Vars), ".env.local should not have new vars after cancel")
+}
+
+// TestMatrixDeleteAtCursorKeepsTheCursorOnItsKey deletes C from .env.local
+// under the completeness sort, the view two rows tall and scrolled down to C:
+// C's row moves up among the rows with a gap, and the cursor and the view
+// follow it. C lands on row 1, where neither the key now at C's old row nor
+// the one there in the rows rebuilt in alphabetical order is C, and the view
+// scrolls only as far as C, not back to the top.
+func TestMatrixDeleteAtCursorKeepsTheCursorOnItsKey(t *testing.T) {
+	// B, D and F have a gap in .env.local; A, C and E have none
+	files := []*model.EnvFile{makeTestFile(".env", "A", "B", "C", "D", "E", "F"), makeTestFile(".env.local", "A", "C", "E")}
+	m := NewMatrixModel(files, config.DefaultConfig().Layout)
+	m.Width = 120
+	m.Height = matrixChromeHeight + 2
+	m.ToggleSort()
+	require.Equal(t, []string{"B", "D", "F", "A", "C", "E"}, matrixKeys(m.entries))
+	m.SetCursor(4, 1) // C in .env.local
+	require.Equal(t, 3, m.rows.Offset, "the view should show C on its last row")
+
+	_, from := m.DeleteAtCursor()
+	require.Same(t, files[1], from)
+
+	require.Equal(t, []string{"B", "C", "D", "F", "A", "E"}, matrixKeys(m.entries), "C, now with a gap, should sort among B, D and F")
+	assert.Equal(t, 1, m.rows.Cursor, "the cursor should follow C to row 1")
+	assert.Equal(t, 1, m.rows.Offset, "the view should scroll up just as far as C")
+}
+
+// TestMatrixDeleteAtCursorKeepsTheCursorIndexWhenTheRowGoes deletes B or D
+// from .env, the only file holding either: the key's row goes, and the cursor
+// keeps its index, within the rows: on C, a middle row, after B, and on the
+// new last row after D.
+func TestMatrixDeleteAtCursorKeepsTheCursorIndexWhenTheRowGoes(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		row    int
+		after  []string
+		cursor int
+	}{
+		{"a middle row", 1, []string{"A", "C", "D"}, 1},
+		{"the last row", 3, []string{"A", "B", "C"}, 2},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			files := []*model.EnvFile{makeTestFile(".env", "A", "B", "C", "D"), makeTestFile(".env.local", "A")}
+			m := NewMatrixModel(files, config.DefaultConfig().Layout)
+			m.Width = 120
+			m.Height = 40
+			m.SetCursor(tc.row, 0)
+
+			_, from := m.DeleteAtCursor()
+			require.Same(t, files[0], from)
+
+			require.Equal(t, tc.after, matrixKeys(m.entries))
+			assert.Equal(t, tc.cursor, m.rows.Cursor, "the cursor should keep its index, within the rows")
+		})
+	}
 }
 
 func TestMatrixViewContainsCheckAndCross(t *testing.T) {

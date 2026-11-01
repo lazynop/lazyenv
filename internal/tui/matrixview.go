@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"charm.land/bubbles/v2/textinput"
@@ -49,10 +50,24 @@ func NewMatrixModel(files []*model.EnvFile, layout config.LayoutConfig) MatrixMo
 	}
 }
 
-func (m *MatrixModel) recompute() {
+// recompute rebuilds the rows from the files, after a cell is added or
+// deleted, and sorts them with the cursor on key's row (sortRows).
+func (m *MatrixModel) recompute(key string) {
 	m.entries = model.ComputeMatrix(m.files)
+	m.sortRows(key)
+}
+
+// sortRows sorts the rows by sortMode and moves the cursor to key's row, or,
+// with no row for key, keeps its index within the rows; the view then scrolls
+// to the cursor. Each re-sort passes the key the cursor was on before the rows
+// changed, so the cursor stays on its key, as in the var list.
+func (m *MatrixModel) sortRows(key string) {
 	model.SortEntries(m.entries, m.sortMode)
+	if i := slices.IndexFunc(m.entries, func(e model.MatrixEntry) bool { return e.Key == key }); i >= 0 {
+		m.rows.Cursor = i
+	}
 	m.rows.clamp(len(m.entries))
+	m.ensureVisible()
 }
 
 // MoveUp moves the cursor up.
@@ -184,14 +199,16 @@ func (m *MatrixModel) visibleCols() int {
 	return min(available/m.layout.MatrixColWidth, len(m.files))
 }
 
-// ToggleSort toggles between alphabetical and completeness sorting.
+// ToggleSort toggles between alphabetical and completeness sorting, the cursor
+// staying on its key (sortRows).
 func (m *MatrixModel) ToggleSort() {
+	cell, _ := m.CursorCell()
 	if m.sortMode == model.SortAlpha {
 		m.sortMode = model.SortCompleteness
 	} else {
 		m.sortMode = model.SortAlpha
 	}
-	model.SortEntries(m.entries, m.sortMode)
+	m.sortRows(cell.Key)
 }
 
 // StartEdit begins inline editing for the current cell (if missing).
@@ -212,21 +229,21 @@ func (m *MatrixModel) EditBar() (string, *textinput.Model) {
 }
 
 // ConfirmEdit adds the variable to the target file and returns that file, or
-// nil when no edit is open.
+// nil when no edit is open. The cursor stays on the key it added.
 func (m *MatrixModel) ConfirmEdit() *model.EnvFile {
-	f := m.edit.File
+	f, key := m.edit.File, m.edit.Key
 	if f == nil {
 		return nil
 	}
-	f.AddVar(m.edit.Key, m.editor.Value())
+	f.AddVar(key, m.editor.Value())
 	m.edit = MatrixCell{}
-	m.recompute()
+	m.recompute(key)
 	return f
 }
 
 // DeleteAtCursor deletes the variable at the current cursor position.
 // Returns the deleted key and the file it was deleted from, or a nil file if
-// nothing was deleted.
+// nothing was deleted. The cursor stays on the key while it keeps a row.
 func (m *MatrixModel) DeleteAtCursor() (string, *model.EnvFile) {
 	cell, ok := m.CursorCell()
 	if !ok || !cell.Present {
@@ -235,7 +252,7 @@ func (m *MatrixModel) DeleteAtCursor() (string, *model.EnvFile) {
 	if i := cell.File.LastIndexOfKey(cell.Key); i >= 0 {
 		cell.File.DeleteVar(i)
 	}
-	m.recompute()
+	m.recompute(cell.Key)
 	return cell.Key, cell.File
 }
 
