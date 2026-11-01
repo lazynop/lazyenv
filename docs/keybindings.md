@@ -61,13 +61,15 @@ Keybindings are context-sensitive: each screen only responds to the keys listed 
 
 After `c`, pick the file to compare the active file with.
 
-| Key            | Action                             |
-| -------------- | ---------------------------------- |
-| `↑` / `k`      | Move up                            |
-| `↓` / `j`      | Move down                          |
-| `Enter`        | Compare with the file under cursor |
-| `Esc`          | Cancel                             |
-| `q` / `Ctrl+C` | Cancel                             |
+| Key             | Action                             |
+| --------------- | ---------------------------------- |
+| `↑` / `k`       | Move up                            |
+| `↓` / `j`       | Move down                          |
+| `PgUp` / `PgDn` | Scroll up / down a page            |
+| `Home` / `End`  | Jump to the first / last file      |
+| `Enter`         | Compare with the file under cursor |
+| `Esc`           | Cancel                             |
+| `q` / `Ctrl+C`  | Cancel                             |
 
 ## Compare — Diff view
 

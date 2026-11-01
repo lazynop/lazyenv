@@ -190,6 +190,8 @@ func (a App) handleEditingCompareKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 func compareSelectHelp(keys KeyMap) helpSection {
 	return helpSection{"Compare: pick the second file", []helpRow{
 		pair("Choose the file", keys.Up, keys.Down),
+		pair("Scroll a page", keys.PageUp, keys.PageDown),
+		pair("Jump to the first/last file", keys.Home, keys.End),
 		alternatives("Compare with it", keys.Enter),
 		alternatives("Cancel", keys.Escape),
 		alternatives("Cancel", keys.Quit),
@@ -206,15 +208,15 @@ func (a *App) exitCompare() {
 }
 
 func (a App) handleCompareSelectKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	if a.keys.navigate(msg, &a.fileList) {
+		return a, nil
+	}
+
 	switch {
 	case key.Matches(msg, a.keys.Escape, a.keys.Quit):
 		// q and Ctrl+C go back here, as they do from compare and matrix.
 		a.exitCompare()
 		a.statusBar.ClearMessage()
-	case key.Matches(msg, a.keys.Up):
-		a.fileList.MoveUp()
-	case key.Matches(msg, a.keys.Down):
-		a.fileList.MoveDown()
 	case key.Matches(msg, a.keys.Enter):
 		second := a.fileList.CursorFile()
 		if second == nil {
