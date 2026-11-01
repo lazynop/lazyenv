@@ -162,18 +162,18 @@ func TestDiffViewSetCursorEmpty(t *testing.T) {
 
 // --- MatrixModel.SetCursor ---
 
+// newFiveKeyMatrix builds a matrix of five keys, all in a, over the files a, b
+// and c, width columns wide and 20 rows high.
+func newFiveKeyMatrix(width int) MatrixModel {
+	files := []*model.EnvFile{makeTestFile("a", "K1", "K2", "K3", "K4", "K5"), makeTestFile("b"), makeTestFile("c")}
+	m := NewMatrixModel(files, config.DefaultConfig().Layout)
+	m.Width = width
+	m.Height = 20
+	return m
+}
+
 func TestMatrixSetCursor(t *testing.T) {
-	m := MatrixModel{
-		entries: make([]model.MatrixEntry, 5),
-		files:   []*model.EnvFile{makeTestFile("a"), makeTestFile("b"), makeTestFile("c")},
-		Height:  20,
-		Width:   80,
-		layout:  config.DefaultConfig().Layout,
-	}
-	// Populate Present slices to match the number of files
-	for i := range m.entries {
-		m.entries[i].Present = make([]bool, 3)
-	}
+	m := newFiveKeyMatrix(80)
 
 	m.SetCursor(3, 1)
 	assert.Equal(t, 3, m.rows.Cursor, "rows.Cursor should be set to 3")
@@ -559,17 +559,7 @@ func newMatrixTestApp(t *testing.T) App {
 	app := newTestApp(nil)
 	app = resize(app, 120, 40)
 	app.mode = ModeMatrix
-	mv := MatrixModel{
-		entries: make([]model.MatrixEntry, 5),
-		files:   []*model.EnvFile{makeTestFile("a"), makeTestFile("b"), makeTestFile("c")},
-		Height:  20,
-		Width:   120,
-		layout:  config.DefaultConfig().Layout,
-	}
-	for i := range mv.entries {
-		mv.entries[i].Present = make([]bool, 3)
-	}
-	app.matrixView = mv
+	app.matrixView = newFiveKeyMatrix(120)
 	return app
 }
 
