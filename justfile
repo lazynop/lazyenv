@@ -61,6 +61,14 @@ mutant $file $old $new $run=".":
         echo "$out" >&2
         exit 2
     fi
+    # A panicking test stops its package's test binary, so the tests after it
+    # never ran: run again past every test that failed so far, until none panics
+    while grep -q '^panic: ' <<<"$out"; do
+        out=$(go test ./... -run "$run" -skip "^($(paste -sd'|' - <<<"$killers"))\$" 2>&1)
+        more=$(grep -o '^--- FAIL: [^ ]*' <<<"$out" | cut -d' ' -f3)
+        [ -z "$more" ] && break
+        killers=$(printf '%s\n%s\n' "$killers" "$more" | sort -u)
+    done
     echo "killed by:"
     sed 's/^/  /' <<<"$killers"
 
