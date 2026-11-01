@@ -822,11 +822,11 @@ var fileInputLabels = map[AppMode]string{
 // text input: a longer label is cut to leave them.
 const minInputWidth = 10
 
-// layoutInputBar returns label as an input bar one terminal row wide draws it,
-// and the width left for in's value. The label is flattened, since it can name
-// a file, and cut when it would leave in fewer than minInputWidth columns.
-func (a App) layoutInputBar(label string, in *textinput.Model) (string, int) {
-	room := a.theme.barRoom(a.width)
+// layoutInputBar returns label as drawn by an input bar with room columns of
+// text, and the width left for in's value. The label is flattened, since it
+// can name a file, and cut when it would leave in fewer than minInputWidth
+// columns.
+func layoutInputBar(room int, label string, in *textinput.Model) (string, int) {
 	inputChrome := lipgloss.Width(in.Prompt) + inputCursorWidth
 	label = truncate(flattenText(label), max(room-inputChrome-minInputWidth, 0))
 	return label, max(room-lipgloss.Width(label)-inputChrome, 1)
@@ -840,7 +840,7 @@ func (a *App) fitInputBar() {
 	if in == nil {
 		return
 	}
-	_, width := a.layoutInputBar(label, in)
+	_, width := layoutInputBar(a.theme.barRoom(a.width), label, in)
 	if in.Width() == width {
 		return
 	}
@@ -859,11 +859,12 @@ func (a App) inputBarView() string {
 	if in == nil {
 		return ""
 	}
-	label, _ = a.layoutInputBar(label, in)
+	room := a.theme.barRoom(a.width)
+	label, _ = layoutInputBar(room, label, in)
 	// textinput measures runes with go-runewidth, which counts some emoji
 	// (those with a variation selector) one column narrower than drawn: cut
 	// what overflows so the bar keeps its one row.
-	return a.theme.StatusBar.Width(a.width).Render(ansi.Truncate(label+in.View(), a.theme.barRoom(a.width), ""))
+	return a.theme.StatusBar.Width(a.width).Render(ansi.Truncate(label+in.View(), room, ""))
 }
 
 func (a *App) updateLayout() {
