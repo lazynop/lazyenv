@@ -116,10 +116,13 @@ func statusRows(left, right string, textWidth int) string {
 	rows := wrapRows(left, textWidth)
 	if right != "" {
 		room := textWidth - lipgloss.Width(right)
-		if last := rows[len(rows)-1]; last != "" && lipgloss.Width(last) >= room {
+		last := rows[len(rows)-1]
+		gap := room - lipgloss.Width(last)
+		if gap < 1 && last != "" {
 			rows = append(rows, "")
+			last, gap = "", room
 		}
-		rows[len(rows)-1] = padRight(rows[len(rows)-1], room) + right
+		rows[len(rows)-1] = last + strings.Repeat(" ", max(gap, 0)) + right
 	}
 	return strings.Join(rows, "\n")
 }
