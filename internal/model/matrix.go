@@ -21,10 +21,6 @@ type MatrixEntry struct {
 // Returns entries sorted alphabetically.
 // For duplicate keys within a file, the last occurrence wins (shell semantics).
 func ComputeMatrix(files []*EnvFile) []MatrixEntry {
-	if len(files) == 0 {
-		return nil
-	}
-
 	// Collect unique keys and last-occurrence values per file.
 	type fileVal struct {
 		value   string
