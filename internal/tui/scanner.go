@@ -92,9 +92,18 @@ func CheckGitIgnore(files []*model.EnvFile) {
 		return
 	}
 
+	// git runs in dir and reads a relative path from there, while a file's
+	// path, when the scanned directory was given relative, is relative to
+	// where lazyenv started: hand git each path relative to dir. The leading
+	// "./" keeps git from reading a name that starts with ':' as pathspec
+	// magic, which ":!x.env" would turn into a failure of the whole check.
 	paths := make([]string, len(files))
 	for i, f := range files {
-		paths[i] = f.Path
+		rel, err := filepath.Rel(dir, f.Path)
+		if err != nil {
+			return
+		}
+		paths[i] = "./" + rel
 	}
 
 	// -z, which needs --stdin, has git take and print the paths split by NUL:
@@ -113,8 +122,8 @@ func CheckGitIgnore(files []*model.EnvFile) {
 		}
 	}
 
-	for _, f := range files {
-		if !ignored[f.Path] {
+	for i, f := range files {
+		if !ignored[paths[i]] {
 			f.GitWarning = true
 		}
 	}
