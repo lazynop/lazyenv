@@ -24,6 +24,15 @@ func makeTestFile(name string, keys ...string) *model.EnvFile {
 	return &model.EnvFile{Name: name, Vars: vars, Lines: lines}
 }
 
+// matrixKeys returns the keys of entries, in order.
+func matrixKeys(entries []model.MatrixEntry) []string {
+	keys := make([]string, len(entries))
+	for i, e := range entries {
+		keys[i] = e.Key
+	}
+	return keys
+}
+
 func TestNewMatrixModel(t *testing.T) {
 	f1 := makeTestFile(".env", "HOST", "PORT", "DB")
 	f2 := makeTestFile(".env.local", "HOST", "SECRET")
@@ -243,6 +252,40 @@ func TestMatrixConfirmEdit(t *testing.T) {
 	require.Len(t, m.entries, 4)
 	require.Equal(t, "C", m.entries[2].Key)
 	assert.Equal(t, []bool{false, true, true}, m.entries[2].Present, "C should be present in .env.local after confirm")
+}
+
+// TestMatrixConfirmEditResorts confirms an edit in each sort mode: M fills its
+// gap in .env while B and Z keep theirs, so the rows keep their alphabetical
+// order, or by completeness keep B and Z ahead of the rest, in an order that
+// is alphabetical neither way.
+func TestMatrixConfirmEditResorts(t *testing.T) {
+	for _, tc := range []struct {
+		name          string
+		mode          model.SortMode
+		before, after []string
+		row           int // M's, before the confirm
+	}{
+		{"alpha", model.SortAlpha, []string{"A", "B", "M", "Y", "Z"}, []string{"A", "B", "M", "Y", "Z"}, 2},
+		{"completeness", model.SortCompleteness, []string{"B", "M", "Z", "A", "Y"}, []string{"B", "Z", "A", "M", "Y"}, 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			env := makeTestFile(".env", "A", "Y")
+			m := NewMatrixModel([]*model.EnvFile{env, makeTestFile(".env.local", "A", "B", "M", "Y", "Z")}, config.DefaultConfig().Layout)
+			m.Width = 120
+			m.Height = 40
+			if tc.mode != m.sortMode {
+				m.ToggleSort()
+			}
+			require.Equal(t, tc.before, matrixKeys(m.entries))
+			m.SetCursor(tc.row, 0) // M in .env
+			m.StartEdit()
+			m.editor.SetValue("new_value")
+
+			require.Same(t, env, m.ConfirmEdit())
+
+			assert.Equal(t, tc.after, matrixKeys(m.entries), "the rows should follow the sort mode after confirm")
+		})
+	}
 }
 
 func TestMatrixCancelEdit(t *testing.T) {
