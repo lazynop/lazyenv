@@ -8,9 +8,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/lazynop/lazyenv/internal/config"
-	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 func assertFlash(t *testing.T, app App, kind messageKind, want string) {
@@ -166,13 +163,8 @@ func newCompareAppOnDisk(t *testing.T) (app App, pathA, pathB string) {
 	t.Helper()
 	pathA = filepath.Join(t.TempDir(), ".env")
 	pathB = filepath.Join(t.TempDir(), ".env.prod")
-	require.NoError(t, os.WriteFile(pathA, []byte("FOO=a\n"), 0o644))
-	require.NoError(t, os.WriteFile(pathB, []byte("FOO=b\n"), 0o644))
-
-	fA, err := parser.ParseFile(pathA, config.SecretsConfig{})
-	require.NoError(t, err)
-	fB, err := parser.ParseFile(pathB, config.SecretsConfig{})
-	require.NoError(t, err)
+	fA := writeAndParse(t, pathA, "FOO=a\n")
+	fB := writeAndParse(t, pathB, "FOO=b\n")
 
 	app = enterCompareMode(t, fA, fB)
 	require.Same(t, fA, app.diffView.FileA)

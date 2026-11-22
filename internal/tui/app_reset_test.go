@@ -9,17 +9,22 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lazynop/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/lazynop/lazyenv/internal/parser"
 )
 
+func writeAndParse(t *testing.T, path, content string) *model.EnvFile {
+	t.Helper()
+	require.NoError(t, os.WriteFile(path, []byte(content), 0o644))
+	f, err := parser.ParseFile(path, config.SecretsConfig{})
+	require.NoError(t, err)
+	return f
+}
+
 func newTestAppWithDiskFile(t *testing.T, content string) (App, string) {
 	t.Helper()
-	dir := t.TempDir()
-	envPath := filepath.Join(dir, ".env")
-	require.NoError(t, os.WriteFile(envPath, []byte(content), 0644))
-
-	f, err := parser.ParseFile(envPath, config.SecretsConfig{})
-	require.NoError(t, err)
+	envPath := filepath.Join(t.TempDir(), ".env")
+	f := writeAndParse(t, envPath, content)
 	f.GitWarning = true
 
 	app := newTestApp(nil)
