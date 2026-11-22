@@ -92,6 +92,31 @@ func TestReorderBlockedInReadOnly(t *testing.T) {
 	assert.Equal(t, "B=2\nA=1\n", string(data))
 }
 
+func TestReorderOpensFromTheFilesPanel(t *testing.T) {
+	app, _ := newTestAppWithDiskFile(t, "B=2\nA=1\n")
+	app = press(app, "left")
+	require.Equal(t, FocusFiles, app.focus)
+
+	app = press(app, "O")
+
+	assert.Equal(t, ModeReorderMenu, app.mode)
+}
+
+func TestReorderBlockedInReadOnlyFromTheFilesPanel(t *testing.T) {
+	app, envPath := newTestAppWithDiskFile(t, "B=2\nA=1\n")
+	app.config.ReadOnly = true
+	app = press(app, "left")
+	require.Equal(t, FocusFiles, app.focus)
+
+	app = press(app, "O")
+	assert.Equal(t, ModeNormal, app.mode, "read-only must block the reorder menu")
+	assert.Contains(t, app.statusBar.Message, "Read-only")
+
+	data, err := os.ReadFile(envPath)
+	require.NoError(t, err)
+	assert.Equal(t, "B=2\nA=1\n", string(data))
+}
+
 func TestReorderCreatesBackup(t *testing.T) {
 	app, envPath := newTestAppWithDiskFile(t, "B=2\nA=1\n")
 
