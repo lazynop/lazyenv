@@ -11,8 +11,8 @@ import (
 
 // NormalizeForWrite upgrades QuoteStyle for any var whose current Value
 // cannot round-trip safely in its current style. For QuoteSingle that is an
-// embedded `'` (shell has no escape inside '...'). For QuoteNone: embedded
-// `\n`/`\r`/`\t` (line separators break the KEY=VALUE format), a leading
+// embedded `'` (shell has no escape inside '...'). For QuoteNone: an embedded
+// `\n` or `\r` (a line separator breaks the KEY=VALUE format) or `\t`, a leading
 // quote char (the re-parse would treat the value as quoted and swallow
 // following lines), and anything parseUnquoted would not read back verbatim
 // (inline-comment truncation, trailing-whitespace trim). All upgrade to
