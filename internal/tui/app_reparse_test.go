@@ -35,10 +35,10 @@ var envFileFieldFates = map[string]reparseFieldFate{
 	"Secrets":         reparseCarriesOver,
 }
 
-var parseFileAllowed = map[string]string{
-	"app_reparse.go:reparse":           "the helper itself",
-	"scanner.go:ScanDir":               "initial load; CheckGitIgnore runs on the result",
-	"app_fileinput.go:finaliseNewFile": "a newly created file; CheckGitIgnore runs on the result",
+var parseFileAllowed = allowList{
+	inFunc("app_reparse.go", "reparse"):           "the helper itself",
+	inFunc("scanner.go", "ScanDir"):               "initial load; CheckGitIgnore runs on the result",
+	inFunc("app_fileinput.go", "finaliseNewFile"): "a newly created file; CheckGitIgnore runs on the result",
 }
 
 func TestReparseClassifiesEveryEnvFileField(t *testing.T) {
@@ -87,7 +87,7 @@ func TestReparseKeepsRuntimeStateAndDropsEdits(t *testing.T) {
 }
 
 func TestParseFileOnlyThroughReparse(t *testing.T) {
-	assertRefsAllowed(t, sourceRefs(t, internalParserPath, "ParseFile"), parseFileAllowed,
+	assertRefsMatchAllowList(t, sourceRefs(t, internalParserPath, "ParseFile"), parseFileAllowed,
 		"re-parse an in-memory file with reparse (app_reparse.go) so its runtime state survives; "+
 			"a load with no in-memory predecessor goes in parseFileAllowed")
 }

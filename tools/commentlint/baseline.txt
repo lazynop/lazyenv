@@ -1,3 +1,2 @@
 # Banned comment lines allowed per file; only ever lower these.
 # Regenerate with: just comment-baseline
-14 internal/tui/source_scan_test.go

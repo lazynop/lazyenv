@@ -284,8 +284,8 @@ func TestFlashMessage_AfterErrorRendersInPrimaryColor(t *testing.T) {
 }
 
 func TestClearMessageAfterOnlyInFlashHelpers(t *testing.T) {
-	assertRefsAllowed(t, sourceRefs(t, "", "clearMessageAfter"),
-		map[string]string{"app_flash.go": "the flash helpers"},
+	assertRefsMatchAllowList(t, sourceRefs(t, thisPackage, "clearMessageAfter"),
+		allowList{inFile("app_flash.go"): "the flash helpers"},
 		"call a.flashMessage, a.flashWarning or a.flashError instead of clearMessageAfter")
 }
 

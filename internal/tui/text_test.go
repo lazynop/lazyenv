@@ -9,12 +9,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var maskValueAllowed = map[string]string{
-	"text.go:displayText": "the helper itself",
+var maskValueAllowed = allowList{
+	inFunc("text.go", "displayText"): "the helper itself",
 }
 
 func TestSecretsMaskOnlyThroughDisplayText(t *testing.T) {
-	assertRefsAllowed(t, sourceRefs(t, internalUtilPath, "MaskValue"), maskValueAllowed,
+	assertRefsMatchAllowList(t, sourceRefs(t, internalUtilPath, "MaskValue"), maskValueAllowed,
 		"draw a variable value with displayText(value, masked), so every view masks it the same way")
 }
 

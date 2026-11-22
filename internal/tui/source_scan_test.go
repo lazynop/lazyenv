@@ -21,7 +21,20 @@ const (
 	internalParserPath = "github.com/lazynop/lazyenv/internal/parser"
 	internalUtilPath   = "github.com/lazynop/lazyenv/internal/util"
 	bubbleteaPath      = "charm.land/bubbletea/v2"
+	thisPackage        = ""
 )
+
+type identMatcher func(n ast.Node, importedAs string) *ast.Ident
+
+type (
+	allowKey  string
+	reason    string
+	allowList map[allowKey]reason
+)
+
+func inFile(file string) allowKey { return allowKey(file) }
+
+func inFunc(file, function string) allowKey { return allowKey(file + ":" + function) }
 
 type sourceRef struct {
 	file          string
@@ -34,27 +47,17 @@ func (r sourceRef) String() string {
 	return fmt.Sprintf("%s:%d: %s in %s", r.file, r.line, r.name, r.enclosingFunc)
 }
 
-// sourceRefs returns every reference, in this package's non-test .go files, to
-// one of funcs of the package at importPath, whatever name each file imports it
-// under; with importPath "", every call to one of this package's own funcs. It
-// walks the AST, so comments and strings never match.
 func sourceRefs(t *testing.T, importPath string, funcs ...string) []sourceRef {
 	t.Helper()
-	return sourceMatches(t, importPath, func(n ast.Node, local string) *ast.Ident {
-		if fn := refIdent(n, local); fn != nil && slices.Contains(funcs, fn.Name) {
+	return sourceMatches(t, importPath, func(n ast.Node, importedAs string) *ast.Ident {
+		if fn := refIdent(n, importedAs); fn != nil && slices.Contains(funcs, fn.Name) {
 			return fn
 		}
 		return nil
 	})
 }
 
-// sourceMatches returns a sourceRef for every node, in this package's non-test
-// .go files, that match accepts. match gets the node and local, the name its
-// file imports the package at importPath under, and returns the identifier of
-// that package the node names, or nil to pass over the node. Files that do not
-// import the package are skipped; with importPath "", every file is walked
-// with local "", and the identifiers are this package's own.
-func sourceMatches(t *testing.T, importPath string, match func(n ast.Node, local string) *ast.Ident) []sourceRef {
+func sourceMatches(t *testing.T, importPath string, match identMatcher) []sourceRef {
 	t.Helper()
 	names, err := filepath.Glob("*.go")
 	require.NoError(t, err)
@@ -67,9 +70,9 @@ func sourceMatches(t *testing.T, importPath string, match func(n ast.Node, local
 		}
 		file, err := goparser.ParseFile(fset, name, nil, goparser.SkipObjectResolution)
 		require.NoError(t, err)
-		local := ""
-		if importPath != "" {
-			if local = importName(file, importPath); local == "" {
+		importedAs := thisPackage
+		if importPath != thisPackage {
+			if importedAs = importName(file, importPath); importedAs == "" {
 				continue
 			}
 		}
@@ -79,12 +82,12 @@ func sourceMatches(t *testing.T, importPath string, match func(n ast.Node, local
 				enclosingFunc = fn.Name.Name
 			}
 			ast.Inspect(decl, func(n ast.Node) bool {
-				id := match(n, local)
+				id := match(n, importedAs)
 				if id == nil {
 					return true
 				}
 				qualified := id.Name
-				if importPath != "" {
+				if importPath != thisPackage {
 					qualified = path.Base(importPath) + "." + id.Name
 				}
 				refs = append(refs, sourceRef{
@@ -100,14 +103,14 @@ func sourceMatches(t *testing.T, importPath string, match func(n ast.Node, local
 	return refs
 }
 
-func refIdent(n ast.Node, local string) *ast.Ident {
+func refIdent(n ast.Node, importedAs string) *ast.Ident {
 	switch n := n.(type) {
 	case *ast.SelectorExpr:
-		if pkg, ok := n.X.(*ast.Ident); ok && local != "" && pkg.Name == local {
+		if pkg, ok := n.X.(*ast.Ident); ok && importedAs != thisPackage && pkg.Name == importedAs {
 			return n.Sel
 		}
 	case *ast.CallExpr:
-		if id, ok := n.Fun.(*ast.Ident); ok && local == "" {
+		if id, ok := n.Fun.(*ast.Ident); ok && importedAs == thisPackage {
 			return id
 		}
 	}
@@ -136,18 +139,14 @@ func importName(file *ast.File, importPath string) string {
 	return ""
 }
 
-// assertRefsAllowed fails for every ref that no allowed entry covers, and for
-// every entry that covers no ref, so a stale entry cannot linger. Keys are a
-// file name ("app_disk.go") or "file:function" ("scanner.go:ScanDir"); values
-// say why the entry is allowed. fix tells the reader what to do instead.
-func assertRefsAllowed(t *testing.T, refs []sourceRef, allowed map[string]string, fix string) {
+func assertRefsMatchAllowList(t *testing.T, refs []sourceRef, allowed allowList, whatToDoInstead string) {
 	t.Helper()
-	used := make(map[string]bool, len(allowed))
+	used := make(map[allowKey]bool, len(allowed))
 	var violations []string
 	for _, ref := range refs {
-		key := ref.file
+		key := inFile(ref.file)
 		if _, ok := allowed[key]; !ok {
-			key = ref.file + ":" + ref.enclosingFunc
+			key = inFunc(ref.file, ref.enclosingFunc)
 		}
 		if _, ok := allowed[key]; ok {
 			used[key] = true
@@ -155,7 +154,7 @@ func assertRefsAllowed(t *testing.T, refs []sourceRef, allowed map[string]string
 		}
 		violations = append(violations, ref.String())
 	}
-	assert.Empty(t, violations, fix)
+	assert.Empty(t, violations, whatToDoInstead)
 	for key := range allowed {
 		assert.True(t, used[key], "allowed entry %q matches no reference: remove it", key)
 	}
