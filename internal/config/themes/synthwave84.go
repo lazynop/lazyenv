@@ -3,16 +3,16 @@ package themes
 // Synthwave '84 color theme.
 // https://github.com/robb0wen/synthwave-vscode
 var synthwave84 = Colors{
-	Primary:  "#FF7EDB", // pink
-	Warning:  "#FEDE5D", // yellow
-	Error:    "#FE4450", // red
-	Success:  "#72F1B8", // green (neon mint)
-	Muted:    "#848BBD", // comment
-	Fg:       "#F0EDED", // foreground
-	Bg:       "#262335", // background
-	Border:   "#34294F", // line
+	Primary:  "#FF7EDB",
+	Warning:  "#FEDE5D",
+	Error:    "#FE4450",
+	Success:  "#72F1B8",
+	Muted:    "#848BBD",
+	Fg:       "#F0EDED",
+	Bg:       "#262335",
+	Border:   "#34294F",
 	CursorBg: "#34294F",
-	Modified: "#FEDE5D", // yellow
-	Added:    "#72F1B8", // green
-	Deleted:  "#FE4450", // red
+	Modified: "#FEDE5D",
+	Added:    "#72F1B8",
+	Deleted:  "#FE4450",
 }

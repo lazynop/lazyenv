@@ -18,7 +18,6 @@ type Colors struct {
 	Deleted  string
 }
 
-// registry maps theme names to their color palettes.
 var registry = map[string]Colors{
 	"andromeda":            andromeda,
 	"ayu-dark":             ayuDark,
@@ -78,7 +77,6 @@ var registry = map[string]Colors{
 	"zenburn":              zenburn,
 }
 
-// sortedNames is computed once at init time.
 var sortedNames []string
 
 func init() {

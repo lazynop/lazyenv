@@ -3,16 +3,16 @@ package themes
 // Nightfox color theme.
 // https://github.com/EdenEast/nightfox.nvim
 var nightfox = Colors{
-	Primary:  "#719CD6", // blue
+	Primary:  "#719CD6",
 	Warning:  "#DFDFE0", // white (nightfox uses it for warnings)
-	Error:    "#C94F6D", // red
-	Success:  "#81B29A", // green
-	Muted:    "#738091", // comment
-	Fg:       "#CDCECF", // foreground
-	Bg:       "#192330", // background
-	Border:   "#29394F", // selection
+	Error:    "#C94F6D",
+	Success:  "#81B29A",
+	Muted:    "#738091",
+	Fg:       "#CDCECF",
+	Bg:       "#192330",
+	Border:   "#29394F",
 	CursorBg: "#29394F",
-	Modified: "#DFDFE0", // white
-	Added:    "#81B29A", // green
-	Deleted:  "#C94F6D", // red
+	Modified: "#DFDFE0",
+	Added:    "#81B29A",
+	Deleted:  "#C94F6D",
 }

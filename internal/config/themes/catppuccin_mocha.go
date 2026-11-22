@@ -3,16 +3,16 @@ package themes
 // Catppuccin Mocha color theme.
 // https://catppuccin.com/palette
 var catppuccinMocha = Colors{
-	Primary:  "#CBA6F7", // mauve
-	Warning:  "#FAB387", // peach
-	Error:    "#F38BA8", // red
-	Success:  "#A6E3A1", // green
-	Muted:    "#6C7086", // overlay0
-	Fg:       "#CDD6F4", // text
-	Bg:       "#1E1E2E", // base
-	Border:   "#45475A", // surface0
+	Primary:  "#CBA6F7",
+	Warning:  "#FAB387",
+	Error:    "#F38BA8",
+	Success:  "#A6E3A1",
+	Muted:    "#6C7086",
+	Fg:       "#CDD6F4",
+	Bg:       "#1E1E2E",
+	Border:   "#45475A",
 	CursorBg: "#45475A",
 	Modified: "#F9E2AF", // yellow (softer than peach for inline markers)
-	Added:    "#A6E3A1", // green
-	Deleted:  "#F38BA8", // red
+	Added:    "#A6E3A1",
+	Deleted:  "#F38BA8",
 }

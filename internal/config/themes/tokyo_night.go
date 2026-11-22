@@ -3,16 +3,16 @@ package themes
 // Tokyo Night color theme.
 // https://github.com/enkia/tokyo-night-vscode-theme
 var tokyoNight = Colors{
-	Primary:  "#7AA2F7", // blue
-	Warning:  "#E0AF68", // yellow
-	Error:    "#F7768E", // red
-	Success:  "#9ECE6A", // green
-	Muted:    "#565F89", // comment
-	Fg:       "#C0CAF5", // foreground
-	Bg:       "#1A1B26", // background
-	Border:   "#292E42", // selection
+	Primary:  "#7AA2F7",
+	Warning:  "#E0AF68",
+	Error:    "#F7768E",
+	Success:  "#9ECE6A",
+	Muted:    "#565F89",
+	Fg:       "#C0CAF5",
+	Bg:       "#1A1B26",
+	Border:   "#292E42",
 	CursorBg: "#292E42",
-	Modified: "#E0AF68", // yellow
-	Added:    "#9ECE6A", // green
-	Deleted:  "#F7768E", // red
+	Modified: "#E0AF68",
+	Added:    "#9ECE6A",
+	Deleted:  "#F7768E",
 }

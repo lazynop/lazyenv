@@ -3,16 +3,16 @@ package themes
 // Rosé Pine Moon color theme.
 // https://rosepinetheme.com/palette
 var rosePineMoon = Colors{
-	Primary:  "#C4A7E7", // iris
-	Warning:  "#F6C177", // gold
-	Error:    "#EB6F92", // love
-	Success:  "#3E8FB0", // foam (teal)
-	Muted:    "#6E6A86", // muted
-	Fg:       "#E0DEF4", // text
-	Bg:       "#232136", // base
-	Border:   "#2A273F", // surface
+	Primary:  "#C4A7E7",
+	Warning:  "#F6C177",
+	Error:    "#EB6F92",
+	Success:  "#3E8FB0",
+	Muted:    "#6E6A86",
+	Fg:       "#E0DEF4",
+	Bg:       "#232136",
+	Border:   "#2A273F",
 	CursorBg: "#2A273F",
-	Modified: "#F6C177", // gold
-	Added:    "#3E8FB0", // foam
-	Deleted:  "#EB6F92", // love
+	Modified: "#F6C177",
+	Added:    "#3E8FB0",
+	Deleted:  "#EB6F92",
 }

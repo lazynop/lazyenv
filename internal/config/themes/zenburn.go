@@ -3,16 +3,16 @@ package themes
 // Zenburn color theme.
 // https://kippura.org/zenburnpage/
 var zenburn = Colors{
-	Primary:  "#8CD0D3", // cyan
-	Warning:  "#DFAF8F", // orange
-	Error:    "#CC9393", // red (muted)
-	Success:  "#7F9F7F", // green (muted)
-	Muted:    "#5F7F5F", // comment
-	Fg:       "#DCDCCC", // foreground
-	Bg:       "#3F3F3F", // background
-	Border:   "#4F4F4F", // line
+	Primary:  "#8CD0D3",
+	Warning:  "#DFAF8F",
+	Error:    "#CC9393",
+	Success:  "#7F9F7F",
+	Muted:    "#5F7F5F",
+	Fg:       "#DCDCCC",
+	Bg:       "#3F3F3F",
+	Border:   "#4F4F4F",
 	CursorBg: "#4F4F4F",
-	Modified: "#DFAF8F", // orange
-	Added:    "#7F9F7F", // green
-	Deleted:  "#CC9393", // red
+	Modified: "#DFAF8F",
+	Added:    "#7F9F7F",
+	Deleted:  "#CC9393",
 }

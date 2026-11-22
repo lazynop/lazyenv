@@ -3,16 +3,16 @@ package themes
 // Monokai Pro color theme.
 // https://monokai.pro
 var monokaiPro = Colors{
-	Primary:  "#FFD866", // yellow
-	Warning:  "#FC9867", // orange
-	Error:    "#FF6188", // red
-	Success:  "#A9DC76", // green
-	Muted:    "#727169", // comment
-	Fg:       "#FCFCFA", // foreground
-	Bg:       "#2D2A2E", // background
-	Border:   "#51504F", // selection
+	Primary:  "#FFD866",
+	Warning:  "#FC9867",
+	Error:    "#FF6188",
+	Success:  "#A9DC76",
+	Muted:    "#727169",
+	Fg:       "#FCFCFA",
+	Bg:       "#2D2A2E",
+	Border:   "#51504F",
 	CursorBg: "#51504F",
-	Modified: "#FC9867", // orange
-	Added:    "#A9DC76", // green
-	Deleted:  "#FF6188", // red
+	Modified: "#FC9867",
+	Added:    "#A9DC76",
+	Deleted:  "#FF6188",
 }

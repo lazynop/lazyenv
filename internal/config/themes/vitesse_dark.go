@@ -3,16 +3,16 @@ package themes
 // Vitesse Dark color theme.
 // https://github.com/antfu/vscode-theme-vitesse
 var vitesseDark = Colors{
-	Primary:  "#4D9375", // green (accent)
-	Warning:  "#E6CC77", // yellow
-	Error:    "#CB7676", // red (muted)
-	Success:  "#4D9375", // green
-	Muted:    "#758575", // comment
-	Fg:       "#DBD7CA", // foreground
-	Bg:       "#121212", // background
-	Border:   "#1E1E1E", // surface
+	Primary:  "#4D9375",
+	Warning:  "#E6CC77",
+	Error:    "#CB7676",
+	Success:  "#4D9375",
+	Muted:    "#758575",
+	Fg:       "#DBD7CA",
+	Bg:       "#121212",
+	Border:   "#1E1E1E",
 	CursorBg: "#1E1E1E",
-	Modified: "#E6CC77", // yellow
-	Added:    "#4D9375", // green
-	Deleted:  "#CB7676", // red
+	Modified: "#E6CC77",
+	Added:    "#4D9375",
+	Deleted:  "#CB7676",
 }

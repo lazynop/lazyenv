@@ -3,16 +3,16 @@ package themes
 // Gruvbox Dark color theme.
 // https://github.com/morhetz/gruvbox
 var gruvboxDark = Colors{
-	Primary:  "#D3869B", // purple
-	Warning:  "#FE8019", // orange
-	Error:    "#FB4934", // red
-	Success:  "#B8BB26", // green
-	Muted:    "#928374", // gray
-	Fg:       "#EBDBB2", // fg
-	Bg:       "#282828", // bg0
-	Border:   "#504945", // bg2
+	Primary:  "#D3869B",
+	Warning:  "#FE8019",
+	Error:    "#FB4934",
+	Success:  "#B8BB26",
+	Muted:    "#928374",
+	Fg:       "#EBDBB2",
+	Bg:       "#282828",
+	Border:   "#504945",
 	CursorBg: "#504945",
 	Modified: "#FABD2F", // bright yellow (cleaner than orange for markers)
-	Added:    "#B8BB26", // green
-	Deleted:  "#FB4934", // red
+	Added:    "#B8BB26",
+	Deleted:  "#FB4934",
 }
