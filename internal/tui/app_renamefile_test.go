@@ -116,7 +116,7 @@ func TestRenameFile_Success(t *testing.T) {
 func TestRenameFile_AlreadyExists(t *testing.T) {
 	dir := t.TempDir()
 	f := writeAndParse(t, filepath.Join(dir, ".env"), "A=1\n")
-	require.NoError(t, os.WriteFile(filepath.Join(dir, ".env.local"), []byte("B=2\n"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".env.local"), []byte("B=2\n"), 0o644))
 
 	app := newTestApp([]*model.EnvFile{f})
 	app.config.Dir = dir

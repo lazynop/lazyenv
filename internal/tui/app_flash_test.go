@@ -69,7 +69,7 @@ func TestFlash_CreateFileSuccess(t *testing.T) {
 func TestFlash_DuplicateFileAlreadyExists(t *testing.T) {
 	dir := t.TempDir()
 	src := writeAndParse(t, filepath.Join(dir, ".env"), "A=1\n")
-	require.NoError(t, os.WriteFile(filepath.Join(dir, ".env.copy"), []byte(""), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".env.copy"), []byte(""), 0o644))
 
 	app := newTestApp([]*model.EnvFile{src})
 	app.config.Dir = dir

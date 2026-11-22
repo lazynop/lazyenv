@@ -127,7 +127,7 @@ func TestTemplateFile_PreservesCommentsAndBlankLines(t *testing.T) {
 func TestTemplateFile_AlreadyExists(t *testing.T) {
 	dir := t.TempDir()
 	src := writeAndParse(t, filepath.Join(dir, ".env"), "A=1\n")
-	require.NoError(t, os.WriteFile(filepath.Join(dir, ".env.example"), []byte(""), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".env.example"), []byte(""), 0o644))
 
 	app := newTestApp([]*model.EnvFile{src})
 	app.config.Dir = dir

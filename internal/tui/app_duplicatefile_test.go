@@ -96,7 +96,7 @@ func TestDuplicateFile_AlreadyExists(t *testing.T) {
 	dir := t.TempDir()
 	srcPath := filepath.Join(dir, ".env")
 	src := writeAndParse(t, srcPath, "FOO=bar\n")
-	require.NoError(t, os.WriteFile(filepath.Join(dir, ".env.local"), []byte(""), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".env.local"), []byte(""), 0o644))
 
 	app := newTestApp([]*model.EnvFile{src})
 	app.config.Dir = dir
