@@ -9,12 +9,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/parser"
 )
 
-// This file is the only place in the package that writes, creates, renames or
-// deletes .env files (enforced by TestDiskWritesGoThroughChokepoint). Each
-// method performs one disk operation and, once it succeeds, records it in
-// SessionStats before returning, so callers can neither forget the hook nor
-// run fallible post-processing (re-parse, CheckGitIgnore) ahead of it.
-
 const envFilePerm os.FileMode = 0o644
 
 func (a App) saveFile(f *model.EnvFile) error {

@@ -26,7 +26,7 @@
 16 internal/tui/app_cursor_property_test.go
 1 internal/tui/app_deletefile.go
 5 internal/tui/app_deletefile_test.go
-15 internal/tui/app_disk.go
+10 internal/tui/app_disk.go
 8 internal/tui/app_disk_test.go
 2 internal/tui/app_duplicatefile_test.go
 3 internal/tui/app_edit.go
