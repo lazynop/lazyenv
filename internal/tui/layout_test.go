@@ -7,6 +7,7 @@ import (
 	goparser "go/parser"
 	"go/token"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -97,6 +98,19 @@ func press(app App, keys ...string) App {
 
 func typing(text string) []string {
 	return strings.Split(text, "")
+}
+
+func writeAndParse(t *testing.T, path, content string) *model.EnvFile {
+	t.Helper()
+	require.NoError(t, os.WriteFile(path, []byte(content), 0o644))
+	f, err := parser.ParseFile(path, config.SecretsConfig{})
+	require.NoError(t, err)
+	return f
+}
+
+func blockBackup(t *testing.T, path string) {
+	t.Helper()
+	require.NoError(t, os.MkdirAll(filepath.Join(path+".bak", "blocker"), 0o755))
 }
 
 func replaceInput(openKey, text string) []string {

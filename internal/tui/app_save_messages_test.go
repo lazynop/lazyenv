@@ -22,11 +22,6 @@ func assertFlashMatches(t *testing.T, app App, kind messageKind, pattern string)
 	assert.Equal(t, kind, app.statusBar.kind)
 }
 
-func blockBackup(t *testing.T, path string) {
-	t.Helper()
-	require.NoError(t, os.MkdirAll(filepath.Join(path+".bak", "blocker"), 0o755))
-}
-
 func backupBlockedPattern(path string) string {
 	return `backup failed: renaming temp file: rename ` + regexp.QuoteMeta(filepath.Dir(path)) + `/\.lazyenv-\d+\.tmp ` + regexp.QuoteMeta(path+".bak") + `: [^:]+ - `
 }
