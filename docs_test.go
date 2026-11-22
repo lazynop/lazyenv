@@ -438,6 +438,19 @@ func TestCodingStandardsNamesExistingCode(t *testing.T) {
 	}
 }
 
+func TestDocsNameExistingJustRecipes(t *testing.T) {
+	repo := newRepoIndex(t)
+	pages, err := filepath.Glob("docs/*.md")
+	require.NoError(t, err)
+	for _, path := range append(pages, "README.md") {
+		for _, ref := range docstest.CodeSpans(docstest.ReadFile(t, path)) {
+			if justRefRe.MatchString(ref) {
+				assert.Empty(t, repo.missing(ref), "%s names `%s`", path, ref)
+			}
+		}
+	}
+}
+
 func TestRepoIndexChecksTheRecipeAJustSpanNames(t *testing.T) {
 	repo := repoIndex{justRecipes: map[string]bool{"mutant": true, "comment-baseline": true}}
 	for _, tc := range []struct {
