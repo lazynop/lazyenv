@@ -7,6 +7,7 @@ import (
 	"charm.land/lipgloss/v2"
 
 	"github.com/lazynop/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/config/themes"
 )
 
 // Theme holds all Lip Gloss styles.
@@ -57,28 +58,30 @@ type Theme struct {
 }
 
 // BuildTheme returns a theme based on the terminal background and optional color overrides.
+// Each empty color falls back to the default-dark palette on a dark terminal
+// and to the default-light palette on a light one.
 func BuildTheme(isDark bool, colors config.ColorConfig) Theme {
-	ld := lipgloss.LightDark(isDark)
+	fallback := defaultPalette(isDark)
 
-	resolve := func(override, light, dark string) color.Color {
+	resolve := func(override, defaultColor string) color.Color {
 		if override != "" {
 			return lipgloss.Color(override)
 		}
-		return ld(lipgloss.Color(light), lipgloss.Color(dark))
+		return lipgloss.Color(defaultColor)
 	}
 
-	colorPrimary := resolve(colors.Primary, "#7B2FBE", "#BD93F9")
-	colorWarning := resolve(colors.Warning, "#D97706", "#FFB86C")
-	colorError := resolve(colors.Error, "#DC2626", "#FF5555")
-	colorSuccess := resolve(colors.Success, "#059669", "#50FA7B")
-	colorMuted := resolve(colors.Muted, "#6B7280", "#6272A4")
-	colorFg := resolve(colors.Fg, "#1F2937", "#F8F8F2")
-	colorBorder := resolve(colors.Border, "#D1D5DB", "#44475A")
-	colorCursorBg := resolve(colors.CursorBg, "#E5E7EB", "#44475A")
+	colorPrimary := resolve(colors.Primary, fallback.Primary)
+	colorWarning := resolve(colors.Warning, fallback.Warning)
+	colorError := resolve(colors.Error, fallback.Error)
+	colorSuccess := resolve(colors.Success, fallback.Success)
+	colorMuted := resolve(colors.Muted, fallback.Muted)
+	colorFg := resolve(colors.Fg, fallback.Fg)
+	colorBorder := resolve(colors.Border, fallback.Border)
+	colorCursorBg := resolve(colors.CursorBg, fallback.CursorBg)
 
-	colorModified := resolve(colors.Modified, "#D97706", "#FFB86C")
-	colorAdded := resolve(colors.Added, "#059669", "#50FA7B")
-	colorDeleted := resolve(colors.Deleted, "#DC2626", "#FF5555")
+	colorModified := resolve(colors.Modified, fallback.Modified)
+	colorAdded := resolve(colors.Added, fallback.Added)
+	colorDeleted := resolve(colors.Deleted, fallback.Deleted)
 
 	var colorBg color.Color
 	if colors.Bg != "" {
@@ -165,6 +168,18 @@ func BuildTheme(isDark bool, colors config.ColorConfig) Theme {
 		ColorFg:      colorFg,
 		ColorBg:      colorBg,
 	}
+}
+
+func defaultPalette(isDark bool) themes.Colors {
+	name := "default-light"
+	if isDark {
+		name = "default-dark"
+	}
+	palette, ok := themes.Lookup(name)
+	if !ok {
+		panic("built-in theme " + name + " is missing")
+	}
+	return palette
 }
 
 func (t *Theme) barRoom(width int) int {
