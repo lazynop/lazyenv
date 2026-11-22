@@ -58,7 +58,6 @@
 66 internal/tui/matrixview_test.go
 13 internal/tui/scanner_gitignore_test.go
 6 internal/tui/scanner_test.go
-5 internal/tui/scroll.go
 18 internal/tui/session_stats_test.go
 25 internal/tui/source_scan_test.go
 26 internal/tui/statusbar_test.go

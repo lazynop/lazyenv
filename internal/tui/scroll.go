@@ -18,11 +18,6 @@ func visibleIndex(row, offset, visible, total int) int {
 	return offset + row
 }
 
-// scrollCursor is a cursor over a list's positions and the scroll offset of
-// the viewport that follows it. Its moves take from the list the visible rows
-// and the number of positions they need, since both can change between moves;
-// the list scrolls after each move with follow, adding any scrolling of its
-// own.
 type scrollCursor struct {
 	Cursor int
 	Offset int
