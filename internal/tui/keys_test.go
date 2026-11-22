@@ -66,18 +66,19 @@ func TestKeyPressesCarryTheirCode(t *testing.T) {
 			}
 			return isSelector(expr, local, "KeyPressMsg")
 		}
-		check := func(lit *ast.CompositeLit) {
+		check := func(lit *ast.CompositeLit, enclosingFunc string) {
 			if fields := keyedFields(lit); fields["Text"] && !fields["Code"] {
-				textOnly = append(textOnly, fset.Position(lit.Pos()).String())
+				ref := newSourceRef(fset, lit.Pos(), enclosingFunc, local+".KeyPressMsg")
+				textOnly = append(textOnly, ref.String())
 			}
 		}
-		ast.Inspect(file, func(n ast.Node) bool {
+		inspectDecls(file, func(n ast.Node, enclosingFunc string) bool {
 			lit, ok := n.(*ast.CompositeLit)
 			if !ok {
 				return true
 			}
 			if isKeyPress(lit.Type) {
-				check(lit)
+				check(lit, enclosingFunc)
 			}
 			if isKeyPress(elemType(lit.Type)) {
 				for _, elt := range lit.Elts {
@@ -85,7 +86,7 @@ func TestKeyPressesCarryTheirCode(t *testing.T) {
 						elt = kv.Value
 					}
 					if inner, ok := elt.(*ast.CompositeLit); ok && inner.Type == nil {
-						check(inner)
+						check(inner, enclosingFunc)
 					}
 				}
 			}
