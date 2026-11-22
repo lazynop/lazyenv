@@ -32,7 +32,7 @@ import (
 var (
 	wordRe                       = regexp.MustCompile(`[A-Za-z_]\w*`)
 	identRefRe                   = regexp.MustCompile(`^\*?([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)(\*?)(?:\(.*\))?$`)
-	justRefRe                    = regexp.MustCompile(`^just ([a-z][\w-]*)$`)
+	justRefRe                    = regexp.MustCompile(`^just ([a-z][\w-]*)(?:\s|$)`)
 	justRecipeRe                 = regexp.MustCompile(`(?m)^([A-Za-z][\w-]*)(?:\s[^:\n]*)?:(?:\s|$)`)
 	minimumRe                    = regexp.MustCompile("Minimum `(\\d+)`")
 	themeCountRe                 = regexp.MustCompile(`(\d+) built-in (?:color )?themes`)
@@ -435,6 +435,24 @@ func TestCodingStandardsNamesExistingCode(t *testing.T) {
 		if problem := repo.missing(ref); problem != "" {
 			t.Errorf("CODING_STANDARDS.md names `%s`, but %s", ref, problem)
 		}
+	}
+}
+
+func TestRepoIndexChecksTheRecipeAJustSpanNames(t *testing.T) {
+	repo := repoIndex{justRecipes: map[string]bool{"mutant": true, "comment-baseline": true}}
+	for _, tc := range []struct {
+		ref, problem string
+	}{
+		{"just mutant", ""},
+		{"just mutnt", "the justfile has no mutnt recipe"},
+		{"just mutant <file> <old> <new> '^TestName$'", ""},
+		{"just mutnt <file> <old> <new> '^TestName$'", "the justfile has no mutnt recipe"},
+		{"just comment-baseline -allow-raise", ""},
+		{"just comment-baselin -allow-raise", "the justfile has no comment-baselin recipe"},
+		{"just --list", ""},
+		{"just os=linux mutnt", ""},
+	} {
+		assert.Equal(t, tc.problem, repo.missing(tc.ref), "missing(%q)", tc.ref)
 	}
 }
 
