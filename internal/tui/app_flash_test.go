@@ -243,13 +243,7 @@ func TestFlashError_RendersInErrorColor(t *testing.T) {
 }
 
 func TestFlash_CompareResetReloadFailureRendersInErrorColor(t *testing.T) {
-	dir := t.TempDir()
-	pathA := filepath.Join(dir, ".env")
-	pathB := filepath.Join(dir, ".env.prod")
-	fA := writeAndParse(t, pathA, "FOO=a\n")
-	fB := writeAndParse(t, pathB, "FOO=b\n")
-
-	app := enterCompareMode(t, fA, fB)
+	app, _, pathB := newCompareAppOnDisk(t)
 	require.NoError(t, os.Remove(pathB))
 
 	app = press(app, "r")
