@@ -1,7 +1,5 @@
 package themes
 
-// Melange color theme (dark).
-// https://github.com/savq/melange-nvim
 var melange = Colors{
 	Primary:  "#86A3A3",
 	Warning:  "#EBC06D",

@@ -1,7 +1,5 @@
 package themes
 
-// Zenburn color theme.
-// https://kippura.org/zenburnpage/
 var zenburn = Colors{
 	Primary:  "#8CD0D3",
 	Warning:  "#DFAF8F",

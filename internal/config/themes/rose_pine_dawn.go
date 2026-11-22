@@ -1,7 +1,5 @@
 package themes
 
-// Rosé Pine Dawn color theme (light variant).
-// https://rosepinetheme.com/palette
 var rosePineDawn = Colors{
 	Primary:  "#907AA9",
 	Warning:  "#EA9D34",

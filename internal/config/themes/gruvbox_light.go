@@ -1,7 +1,5 @@
 package themes
 
-// Gruvbox Light color theme.
-// https://github.com/morhetz/gruvbox
 var gruvboxLight = Colors{
 	Primary:  "#B57614",
 	Warning:  "#AF3A03",

@@ -1,7 +1,5 @@
 package themes
 
-// Vitesse Dark color theme.
-// https://github.com/antfu/vscode-theme-vitesse
 var vitesseDark = Colors{
 	Primary:  "#4D9375",
 	Warning:  "#E6CC77",

@@ -1,7 +1,5 @@
 package themes
 
-// Catppuccin Mocha color theme.
-// https://catppuccin.com/palette
 var catppuccinMocha = Colors{
 	Primary:  "#CBA6F7",
 	Warning:  "#FAB387",

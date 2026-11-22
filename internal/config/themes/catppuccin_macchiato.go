@@ -1,7 +1,5 @@
 package themes
 
-// Catppuccin Macchiato color theme.
-// https://catppuccin.com/palette
 var catppuccinMacchiato = Colors{
 	Primary:  "#C6A0F6",
 	Warning:  "#F5A97F",

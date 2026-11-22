@@ -1,7 +1,5 @@
 package themes
 
-// Dawnfox color theme (light variant of Nightfox).
-// https://github.com/EdenEast/nightfox.nvim
 var dawnfox = Colors{
 	Primary:  "#286983",
 	Warning:  "#EA9D34",

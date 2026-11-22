@@ -1,7 +1,5 @@
 package themes
 
-// Ayu Mirage color theme.
-// https://github.com/ayu-theme/ayu-colors
 var ayuMirage = Colors{
 	Primary:  "#FFCC66",
 	Warning:  "#FFD580",

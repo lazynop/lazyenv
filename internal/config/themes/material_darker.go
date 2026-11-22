@@ -1,7 +1,5 @@
 package themes
 
-// Material Darker color theme.
-// https://github.com/material-theme/vsc-material-theme
 var materialDarker = Colors{
 	Primary:  "#82AAFF",
 	Warning:  "#FFCB6B",

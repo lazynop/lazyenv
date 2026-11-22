@@ -1,7 +1,5 @@
 package themes
 
-// Vitesse Light color theme.
-// https://github.com/antfu/vscode-theme-vitesse
 var vitesseLight = Colors{
 	Primary:  "#1E754F",
 	Warning:  "#B58900",

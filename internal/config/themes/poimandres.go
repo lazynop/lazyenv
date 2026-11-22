@@ -1,7 +1,5 @@
 package themes
 
-// Poimandres color theme.
-// https://github.com/drcmda/poimandres-theme
 var poimandres = Colors{
 	Primary:  "#ADD7FF",
 	Warning:  "#FFFAC2",

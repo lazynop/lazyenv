@@ -1,7 +1,5 @@
 package themes
 
-// Kanagawa color theme.
-// https://github.com/rebelot/kanagawa.nvim
 var kanagawa = Colors{
 	Primary:  "#7E9CD8",
 	Warning:  "#FFA066",

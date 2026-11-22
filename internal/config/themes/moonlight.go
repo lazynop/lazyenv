@@ -1,7 +1,5 @@
 package themes
 
-// Moonlight color theme.
-// https://github.com/atomiks/moonlight-vscode-theme
 var moonlight = Colors{
 	Primary:  "#82AAFF",
 	Warning:  "#FFC777",

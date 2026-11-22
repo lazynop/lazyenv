@@ -1,7 +1,5 @@
 package themes
 
-// Ayu Dark color theme.
-// https://github.com/ayu-theme/ayu-colors
 var ayuDark = Colors{
 	Primary:  "#E6B450",
 	Warning:  "#FFB454",

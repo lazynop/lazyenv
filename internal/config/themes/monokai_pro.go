@@ -1,7 +1,5 @@
 package themes
 
-// Monokai Pro color theme.
-// https://monokai.pro
 var monokaiPro = Colors{
 	Primary:  "#FFD866",
 	Warning:  "#FC9867",

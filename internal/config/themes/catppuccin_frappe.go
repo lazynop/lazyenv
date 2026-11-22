@@ -1,7 +1,5 @@
 package themes
 
-// Catppuccin Frappé color theme.
-// https://catppuccin.com/palette
 var catppuccinFrappe = Colors{
 	Primary:  "#CA9EE6",
 	Warning:  "#EF9F76",

@@ -1,7 +1,5 @@
 package themes
 
-// One Light color theme (Atom).
-// https://github.com/atom/atom/tree/master/packages/one-light-syntax
 var oneLight = Colors{
 	Primary:  "#4078F2",
 	Warning:  "#C18401",

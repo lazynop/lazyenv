@@ -1,7 +1,5 @@
 package themes
 
-// GitHub Light color theme.
-// https://github.com/primer/github-vscode-theme
 var githubLight = Colors{
 	Primary:  "#0969DA",
 	Warning:  "#9A6700",

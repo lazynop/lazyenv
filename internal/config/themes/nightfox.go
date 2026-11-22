@@ -1,7 +1,5 @@
 package themes
 
-// Nightfox color theme.
-// https://github.com/EdenEast/nightfox.nvim
 var nightfox = Colors{
 	Primary:  "#719CD6",
 	Warning:  "#DFDFE0",

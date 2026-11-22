@@ -1,7 +1,5 @@
 package themes
 
-// One Dark color theme.
-// https://github.com/Binaryify/OneDark-Pro
 var oneDark = Colors{
 	Primary:  "#61AFEF",
 	Warning:  "#E5C07B",

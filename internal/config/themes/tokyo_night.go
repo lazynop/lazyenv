@@ -1,7 +1,5 @@
 package themes
 
-// Tokyo Night color theme.
-// https://github.com/enkia/tokyo-night-vscode-theme
 var tokyoNight = Colors{
 	Primary:  "#7AA2F7",
 	Warning:  "#E0AF68",

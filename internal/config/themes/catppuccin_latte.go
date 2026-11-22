@@ -1,7 +1,5 @@
 package themes
 
-// Catppuccin Latte color theme (light).
-// https://catppuccin.com/palette
 var catppuccinLatte = Colors{
 	Primary:  "#1E66F5",
 	Warning:  "#DF8E1D",

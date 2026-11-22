@@ -1,7 +1,5 @@
 package themes
 
-// Dracula color theme.
-// https://draculatheme.com/contribute#color-palette
 var dracula = Colors{
 	Primary:  "#BD93F9",
 	Warning:  "#FFB86C",

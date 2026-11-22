@@ -1,7 +1,5 @@
 package themes
 
-// Tomorrow Night color theme.
-// https://github.com/chriskempson/tomorrow-theme
 var tomorrowNight = Colors{
 	Primary:  "#81A2BE",
 	Warning:  "#F0C674",

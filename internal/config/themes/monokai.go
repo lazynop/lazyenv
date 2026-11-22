@@ -1,7 +1,5 @@
 package themes
 
-// Monokai color theme (original).
-// https://monokai.pro/classic
 var monokai = Colors{
 	Primary:  "#66D9EF",
 	Warning:  "#E6DB74",

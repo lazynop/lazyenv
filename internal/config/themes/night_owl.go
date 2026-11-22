@@ -1,7 +1,5 @@
 package themes
 
-// Night Owl color theme.
-// https://github.com/sdras/night-owl-vscode-theme
 var nightOwl = Colors{
 	Primary:  "#82AAFF",
 	Warning:  "#ADDB67",

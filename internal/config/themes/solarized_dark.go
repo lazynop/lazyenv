@@ -1,7 +1,5 @@
 package themes
 
-// Solarized Dark color theme.
-// https://ethanschoonover.com/solarized
 var solarizedDark = Colors{
 	Primary:  "#268BD2",
 	Warning:  "#B58900",

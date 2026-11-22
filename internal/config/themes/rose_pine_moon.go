@@ -1,7 +1,5 @@
 package themes
 
-// Rosé Pine Moon color theme.
-// https://rosepinetheme.com/palette
 var rosePineMoon = Colors{
 	Primary:  "#C4A7E7",
 	Warning:  "#F6C177",

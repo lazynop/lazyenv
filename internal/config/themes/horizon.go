@@ -1,7 +1,5 @@
 package themes
 
-// Horizon color theme.
-// https://horizontheme.com
 var horizon = Colors{
 	Primary:  "#E95678",
 	Warning:  "#FAB795",

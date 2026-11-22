@@ -1,7 +1,5 @@
 package themes
 
-// Cobalt2 color theme.
-// https://github.com/wesbos/cobalt2-vscode
 var cobalt2 = Colors{
 	Primary:  "#FFC600",
 	Warning:  "#FF9D00",

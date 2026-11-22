@@ -1,7 +1,5 @@
 package themes
 
-// Snazzy color theme.
-// https://github.com/sindresorhus/hyper-snazzy
 var snazzy = Colors{
 	Primary:  "#57C7FF",
 	Warning:  "#F3F99D",

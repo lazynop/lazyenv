@@ -1,7 +1,5 @@
 package themes
 
-// Everforest Dark color theme.
-// https://github.com/sainnhe/everforest
 var everforest = Colors{
 	Primary:  "#A7C080",
 	Warning:  "#DBBC7F",

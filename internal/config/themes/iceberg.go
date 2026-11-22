@@ -1,7 +1,5 @@
 package themes
 
-// Iceberg color theme.
-// https://cocopon.github.io/iceberg.vim/
 var iceberg = Colors{
 	Primary:  "#84A0C6",
 	Warning:  "#E2A478",

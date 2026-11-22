@@ -1,7 +1,5 @@
 package themes
 
-// Synthwave '84 color theme.
-// https://github.com/robb0wen/synthwave-vscode
 var synthwave84 = Colors{
 	Primary:  "#FF7EDB",
 	Warning:  "#FEDE5D",

@@ -1,7 +1,5 @@
 package themes
 
-// Base16 Eighties color theme.
-// https://github.com/chriskempson/base16
 var base16Eighties = Colors{
 	Primary:  "#6699CC",
 	Warning:  "#FFCC66",

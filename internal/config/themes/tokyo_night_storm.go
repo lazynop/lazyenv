@@ -1,7 +1,5 @@
 package themes
 
-// Tokyo Night Storm color theme (deeper blue variant).
-// https://github.com/enkia/tokyo-night-vscode-theme
 var tokyoNightStorm = Colors{
 	Primary:  "#7AA2F7",
 	Warning:  "#E0AF68",

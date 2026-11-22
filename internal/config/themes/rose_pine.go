@@ -1,7 +1,5 @@
 package themes
 
-// Rosé Pine color theme.
-// https://rosepinetheme.com
 var rosePine = Colors{
 	Primary:  "#C4A7E7",
 	Warning:  "#F6C177",

@@ -1,7 +1,5 @@
 package themes
 
-// Vesper color theme.
-// https://github.com/raunofreiberg/vesper
 var vesper = Colors{
 	Primary:  "#FFC799",
 	Warning:  "#FFCFA8",

@@ -1,7 +1,5 @@
 package themes
 
-// Andromeda color theme.
-// https://github.com/EliverLara/Andromeda
 var andromeda = Colors{
 	Primary:  "#00E8C6",
 	Warning:  "#FFE66D",

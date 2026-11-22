@@ -1,7 +1,5 @@
 package themes
 
-// Shades of Purple color theme.
-// https://github.com/ahmadawais/shades-of-purple-vscode
 var shadesOfPurple = Colors{
 	Primary:  "#FAD000",
 	Warning:  "#FF9D00",

@@ -1,7 +1,5 @@
 package themes
 
-// GitHub Dark color theme.
-// https://github.com/primer/github-vscode-theme
 var githubDark = Colors{
 	Primary:  "#58A6FF",
 	Warning:  "#D29922",

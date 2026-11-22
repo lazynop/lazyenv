@@ -1,7 +1,5 @@
 package themes
 
-// Nord color theme.
-// https://www.nordtheme.com
 var nord = Colors{
 	Primary:  "#88C0D0",
 	Warning:  "#EBCB8B",

@@ -1,7 +1,5 @@
 package themes
 
-// Tomorrow color theme (light variant).
-// https://github.com/chriskempson/tomorrow-theme
 var tomorrow = Colors{
 	Primary:  "#4271AE",
 	Warning:  "#EAB700",

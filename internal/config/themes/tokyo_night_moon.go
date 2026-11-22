@@ -1,7 +1,5 @@
 package themes
 
-// Tokyo Night Moon color theme (warmer variant).
-// https://github.com/enkia/tokyo-night-vscode-theme
 var tokyoNightMoon = Colors{
 	Primary:  "#82AAFF",
 	Warning:  "#FFC777",

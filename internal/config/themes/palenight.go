@@ -1,7 +1,5 @@
 package themes
 
-// Palenight (Material Theme) color theme.
-// https://github.com/material-theme/vsc-material-theme
 var palenight = Colors{
 	Primary:  "#82AAFF",
 	Warning:  "#FFCB6B",

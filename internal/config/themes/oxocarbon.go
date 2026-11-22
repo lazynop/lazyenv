@@ -1,7 +1,5 @@
 package themes
 
-// Oxocarbon color theme (IBM Carbon-inspired).
-// https://github.com/nyoom-engineering/oxocarbon.nvim
 var oxocarbon = Colors{
 	Primary:  "#78A9FF",
 	Warning:  "#EE5396",

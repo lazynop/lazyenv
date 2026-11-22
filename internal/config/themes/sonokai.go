@@ -1,7 +1,5 @@
 package themes
 
-// Sonokai color theme (Monokai Pro-inspired for Neovim).
-// https://github.com/sainnhe/sonokai
 var sonokai = Colors{
 	Primary:  "#7ACCD7",
 	Warning:  "#E7C664",

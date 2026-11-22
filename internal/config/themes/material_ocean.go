@@ -1,7 +1,5 @@
 package themes
 
-// Material Ocean color theme.
-// https://github.com/material-theme/vsc-material-theme
 var materialOcean = Colors{
 	Primary:  "#82AAFF",
 	Warning:  "#FFCB6B",

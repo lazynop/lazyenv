@@ -1,7 +1,5 @@
 package themes
 
-// Ayu Light color theme.
-// https://github.com/ayu-theme/ayu-colors
 var ayuLight = Colors{
 	Primary:  "#FF9940",
 	Warning:  "#F2AE49",
