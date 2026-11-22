@@ -78,7 +78,7 @@ Before lazyenv first writes a file in a session, it copies it to a `.bak` file n
 
 ## Round-trip fidelity
 
-Saves preserve comments, blank lines, quoting style, and key ordering — your files stay exactly as you wrote them.
+Saves preserve comments, blank lines, quoting style, and key ordering. Line endings and the byte order mark are the exception: a save writes LF line endings and no UTF-8 BOM, whatever the file used, so a file with CRLF or CR line endings, or with a BOM, changes on its first save. LF without a BOM is the dotenv convention, and a BOM breaks the first key in a parser that does not strip it.
 
 ## Search and sort
 
