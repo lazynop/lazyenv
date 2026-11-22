@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lazynop/lazyenv/internal/config"
-	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/lazynop/lazyenv/internal/parser"
 )
 
@@ -170,47 +169,40 @@ func TestSavePreservesTrailingNewline(t *testing.T) {
 }
 
 func TestSaveFromMatrixPreservesGitWarning(t *testing.T) {
-	dir := t.TempDir()
-	pathA := filepath.Join(dir, ".env")
-	pathB := filepath.Join(dir, ".env.prod")
-	require.NoError(t, os.WriteFile(pathA, []byte("FOO=a\n"), 0644))
-	require.NoError(t, os.WriteFile(pathB, []byte("BAR=b\n"), 0644))
+	app := loadFixtureApp(t, config.DefaultConfig(), map[string]string{
+		".env":      "FOO=a\n",
+		".env.prod": "BAR=b\n",
+	}, 80, 24)
+	for _, f := range app.fileList.Files {
+		f.GitWarning = true
+	}
+	env, prod := app.fileList.Files[0], app.fileList.Files[1]
+	require.Equal(t, ".env.prod", prod.Name)
+	require.Same(t, env, app.varList.File, "the var list starts on .env, so the save must follow the file selected after the matrix")
 
-	fA, err := parser.ParseFile(pathA, config.SecretsConfig{})
-	require.NoError(t, err)
-	fA.GitWarning = true
+	app = press(app, "m", "j", "right")
+	cell, ok := app.matrixView.CursorCell()
+	require.True(t, ok)
+	require.Equal(t, "FOO", cell.Key)
+	require.Same(t, prod, cell.File)
+	require.False(t, cell.Present)
 
-	fB, err := parser.ParseFile(pathB, config.SecretsConfig{})
-	require.NoError(t, err)
-	fB.GitWarning = true
+	app = press(app, "a")
+	require.Equal(t, ModeMatrixEditing, app.mode)
+	app = press(app, typing("from_matrix")...)
+	app = press(app, "enter", "esc")
+	require.Equal(t, ModeNormal, app.mode)
+	require.True(t, prod.Modified, "the matrix add stays in memory until a save")
 
-	app := newTestApp(nil)
-	app.fileList.Files = append(app.fileList.Files, fA, fB)
-	app.fileList.Selected = 0
-	app.varList.SetFile(fA)
-
-	fB.AddVar("FOO", "from_matrix")
-	require.True(t, fB.Modified)
-
-	app.varList.SetFile(fB)
-	updated, _ := app.Update(keyMsg("w"))
-	app = updated.(App)
+	require.Equal(t, FocusFiles, app.focus, "leaving the matrix keeps the file list focused")
+	app = press(app, "j")
+	require.Same(t, prod, app.varList.File)
+	app = press(app, "w")
 
 	for _, f := range app.fileList.Files {
 		assert.True(t, f.GitWarning, "%s: GitWarning must survive save", f.Name)
 	}
-	var prodFile *model.EnvFile
-	for _, f := range app.fileList.Files {
-		if f.Name == ".env.prod" {
-			prodFile = f
-		}
-	}
-	require.NotNil(t, prodFile)
-	found := false
-	for _, v := range prodFile.Vars {
-		if v.Key == "FOO" {
-			found = true
-		}
-	}
-	assert.True(t, found, "FOO should exist in .env.prod after save")
+	data, err := os.ReadFile(prod.Path)
+	require.NoError(t, err)
+	assert.Equal(t, "BAR=b\nFOO=from_matrix\n", string(data))
 }
