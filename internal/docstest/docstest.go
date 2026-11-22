@@ -101,6 +101,32 @@ func TableRows(t *testing.T, doc, header string) [][]string {
 	return nil
 }
 
+// TableRow returns the first row, in the tables of doc with a column named
+// column, whose cell in that column holds the code span key, and fails the
+// test when there is none.
+func TableRow(t *testing.T, doc, column, key string) []string {
+	t.Helper()
+	for _, table := range Tables(doc) {
+		i := slices.Index(table.Header, column)
+		if i < 0 {
+			continue
+		}
+		for _, row := range table.Rows {
+			if i < len(row) && slices.Contains(CodeSpans(row[i]), key) {
+				return row
+			}
+		}
+	}
+	require.Failf(t, "missing row", "no table has a %q column holding `%s`", column, key)
+	return nil
+}
+
+// RowText returns the cells of the row TableRow finds, joined by "|".
+func RowText(t *testing.T, doc, column, key string) string {
+	t.Helper()
+	return strings.Join(TableRow(t, doc, column, key), "|")
+}
+
 // LineStartingWith returns the first line of doc that starts with prefix, and
 // fails the test when there is none.
 func LineStartingWith(t *testing.T, doc, prefix string) string {
