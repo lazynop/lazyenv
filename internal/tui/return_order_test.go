@@ -2,7 +2,6 @@ package tui
 
 import (
 	"go/ast"
-	"go/build"
 	"go/importer"
 	goparser "go/parser"
 	"go/token"
@@ -21,9 +20,7 @@ type typedSource struct {
 
 func typeCheckThisPackage(t *testing.T) typedSource {
 	t.Helper()
-	pkg, err := build.ImportDir(".", 0)
-	require.NoError(t, err)
-
+	pkg := listPackageSource(t)
 	src := typedSource{
 		fset: token.NewFileSet(),
 		info: &types.Info{
@@ -31,13 +28,13 @@ func typeCheckThisPackage(t *testing.T) typedSource {
 			Selections: map[*ast.SelectorExpr]*types.Selection{},
 		},
 	}
-	for _, name := range pkg.GoFiles {
+	for _, name := range pkg.goFiles {
 		file, err := goparser.ParseFile(src.fset, name, nil, goparser.SkipObjectResolution)
 		require.NoError(t, err)
 		src.files = append(src.files, file)
 	}
 	conf := types.Config{Importer: importer.ForCompiler(src.fset, "source", nil)}
-	_, err = conf.Check(pkg.ImportPath, src.fset, src.files, src.info)
+	_, err := conf.Check(pkg.importPath, src.fset, src.files, src.info)
 	require.NoError(t, err)
 	return src
 }
@@ -120,10 +117,10 @@ func TestReturnsCallPointerMethodsBeforeReadingTheirReceiver(t *testing.T) {
 	src := typeCheckThisPackage(t)
 	var violations []string
 	for _, file := range src.files {
-		ast.Inspect(file, func(n ast.Node) bool {
+		inspectDecls(file, func(n ast.Node, enclosingFunc string) bool {
 			if ret, ok := n.(*ast.ReturnStmt); ok {
 				if read := readOfPointerCallReceiver(ret, src.info); read != nil {
-					violations = append(violations, src.fset.Position(read.Pos()).String())
+					violations = append(violations, newSourceRef(src.fset, read.Pos(), enclosingFunc, read.Name).String())
 				}
 			}
 			return true

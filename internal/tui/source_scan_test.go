@@ -3,13 +3,12 @@ package tui
 import (
 	"fmt"
 	"go/ast"
+	"go/build"
 	goparser "go/parser"
 	"go/token"
 	"path"
-	"path/filepath"
 	"slices"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -57,17 +56,43 @@ func sourceRefs(t *testing.T, importPath string, funcs ...string) []sourceRef {
 	})
 }
 
+func newSourceRef(fset *token.FileSet, pos token.Pos, enclosingFunc, name string) sourceRef {
+	position := fset.PositionFor(pos, false)
+	return sourceRef{file: position.Filename, line: position.Line, enclosingFunc: enclosingFunc, name: name}
+}
+
+type packageSource struct {
+	importPath string
+	goFiles    []string
+	testFiles  []string
+}
+
+func listPackageSource(t *testing.T) packageSource {
+	t.Helper()
+	pkg, err := build.ImportDir(".", 0)
+	require.NoError(t, err)
+	return packageSource{
+		importPath: pkg.ImportPath,
+		goFiles:    pkg.GoFiles,
+		testFiles:  slices.Concat(pkg.TestGoFiles, pkg.XTestGoFiles),
+	}
+}
+
+func inspectDecls(file *ast.File, visit func(n ast.Node, enclosingFunc string) bool) {
+	for _, decl := range file.Decls {
+		enclosingFunc := ""
+		if fn, ok := decl.(*ast.FuncDecl); ok {
+			enclosingFunc = fn.Name.Name
+		}
+		ast.Inspect(decl, func(n ast.Node) bool { return visit(n, enclosingFunc) })
+	}
+}
+
 func sourceMatches(t *testing.T, importPath string, match identMatcher) []sourceRef {
 	t.Helper()
-	names, err := filepath.Glob("*.go")
-	require.NoError(t, err)
-
 	fset := token.NewFileSet()
 	var refs []sourceRef
-	for _, name := range names {
-		if strings.HasSuffix(name, "_test.go") {
-			continue
-		}
+	for _, name := range listPackageSource(t).goFiles {
 		file, err := goparser.ParseFile(fset, name, nil, goparser.SkipObjectResolution)
 		require.NoError(t, err)
 		importedAs := thisPackage
@@ -76,29 +101,18 @@ func sourceMatches(t *testing.T, importPath string, match identMatcher) []source
 				continue
 			}
 		}
-		for _, decl := range file.Decls {
-			enclosingFunc := ""
-			if fn, ok := decl.(*ast.FuncDecl); ok {
-				enclosingFunc = fn.Name.Name
-			}
-			ast.Inspect(decl, func(n ast.Node) bool {
-				id := match(n, importedAs)
-				if id == nil {
-					return true
-				}
-				qualified := id.Name
-				if importPath != thisPackage {
-					qualified = path.Base(importPath) + "." + id.Name
-				}
-				refs = append(refs, sourceRef{
-					file:          name,
-					line:          fset.Position(id.Pos()).Line,
-					enclosingFunc: enclosingFunc,
-					name:          qualified,
-				})
+		inspectDecls(file, func(n ast.Node, enclosingFunc string) bool {
+			id := match(n, importedAs)
+			if id == nil {
 				return true
-			})
-		}
+			}
+			qualified := id.Name
+			if importPath != thisPackage {
+				qualified = path.Base(importPath) + "." + id.Name
+			}
+			refs = append(refs, newSourceRef(fset, id.Pos(), enclosingFunc, qualified))
+			return true
+		})
 	}
 	return refs
 }

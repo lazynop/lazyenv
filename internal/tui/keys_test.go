@@ -5,7 +5,6 @@ import (
 	"go/ast"
 	goparser "go/parser"
 	"go/token"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -52,11 +51,9 @@ func TestEveryBoundKeyCanBePressed(t *testing.T) {
 }
 
 func TestKeyPressesCarryTheirCode(t *testing.T) {
-	names, err := filepath.Glob("*_test.go")
-	require.NoError(t, err)
 	fset := token.NewFileSet()
 	var textOnly []string
-	for _, name := range names {
+	for _, name := range listPackageSource(t).testFiles {
 		file, err := goparser.ParseFile(fset, name, nil, goparser.SkipObjectResolution)
 		require.NoError(t, err)
 		local := importName(file, bubbleteaPath)
