@@ -192,7 +192,8 @@ func TestQuitReturnsQuitCmd(t *testing.T) {
 	app := newTestApp(nil)
 
 	_, cmd := app.Update(keyMsg("q"))
-	assert.NotNil(t, cmd)
+	require.NotNil(t, cmd)
+	assert.IsType(t, tea.QuitMsg{}, cmd(), "q must quit the app")
 }
 
 func TestViewNotReady(t *testing.T) {
