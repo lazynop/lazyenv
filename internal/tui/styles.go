@@ -167,15 +167,10 @@ func BuildTheme(isDark bool, colors config.ColorConfig) Theme {
 	}
 }
 
-// barRoom is the columns of text a status bar or input bar width columns wide
-// holds inside the horizontal frame of StatusBar, the style that draws both.
 func (t *Theme) barRoom(width int) int {
 	return width - t.StatusBar.GetHorizontalFrameSize()
 }
 
-// renderPanel draws a bordered panel (the file list, the var list, each side
-// of the compare view): title and content inside the border, which takes the
-// primary color while the panel is focused.
 func renderPanel(width, height int, focused bool, title, content string, theme Theme) string {
 	style := theme.Panel.
 		Width(width).

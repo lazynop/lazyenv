@@ -9,7 +9,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// startReorder opens the reorder mode-selection menu for the active file.
 func (a App) startReorder() (tea.Model, tea.Cmd) {
 	if cmd := a.readOnlyFlash(); cmd != nil {
 		return a, cmd
@@ -24,7 +23,6 @@ func (a App) startReorder() (tea.Model, tea.Cmd) {
 	return a, nil
 }
 
-// handleReorderKey routes key presses for both reorder sub-modes.
 func (a App) handleReorderKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	if a.mode == ModeReorderMenu {
 		return a.handleReorderMenuKey(msg)
@@ -32,7 +30,6 @@ func (a App) handleReorderKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	return a.handleReorderConfirmKey(msg)
 }
 
-// handleReorderMenuKey handles the mode-selection menu shown after pressing O.
 func (a App) handleReorderMenuKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Escape):
@@ -48,7 +45,6 @@ func (a App) handleReorderMenuKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	return a, nil
 }
 
-// promptReorderConfirm switches to the confirmation prompt for the chosen mode.
 func (a App) promptReorderConfirm() (tea.Model, tea.Cmd) {
 	f := a.varList.File
 	if f == nil {
@@ -63,7 +59,6 @@ func (a App) promptReorderConfirm() (tea.Model, tea.Cmd) {
 	return a, nil
 }
 
-// handleReorderConfirmKey handles the y/n confirmation for an on-disk reorder.
 func (a App) handleReorderConfirmKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Confirm):

@@ -10,10 +10,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/util"
 )
 
-// This file holds the text helpers every view draws its text with.
-
-// displayText returns value as the panel shows it: masked when masked is
-// set, and flattened to a single row.
 func displayText(value string, masked bool) string {
 	if masked {
 		value = util.MaskValue(value)
@@ -21,37 +17,26 @@ func displayText(value string, masked bool) string {
 	return flattenText(value)
 }
 
-// flattenText returns s drawable on one row: line breaks and tabs become
-// width-1 arrows, and every other control character a visible stand-in, so
-// text read from disk (a value, a file name) can neither break the layout nor
-// send the terminal a control sequence (clear the screen, write the clipboard).
-// strings.Map also replaces invalid UTF-8, which could carry raw C1 bytes, and
-// allocates nothing when s needs no change.
 func flattenText(s string) string { return strings.Map(flattenRune, s) }
 
 func flattenRune(r rune) rune {
 	switch {
 	case r == '\n':
-		return '↵' // U+21B5
+		return '↵'
 	case r == '\t':
-		return '⇥' // U+21E5
+		return '⇥'
 	case r == '\r':
-		return '↩' // U+21A9
+		return '↩'
 	case r < 0x20:
 		return 0x2400 + r // Control Pictures: ␀ … ␟, ␛ for ESC
 	case r == 0x7f:
-		return '␡' // U+2421
+		return '␡'
 	case r >= 0x80 && r < 0xa0: // C1 controls
 		return utf8.RuneError
 	}
 	return r
 }
 
-// truncate fits s into maxCols display columns, appending ".." when the
-// string is actually shortened. It measures s by grapheme cluster with x/ansi,
-// as lipgloss.Width does, so a row it fits is a row lipgloss draws in that
-// width, and multi-byte runes like secret bullets or flatten glyphs are never
-// sliced mid-sequence.
 func truncate(s string, maxCols int) string {
 	if maxCols <= 0 {
 		return ""
@@ -66,21 +51,14 @@ func truncate(s string, maxCols int) string {
 	return ansi.Truncate(s, maxCols, "..")
 }
 
-// fitName fits a file name into maxCols display columns as truncate does,
-// flattened first: a name can hold any byte but a slash or NUL.
 func fitName(name string, maxCols int) string {
 	return truncate(flattenText(name), maxCols)
 }
 
-// wrapRows wraps s to width columns, at spaces where it can, and returns its
-// rows.
 func wrapRows(s string, width int) []string {
 	return strings.Split(ansi.Wrap(s, width, ""), "\n")
 }
 
-// padRight pads s with spaces to width display columns, measured by grapheme
-// cluster like truncate, so a cell it pads is width columns wide whatever runes
-// s holds. A string already that wide or wider comes back unchanged.
 func padRight(s string, width int) string {
 	visLen := lipgloss.Width(s)
 	if visLen >= width {

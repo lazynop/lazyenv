@@ -8,26 +8,20 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-// helpTitle is the first row of the help screen.
 const helpTitle = "lazyenv — TUI for managing .env files"
 
-// helpWheelNote names the mouse wheel on the help's scroll row.
 const helpWheelNote = " (or the mouse wheel)"
 
-// helpSection is one titled group of rows on the help screen.
 type helpSection struct {
 	title string
 	rows  []helpRow
 }
 
-// helpRow is one row of a helpSection: the keys it names and what they do.
 type helpRow struct {
 	keys string
 	desc string
 }
 
-// alternatives is the row of bindings whose keys all do desc, joined as
-// alternatives: "q / Ctrl+C".
 func alternatives(desc string, bindings ...key.Binding) helpRow {
 	var labels []string
 	for _, b := range bindings {
@@ -38,14 +32,10 @@ func alternatives(desc string, bindings ...key.Binding) helpRow {
 	return helpRow{strings.Join(labels, " / "), desc}
 }
 
-// pair is the row of two bindings that do the two halves of desc (up and
-// down, left and right file), their keys paired by position: "↑/↓  k/j".
 func pair(desc string, first, second key.Binding) helpRow {
 	return helpRow{strings.Join(pairColumns(first, second), "  "), desc}
 }
 
-// pairColumns are the keys of first and second paired by position, one
-// column for each: "↑/↓", "k/j".
 func pairColumns(first, second key.Binding) []string {
 	var columns []string
 	for i := range max(len(first.Keys()), len(second.Keys())) {
@@ -60,9 +50,6 @@ func pairColumns(first, second key.Binding) []string {
 	return columns
 }
 
-// shortKeys is the short form of bindings that the status-bar hints, the
-// prompts and the help's footer name: the first key of each, joined by "/":
-// "q", "←/→".
 func shortKeys(bindings ...key.Binding) string {
 	labels := make([]string, len(bindings))
 	for i, b := range bindings {
@@ -71,21 +58,14 @@ func shortKeys(bindings ...key.Binding) string {
 	return strings.Join(labels, "/")
 }
 
-// yesNo is the "(y/n)" that ends a yes/no prompt, naming the short keys of
-// keys.Confirm and keys.Deny.
 func yesNo(keys KeyMap) string {
 	return "(" + shortKeys(keys.Confirm, keys.Deny) + ")"
 }
 
-// glyph is the row of an indicator, a glyph the panels draw rather than a key.
 func glyph(label, desc string) helpRow {
 	return helpRow{label, desc}
 }
 
-// helpContents returns the sections of the help screen for keys, in the
-// order it shows them. Each screen's section sits next to the handler of its
-// keys, except promptsHelp, whose keys several handlers match; wheel says
-// whether the mouse wheel scrolls the help.
 func helpContents(keys KeyMap, wheel bool) []helpSection {
 	return []helpSection{
 		filesPanelHelp(keys),
@@ -110,7 +90,6 @@ func helpContents(keys KeyMap, wheel bool) []helpSection {
 			glyph(collapsedGroupGlyph, "Collapsed group"),
 			glyph(expandedGroupGlyph, "Expanded group"),
 		}},
-		// Each value glyph is what flattenText draws for the character.
 		{"Value Indicators", []helpRow{
 			glyph(flattenText("\n"), "Line break"),
 			glyph(flattenText("\t"), "Tab"),
@@ -134,8 +113,6 @@ func helpContents(keys KeyMap, wheel bool) []helpSection {
 	}
 }
 
-// promptsHelp is the help section of the input bars and yes/no prompts,
-// whose keys the editing, search, confirm and reorder handlers match.
 func promptsHelp(keys KeyMap) helpSection {
 	return helpSection{"Prompts", []helpRow{
 		alternatives("Confirm a text input or a search", keys.Enter),
@@ -169,7 +146,7 @@ func helpText(sections []helpSection) string {
 // HelpViewModel manages the help screen (?): the help text, scrolled when it
 // is taller than the terminal.
 type HelpViewModel struct {
-	text   string // the help text, one row per line
+	text   string
 	scroll string // the scroll keys the footer names: "↑/↓ k/j PgUp/PgDn"
 	close  string // the close keys the footer names: "Esc ? q"
 	offset int
@@ -183,11 +160,7 @@ type HelpViewModel struct {
 // mouse wheel scrolls it, so the help names the wheel only then.
 func NewHelpViewModel(keys KeyMap, wheel bool) HelpViewModel {
 	return HelpViewModel{
-		text: helpText(helpContents(keys, wheel)),
-		// The footer is a reminder that fits one row at MinTerminalWidth: it
-		// names the line and page scroll keys and the first key of each close
-		// binding, and leaves Home/End and the other close keys (Ctrl+C by
-		// default) to the "This help" section.
+		text:   helpText(helpContents(keys, wheel)),
 		scroll: strings.Join(slices.Concat(pairColumns(keys.Up, keys.Down), pairColumns(keys.PageUp, keys.PageDown)), " "),
 		close:  strings.Join([]string{shortKeys(keys.Escape), shortKeys(keys.Help), shortKeys(keys.Quit)}, " "),
 	}
@@ -220,11 +193,6 @@ func (m *HelpViewModel) SetSize(width, height int) {
 	m.scrollTo(m.offset)
 }
 
-// wrapHelpRow word-wraps one row of the help text to width with a hanging indent:
-// the continuation lines start under the row's description, the text after
-// its last run of two or more spaces (a heading has none and continues under
-// its first word). A row that fits is returned unchanged, and one whose
-// indent leaves no room is wrapped without it.
 func wrapHelpRow(row string, width int) []string {
 	if lipgloss.Width(row) <= width {
 		return []string{row}
@@ -245,13 +213,10 @@ func wrapHelpRow(row string, width int) []string {
 	return lines
 }
 
-// visibleLines returns how many rows of the help text fit on the screen.
 func (m *HelpViewModel) visibleLines() int {
 	return max(m.height-helpChromeHeight, 1)
 }
 
-// scrollTo shows the text from row offset, held between the first row and
-// the offset that shows the last row at the bottom of the screen.
 func (m *HelpViewModel) scrollTo(offset int) {
 	m.offset = scrollOffset(offset, offset, m.visibleLines(), len(m.lines))
 }

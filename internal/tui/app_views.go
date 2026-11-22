@@ -13,8 +13,6 @@ const (
 	configErrorHint    = "Press any key to exit"
 	configErrorCutHint = configErrorHint + " · see lazyenv --check-config"
 
-	// configPathMaxRows caps the rows the config file's path takes on the
-	// error screen, so at least one error fits on the smallest terminal.
 	configPathMaxRows = 2
 )
 
@@ -25,8 +23,6 @@ func (a App) viewConfigError() string {
 		Padding(1, 3).
 		Align(lipgloss.Center)
 
-	// The path and the errors wrap to the columns the box's frame leaves, so
-	// a long one never pushes the box past the terminal.
 	room := max(a.width-box.GetHorizontalFrameSize(), 1)
 	var path []string
 	if a.configPath != "" {
@@ -42,9 +38,6 @@ func (a App) viewConfigError() string {
 	}
 	hint := configErrorHint
 
-	// When the box is taller than the terminal it drops its vertical padding,
-	// then the blank rows, then the errors that do not fit, and points to
-	// --check-config, which lists them all.
 	blankRows := 2
 	rowsBesideMsg := func() int { return box.GetVerticalFrameSize() + 1 + len(path) + blankRows + 1 }
 	msg := wrapEach(a.configLines, room)
@@ -80,7 +73,6 @@ func (a App) viewConfigError() string {
 	return lipgloss.Place(a.width, a.height, lipgloss.Center, lipgloss.Center, alert)
 }
 
-// wrapEach wraps each text to width columns and returns the rows of each.
 func wrapEach(texts []string, width int) [][]string {
 	wrapped := make([][]string, len(texts))
 	for i, text := range texts {
@@ -89,10 +81,6 @@ func wrapEach(texts []string, width int) [][]string {
 	return wrapped
 }
 
-// cutToRows keeps the leading texts whose rows fit in rows, and says on one
-// more row how many it left out. When not even the first one fits, it keeps
-// the rows of the first that fit, the last one ending in an ellipsis. It
-// reports whether it cut anything.
 func cutToRows(texts [][]string, rows, width int) ([][]string, bool) {
 	if len(slices.Concat(texts...)) <= rows {
 		return texts, false

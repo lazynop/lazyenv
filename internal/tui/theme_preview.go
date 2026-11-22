@@ -13,7 +13,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/config/themes"
 )
 
-// resolvedColors holds theme colors converted to color.Color for rendering.
 type resolvedColors struct {
 	primary  color.Color
 	warning  color.Color
@@ -52,11 +51,11 @@ type ThemePreviewModel struct {
 	searchPaths []string
 	keys        KeyMap
 	cursor      int
-	selected    string // non-empty if user pressed Enter
+	selected    string
 	width       int
 	height      int
 	noMouse     bool
-	scrollLines int // themes a wheel tick moves through: mouse-scroll-lines
+	scrollLines int
 }
 
 // NewThemePreview returns a new theme preview model, with the mouse settings
@@ -141,23 +140,18 @@ func (m ThemePreviewModel) handleMouseWheel(msg tea.MouseWheelMsg) ThemePreviewM
 	return m
 }
 
-// scrollOffset returns the first theme the list shows: the list scrolls only
-// as far as the cursor needs.
 func (m ThemePreviewModel) scrollOffset() int {
 	return scrollOffset(m.cursor, 0, m.visibleLines(), len(m.themes))
 }
 
-// listWidth returns the width of the theme list panel, border included.
 func (m ThemePreviewModel) listWidth() int {
 	return max(m.width/3, config.FileListMinWidth)
 }
 
-// panelHeight is the height of both panels: the rows above the status bar.
 func (m ThemePreviewModel) panelHeight() int {
 	return m.height - statusBarHeight
 }
 
-// visibleLines returns how many themes the list panel shows.
 func (m ThemePreviewModel) visibleLines() int {
 	return max(m.panelHeight()-panelChromeHeight, 0)
 }
@@ -182,23 +176,18 @@ func (m ThemePreviewModel) View() tea.View {
 	}
 
 	listWidth := m.listWidth()
-	// A Lip Gloss Width includes the border, so the two panels split the
-	// terminal width between them.
 	showcaseWidth := m.width - listWidth
 
 	left := m.renderThemeList(listWidth, rc)
 	right := m.renderShowcase(showcaseWidth, tc, rc)
 
-	// Status bar
 	statusBar := m.renderStatusBar(rc)
 
-	// Join panels side by side
 	panels := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
 
 	return m.newView(lipgloss.JoinVertical(lipgloss.Left, panels, statusBar), rc)
 }
 
-// newView wraps content in a view painted with the theme's background.
 func (m ThemePreviewModel) newView(content string, rc resolvedColors) tea.View {
 	view := tea.NewView(content)
 	view.BackgroundColor = rc.bg
@@ -230,7 +219,6 @@ func (m ThemePreviewModel) renderThemeList(width int, rc resolvedColors) string 
 		if i == m.cursor {
 			prefix, style = "▸ ", cursorStyle
 		}
-		// Truncate rather than wrap, so each theme keeps to one row.
 		lines = append(lines, style.Render(truncate(prefix+m.themes[i], innerWidth)))
 	}
 
@@ -249,7 +237,6 @@ func (m ThemePreviewModel) renderShowcase(width int, tc themes.Colors, rc resolv
 	title := lipgloss.NewStyle().Bold(true).Foreground(rc.primary).
 		Render(" " + themeName)
 
-	// Color list: swatch + name + hex
 	type colorEntry struct {
 		name  string
 		value string
@@ -287,8 +274,6 @@ func (m ThemePreviewModel) renderShowcase(width int, tc themes.Colors, rc resolv
 	innerWidth := width - panelBorderWidth
 	configBox := m.renderConfigBox(innerWidth, themeName, rc)
 
-	// Fit the content to the rows inside the border: show the config box only
-	// when it fits, and cut the colors short on the shortest terminals.
 	inner := lipgloss.NewStyle().Width(innerWidth)
 	innerRows := max(m.panelHeight()-panelBorderHeight, 1)
 	content := inner.Render(title + "\n\n" + colorSection)
@@ -340,7 +325,6 @@ func (m ThemePreviewModel) renderStatusBar(rc resolvedColors) string {
 		keyStyle.Render(shortKeys(m.keys.Quit, m.keys.Escape)), descStyle.Render("quit"),
 	)
 
-	// Inline keeps the bar on one row, cut at the terminal width.
 	return lipgloss.NewStyle().Width(m.width).MaxWidth(m.width).Inline(true).Render(bar)
 }
 

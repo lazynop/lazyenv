@@ -18,13 +18,12 @@ func ScanDir(path string, recursive bool, fileCfg config.FileConfig, secrets con
 
 	walkFn := func(p string, d os.DirEntry, err error) error {
 		if err != nil {
-			return nil // skip files we can't access
+			return nil
 		}
 		if d.IsDir() {
 			if !recursive && p != path {
 				return filepath.SkipDir
 			}
-			// Skip hidden directories (except root)
 			if p != path && strings.HasPrefix(d.Name(), ".") {
 				return filepath.SkipDir
 			}
@@ -39,7 +38,7 @@ func ScanDir(path string, recursive bool, fileCfg config.FileConfig, secrets con
 		if isEnvFile(d.Name(), fileCfg) {
 			ef, err := parser.ParseFile(p, secrets)
 			if err != nil {
-				return nil // skip unparseable files
+				return nil
 			}
 			files = append(files, ef)
 		}
@@ -64,13 +63,11 @@ func ScanDir(path string, recursive bool, fileCfg config.FileConfig, secrets con
 }
 
 func isEnvFile(name string, cfg config.FileConfig) bool {
-	// Check exclude patterns first
 	for _, pat := range cfg.Exclude {
 		if matched, _ := filepath.Match(pat, name); matched {
 			return false
 		}
 	}
-	// Check include patterns
 	for _, pat := range cfg.Include {
 		if matched, _ := filepath.Match(pat, name); matched {
 			return true
@@ -86,17 +83,11 @@ func CheckGitIgnore(files []*model.EnvFile) {
 		return
 	}
 
-	// Check if we're in a git repo first
 	dir := filepath.Dir(files[0].Path)
 	if !isGitRepo(dir) {
 		return
 	}
 
-	// git runs in dir and reads a relative path from there, while a file's
-	// path, when the scanned directory was given relative, is relative to
-	// where lazyenv started: hand git each path relative to dir. The leading
-	// "./" keeps git from reading a name that starts with ':' as pathspec
-	// magic, which ":!x.env" would turn into a failure of the whole check.
 	paths := make([]string, len(files))
 	for i, f := range files {
 		rel, err := filepath.Rel(dir, f.Path)
@@ -106,9 +97,6 @@ func CheckGitIgnore(files []*model.EnvFile) {
 		paths[i] = "./" + rel
 	}
 
-	// -z, which needs --stdin, has git take and print the paths split by NUL:
-	// one per line, it would quote a path holding a control character, or a
-	// non-ASCII byte while core.quotePath is on (the default).
 	const nul = "\x00"
 	cmd := exec.Command("git", "check-ignore", "-z", "--stdin")
 	cmd.Dir = dir
@@ -129,7 +117,6 @@ func CheckGitIgnore(files []*model.EnvFile) {
 	}
 }
 
-// isGitRepo checks if the given directory is inside a git repository.
 func isGitRepo(dir string) bool {
 	cmd := exec.Command("git", "rev-parse", "--git-dir")
 	cmd.Dir = dir

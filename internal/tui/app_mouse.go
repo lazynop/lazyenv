@@ -5,7 +5,6 @@ import (
 )
 
 func (a App) handleMouseClick(msg tea.MouseClickMsg) (tea.Model, tea.Cmd) {
-	// `just lint` (exhaustive) requires a case for every AppMode.
 	//exhaustive:enforce
 	switch a.mode {
 	case ModeNormal, ModeSearching:
@@ -19,16 +18,12 @@ func (a App) handleMouseClick(msg tea.MouseClickMsg) (tea.Model, tea.Cmd) {
 	case ModeEditing, ModeEditingCompare, ModeMatrixEditing, ModeConfirmDelete, ModeConfirmDeleteFile,
 		ModeConfirmMatrixDelete, ModeCreateFile, ModeDuplicateFile, ModeRenameFile,
 		ModeTemplateFile, ModeReorderMenu, ModeReorderConfirm, ModeHelp, ModeConfigError:
-		// Keyboard-only modes (text input, prompts, menus) and static screens:
-		// clicks are ignored. The help screen has nothing to click, and a
-		// stray click while scrolling it with the wheel must not close it.
 	}
 	return a, nil
 }
 
 func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 	if msg.X < a.fileWidth {
-		// Click on file list panel
 		a.setFocus(FocusFiles)
 		index := a.fileList.IndexAt(msg.Y)
 		if index >= 0 {
@@ -36,8 +31,6 @@ func (a App) handleNormalMouseClick(msg tea.MouseClickMsg) App {
 			a.selectCursorFile()
 		}
 	} else {
-		// Click on var list panel. The row maps to an item as drawn when
-		// clicked, before focusing the list draws a peek line and scrolls.
 		index := a.varList.IndexAt(msg.Y)
 		a.setFocus(FocusVars)
 		if index >= 0 {
@@ -60,11 +53,11 @@ func (a App) handleCompareMouseClick(msg tea.MouseClickMsg) App {
 
 func (a App) handleCompareSelectMouseClick(msg tea.MouseClickMsg) App {
 	if msg.X >= a.fileWidth {
-		return a // only the file list picks the file to compare with
+		return a
 	}
 	index := a.fileList.IndexAt(msg.Y)
 	if index >= 0 {
-		a.fileList.MoveCursorTo(index) // the compare target, not the active file
+		a.fileList.MoveCursorTo(index)
 	}
 	return a
 }
@@ -79,7 +72,6 @@ func (a App) handleMatrixMouseClick(msg tea.MouseClickMsg) App {
 func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 	up := msg.Button == tea.MouseWheelUp
 	lines := a.config.Layout.MouseScrollLines
-	// `just lint` (exhaustive) requires a case for every AppMode.
 	//exhaustive:enforce
 	switch a.mode {
 	case ModeNormal, ModeSearching:
@@ -91,8 +83,6 @@ func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 	case ModeComparing:
 		wheelScroll(lines, up, a.diffView.MoveUp, a.diffView.MoveDown)
 	case ModeCompareSelect:
-		// Only the file list picks the compare target, and its cursor picks
-		// it, not the active file.
 		if msg.X < a.fileWidth {
 			wheelScroll(lines, up, a.fileList.MoveUp, a.fileList.MoveDown)
 		}
@@ -103,9 +93,6 @@ func (a App) handleMouseWheel(msg tea.MouseWheelMsg) App {
 	case ModeEditing, ModeEditingCompare, ModeMatrixEditing, ModeConfirmDelete, ModeConfirmDeleteFile,
 		ModeConfirmMatrixDelete, ModeCreateFile, ModeDuplicateFile, ModeRenameFile, ModeTemplateFile,
 		ModeReorderMenu, ModeReorderConfirm, ModeConfigError:
-		// Keyboard-only modes and static screens: the wheel is ignored. Edit
-		// bars and confirmations act on the entry they were opened on, so
-		// moving the cursor under them would only mislead or retarget them.
 	}
 	return a
 }
@@ -116,8 +103,6 @@ func (a App) scrollFileList(up bool) App {
 	return a
 }
 
-// wheelScroll moves a view by one wheel tick: lines steps of moveUp or
-// moveDown.
 func wheelScroll(lines int, up bool, moveUp, moveDown func()) {
 	step := moveDown
 	if up {

@@ -8,12 +8,11 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// Add step tracks the two-step add flow.
 type addStep int
 
 const (
-	addStepKey   addStep = iota // entering key name
-	addStepValue                // entering value
+	addStepKey addStep = iota
+	addStepValue
 )
 
 // EditorResult is returned when editing finishes.
@@ -37,14 +36,14 @@ type EditorModel struct {
 	isAdd       bool
 	isRenameKey bool
 	addStep     addStep
-	addKey      string // stored key name during add flow
+	addKey      string
 	label       string
 	shown       string // the value as the bar showed it when the edit started
 }
 
 // NewEditorModel creates a new editor model.
 func NewEditorModel() EditorModel {
-	ti := textinput.New() // no CharLimit: a value of any length must load whole
+	ti := textinput.New()
 	return EditorModel{
 		input:    ti,
 		varIndex: -1,

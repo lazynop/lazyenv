@@ -14,7 +14,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// The var list's indicators, which the help lists under Variable Indicators.
 const (
 	newVarGlyph         = "+"
 	modifiedVarGlyph    = "*"
@@ -26,11 +25,8 @@ const (
 	expandedGroupGlyph  = "▾"
 )
 
-// ungroupedHeaderLabel is the label shown above the trailing bucket of
-// variables with a unique prefix, no '_', or a leading '_'.
 const ungroupedHeaderLabel = "UNGROUPED"
 
-// displayKind distinguishes a variable row from a group header row.
 type displayKind int
 
 const (
@@ -38,17 +34,15 @@ const (
 	displayItemHeader
 )
 
-// displayItem is a single row in the rendered var list — either a variable
-// or a collapsible group header.
 type displayItem struct {
 	Kind     displayKind
-	VarIdx   int // index into File.Vars; valid when Kind == displayItemVar
-	GroupIdx int // index into groups;    valid when Kind == displayItemHeader
+	VarIdx   int
+	GroupIdx int
 }
 
 // VarListModel manages the variable list panel.
 type VarListModel struct {
-	scrollCursor // Cursor and Offset over displayItems
+	scrollCursor
 
 	File        *model.EnvFile
 	Height      int
@@ -62,10 +56,9 @@ type VarListModel struct {
 
 	layout config.LayoutConfig
 
-	// Computed view: groups + flattened display rows.
 	groups       []model.VarGroup
 	displayItems []displayItem
-	collapsed    map[string]bool // group prefix → collapsed flag (preserved across toggles)
+	collapsed    map[string]bool
 }
 
 // NewVarListModel creates a new variable list model.
@@ -84,12 +77,6 @@ func (m *VarListModel) SetFile(f *model.EnvFile) {
 	m.recomputeDisplay()
 }
 
-// recomputeDisplay rebuilds groups and the flat displayItems list.
-//
-// Linear view (no headers) is used when grouping is off OR when a search
-// query is active. Otherwise: emit one displayItemHeader per non-Ungrouped
-// group followed by its (optionally collapsed) vars; the Ungrouped bucket
-// is appended last with no header.
 func (m *VarListModel) recomputeDisplay() {
 	m.groups = nil
 	m.displayItems = nil
@@ -106,15 +93,12 @@ func (m *VarListModel) recomputeDisplay() {
 	m.groups = model.ComputeGroups(m.File.Vars)
 	if m.SortAlpha {
 		sort.SliceStable(m.groups, func(i, j int) bool {
-			// Ungrouped pinned last, even when sorting alphabetically.
 			if m.groups[i].IsUngrouped() != m.groups[j].IsUngrouped() {
 				return !m.groups[i].IsUngrouped()
 			}
 			return m.groups[i].Prefix < m.groups[j].Prefix
 		})
 	}
-	// Show the Ungrouped header only when a named group also exists, so the
-	// single-Ungrouped case (no real groupings) keeps the linear-view feel.
 	showUngroupedHeader := m.namedGroupCount() > 0
 	for gi, g := range m.groups {
 		if g.IsUngrouped() && !showUngroupedHeader {
@@ -149,8 +133,6 @@ func (m *VarListModel) appendGroupVars(g model.VarGroup) {
 	m.emitVarRows(slices.Clone(g.Vars))
 }
 
-// emitVarRows appends one displayItemVar per index in the given slice,
-// optionally sorting alphabetically by Key first. Mutates indices in place.
 func (m *VarListModel) emitVarRows(indices []int) {
 	if m.SortAlpha {
 		sort.Slice(indices, func(a, b int) bool {
@@ -162,9 +144,6 @@ func (m *VarListModel) emitVarRows(indices []int) {
 	}
 }
 
-// matchesQuery reports whether v's key or value contains the (already
-// lowercased) query. A masked value is skipped, so the search never
-// confirms text the panel hides.
 func (m *VarListModel) matchesQuery(v *model.EnvVar, qLower string) bool {
 	if strings.Contains(strings.ToLower(v.Key), qLower) {
 		return true
@@ -175,22 +154,16 @@ func (m *VarListModel) matchesQuery(v *model.EnvVar, qLower string) bool {
 	return strings.Contains(strings.ToLower(v.Value), qLower)
 }
 
-// isMasked reports whether the panel hides v's value: v is a secret and
-// secrets are not revealed.
 func (m *VarListModel) isMasked(v *model.EnvVar) bool {
 	return v.IsSecret && !m.ShowSecrets
 }
 
-// isOriginalMasked reports whether the panel hides v's original value: it or
-// v's current value is a secret, and secrets are not revealed.
 func (m *VarListModel) isOriginalMasked(v *model.EnvVar) bool {
 	return (v.IsSecret || v.OriginalIsSecret) && !m.ShowSecrets
 }
 
 func (m *VarListModel) clampCursor() {
 	m.clamp(len(m.displayItems))
-	// Keep the scroll offset within the (possibly shrunken) list, and the
-	// cursor row (now perhaps modified, with a peek line) inside the viewport.
 	m.ensureCursorVisible()
 }
 
@@ -200,11 +173,6 @@ func (m *VarListModel) SetSize(width, height int) {
 	m.ensureCursorVisible()
 }
 
-// ensureCursorVisible scrolls so the cursor row, and its peek line when one
-// is drawn, sit inside the viewport, and the viewport shows no blank rows
-// while rows above it are scrolled off. The deleted vars, drawn below the
-// last item, count as rows too: on the last item the list scrolls on to show
-// as many of them as fit.
 func (m *VarListModel) ensureCursorVisible() {
 	if m.Height <= panelChromeHeight {
 		return // not laid out yet
@@ -290,29 +258,20 @@ func (m *VarListModel) IndexAt(y int) int {
 	return -1
 }
 
-// drawnRowKind is what a row of the var list draws.
 type drawnRowKind int
 
 const (
-	itemRow    drawnRowKind = iota // a display item: a var or a group header
-	peekRow                        // the peek line under the item at the cursor
-	noteRow                        // in place of the items when there are none
-	deletedRow                     // a deleted var, below the last item
+	itemRow drawnRowKind = iota
+	peekRow
+	noteRow
+	deletedRow
 )
 
-// drawnRow is a row the list draws: its kind and the index of what it shows,
-// in displayItems for an item or a peek line (the item it belongs to), in
-// File.DeletedVars for a deleted var.
 type drawnRow struct {
 	kind  drawnRowKind
 	index int
 }
 
-// drawnRows returns the rows the list draws from Offset down: the items that
-// fit (visibleLines), the peek line under the cursor's when one is drawn, or a
-// note when no item is shown, then the deleted vars the rows left hold.
-// renderRows draws them and IndexAt maps clicks through them, so both follow
-// one layout.
 func (m *VarListModel) drawnRows() []drawnRow {
 	var rows []drawnRow
 	if len(m.displayItems) == 0 {
@@ -393,10 +352,6 @@ func (m *VarListModel) captureCursor() cursorAnchor {
 	return cursorAnchor{}
 }
 
-// restoreCursor positions the cursor on the row that matches the anchor.
-// If the original row was a header, look for a header with the same prefix.
-// If it was a var, look for the var first; if hidden in a collapsed group,
-// fall back to that group's header.
 func (m *VarListModel) restoreCursor(a cursorAnchor) {
 	if a.hasHeader {
 		for i, item := range m.displayItems {
@@ -487,7 +442,6 @@ func (m *VarListModel) namedGroupCount() int {
 	return n
 }
 
-// renderWarningIndicators renders the modification and issue warning indicators for a variable.
 func (m *VarListModel) renderWarningIndicators(v *model.EnvVar, theme Theme) string {
 	mod := " "
 	issue := " "
@@ -509,24 +463,19 @@ func (m *VarListModel) renderWarningIndicators(v *model.EnvVar, theme Theme) str
 	return mod + issue
 }
 
-// formatValue returns the masked, flattened, truncated and padded display
-// value for a variable, ready to be emitted into a single-row table cell.
 func (m *VarListModel) formatValue(v *model.EnvVar, maxValWidth int) string {
 	return padRight(truncate(displayText(v.Value, m.isMasked(v)), maxValWidth), maxValWidth)
 }
 
-// renderVarLine renders a single variable line including cursor highlighting, secret masking, and warnings.
 func (m *VarListModel) renderVarLine(rowIdx int, v *model.EnvVar, keyWidth, maxValWidth int, theme Theme) string {
 	key := padRight(truncate(v.Key, keyWidth), keyWidth)
 	value := m.formatValue(v, maxValWidth)
 	warning := m.renderWarningIndicators(v, theme)
 
 	if rowIdx == m.Cursor && m.Focused {
-		// Cursor line: render as a single styled block (no ANSI nesting)
 		return theme.CursorItem.Render(fmt.Sprintf("  %s  %s%s", key, value, stripAnsi(warning)))
 	}
 
-	// Normal line: style key and value segments individually
 	valueStyle := theme.ValueStyle
 	if m.isMasked(v) {
 		valueStyle = theme.SecretValue
@@ -537,11 +486,6 @@ func (m *VarListModel) renderVarLine(rowIdx int, v *model.EnvVar, keyWidth, maxV
 		warning)
 }
 
-// renderHeaderLine renders a group header row (▾ PREFIX (N) or ▸ PREFIX (N)).
-//
-// When the cursor is on this row and the panel is focused, the line is
-// formatted from its plain parts and rendered as one CursorItem block, so no
-// inner Render() reset cuts the cursor highlight.
 func (m *VarListModel) renderHeaderLine(rowIdx int, group model.VarGroup, theme Theme) string {
 	arrow := expandedGroupGlyph
 	if m.collapsed[group.Prefix] {
@@ -552,9 +496,7 @@ func (m *VarListModel) renderHeaderLine(rowIdx int, group model.VarGroup, theme 
 		label = ungroupedHeaderLabel
 	}
 	countStr := fmt.Sprintf("(%d)", len(group.Vars))
-	const format = "  %s %s %s" // arrow, label, count
-	// The label gives way to the arrow and the count, so the header keeps its
-	// one row.
+	const format = "  %s %s %s"
 	label = truncate(label, m.contentCols()-lipgloss.Width(fmt.Sprintf(format, arrow, "", countStr)))
 
 	if rowIdx == m.Cursor && m.Focused {
@@ -566,36 +508,28 @@ func (m *VarListModel) renderHeaderLine(rowIdx int, group model.VarGroup, theme 
 		theme.MutedItem.Render(countStr))
 }
 
-// renderPeekLine renders the peek line under a modified or new variable.
 func (m *VarListModel) renderPeekLine(v *model.EnvVar, keyWidth, maxValWidth int, theme Theme) string {
 	text := "↳ new variable"
 	if !v.IsNew {
 		text = "↳ was: " + displayText(v.OriginalValue, m.isOriginalMasked(v))
 	}
-	// The text sits in the value column, so it fits wherever the row does.
 	return theme.MutedItem.Render(fmt.Sprintf("  %s  %s", padRight("", keyWidth), truncate(text, maxValWidth)))
 }
 
-// renderDeletedLine renders a deleted variable, drawn below the list until
-// the file is saved.
 func (m *VarListModel) renderDeletedLine(dv *model.EnvVar, keyWidth, maxValWidth int, theme Theme) string {
 	key := padRight(truncate(dv.Key, keyWidth), keyWidth)
 	value := m.formatValue(dv, maxValWidth)
 	return theme.MutedItem.Render(fmt.Sprintf("  %s  %s", key, value)) + theme.DeletedMarker.Render(deletedVarGlyph) + " "
 }
 
-// contentRows returns how many rows the panel has inside its chrome.
 func (m *VarListModel) contentRows() int {
 	return max(m.Height-panelChromeHeight, 1)
 }
 
-// contentCols returns how many columns the panel has inside its borders.
 func (m *VarListModel) contentCols() int {
 	return m.Width - panelBorderWidth
 }
 
-// visibleLines returns how many display items fit in the viewport, leaving a
-// row for the peek line when one is drawn.
 func (m *VarListModel) visibleLines() int {
 	visible := m.contentRows()
 	if m.drawsPeekLine() {
@@ -604,8 +538,6 @@ func (m *VarListModel) visibleLines() int {
 	return visible
 }
 
-// drawsPeekLine reports whether a peek line is drawn under the cursor row:
-// peek is on, the panel is focused and the cursor is on a modified or new var.
 func (m *VarListModel) drawsPeekLine() bool {
 	if !m.Peeking || !m.Focused || m.Cursor < 0 || m.Cursor >= len(m.displayItems) {
 		return false
@@ -628,7 +560,6 @@ func (m *VarListModel) calcColumnWidths() (int, int) {
 		}
 		longestKey = max(longestKey, len(m.File.Vars[item.VarIdx].Key))
 	}
-	// The deleted vars drawn below share the key column.
 	if m.File != nil {
 		for _, v := range m.File.DeletedVars {
 			longestKey = max(longestKey, len(v.Key))
@@ -641,7 +572,6 @@ func (m *VarListModel) calcColumnWidths() (int, int) {
 	}.split(longestKey, m.Width)
 }
 
-// note is the row drawn in place of the items when no item is shown.
 func (m *VarListModel) note() string {
 	switch {
 	case m.File == nil:
@@ -658,8 +588,6 @@ func (m *VarListModel) note() string {
 	return "  No variables"
 }
 
-// renderRows renders the rows drawnRows lays out: items, the peek line or the
-// note, and deleted vars.
 func (m *VarListModel) renderRows(keyWidth, maxValWidth int, theme Theme) []string {
 	var lines []string
 	for _, row := range m.drawnRows() {
@@ -675,7 +603,6 @@ func (m *VarListModel) renderRows(keyWidth, maxValWidth int, theme Theme) []stri
 			v := &m.File.Vars[m.displayItems[row.index].VarIdx]
 			lines = append(lines, m.renderPeekLine(v, keyWidth, maxValWidth, theme))
 		case noteRow:
-			// Cut to its one row, which drawnRows counts it as.
 			lines = append(lines, theme.MutedItem.Render(truncate(m.note(), m.contentCols())))
 		case deletedRow:
 			lines = append(lines, m.renderDeletedLine(&m.File.DeletedVars[row.index], keyWidth, maxValWidth, theme))
@@ -684,7 +611,6 @@ func (m *VarListModel) renderRows(keyWidth, maxValWidth int, theme Theme) []stri
 	return lines
 }
 
-// viewTitle returns the panel title string.
 func (m *VarListModel) viewTitle(theme Theme) string {
 	if m.File == nil {
 		return theme.PanelTitle.Render("Variables")
@@ -702,7 +628,6 @@ func (m *VarListModel) viewTitle(theme Theme) string {
 	}
 	count = fmt.Sprintf("(%s vars)", count)
 	const sep = " "
-	// The name gives way to the count, so the title keeps its one row.
 	room := m.contentCols() - theme.PanelTitle.GetHorizontalFrameSize() - lipgloss.Width(sep+count)
 	return theme.PanelTitle.Render(fitName(m.File.Name, room)) + sep + theme.MutedItem.Render(count)
 }
@@ -717,5 +642,4 @@ func (m *VarListModel) View(theme Theme) string {
 	return renderPanel(m.Width, m.Height, m.Focused, title, strings.Join(lines, "\n"), theme)
 }
 
-// stripAnsi removes ANSI escape sequences from s.
 func stripAnsi(s string) string { return ansi.Strip(s) }

@@ -9,16 +9,15 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// The file list's indicators, which the help lists under File Indicators.
 const (
 	selectedFileGlyph = "●"
-	modifiedFileGlyph = "*" // also after a file's name in the compare view
+	modifiedFileGlyph = "*"
 	gitWarningGlyph   = "!"
 )
 
 // FileListModel manages the file list panel.
 type FileListModel struct {
-	scrollCursor // Cursor and Offset over Files
+	scrollCursor
 
 	Files    []*model.EnvFile
 	Selected int // index of the selected (active) file
@@ -91,15 +90,12 @@ func (m *FileListModel) SetSize(width, height int) {
 	m.ensureCursorVisible()
 }
 
-// ensureCursorVisible scrolls so the cursor row sits inside the viewport, and
-// the viewport shows no blank rows while rows above it are scrolled off.
 func (m *FileListModel) ensureCursorVisible() {
 	if m.Height > panelChromeHeight { // not before the first layout
 		m.follow(m.visibleLines(), len(m.Files))
 	}
 }
 
-// visibleLines returns how many files fit in the panel.
 func (m *FileListModel) visibleLines() int {
 	return max(m.Height-panelChromeHeight, 1)
 }
@@ -180,7 +176,6 @@ func (m *FileListModel) View(theme Theme) string {
 			raw := fmt.Sprintf("%s%s%s%s%s%s", sel, warn, name, strings.Repeat(" ", gap), varCount, mod)
 			line = theme.CursorItem.Render(padRight(raw, inner))
 		} else {
-			// Style each segment individually to avoid ANSI reset leaking
 			var itemStyle lipgloss.Style
 			if i == m.Selected {
 				itemStyle = theme.SelectedItem

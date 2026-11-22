@@ -9,8 +9,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// matrixHelp is the help section of the keys handleMatrixKey and
-// handleMatrixEdit match.
 func matrixHelp(keys KeyMap) helpSection {
 	return helpSection{"Matrix", []helpRow{
 		pair("Move between variables", keys.Up, keys.Down),

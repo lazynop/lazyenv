@@ -37,7 +37,6 @@ func (a App) confirmRenameFile() (tea.Model, tea.Cmd) {
 	src.Path = newPath
 	src.Name = name
 
-	// Re-check gitignore — the new name may have different coverage
 	if !a.config.NoGitCheck {
 		src.GitWarning = false
 		CheckGitIgnore([]*model.EnvFile{src})

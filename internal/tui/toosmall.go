@@ -7,15 +7,10 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-// terminalTooSmall reports whether a width x height terminal is below the
-// minimum the TUI lays its screens out in.
 func terminalTooSmall(width, height int) bool {
 	return width < MinTerminalWidth || height < MinTerminalHeight
 }
 
-// tooSmallView is the screen drawn in place of any other while the terminal
-// is below the minimum: it names the size needed and how to quit, centered
-// and cut to the terminal.
 func tooSmallView(width, height int, title, muted lipgloss.Style) string {
 	notice := lipgloss.JoinVertical(lipgloss.Center,
 		title.Render("Terminal too small"),

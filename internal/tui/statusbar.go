@@ -8,22 +8,21 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-// messageKind picks the theme color a status-bar message renders in.
 type messageKind int
 
 const (
-	messageInfo    messageKind = iota // primary color
-	messageWarning                    // warning color: an action refused because of the input or the current state
-	messageAlert                      // error color: a failure, or a prompt confirming a delete
+	messageInfo messageKind = iota
+	messageWarning
+	messageAlert
 )
 
 // StatusBarModel manages the bottom status bar.
 type StatusBarModel struct {
 	Width    int
-	ReadOnly bool        // show [READ-ONLY] badge
-	Message  string      // transient message (e.g. "Saved!")
-	kind     messageKind // color Message renders in
-	msgGen   int         // bumped on every message set; guards against stale clears
+	ReadOnly bool   // show [READ-ONLY] badge
+	Message  string // transient message (e.g. "Saved!")
+	kind     messageKind
+	msgGen   int
 }
 
 // NewStatusBarModel creates a new status bar model.
@@ -48,12 +47,6 @@ func (m *StatusBarModel) SetAlert(msg string) {
 	m.setMessage(msg, messageAlert)
 }
 
-// setMessage sets the message and its kind. The message is flattened, since it
-// can name a file, whose name can hold any control character. Each call bumps
-// a generation counter so a clear scheduled for an earlier message cannot wipe
-// a newer one. This keeps persistent prompts (menus, confirmations) on screen
-// even if a previous transient flash's auto-clear timer fires while they are
-// showing.
 func (m *StatusBarModel) setMessage(msg string, kind messageKind) {
 	m.Message = flattenText(msg)
 	m.kind = kind
@@ -68,8 +61,6 @@ func (m *StatusBarModel) ClearMessage() {
 
 // View renders the status bar, its hints naming the keys that keys binds.
 func (m *StatusBarModel) View(theme Theme, keys KeyMap, mode AppMode, focus Focus, fileName string, varCount int, stats ...DiffStats) string {
-	// Left side: the transient message, or else the keybinding hints based on
-	// mode and focus
 	var left string
 	if m.Message != "" {
 		left = m.messageStyle(theme).Render(m.Message)
@@ -81,8 +72,6 @@ func (m *StatusBarModel) View(theme Theme, keys KeyMap, mode AppMode, focus Focu
 		left = modeHints(theme, keys, mode, focus, diffStats)
 	}
 
-	// Right side: read-only badge + file info, the file name cut to what a
-	// row leaves beside the rest, so the side fits one row
 	textWidth := theme.barRoom(m.Width)
 	right := ""
 	if m.ReadOnly {
@@ -102,9 +91,6 @@ func (m *StatusBarModel) View(theme Theme, keys KeyMap, mode AppMode, focus Focu
 		Render(statusRows(left, right, textWidth))
 }
 
-// statusRows lays the status bar's left side out in rows of textWidth columns,
-// wrapped on its own, and its right side whole and right-aligned on the last
-// row, or on a row of its own below when the last row has no room left for it.
 func statusRows(left, right string, textWidth int) string {
 	rows := wrapRows(left, textWidth)
 	if right != "" {
@@ -120,7 +106,6 @@ func statusRows(left, right string, textWidth int) string {
 	return strings.Join(rows, "\n")
 }
 
-// messageStyle returns the style Message renders in, picked by its kind.
 func (m *StatusBarModel) messageStyle(theme Theme) lipgloss.Style {
 	switch m.kind {
 	case messageWarning:
@@ -149,8 +134,6 @@ func formatDiffStats(s DiffStats, theme Theme) string {
 	return strings.Join(parts, " ")
 }
 
-// modeHints is the status-bar hint of mode and focus, naming the keys that
-// keys binds; diffStats ends the compare view's hint.
 func modeHints(theme Theme, keys KeyMap, mode AppMode, focus Focus, diffStats string) string {
 	switch mode {
 	case ModeNormal:
@@ -202,12 +185,8 @@ func modeHints(theme Theme, keys KeyMap, mode AppMode, focus Focus, diffStats st
 	case ModeConfirmDelete:
 		return theme.DuplicateWarn.Render("Delete variable? " + yesNo(keys))
 	case ModeConfirmDeleteFile, ModeConfirmMatrixDelete:
-		// The prompt set on entering the mode names what gets deleted and
-		// stays until the mode ends, so a hint here would never show.
 		return ""
 	case ModeHelp:
-		// The help screen fills the terminal with no status bar; its own
-		// footer names the keys.
 		return ""
 	case ModeSearching:
 		return theme.MutedItem.Render(fmt.Sprintf("Type to search, %s to keep the filter, %s to clear it",
@@ -233,13 +212,10 @@ func modeHints(theme Theme, keys KeyMap, mode AppMode, focus Focus, diffStats st
 	}
 }
 
-// formatHint is the hint "[key]desc" naming the short keys of bindings.
 func formatHint(theme Theme, desc string, bindings ...key.Binding) string {
 	return fmt.Sprintf("[%s]%s", theme.StatusBarKey.Render(shortKeys(bindings...)), theme.MutedItem.Render(desc))
 }
 
-// inputHint is the hint of an input bar: the key that confirms it, to do
-// action, and the one that cancels it.
 func inputHint(theme Theme, keys KeyMap, action string) string {
 	return theme.MutedItem.Render(fmt.Sprintf("%s to %s, %s to cancel", shortKeys(keys.Enter), action, shortKeys(keys.Escape)))
 }

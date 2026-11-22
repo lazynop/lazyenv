@@ -18,13 +18,11 @@ func (a App) confirmDuplicateFile() (tea.Model, tea.Cmd) {
 		return a, nil
 	}
 
-	// Place beside the source so it appears in the same watched directory
 	destPath, cmd := a.validateNewPath(name, filepath.Dir(src.Path))
 	if cmd != nil {
 		return a, cmd
 	}
 
-	// Copy raw bytes to preserve comments, formatting, and round-trip fidelity
 	data, err := os.ReadFile(src.Path)
 	if err != nil {
 		return a, a.flashError("Error reading source: " + err.Error())

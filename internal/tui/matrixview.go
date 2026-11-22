@@ -13,7 +13,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// The matrix's cell marks, which the help lists under Matrix Indicators.
 const (
 	presentGlyph = "✓"
 	missingGlyph = "✗"
@@ -24,8 +23,8 @@ type MatrixModel struct {
 	files   []*model.EnvFile
 	entries []model.MatrixEntry
 
-	rows scrollCursor // over the keys (rows)
-	cols scrollCursor // over the files (columns)
+	rows scrollCursor
+	cols scrollCursor
 
 	sortMode model.SortMode
 
@@ -34,7 +33,7 @@ type MatrixModel struct {
 	Width  int
 	Height int
 
-	edit   MatrixCell // the missing cell being filled; File is nil with no edit open
+	edit   MatrixCell
 	editor textinput.Model
 }
 
@@ -50,17 +49,11 @@ func NewMatrixModel(files []*model.EnvFile, layout config.LayoutConfig) MatrixMo
 	}
 }
 
-// recompute rebuilds the rows from the files, after a cell is added or
-// deleted, and sorts them with the cursor on key's row (sortRows).
 func (m *MatrixModel) recompute(key string) {
 	m.entries = model.ComputeMatrix(m.files)
 	m.sortRows(key)
 }
 
-// sortRows sorts the rows by sortMode and moves the cursor to key's row, or,
-// with no row for key, keeps its index within the rows; the view then scrolls
-// to the cursor. Each re-sort passes the key the cursor was on before the rows
-// changed, so the cursor stays on its key, as in the var list.
 func (m *MatrixModel) sortRows(key string) {
 	model.SortEntries(m.entries, m.sortMode)
 	if i := slices.IndexFunc(m.entries, func(e model.MatrixEntry) bool { return e.Key == key }); i >= 0 {
@@ -125,7 +118,6 @@ func (m *MatrixModel) SetCursor(row, col int) {
 	m.ensureHorizontalVisible()
 }
 
-// visibleLines returns how many body rows the matrix shows.
 func (m *MatrixModel) visibleLines() int {
 	return max(1, m.Height-matrixChromeHeight)
 }
@@ -277,7 +269,6 @@ func (m *MatrixModel) renderHeaderRow(endCol int, theme Theme) string {
 func (m *MatrixModel) renderBodyRow(ri, endCol int, theme Theme) string {
 	entry := m.entries[ri]
 
-	// Key name
 	keyStr := truncate(entry.Key, m.layout.MatrixKeyWidth-2)
 	keyFormatted := padRight(keyStr, m.layout.MatrixKeyWidth)
 	if ri == m.rows.Cursor {
@@ -291,7 +282,6 @@ func (m *MatrixModel) renderBodyRow(ri, endCol int, theme Theme) string {
 	for ci := m.cols.Offset; ci < endCol; ci++ {
 		var cell string
 		if ri == m.rows.Cursor && ci == m.cols.Cursor {
-			// Highlight active cell
 			if entry.Present[ci] {
 				cell = theme.SelectedItem.Render(padRight(" "+presentGlyph, m.layout.MatrixColWidth))
 			} else {
@@ -340,15 +330,12 @@ func (m *MatrixModel) View(theme Theme) string {
 	visCols := m.visibleCols()
 	endCol := min(m.cols.Offset+visCols, len(m.files))
 
-	// Header row
 	b.WriteString(m.renderHeaderRow(endCol, theme))
 	b.WriteString("\n")
 
-	// Separator
 	b.WriteString(theme.MutedItem.Render(strings.Repeat("─", max(m.Width-matrixPaddingWidth, 0))))
 	b.WriteString("\n")
 
-	// Body rows
 	visible := m.visibleLines()
 	endRow := min(m.rows.Offset+visible, len(m.entries))
 
@@ -357,7 +344,6 @@ func (m *MatrixModel) View(theme Theme) string {
 		b.WriteString("\n")
 	}
 
-	// Stats footer
 	missing := 0
 	total := len(m.entries) * len(m.files)
 	for _, e := range m.entries {
@@ -374,8 +360,6 @@ func (m *MatrixModel) View(theme Theme) string {
 
 	content := b.String()
 
-	// Pad the body to its full height, so the stats footer concatenated below
-	// keeps its row however many keys there are.
 	content += strings.Repeat("\n", max(0, matrixContentOffsetY+visible-strings.Count(content, "\n")))
 
 	style := lipgloss.NewStyle().

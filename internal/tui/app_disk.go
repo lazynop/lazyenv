@@ -19,7 +19,6 @@ import (
 // (owner-writable, world-readable), matching parser.WriteFile.
 const envFilePerm os.FileMode = 0o644
 
-// saveFile writes f to disk and records the vars just written.
 func (a App) saveFile(f *model.EnvFile) error {
 	if err := parser.WriteFile(f); err != nil {
 		return err
@@ -48,7 +47,6 @@ func (a App) duplicateFile(path string, data []byte, srcPath string) error {
 	if err := parser.WriteFileAtomic(path, data, envFilePerm); err != nil {
 		return err
 	}
-	// The stats read only keys and values, so no secrets config is needed.
 	copied := parser.ParseBytes(filepath.Base(path), data, config.SecretsConfig{})
 	a.sessionStats.RecordCreateDuplicate(path, srcPath, copied.Vars)
 	return nil
@@ -68,7 +66,6 @@ func (a App) templateFile(path string, data []byte, src *model.EnvFile) error {
 	return nil
 }
 
-// renameFile moves the file at oldPath to newPath and records the rename.
 func (a App) renameFile(oldPath, newPath string) error {
 	if err := os.Rename(oldPath, newPath); err != nil {
 		return err
@@ -77,7 +74,6 @@ func (a App) renameFile(oldPath, newPath string) error {
 	return nil
 }
 
-// deleteFile removes the file at path and records the deletion.
 func (a App) deleteFile(path string) error {
 	if err := os.Remove(path); err != nil {
 		return err

@@ -10,8 +10,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// compareHelp is the help section of the keys handleComparingKey and
-// handleComparingEdit match.
 func compareHelp(keys KeyMap) helpSection {
 	return helpSection{"Compare view", []helpRow{
 		pair("Navigate entries", keys.Up, keys.Down),
@@ -30,7 +28,6 @@ func compareHelp(keys KeyMap) helpSection {
 }
 
 func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	// Mutating actions (copy, edit, save) — blocked in read-only mode
 	if key.Matches(msg, a.keys.Right, a.keys.Left, a.keys.Save, a.keys.Edit, a.keys.EditRight) {
 		return a.handleComparingEdit(msg)
 	}
@@ -52,7 +49,7 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a.handleCompareReset()
 	case key.Matches(msg, a.keys.ToggleSecret):
 		a.diffView.ShowSecrets = !a.diffView.ShowSecrets
-		a.varList.SetShowSecrets(a.diffView.ShowSecrets) // keep in sync
+		a.varList.SetShowSecrets(a.diffView.ShowSecrets)
 		if a.diffView.ShowSecrets {
 			return a, a.flashMessage("Secrets revealed")
 		}
@@ -127,7 +124,6 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 			if err := a.saveFile(f); err != nil {
 				return a, a.flashError("Error saving " + f.Name + ": " + err.Error())
 			}
-			// Re-parse to refresh RawLines
 			refreshed, err := a.refreshFile(f)
 			if err == nil {
 				if f == a.diffView.FileA {
@@ -155,7 +151,6 @@ func (a App) startCompareEdit(file *model.EnvFile) (tea.Model, tea.Cmd) {
 	varIdx := file.LastIndexOfKey(e.Key)
 
 	if varIdx < 0 {
-		// Key doesn't exist in this file
 		return a, a.flashWarning(e.Key + " not in " + file.Name)
 	}
 
@@ -185,8 +180,6 @@ func (a App) handleEditingCompareKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	}
 }
 
-// compareSelectHelp is the help section of the keys handleCompareSelectKey
-// matches.
 func compareSelectHelp(keys KeyMap) helpSection {
 	return helpSection{"Compare: pick the second file", []helpRow{
 		pair("Choose the file", keys.Up, keys.Down),
@@ -198,9 +191,6 @@ func compareSelectHelp(keys KeyMap) helpSection {
 	}}
 }
 
-// exitCompare goes back to the main view from compare or from picking its
-// second file, the file list's cursor back on the active file so the list and
-// the vars panel stay in sync.
 func (a *App) exitCompare() {
 	a.mode = ModeNormal
 	a.compareFirstFile = nil
@@ -214,7 +204,6 @@ func (a App) handleCompareSelectKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 	switch {
 	case key.Matches(msg, a.keys.Escape, a.keys.Quit):
-		// q and Ctrl+C go back here, as they do from compare and matrix.
 		a.exitCompare()
 		a.statusBar.ClearMessage()
 	case key.Matches(msg, a.keys.Enter):

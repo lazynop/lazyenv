@@ -10,8 +10,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// The compare view's status marks, which the help lists under Compare
-// Indicators.
 const (
 	diffEqualGlyph   = "="
 	diffChangedGlyph = "≠"
@@ -29,7 +27,7 @@ type DiffStats struct {
 
 // DiffViewModel manages the diff/compare view.
 type DiffViewModel struct {
-	scrollCursor // Cursor and Offset over Entries
+	scrollCursor
 
 	FileA       *model.EnvFile
 	FileB       *model.EnvFile
@@ -162,7 +160,6 @@ func (m *DiffViewModel) PrevDiff() {
 	}
 }
 
-// visibleLines returns how many entries fit in a panel.
 func (m *DiffViewModel) visibleLines() int {
 	return max(m.Height-panelChromeHeight, 1)
 }
@@ -173,7 +170,6 @@ func (m *DiffViewModel) IndexAt(y int) int {
 	return visibleIndex(y-panelContentOffsetY, m.Offset, m.visibleLines(), len(m.Entries))
 }
 
-// ensureVisible scrolls just enough to keep the cursor on screen.
 func (m *DiffViewModel) ensureVisible() {
 	m.follow(m.visibleLines(), len(m.Entries))
 }
@@ -191,16 +187,12 @@ func (m *DiffViewModel) CopyToRight() string {
 
 	switch e.Status {
 	case model.DiffChanged:
-		// Update existing key in B with A's value
 		if i := m.FileB.LastIndexOfKey(e.Key); i >= 0 {
 			m.FileB.UpdateVar(i, e.ValueA)
 		}
 	case model.DiffAdded:
-		// Key only in A, add to B
 		m.FileB.AddVar(e.Key, e.ValueA)
 	case model.DiffRemoved:
-		// Key only in B — copying "right" means overwrite with nothing;
-		// more useful: delete from B so they match (both gone)
 		m.FileB.DeleteKey(e.Key)
 	}
 
@@ -221,15 +213,12 @@ func (m *DiffViewModel) CopyToLeft() string {
 
 	switch e.Status {
 	case model.DiffChanged:
-		// Update existing key in A with B's value
 		if i := m.FileA.LastIndexOfKey(e.Key); i >= 0 {
 			m.FileA.UpdateVar(i, e.ValueB)
 		}
 	case model.DiffRemoved:
-		// Key only in B, add to A
 		m.FileA.AddVar(e.Key, e.ValueB)
 	case model.DiffAdded:
-		// Key only in A — delete from A
 		m.FileA.DeleteKey(e.Key)
 	}
 
@@ -262,12 +251,10 @@ func (m *DiffViewModel) View(theme Theme) string {
 
 	halfWidth := m.Width / 2
 
-	// Headers
 	room := halfWidth - panelBorderWidth - theme.PanelTitle.GetHorizontalFrameSize()
 	leftTitle := theme.PanelTitle.Render(titleName(m.FileA, room))
 	rightTitle := theme.PanelTitle.Render(titleName(m.FileB, room))
 
-	// Calculate column widths
 	longestKey := 0
 	for _, e := range m.Entries {
 		longestKey = max(longestKey, len(e.Key))
@@ -278,7 +265,6 @@ func (m *DiffViewModel) View(theme Theme) string {
 		minValue: m.layout.DiffMinValueWidth,
 	}.split(longestKey, halfWidth)
 
-	// Render entries
 	end := min(m.Offset+m.visibleLines(), len(m.Entries))
 
 	var leftLines, rightLines []string
@@ -297,9 +283,6 @@ func (m *DiffViewModel) View(theme Theme) string {
 		renderPanel(halfWidth, m.Height, false, rightTitle, rightContent, theme))
 }
 
-// titleName is f's name as a panel title room columns wide shows it, followed
-// by the modified mark when f has unsaved changes: the name gives way to the
-// mark, so the title keeps its one row.
 func titleName(f *model.EnvFile, room int) string {
 	mark := ""
 	if f.Modified {
@@ -308,8 +291,6 @@ func titleName(f *model.EnvFile, room int) string {
 	return fitName(f.Name, room-lipgloss.Width(mark)) + mark
 }
 
-// renderDiffEntry renders a single diff entry, returning the left and right
-// panel lines.
 func (m *DiffViewModel) renderDiffEntry(e model.DiffEntry, isCursor bool, keyWidth, valWidth, halfWidth int, theme Theme) (string, string) {
 	var statusChar string
 	var style lipgloss.Style
@@ -357,19 +338,12 @@ func (m *DiffViewModel) renderDiffEntry(e model.DiffEntry, isCursor bool, keyWid
 	return leftLine, rightLine
 }
 
-// columnLimits holds a key/value table's width settings from the layout config.
 type columnLimits struct {
-	maxKey   int // widest the key column may grow
-	padding  int // a row's fixed overhead: borders, gaps and markers
-	minValue int // value width kept before the key column gives up any more
+	maxKey   int
+	padding  int
+	minValue int
 }
 
-// split divides a panel width between the key column, no wider than
-// longestKey or maxKey, and the value column. When both don't fit, the key
-// column shrinks first, down to nothing, so the value keeps minValue columns
-// or all the room when there is less than that. As long as padding covers the
-// row's fixed overhead (callers floor it at the config minimums, which do),
-// the row never grows past width, so it never wraps.
 func (l columnLimits) split(longestKey, width int) (keyWidth, valWidth int) {
 	room := max(width-l.padding, 0)
 	keyWidth = min(longestKey, l.maxKey, max(room-l.minValue, 0))

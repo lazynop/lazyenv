@@ -6,9 +6,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/parser"
 )
 
-// backupIfNeeded creates a .bak backup of the file before the first save of
-// the session. It is a no-op if --no-backup was set or the file was already
-// backed up. Returns a warning message (empty on success or skip).
 func (a App) backupIfNeeded(path string) string {
 	if a.config.NoBackup || a.backedUpPaths[path] {
 		return ""
@@ -36,7 +33,6 @@ func (a App) handleSave() (App, tea.Cmd) {
 		return a, a.flashError("Error saving: " + err.Error())
 	}
 
-	// Re-parse to refresh RawLines
 	if _, err := a.refreshFile(f); err != nil {
 		return a, a.flashError(warn + "Saved but refresh failed: " + err.Error())
 	}

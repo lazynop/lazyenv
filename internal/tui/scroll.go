@@ -13,11 +13,6 @@ func scrollOffset(cursor, offset, visible, total int) int {
 	return max(min(offset, total-visible), 0)
 }
 
-// visibleIndex returns the index of the entry a viewport of visible rows
-// starting at offset draws on row, counted from its first row, or -1 for a row
-// that draws no entry: above or below the viewport, or past the last of total
-// entries. Mouse clicks map through it, so a click on chrome never selects an
-// entry scrolled off screen.
 func visibleIndex(row, offset, visible, total int) int {
 	if row < 0 || row >= visible || offset+row >= total {
 		return -1
@@ -31,29 +26,22 @@ func visibleIndex(row, offset, visible, total int) int {
 // the list scrolls after each move with follow, adding any scrolling of its
 // own.
 type scrollCursor struct {
-	Cursor int // the position under the cursor
-	Offset int // the first row the viewport shows
+	Cursor int
+	Offset int
 }
 
-// prev moves the cursor to the previous position, if there is one.
 func (s *scrollCursor) prev() {
 	if s.Cursor > 0 {
 		s.Cursor--
 	}
 }
 
-// next moves the cursor to the next of total positions, if there is one.
 func (s *scrollCursor) next(total int) {
 	if s.Cursor < total-1 {
 		s.Cursor++
 	}
 }
 
-// pageMove moves the cursor and the offset a page of visible rows over total
-// positions, down for pages 1 and up for -1. Both move by the visible rows,
-// so the cursor keeps its row on screen and the view skips no row; the cursor
-// stops at the first or last position, and follow brings the offset back
-// within the rows once it passes an end.
 func (s *scrollCursor) pageMove(visible, total, pages int) {
 	step := pages * visible
 	s.Cursor += step
@@ -61,8 +49,6 @@ func (s *scrollCursor) pageMove(visible, total, pages int) {
 	s.clamp(total)
 }
 
-// moveTo moves the cursor to index, kept within total positions; with none,
-// the cursor stays where it is.
 func (s *scrollCursor) moveTo(index, total int) {
 	if total > 0 {
 		s.Cursor = index
@@ -70,21 +56,14 @@ func (s *scrollCursor) moveTo(index, total int) {
 	}
 }
 
-// clamp brings the cursor back within total positions, as after the list
-// shrinks; with none, onto the first.
 func (s *scrollCursor) clamp(total int) {
 	s.Cursor = max(min(s.Cursor, total-1), 0)
 }
 
-// follow scrolls a viewport of visible rows over total rows just enough to
-// keep the cursor in it (scrollOffset).
 func (s *scrollCursor) follow(visible, total int) {
 	s.Offset = scrollOffset(s.Cursor, s.Offset, visible, total)
 }
 
-// navigable is a view the navigation keys move through, a row at a time, a
-// page at a time, or to either end: a cursor over a list's positions, which
-// the view scrolls to follow, or the help's text, which has no cursor.
 type navigable interface {
 	MoveUp()
 	MoveDown()
@@ -94,8 +73,6 @@ type navigable interface {
 	MoveToLast()
 }
 
-// navigate moves view as the navigation key msg asks (Up, Down, PageUp,
-// PageDown, Home or End) and reports whether msg is one of them.
 func (k KeyMap) navigate(msg tea.KeyPressMsg, view navigable) bool {
 	switch {
 	case key.Matches(msg, k.Up):

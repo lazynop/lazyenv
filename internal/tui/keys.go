@@ -100,8 +100,6 @@ func DefaultKeyMap() KeyMap {
 	}
 }
 
-// keyLabels are the labels of the key names that are not a single character
-// or a ctrl+<x> combination.
 var keyLabels = map[string]string{
 	"up":     "↑",
 	"down":   "↓",

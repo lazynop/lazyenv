@@ -104,25 +104,18 @@ type App struct {
 	configPath  string
 	configLines []string
 
-	// Startup notice, flashed once Init runs; empty when there is none.
 	startupNotice string
 
-	// Backup state: tracks which files have been backed up this session
 	backedUpPaths map[string]bool
 
-	// Compare mode state
 	compareFirstFile *model.EnvFile
-	compareEditFile  *model.EnvFile // which file is being edited in compare mode
+	compareEditFile  *model.EnvFile
 
-	// File-operation state (create/duplicate/rename/template). The active
-	// AppMode distinguishes the operation; the input and source are shared.
 	fileInput    textinput.Model
-	fileOpSource *model.EnvFile // source for duplicate/rename/template; nil for create
+	fileOpSource *model.EnvFile
 
-	// Reorder state: the mode chosen in the menu, applied on confirm.
 	reorderMode model.ReorderMode
 
-	// Session statistics: nil when disabled (e.g. read-only or session-summary=false).
 	sessionStats *SessionStats
 }
 
@@ -154,7 +147,7 @@ func NewApp(cfg config.Config, startup StartupMessages) App {
 	app := App{
 		config:        cfg,
 		keys:          keys,
-		theme:         BuildTheme(true, cfg.Colors), // default to dark, will update on BackgroundColorMsg
+		theme:         BuildTheme(true, cfg.Colors),
 		hasDarkBg:     true,
 		mode:          ModeNormal,
 		fileList:      NewFileListModel(),
@@ -171,7 +164,6 @@ func NewApp(cfg config.Config, startup StartupMessages) App {
 	}
 	app.setFocus(FocusFiles)
 	if len(startup.ConfigErrors) > 0 {
-		// The run stops on this screen, so the notices go on it too.
 		app.configPath = startup.ConfigPath
 		app.configLines = slices.Concat(startup.ConfigErrors, startup.Notices)
 		app.mode = ModeConfigError
@@ -278,7 +270,6 @@ func (a App) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	// Mode-specific handling
 	switch a.mode {
 	case ModeEditing:
 		return a.handleEditingKey(msg)
@@ -310,7 +301,6 @@ func (a App) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a, tea.Quit
 	}
 
-	// Normal mode
 	return a.handleNormalKey(msg)
 }
 
@@ -324,12 +314,10 @@ func (a App) handleNormalKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a, nil
 	}
 
-	// Navigation keys (Up/Down/Left/Right/Enter)
 	if updated, handled := a.handleNormalNavigation(msg); handled {
 		return updated, nil
 	}
 
-	// Var-focused actions (Edit/Add/Delete/Yank/Peek)
 	if m, cmd, handled := a.handleNormalVarAction(msg); handled {
 		return m, cmd
 	}
@@ -340,20 +328,15 @@ func (a App) handleNormalKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a.startReorder()
 	}
 
-	// File-focused actions (Create/Duplicate/Delete/Rename)
 	if a.focus == FocusFiles {
 		if m, cmd, handled := a.handleNormalFileAction(msg); handled {
 			return m, cmd
 		}
 	}
 
-	// Global actions (Compare/Save/Reset/Toggle/Search/Matrix)
 	return a.handleNormalGlobalAction(msg)
 }
 
-// filesPanelHelp is the help section of the files panel's keys that
-// bothPanelsHelp leaves out. handleNormalFileAction and handleNormalNavigation
-// match them.
 func filesPanelHelp(keys KeyMap) helpSection {
 	return helpSection{"Files panel", []helpRow{
 		alternatives("Switch to the variables panel", keys.Right, keys.Enter),
@@ -365,9 +348,6 @@ func filesPanelHelp(keys KeyMap) helpSection {
 	}}
 }
 
-// varsPanelHelp is the help section of the variables panel's keys that
-// bothPanelsHelp leaves out. handleNormalVarAction and handleNormalNavigation
-// match them.
 func varsPanelHelp(keys KeyMap) helpSection {
 	return helpSection{"Variables panel", []helpRow{
 		alternatives("Switch to the files panel", keys.Left),
@@ -382,13 +362,6 @@ func varsPanelHelp(keys KeyMap) helpSection {
 	}}
 }
 
-// bothPanelsHelp is the help section of the keys one row describes whichever
-// panel has the focus, details aside: ↑/↓, PgUp/PgDn and Home/End move
-// through the items in both, and also load the file in the files panel. A key
-// that acts in one panel only, or does something in each that one row cannot
-// describe for both, has its rows in filesPanelHelp and varsPanelHelp instead.
-// handleNormalKey, handleNormalNavigation and handleNormalGlobalAction match
-// them.
 func bothPanelsHelp(keys KeyMap) helpSection {
 	return helpSection{"Both panels", []helpRow{
 		pair("Navigate items", keys.Up, keys.Down),
@@ -409,7 +382,6 @@ func bothPanelsHelp(keys KeyMap) helpSection {
 }
 
 func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bool) {
-	// Block mutating file actions in read-only mode
 	if a.config.ReadOnly && key.Matches(msg, a.keys.CreateFile, a.keys.DuplicateFile, a.keys.DeleteFile, a.keys.RenameFile, a.keys.TemplateFile) {
 		return a, a.readOnlyFlash(), true
 	}
@@ -477,7 +449,7 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 		a.compareFirstFile = f
 		a.mode = ModeCompareSelect
 		a.setFocus(FocusFiles)
-		a.statusBar.ClearMessage() // the mode's hint is the prompt
+		a.statusBar.ClearMessage()
 
 	case key.Matches(msg, a.keys.Save):
 		if cmd := a.readOnlyFlash(); cmd != nil {
@@ -557,10 +529,6 @@ func (a App) handleNormalEnter() App {
 	return a
 }
 
-// selectCursorFile makes the file at the file list's cursor the active one
-// and shows its variables. The var list starts over from the top only on a
-// file it was not showing: a key, a click or the wheel that leaves the active
-// file as it is keeps the var list's cursor and scroll.
 func (a *App) selectCursorFile() {
 	a.fileList.Select()
 	if f := a.fileList.SelectedFile(); f != nil && f != a.varList.File {
@@ -568,8 +536,6 @@ func (a *App) selectCursorFile() {
 	}
 }
 
-// setFocus moves the focus to the files or vars panel and tells each panel
-// whether it holds it.
 func (a *App) setFocus(f Focus) {
 	a.focus = f
 	a.fileList.Focused = f == FocusFiles
@@ -679,8 +645,6 @@ func (a App) handleConfirmDeleteKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	return a, nil
 }
 
-// helpScreenHelp is the help section of the help screen itself, whose keys
-// handleHelpKey matches; wheel adds the mouse wheel to the scroll row.
 func helpScreenHelp(keys KeyMap, wheel bool) helpSection {
 	scroll := "Scroll"
 	if wheel {
@@ -742,7 +706,6 @@ func (a App) View() tea.View {
 	return view
 }
 
-// screen renders the current mode's screen.
 func (a App) screen() string {
 	switch a.mode {
 	case ModeConfigError:
@@ -758,13 +721,11 @@ func (a App) screen() string {
 	case ModeMatrixEditing:
 		return a.withBottom(a.matrixView.View(a.theme), a.statusBar.View(a.theme, a.keys, ModeEditing, a.focus, "", 0))
 	default:
-		// Two-panel layout
 		filePanel := a.fileList.View(a.theme)
 		varPanel := a.varList.View(a.theme)
 
 		panels := lipgloss.JoinHorizontal(lipgloss.Top, filePanel, varPanel)
 
-		// Status bar
 		fileName := ""
 		varCount := 0
 		if f := a.varList.File; f != nil {
@@ -776,9 +737,6 @@ func (a App) screen() string {
 	}
 }
 
-// withBottom stacks body over the current mode's input bar, if any, and
-// status, the status bar, in the bottomChromeHeight rows every view reserves
-// below its body: status is cut to the rows the input bar leaves.
 func (a App) withBottom(body, status string) string {
 	parts := []string{body}
 	maxStatusRows := bottomChromeHeight
@@ -792,8 +750,6 @@ func (a App) withBottom(body, status string) string {
 	return lipgloss.JoinVertical(lipgloss.Left, append(parts, status)...)
 }
 
-// inputBar returns the label and the text input of the current mode's input
-// bar, or a nil input in a mode without one.
 func (a *App) inputBar() (string, *textinput.Model) {
 	switch a.mode {
 	case ModeSearching:
@@ -809,8 +765,6 @@ func (a *App) inputBar() (string, *textinput.Model) {
 	return "", nil
 }
 
-// fileInputLabels labels the input bar of each file-operation mode, the modes
-// activeFileInput serves.
 var fileInputLabels = map[AppMode]string{
 	ModeCreateFile:    "New file: ",
 	ModeDuplicateFile: "Duplicate as: ",
@@ -818,23 +772,14 @@ var fileInputLabels = map[AppMode]string{
 	ModeTemplateFile:  "Template as: ",
 }
 
-// minInputWidth is the fewest columns an input bar keeps for the value of its
-// text input: a longer label is cut to leave them.
 const minInputWidth = 10
 
-// layoutInputBar returns label as drawn by an input bar with room columns of
-// text, and the width left for in's value. The label is flattened, since it
-// can name a file, and cut when it would leave in fewer than minInputWidth
-// columns.
 func layoutInputBar(room int, label string, in *textinput.Model) (string, int) {
 	inputChrome := lipgloss.Width(in.Prompt) + inputCursorWidth
 	label = truncate(flattenText(label), max(room-inputChrome-minInputWidth, 0))
 	return label, max(room-lipgloss.Width(label)-inputChrome, 1)
 }
 
-// fitInputBar gives the current mode's text input the width its bar leaves
-// it, so the input scrolls its value horizontally, keeping the cursor in view,
-// instead of wrapping the bar.
 func (a *App) fitInputBar() {
 	label, in := a.inputBar()
 	if in == nil {
@@ -852,8 +797,6 @@ func (a *App) fitInputBar() {
 	in.SetCursor(pos)
 }
 
-// inputBarView returns the current mode's input bar, or "" in a mode without
-// one.
 func (a App) inputBarView() string {
 	label, in := a.inputBar()
 	if in == nil {
@@ -874,8 +817,6 @@ func (a *App) updateLayout() {
 	if w := a.config.Layout.FileListWidth; w != 0 {
 		a.fileWidth = w
 	}
-	// The file list leaves the variables panel its minimum, then keeps its
-	// own, which wins only below the minimum terminal width.
 	a.fileWidth = max(min(a.fileWidth, a.width-config.VarListMinWidth), config.FileListMinWidth)
 	varWidth := a.width - a.fileWidth
 

@@ -26,10 +26,10 @@ type createOrigin struct {
 // SessionStats tracks disk-level changes during a lazyenv session.
 // All maps are keyed by absolute file path.
 type SessionStats struct {
-	initial map[string]*fileSnapshot // path → vars at session start
+	initial map[string]*fileSnapshot
 	final   map[string]*fileSnapshot // path → vars after latest save; nil value = deleted
 	renames map[string]string        // currentPath → originalPath (chain collapsed)
-	created map[string]createOrigin  // newPath → origin info
+	created map[string]createOrigin
 }
 
 // NewSessionStats returns an empty stats tracker.
@@ -42,12 +42,9 @@ func NewSessionStats() *SessionStats {
 	}
 }
 
-// fileSnapshot is a file's variables as a shell sees them when sourcing it:
-// the last occurrence of a duplicate key wins, both for the value and for the
-// key's position in order.
 type fileSnapshot struct {
-	values map[string]string // key → value
-	order  []string          // keys in file order
+	values map[string]string
+	order  []string
 }
 
 func snapshot(vars []model.EnvVar) *fileSnapshot {
@@ -100,8 +97,6 @@ func (s *SessionStats) recordCreate(path string, kind createKind, source string,
 	}
 	snap := snapshot(vars)
 	origin := createOrigin{kind: kind, source: source}
-	// baseline is only consulted for createDuplicate (diff against post-create edits).
-	// Storing it for scratch/template would be dead weight.
 	if kind == createDuplicate {
 		origin.baseline = snap
 	}
@@ -109,7 +104,6 @@ func (s *SessionStats) recordCreate(path string, kind createKind, source string,
 	s.final[path] = snap
 }
 
-// pluralVars words how many variables f holds.
 func pluralVars(f *fileSnapshot) string {
 	n := len(f.values)
 	if n == 1 {
@@ -153,8 +147,6 @@ func (s *SessionStats) RecordRename(oldPath, newPath string) {
 		s.final[newPath] = s.final[oldPath]
 		delete(s.final, oldPath)
 	case s.initial[origin] != nil:
-		// No prior save on oldPath: on-disk content at newPath equals the
-		// baseline at origin (os.Rename moves bytes unchanged).
 		s.final[newPath] = s.initial[origin]
 	}
 	if co, ok := s.created[oldPath]; ok {
@@ -270,9 +262,6 @@ func formatCounts(added, changed, deleted int) string {
 	return fmt.Sprintf("%d added, %d changed, %d deleted", added, changed, deleted)
 }
 
-// describeChanges words how target differs from base, and reports whether it
-// differs at all; with no difference the words are the three zero counts. A
-// nil base is a file with no variables.
 func describeChanges(base, target *fileSnapshot) (string, bool) {
 	if base == nil {
 		base = snapshot(nil)
@@ -289,13 +278,10 @@ func describeChanges(base, target *fileSnapshot) (string, bool) {
 	return formatCounts(a, c, d), edited
 }
 
-// reordered reports whether the keys base and target share appear in a
-// different order: adding or deleting a key moves no other key.
 func reordered(base, target *fileSnapshot) bool {
 	return !slices.Equal(sharedKeys(base.order, target.values), sharedKeys(target.order, base.values))
 }
 
-// sharedKeys returns the keys of order that other also holds, in order.
 func sharedKeys(order []string, other map[string]string) []string {
 	var shared []string
 	for _, k := range order {
