@@ -610,7 +610,18 @@ func TestVarListGrouping_RefreshAfterAddRecomputesGroups(t *testing.T) {
 	assert.Equal(t, "DB", vl.groups[vl.displayItems[0].GroupIdx].Prefix)
 }
 
-func TestVarListGrouping_ToggleSortKeepsTheCursorOnTheEmptyPrefixUngroupedHeader(t *testing.T) {
+func ungroupedHeaderRow(t *testing.T, vl *VarListModel) int {
+	t.Helper()
+	for i, item := range vl.displayItems {
+		if item.Kind == displayItemHeader && vl.groups[item.GroupIdx].IsUngrouped() {
+			return i
+		}
+	}
+	require.Fail(t, "no UNGROUPED header is listed")
+	return -1
+}
+
+func TestVarListRestoreCursorFollowsTheEmptyPrefixUngroupedHeaderToItsNewRow(t *testing.T) {
 	f := makeTestFile(".env",
 		"REDIS_URL", "REDIS_PORT",
 		"DB_HOST", "DB_PORT",
@@ -621,16 +632,19 @@ func TestVarListGrouping_ToggleSortKeepsTheCursorOnTheEmptyPrefixUngroupedHeader
 	vl.Height = 30
 	vl.ToggleGrouping()
 
-	require.Equal(t, 9, len(vl.displayItems))
-	vl.SetCursor(6)
-	require.True(t, vl.IsHeaderAtCursor())
-	require.True(t, vl.groups[vl.displayItems[vl.Cursor].GroupIdx].IsUngrouped())
+	before := ungroupedHeaderRow(t, &vl)
+	vl.SetCursor(before)
+	anchor := vl.captureCursor()
+	require.Equal(t, cursorAnchor{kind: anchorHeader, headerPrefix: ""}, anchor)
 
-	vl.ToggleSort()
+	f.AddVar("REDIS_HOST", "localhost")
+	vl.Refresh()
+	after := ungroupedHeaderRow(t, &vl)
+	require.NotEqual(t, before, after, "REDIS_HOST must move the UNGROUPED header to another row")
 
-	require.True(t, vl.IsHeaderAtCursor(), "cursor must still be on a header")
-	assert.True(t, vl.groups[vl.displayItems[vl.Cursor].GroupIdx].IsUngrouped(),
-		"cursor must still be on the UNGROUPED header after sort toggle")
+	vl.restoreCursor(anchor)
+
+	assert.Equal(t, after, vl.Cursor, "the cursor must follow the UNGROUPED header to its new row")
 }
 
 func TestVarListGrouping_RefreshPreservesAlphaOrder(t *testing.T) {
