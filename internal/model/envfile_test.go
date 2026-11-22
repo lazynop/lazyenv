@@ -538,9 +538,6 @@ func TestLastIndexOfKey(t *testing.T) {
 	assert.Equal(t, -1, ef.LastIndexOfKey("MISSING"))
 }
 
-// parseTestEnv builds an EnvFile from raw text using a minimal classifier
-// (the model package cannot import the parser). It is good enough for the
-// controlled inputs used by the reorder tests.
 func parseTestEnv(content string) *EnvFile {
 	ef := &EnvFile{Name: "test.env"}
 	if content == "" {
