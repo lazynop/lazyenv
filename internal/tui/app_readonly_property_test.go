@@ -26,10 +26,6 @@ var mutatingModes = map[AppMode]string{
 	ModeReorderConfirm:      "confirms an on-disk rewrite",
 }
 
-// readOnlyStartStates are the states every binding is pressed from: Normal
-// mode in each panel, and every other mode a key press reaches in read-only
-// mode. ModeConfigError is absent on purpose: a config error at startup
-// enters it, never a key.
 var readOnlyStartStates = []struct {
 	name                  string
 	keysFromTheFilesPanel []string

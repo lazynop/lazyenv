@@ -83,7 +83,7 @@ Caught by `just lint` (`exhaustive`): both switches name every `AppMode`, so a n
 - **Key-group guard**: `if a.config.ReadOnly && key.Matches(msg, ...) { return a, a.readOnlyFlash(), true }` ahead of the switch (see `handleNormalFileAction`).
 - **Mutation-only entry point** (a flow that only writes, e.g. `startReorder`): the `readOnlyFlash()` check as its first statement.
 
-Caught by `TestReadOnlyNoKeyChangesFiles` (`internal/tui/app_readonly_property_test.go`): it presses every `KeyMap` binding in every reachable mode under `--read-only` and fails if a file changes on disk or in memory. A new mode a key can reach fails it until classified there: in `mutatingModes`, or as a start state in `readOnlyStartStates`.
+Caught by `TestReadOnlyNoKeyChangesFiles` (`internal/tui/app_readonly_property_test.go`): it presses every `KeyMap` binding in every reachable mode under `--read-only` and fails if a file changes on disk or in memory. A new mode a key can reach fails it until classified there: in `mutatingModes`, or as a start state in `readOnlyStartStates`. `ModeConfigError` is in neither: only a config error at startup enters it, never a key.
 
 ### Checklist: SessionStats hooks
 
