@@ -79,16 +79,7 @@ func (a App) executeReorder() (tea.Model, tea.Cmd) {
 
 	f.Reorder(a.reorderMode)
 
-	warn, err := a.backupAndSave(f)
-	if err != nil {
-		return a, a.flashError("Error saving: " + err.Error())
-	}
-
-	if _, err := a.refreshFile(f); err != nil {
-		return a, a.flashError(warn + "Reordered but refresh failed: " + err.Error())
-	}
-
-	return a, a.flashMessage(fmt.Sprintf("%sReordered %s (%s)", warn, f.Name, a.reorderModeLabel()))
+	return a, a.saveAndRefresh(f, "Reordered", fmt.Sprintf("Reordered %s (%s)", f.Name, a.reorderModeLabel()))
 }
 
 func (a App) reorderModeLabel() string {

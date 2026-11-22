@@ -32,16 +32,20 @@ func (a App) handleSave() (App, tea.Cmd) {
 		return a, a.flashMessage("No changes to save")
 	}
 
+	return a, a.saveAndRefresh(f, "Saved", "Saved "+f.Name)
+}
+
+func (a *App) saveAndRefresh(f *model.EnvFile, verb, done string) tea.Cmd {
 	warn, err := a.backupAndSave(f)
 	if err != nil {
-		return a, a.flashError("Error saving: " + err.Error())
+		return a.flashError("Error saving: " + err.Error())
 	}
 
 	if _, err := a.refreshFile(f); err != nil {
-		return a, a.flashError(warn + "Saved but refresh failed: " + err.Error())
+		return a.flashError(warn + verb + " but refresh failed: " + err.Error())
 	}
 
-	return a, a.flashMessage(warn + "Saved " + f.Name)
+	return a.flashMessage(warn + done)
 }
 
 func (a App) handleReset() (App, tea.Cmd) {
