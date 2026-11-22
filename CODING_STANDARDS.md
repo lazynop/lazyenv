@@ -91,6 +91,7 @@ Caught by `TestReadOnlyNoKeyChangesFiles` (`internal/tui/app_readonly_property_t
 
 Caught by `TestDiskWritesGoThroughChokepoint`: a direct `parser.WriteFile`, `parser.WriteFileAtomic` or `parser.CreateBackup` (allowed only in `backupIfNeeded`, since backups are not tracked), or an `os` function that creates, writes, truncates, renames, links or deletes files (`os.WriteFile`, `os.Create`, `os.OpenFile`, `os.Rename`, `os.Remove`, `os.RemoveAll`, …; the full list is in the test), anywhere else in `internal/tui`. `os.OpenFile` counts even for reads: read with `os.Open` or `os.ReadFile`.
 
+- **Keys and values only**: a snapshot holds each variable's key and value, nothing derived from `[secrets]`, so a parse made only to record a snapshot (`duplicateFile`) uses the zero `config.SecretsConfig`; it is not a reparse of a file the TUI shows.
 - **Nil-safe**: `a.sessionStats` is `nil` in read-only mode or with `session-summary = false`, and every `Record*` method handles a nil receiver, so call it unconditionally.
 - **New kind of disk operation** (e.g. moving a file between directories): add an `App` method in `app_disk.go` and a `Record*` method, handle it in `Summary()` / `formatLiveRow` / `formatDeletedRow`, and test it in `session_stats_test.go`.
 - **New create path** outside `confirmCreateFile` / `confirmDuplicateFile` / `confirmTemplateFile`: pick the matching `createKind`, or add one.
