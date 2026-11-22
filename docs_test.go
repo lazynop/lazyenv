@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"maps"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -23,7 +24,9 @@ import (
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/config/themes"
 	"github.com/lazynop/lazyenv/internal/docstest"
+	"github.com/lazynop/lazyenv/internal/parser"
 	"github.com/lazynop/lazyenv/internal/tui"
+	"github.com/lazynop/lazyenv/internal/util"
 )
 
 var (
@@ -41,12 +44,12 @@ var (
 )
 
 func TestUsageDocumentsEveryFlag(t *testing.T) {
-	parser, err := kong.New(&cli)
+	flagParser, err := kong.New(&cli)
 	require.NoError(t, err)
 	doc := docstest.ReadFile(t, "docs/usage.md")
 
 	flagNameBySpelling := map[string]string{}
-	for _, f := range parser.Model.Flags {
+	for _, f := range flagParser.Model.Flags {
 		flagNameBySpelling["--"+f.Name] = f.Name
 		if f.Short != 0 {
 			flagNameBySpelling["-"+string(f.Short)] = f.Name
@@ -82,7 +85,7 @@ func TestUsageDocumentsEveryFlag(t *testing.T) {
 		assert.Contains(t, flagNameBySpelling, s, "docs/usage.md lists %s among the flags without a config equivalent, but it is not a flag", s)
 		accounted[flagNameBySpelling[s]] = true
 	}
-	for _, f := range parser.Model.Flags {
+	for _, f := range flagParser.Model.Flags {
 		assert.True(t, accounted[f.Name],
 			"docs/usage.md neither maps --%s to a config key nor lists it among the flags without a config equivalent", f.Name)
 	}
@@ -576,4 +579,198 @@ func TestConfigurationCreditsEveryTheme(t *testing.T) {
 	}
 	slices.Sort(credited)
 	assert.Equal(t, themes.Names(), credited)
+}
+
+func TestConfigurationDocumentsTheSecretMask(t *testing.T) {
+	row := docstest.TableRow(t, docstest.ReadFile(t, "docs/configuration.md"), "Key", "show-secrets")
+	assert.Contains(t, docstest.CodeSpans(row[2]), util.MaskValue("secret"), "docs/configuration.md, show-secrets row, states the wrong mask")
+}
+
+var themeNoticeRe = regexp.MustCompile("unknown `--theme` .* for (\\d+) seconds")
+
+func TestConfigurationDocumentsTheThemeNoticeDuration(t *testing.T) {
+	section := docstest.Section(t, docstest.ReadFile(t, "docs/configuration.md"), "Invalid configuration")
+	m := themeNoticeRe.FindStringSubmatch(section)
+	require.NotNil(t, m, "docs/configuration.md § Invalid configuration should state how long the unknown --theme notice shows")
+	timeout := config.DefaultConfig().Layout.ErrorMessageTimeout
+	assert.Equal(t, strconv.Itoa(int(timeout.Seconds())), m[1], "docs/configuration.md § Invalid configuration states the wrong duration of the unknown --theme notice")
+}
+
+var numberedItemRe = regexp.MustCompile(`(?m)^\d+\. (.*)$`)
+
+func TestConfigurationDocumentsTheConfigSearchOrder(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HOME", filepath.Join(root, "home"))
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(root, "xdg"))
+	userConfigDir, err := os.UserConfigDir()
+	require.NoError(t, err)
+	home, err := os.UserHomeDir()
+	require.NoError(t, err)
+	projectDir := filepath.Join(root, "project")
+	configFlag := filepath.Join(root, "flag.toml")
+
+	asDocumented := func(path string) string {
+		if path == configFlag {
+			return "--config"
+		}
+		for _, base := range []struct{ dir, prefix string }{{projectDir, ""}, {userConfigDir, ""}, {home, "~/"}} {
+			if rel, err := filepath.Rel(base.dir, path); err == nil && !strings.HasPrefix(rel, "..") {
+				return base.prefix + filepath.ToSlash(rel)
+			}
+		}
+		require.Failf(t, "unexpected path", "ConfigSearchPaths returned %s, outside every directory this test knows", path)
+		return ""
+	}
+
+	items := numberedItemRe.FindAllStringSubmatch(docstest.Section(t, docstest.ReadFile(t, "docs/configuration.md"), "Config file location"), -1)
+	paths := config.ConfigSearchPaths(projectDir, configFlag)
+	require.Len(t, items, len(paths), "docs/configuration.md § Config file location lists another number of places than ConfigSearchPaths searches")
+	for i, path := range paths {
+		assert.Contains(t, docstest.CodeSpans(items[i][1]), asDocumented(path), "docs/configuration.md § Config file location states the wrong place at step %d", i+1)
+	}
+}
+
+var (
+	releasePlatformsRe = regexp.MustCompile(`Builds are available for ([^\n]*)\.`)
+	releaseOSRe        = regexp.MustCompile(`(\w+) \(([^)]*)\)`)
+	goreleaserKeyRe    = regexp.MustCompile(`^(?: {2}- | {4})(\w+):`)
+	goreleaserItemRe   = regexp.MustCompile(`^ {6}- (?:(\w+): )?"?([^"]*)"?$`)
+	goreleaserPairRe   = regexp.MustCompile(`^ {8}(\w+): "?([^"]*)"?$`)
+)
+
+var releaseOSNames = map[string]string{"linux": "Linux", "darwin": "macOS", "windows": "Windows", "freebsd": "FreeBSD"}
+
+func TestInstallationListsTheReleasePlatforms(t *testing.T) {
+	m := releasePlatformsRe.FindStringSubmatch(docstest.Section(t, docstest.ReadFile(t, "docs/installation.md"), "From releases"))
+	require.NotNil(t, m, "docs/installation.md § From releases should list the platforms, as \"Builds are available for ...\"")
+	var documented []string
+	for _, platform := range releaseOSRe.FindAllStringSubmatch(m[1], -1) {
+		for arch := range strings.SplitSeq(platform[2], ", ") {
+			documented = append(documented, platform[1]+" "+arch)
+		}
+	}
+
+	var built []string
+	for _, p := range goreleaserPlatforms(t, docstest.ReadFile(t, ".goreleaser.yml")) {
+		name, ok := releaseOSNames[p["goos"]]
+		require.True(t, ok, ".goreleaser.yml builds for %s, which releaseOSNames does not name", p["goos"])
+		arch := p["goarch"]
+		if arch == "arm" {
+			arch += "v" + p["goarm"]
+		}
+		built = append(built, name+" "+arch)
+	}
+	assert.ElementsMatch(t, built, documented, "docs/installation.md § From releases lists other platforms than .goreleaser.yml builds")
+}
+
+func readGoreleaserBuild(t *testing.T, yml string) (lists map[string][]string, ignored []map[string]string) {
+	t.Helper()
+	_, builds, ok := strings.Cut(yml, "\nbuilds:\n")
+	require.True(t, ok, ".goreleaser.yml has no builds section")
+	lists = map[string][]string{}
+	key := ""
+	for line := range strings.Lines(builds) {
+		line = strings.TrimSuffix(line, "\n")
+		if line == "" {
+			continue
+		}
+		if !strings.HasPrefix(line, " ") {
+			break
+		}
+		if strings.HasPrefix(line, "  - ") {
+			require.Empty(t, lists, ".goreleaser.yml has a second build: readGoreleaserBuild reads only one")
+		}
+		if m := goreleaserKeyRe.FindStringSubmatch(line); m != nil {
+			key = m[1]
+			continue
+		}
+		if m := goreleaserItemRe.FindStringSubmatch(line); m != nil {
+			if key == "ignore" {
+				require.NotEmpty(t, m[1], ".goreleaser.yml: an ignore entry should start with a key: %q", line)
+				ignored = append(ignored, map[string]string{m[1]: m[2]})
+			} else {
+				lists[key] = append(lists[key], m[2])
+			}
+			continue
+		}
+		if m := goreleaserPairRe.FindStringSubmatch(line); m != nil && key == "ignore" && len(ignored) > 0 {
+			ignored[len(ignored)-1][m[1]] = m[2]
+			continue
+		}
+		require.Failf(t, "unknown line", ".goreleaser.yml: readGoreleaserBuild does not know the shape of the builds line %q", line)
+	}
+	return lists, ignored
+}
+
+func goreleaserPlatforms(t *testing.T, yml string) []map[string]string {
+	t.Helper()
+	lists, ignored := readGoreleaserBuild(t, yml)
+	supported := goTargets(t)
+	var platforms []map[string]string
+	for _, goos := range lists["goos"] {
+		for _, goarch := range lists["goarch"] {
+			if !supported[goos+"/"+goarch] {
+				continue
+			}
+			goarms := []string{""}
+			if goarch == "arm" {
+				goarms = lists["goarm"]
+			}
+			for _, goarm := range goarms {
+				p := map[string]string{"goos": goos, "goarch": goarch, "goarm": goarm}
+				if !slices.ContainsFunc(ignored, func(rule map[string]string) bool { return isSubset(rule, p) }) {
+					platforms = append(platforms, p)
+				}
+			}
+		}
+	}
+	return platforms
+}
+
+func goTargets(t *testing.T) map[string]bool {
+	t.Helper()
+	out, err := exec.Command("go", "tool", "dist", "list").Output()
+	require.NoError(t, err)
+	targets := map[string]bool{}
+	for _, target := range strings.Fields(string(out)) {
+		targets[target] = true
+	}
+	return targets
+}
+
+func isSubset(rule, platform map[string]string) bool {
+	for k, v := range rule {
+		if platform[k] != v {
+			return false
+		}
+	}
+	return true
+}
+
+func TestDocsStateTheBackupName(t *testing.T) {
+	dir := t.TempDir()
+	original := filepath.Join(dir, ".env")
+	require.NoError(t, os.WriteFile(original, []byte("A=1\n"), 0o600))
+	require.NoError(t, parser.CreateBackup(original))
+	entries, err := os.ReadDir(dir)
+	require.NoError(t, err)
+	var backup string
+	for _, e := range entries {
+		if e.Name() != ".env" {
+			backup = e.Name()
+		}
+	}
+	require.Len(t, entries, 2, "CreateBackup should write one backup next to the file")
+	suffix, ok := strings.CutPrefix(backup, ".env")
+	require.True(t, ok, "the backup %s of .env should start with .env", backup)
+
+	features := docstest.Section(t, docstest.ReadFile(t, "docs/features.md"), "Automatic backup")
+	assert.Contains(t, docstest.CodeSpans(features), backup, "docs/features.md § Automatic backup states the wrong backup name of .env")
+	surfaces := map[string]string{
+		"docs/usage.md, --no-backup row":       docstest.RowText(t, docstest.ReadFile(t, "docs/usage.md"), "Long form", "--no-backup"),
+		"docs/configuration.md, no-backup row": docstest.RowText(t, docstest.ReadFile(t, "docs/configuration.md"), "Key", "no-backup"),
+	}
+	for _, name := range slices.Sorted(maps.Keys(surfaces)) {
+		assert.Contains(t, docstest.CodeSpans(surfaces[name]), suffix, "%s states the wrong backup suffix", name)
+	}
 }
