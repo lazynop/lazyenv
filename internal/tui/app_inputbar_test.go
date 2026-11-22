@@ -12,8 +12,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// inputBarCase opens one input bar over layoutFiles and returns the text
-// input it holds.
 type inputBarCase struct {
 	name  string
 	mode  AppMode
@@ -40,8 +38,6 @@ const inputTail = "TAIL_12345"
 
 var longInput = strings.Repeat("x", 90) + inputTail
 
-// openInputBar sizes an App over layoutFiles to a terminal width columns wide,
-// opens tc's bar and types value into it.
 func openInputBar(t *testing.T, tc inputBarCase, width int, value string) App {
 	t.Helper()
 	app := tc.open(resize(newTestApp(layoutFiles()), width, 24))
@@ -52,10 +48,6 @@ func openInputBar(t *testing.T, tc inputBarCase, width int, value string) App {
 	return app
 }
 
-// TestInputBarsScrollALongValueOnOneRow types a value wider than the
-// terminal into every input bar, at every width of the layout grid: the bar
-// keeps one row, scrolling the value so its end, where the cursor is, stays in
-// view.
 func TestInputBarsScrollALongValueOnOneRow(t *testing.T) {
 	for _, tc := range inputBarCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -84,8 +76,6 @@ func TestInputBarsKeepOneRowWithWideGraphemes(t *testing.T) {
 	}
 }
 
-// TestInputBarsRefitAfterAResize shrinks the terminal while every input bar
-// holds a long value: the bar refits to the new width and keeps one row.
 func TestInputBarsRefitAfterAResize(t *testing.T) {
 	for _, tc := range inputBarCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -98,8 +88,6 @@ func TestInputBarsRefitAfterAResize(t *testing.T) {
 	}
 }
 
-// TestInputBarsKeepTextTypedMidValueInView moves the cursor near the start of
-// a value wider than the bar and types there: the text typed stays in view.
 func TestInputBarsKeepTextTypedMidValueInView(t *testing.T) {
 	long := strings.Repeat("x", 90) // room to type within the search input's 100-rune limit
 	for _, tc := range inputBarCases {
@@ -115,8 +103,6 @@ func TestInputBarsKeepTextTypedMidValueInView(t *testing.T) {
 	}
 }
 
-// TestInputBarCutsALongLabel opens the matrix editor bar on a key whose label
-// is wider than the bar: the label is cut, so the bar keeps one row.
 func TestInputBarCutsALongLabel(t *testing.T) {
 	const longKey = "UPSTREAM_SERVICE_CIRCUIT_BREAKER_THRESHOLD_MS"
 	app := press(resize(newTestApp([]*model.EnvFile{

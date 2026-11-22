@@ -17,8 +17,6 @@ func initGitRepo(t *testing.T, dir string) {
 	require.NoError(t, cmd.Run())
 }
 
-// TestCheckGitIgnore scans each fixture, in a git repo unless notARepo, and
-// checks which .env files CheckGitIgnore marks as not covered by .gitignore.
 func TestCheckGitIgnore(t *testing.T) {
 	tests := []struct {
 		name      string

@@ -23,13 +23,11 @@ const (
 	bubbleteaPath      = "charm.land/bubbletea/v2"
 )
 
-// sourceRef is a reference, in this package's non-test source, to a function
-// or type of an imported package or of this one.
 type sourceRef struct {
-	file  string // file name, relative to the package directory
+	file  string
 	line  int
 	owner string // enclosing top-level function, "" at package level
-	name  string // "pkg.Name" (pkg being the last element of the import path), or "Name"
+	name  string
 }
 
 func (r sourceRef) String() string {
@@ -102,9 +100,6 @@ func sourceMatches(t *testing.T, importPath string, match func(n ast.Node, local
 	return refs
 }
 
-// refIdent returns the function name n refers to: the Func of a pkg.Func
-// selector when local is the file's name for the imported package, or the
-// callee of a Func(...) call to this package when local is "".
 func refIdent(n ast.Node, local string) *ast.Ident {
 	switch n := n.(type) {
 	case *ast.SelectorExpr:
@@ -119,7 +114,6 @@ func refIdent(n ast.Node, local string) *ast.Ident {
 	return nil
 }
 
-// isSelector reports whether expr is pkg.name.
 func isSelector(expr ast.Expr, pkg, name string) bool {
 	sel, ok := expr.(*ast.SelectorExpr)
 	if !ok || sel.Sel.Name != name {
@@ -129,8 +123,6 @@ func isSelector(expr ast.Expr, pkg, name string) bool {
 	return ok && id.Name == pkg
 }
 
-// importName returns the name file uses for the package at importPath, or ""
-// when file does not import it.
 func importName(file *ast.File, importPath string) string {
 	for _, imp := range file.Imports {
 		if p, _ := strconv.Unquote(imp.Path.Value); p != importPath {

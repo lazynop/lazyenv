@@ -27,9 +27,6 @@ func resizeFixture() []*model.EnvFile {
 	return files
 }
 
-// TestResizeKeepsTheCursorRowInView moves the cursor of every scrollable view
-// to a row near the bottom (a column near the right, in the matrix) of a large
-// terminal, then shrinks the terminal: the cursor stays in view.
 func TestResizeKeepsTheCursorRowInView(t *testing.T) {
 	files := resizeFixture()
 	right := slices.Repeat([]string{"l"}, 20)
@@ -55,9 +52,6 @@ func TestResizeKeepsTheCursorRowInView(t *testing.T) {
 	}
 }
 
-// TestGrowingTheTerminalScrollsBackToFillTheView scrolls every scrollable view
-// to its last row in a small terminal, then grows the terminal: the view
-// scrolls back to show the rows above instead of leaving blank rows below.
 func TestGrowingTheTerminalScrollsBackToFillTheView(t *testing.T) {
 	files := resizeFixture()
 	end := down(29)
@@ -82,8 +76,6 @@ func TestGrowingTheTerminalScrollsBackToFillTheView(t *testing.T) {
 	}
 }
 
-// TestStartupFocusesTheFileList lays out a fresh App: the file list, which
-// holds the focus, is drawn focused.
 func TestStartupFocusesTheFileList(t *testing.T) {
 	app := resize(newTestApp([]*model.EnvFile{makeTestFile(".env", "A")}), 80, 24)
 
@@ -102,9 +94,6 @@ func TestMatrixRendersInATinyTerminal(t *testing.T) {
 	assert.NotPanics(t, func() { _ = app.matrixView.View(app.theme) })
 }
 
-// TestTooSmallTerminalShowsANotice shrinks the terminal below the minimum, in
-// width or in height: the App draws a notice that fits it instead of its
-// panels, and draws the panels again once the terminal is back to the minimum.
 func TestTooSmallTerminalShowsANotice(t *testing.T) {
 	sizes := []struct{ width, height int }{
 		{MinTerminalWidth - 1, 24},
@@ -128,9 +117,6 @@ func TestTooSmallTerminalShowsANotice(t *testing.T) {
 	}
 }
 
-// TestTooSmallTerminalDropsInputItCannotShowAndQuitsOnCtrlC presses keys and
-// clicks while the terminal is below the minimum: none acts on the hidden
-// screen, and Ctrl+C still quits.
 func TestTooSmallTerminalDropsInputItCannotShowAndQuitsOnCtrlC(t *testing.T) {
 	app := onVars(resize(newTestApp([]*model.EnvFile{makeTestFile(".env", "A", "B")}), 80, 24))
 	app = resize(app, MinTerminalWidth-1, 24)

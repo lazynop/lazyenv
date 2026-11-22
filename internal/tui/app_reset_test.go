@@ -13,7 +13,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/parser"
 )
 
-// newTestAppWithDiskFile creates an App with a real file on disk for save/reset tests.
 func newTestAppWithDiskFile(t *testing.T, content string) (App, string) {
 	t.Helper()
 	dir := t.TempDir()
@@ -64,7 +63,6 @@ func TestSavePreservesGitWarning(t *testing.T) {
 }
 
 func TestCompareSavePreservesGitWarning(t *testing.T) {
-	// Create two real files on disk.
 	dir := t.TempDir()
 	pathA := filepath.Join(dir, ".env")
 	pathB := filepath.Join(dir, ".env.prod")
@@ -84,7 +82,6 @@ func TestCompareSavePreservesGitWarning(t *testing.T) {
 	app.fileList.Selected = 0
 	app.varList.SetFile(fA)
 
-	// Enter compare mode and modify file A.
 	app.mode = ModeComparing
 	app.diffView.FileA = fA
 	app.diffView.FileB = fB
@@ -92,7 +89,6 @@ func TestCompareSavePreservesGitWarning(t *testing.T) {
 	fA.UpdateVar(0, "changed")
 	require.True(t, fA.Modified)
 
-	// Press 'w' to save in compare mode.
 	updated, _ := app.Update(keyMsg("w"))
 	app = updated.(App)
 
@@ -120,13 +116,11 @@ func TestCompareResetPreservesGitWarning(t *testing.T) {
 	app.fileList.Selected = 0
 	app.varList.SetFile(fA)
 
-	// Enter compare mode and modify file A.
 	app.mode = ModeComparing
 	app.diffView.SetFiles(fA, fB)
 	fA.UpdateVar(0, "changed")
 	require.True(t, fA.Modified)
 
-	// Press 'r' to reset in compare mode.
 	updated, _ := app.Update(keyMsg("r"))
 	app = updated.(App)
 
@@ -135,10 +129,7 @@ func TestCompareResetPreservesGitWarning(t *testing.T) {
 }
 
 func TestSavePreservesNoTrailingNewline(t *testing.T) {
-	// End-to-end: a file without a trailing newline must round-trip through
-	// the TUI save flow (handleSave → WriteFile → Marshal → re-parse → next
-	// save) without ever gaining one. Pins the parser fix at the TUI layer.
-	app, envPath := newTestAppWithDiskFile(t, "FOO=bar") // no trailing \n
+	app, envPath := newTestAppWithDiskFile(t, "FOO=bar")
 	require.False(t, app.fileList.Files[0].TrailingNewline,
 		"ParseFile must detect no trailing newline on source")
 
@@ -155,7 +146,6 @@ func TestSavePreservesNoTrailingNewline(t *testing.T) {
 	assert.False(t, app.fileList.Files[0].TrailingNewline,
 		"re-parsed file must still have TrailingNewline=false")
 
-	// Second cycle: modify again and save, confirm round-trip is stable.
 	app.fileList.Files[0].UpdateVar(0, "second")
 	updated, _ = app.Update(keyMsg("w"))
 	app = updated.(App)
@@ -167,8 +157,6 @@ func TestSavePreservesNoTrailingNewline(t *testing.T) {
 }
 
 func TestSavePreservesTrailingNewline(t *testing.T) {
-	// Mirror of TestSavePreservesNoTrailingNewline for the common case:
-	// a file WITH a trailing newline keeps one after a TUI save+re-parse.
 	app, envPath := newTestAppWithDiskFile(t, "FOO=bar\n")
 	require.True(t, app.fileList.Files[0].TrailingNewline)
 
@@ -183,7 +171,6 @@ func TestSavePreservesTrailingNewline(t *testing.T) {
 }
 
 func TestSaveFromMatrixPreservesGitWarning(t *testing.T) {
-	// Create two real files, enter matrix, add a var, then save.
 	dir := t.TempDir()
 	pathA := filepath.Join(dir, ".env")
 	pathB := filepath.Join(dir, ".env.prod")
@@ -207,7 +194,6 @@ func TestSaveFromMatrixPreservesGitWarning(t *testing.T) {
 	fB.AddVar("FOO", "from_matrix")
 	require.True(t, fB.Modified)
 
-	// Save file B.
 	app.varList.SetFile(fB)
 	updated, _ := app.Update(keyMsg("w"))
 	app = updated.(App)
@@ -215,7 +201,6 @@ func TestSaveFromMatrixPreservesGitWarning(t *testing.T) {
 	for _, f := range app.fileList.Files {
 		assert.True(t, f.GitWarning, "%s: GitWarning must survive save", f.Name)
 	}
-	// Verify the added var was saved.
 	var prodFile *model.EnvFile
 	for _, f := range app.fileList.Files {
 		if f.Name == ".env.prod" {

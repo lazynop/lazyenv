@@ -20,30 +20,21 @@ var customSecrets = config.SecretsConfig{
 	SafePatterns:  []string{"PUBLIC_"},
 }
 
-// customSecretsFixture is two files to change under customSecrets. Only .env
-// holds PUBLIC_TOKEN, NOTE (a plain var) and MEMO (a token under a plain key);
-// only .env.prod holds CACHE_HOST and GREETING (a token under a plain key).
 var customSecretsFixture = map[string]string{
 	".env":      "DB_HOST=alpha\nPUBLIC_TOKEN=ghp_first1\nNOTE=hello\nMEMO=ghp_memo44\n",
 	".env.prod": "DB_HOST=beta\nCACHE_HOST=delta\nGREETING=ghp_second2\n",
 }
 
-// shownValue is a value the screen shows, and whether it shows it masked.
 type shownValue struct {
 	value  string
 	masked bool
 }
 
-// customSecretsLoaded is how the var list shows the values of each file of
-// customSecretsFixture, loaded under customSecrets.
 var customSecretsLoaded = map[string][]shownValue{
 	".env":      {{"alpha", true}, {"ghp_first1", false}, {"hello", false}, {"ghp_memo44", true}},
 	".env.prod": {{"beta", true}, {"delta", true}, {"ghp_second2", true}},
 }
 
-// customSecretsApp loads customSecretsFixture the way the program does, with
-// customSecrets as the [secrets] config: the main view shows .env, with the
-// file list focused.
 func customSecretsApp(t *testing.T) App {
 	t.Helper()
 	cfg := config.DefaultConfig()
@@ -51,7 +42,6 @@ func customSecretsApp(t *testing.T) App {
 	return loadFixtureApp(t, cfg, customSecretsFixture, 120, 40)
 }
 
-// assertShows checks app's screen shows each of values, masked or in clear.
 func assertShows(t *testing.T, app App, values ...shownValue) {
 	t.Helper()
 	view := stripAnsi(app.View().Content)
@@ -60,36 +50,24 @@ func assertShows(t *testing.T, app App, values ...shownValue) {
 	}
 }
 
-// The key scripts below start in the main view with the file list focused, on
-// .env as loadFixtureApp leaves it, and end in the main view showing the file
-// they change.
-
-// editValueKeys edits the value of the shown file's var at row to value.
 func editValueKeys(row int, value string) []string {
 	return slices.Concat([]string{"right"}, down(row), []string{"e", "ctrl+u"}, typing(value), []string{"enter"})
 }
 
-// renameVarKeys renames the shown file's var at row to name.
 func renameVarKeys(row int, name string) []string {
 	return slices.Concat([]string{"right"}, down(row), renameKeys(name))
 }
 
-// addVarKeys adds name=value to the shown file.
 func addVarKeys(name, value string) []string {
 	return slices.Concat([]string{"right", "a"}, typing(name), []string{"enter"}, typing(value), []string{"enter"})
 }
 
-// compareProdKeys compares .env, on the left, with .env.prod.
 var compareProdKeys = []string{"c", "j", "enter"}
 
-// copyIntoEnvKeys compares .env with .env.prod and copies the entry at row
-// into .env.
 func copyIntoEnvKeys(row int) []string {
 	return slices.Concat(compareProdKeys, down(row), []string{"h", "q"})
 }
 
-// copyIntoProdKeys compares .env with .env.prod and copies the entry at row
-// into .env.prod, which it then shows.
 func copyIntoProdKeys(row int) []string {
 	return slices.Concat(compareProdKeys, down(row), []string{"l", "q", "j"})
 }
@@ -101,10 +79,6 @@ func matrixAddKeys(row, col int, value string) []string {
 		[]string{"a"}, typing(value), []string{"enter", "esc"}, down(col))
 }
 
-// TestCustomSecretsConfigMasksChangedValues changes a var in each way the app
-// offers, under a custom [secrets] config: the var list masks the new value as
-// the config judges it, before and after a save, and a reset masks the file's
-// values as on load.
 func TestCustomSecretsConfigMasksChangedValues(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -151,10 +125,6 @@ func TestCustomSecretsConfigMasksChangedValues(t *testing.T) {
 	}
 }
 
-// TestCustomSecretsConfigMasksAfterCompareSaveAndReset copies DB_HOST into
-// .env.prod in compare, then saves or resets both files there, under a custom
-// [secrets] config: back in the main view, each file masks its values as the
-// config judges them.
 func TestCustomSecretsConfigMasksAfterCompareSaveAndReset(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -177,8 +147,6 @@ func TestCustomSecretsConfigMasksAfterCompareSaveAndReset(t *testing.T) {
 	}
 }
 
-// assertDiskFileShows checks app's var list shows the file name, as on disk
-// (not modified), with values masked or in clear.
 func assertDiskFileShows(t *testing.T, app App, name string, values []shownValue) {
 	t.Helper()
 	require.Equal(t, name, app.varList.File.Name)
@@ -222,9 +190,6 @@ func varRowMarkers(t *testing.T, view, key string) []string {
 	return markers
 }
 
-// TestPlaceholderMarkerFollowsChanges edits and adds values in the var list:
-// a var shows the placeholder marker exactly when its new value is a
-// placeholder, before a save and after it.
 func TestPlaceholderMarkerFollowsChanges(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -253,9 +218,6 @@ func TestPlaceholderMarkerFollowsChanges(t *testing.T) {
 	}
 }
 
-// TestDuplicateMarkerFollowsChanges renames or deletes one of two variables
-// sharing a key: neither row shows the duplicate marker any more, before a
-// save and after it.
 func TestDuplicateMarkerFollowsChanges(t *testing.T) {
 	tests := []struct {
 		name          string

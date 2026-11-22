@@ -13,22 +13,17 @@ import (
 	"github.com/lazynop/lazyenv/internal/util"
 )
 
-// --- handleEditingKey tests ---
-
 func TestEditExistingVarConfirm(t *testing.T) {
 	f := makeTestFile(".env", "FOO", "BAR")
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	// Press 'e' to start editing FOO (cursor at 0)
 	updated, _ := app.Update(keyMsg("e"))
 	app = updated.(App)
 	assert.Equal(t, ModeEditing, app.mode)
 
-	// Type new value by setting it directly on editor input
 	app.editor.input.SetValue("new_value")
 
-	// Press Enter to confirm
 	updated, _ = app.Update(keyMsg("enter"))
 	app = updated.(App)
 
@@ -37,9 +32,6 @@ func TestEditExistingVarConfirm(t *testing.T) {
 	assert.True(t, f.Modified)
 }
 
-// TestEditMasksTheNewValueWhenItIsASecret edits a value in the var list: the
-// row is masked exactly when the key and the new value are detected as a
-// secret, as they are once the file is saved and read again.
 func TestEditMasksTheNewValueWhenItIsASecret(t *testing.T) {
 	tests := []struct {
 		name, line, newValue string
@@ -62,8 +54,6 @@ func TestEditMasksTheNewValueWhenItIsASecret(t *testing.T) {
 	}
 }
 
-// assertMaskedInView checks view masks value when masked is set, and shows it
-// otherwise.
 func assertMaskedInView(t *testing.T, view, value string, masked bool) {
 	t.Helper()
 	if masked {
@@ -74,13 +64,10 @@ func assertMaskedInView(t *testing.T, view, value string, masked bool) {
 	}
 }
 
-// valueEdits are the keys that start editing the value of the variable under
-// the cursor, from the main view on .env and .env.prod: in the var list, and on
-// either side of the compare view.
 var valueEdits = []struct {
 	name   string
 	keys   []string
-	label  string  // the edit bar's label for CERT
+	label  string
 	mode   AppMode // the mode the keys leave the app in when the bar stays closed
 	edited int     // index of the file whose value the keys edit
 }{
@@ -89,8 +76,6 @@ var valueEdits = []struct {
 	{"compare E", []string{"c", "j", "enter", "E"}, "Edit CERT in .env.prod: ", ModeComparing, 1},
 }
 
-// valueEditApp returns an app on .env and .env.prod, each holding CERT=plain
-// but the file at index edited, which holds line instead.
 func valueEditApp(edited int, line string) (App, []*model.EnvFile) {
 	lines := []string{"CERT=plain", "CERT=plain"}
 	lines[edited] = line
@@ -101,8 +86,6 @@ func valueEditApp(edited int, line string) (App, []*model.EnvFile) {
 	return resize(newTestApp(files), 120, 40), files
 }
 
-// TestConfirmingAnUntouchedEditKeepsTheValue opens the edit bar on a value and
-// confirms it without typing: the value and the file stay unchanged.
 func TestConfirmingAnUntouchedEditKeepsTheValue(t *testing.T) {
 	for _, edit := range valueEdits {
 		t.Run(edit.name, func(t *testing.T) {
@@ -116,9 +99,6 @@ func TestConfirmingAnUntouchedEditKeepsTheValue(t *testing.T) {
 	}
 }
 
-// TestEditOpensTheBarOnAPlainValue presses an edit key on a value with no
-// control characters: the bar opens on the value, and typing then confirming
-// changes it.
 func TestEditOpensTheBarOnAPlainValue(t *testing.T) {
 	for _, edit := range valueEdits {
 		t.Run(edit.name, func(t *testing.T) {
@@ -136,10 +116,6 @@ func TestEditOpensTheBarOnAPlainValue(t *testing.T) {
 	}
 }
 
-// TestEditRefusesAValueTheBarCannotShow presses an edit key on a value the edit
-// bar would not show as it is, then types and confirms as on an open bar: the
-// bar stays closed, the status bar warns, and the value and the files stay
-// unchanged.
 func TestEditRefusesAValueTheBarCannotShow(t *testing.T) {
 	values := []struct{ name, line, value string }{
 		{"line break", `CERT="line1\nline2"`, "line1\nline2"},
@@ -186,15 +162,12 @@ func TestEditExistingVarCancel(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	// Press 'e' to start editing
 	updated, _ := app.Update(keyMsg("e"))
 	app = updated.(App)
 	assert.Equal(t, ModeEditing, app.mode)
 
-	// Change value
 	app.editor.input.SetValue("changed")
 
-	// Press Escape to cancel
 	updated, _ = app.Update(keyMsg("esc"))
 	app = updated.(App)
 
@@ -207,21 +180,17 @@ func TestAddVariableTwoStepFlow(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	// Press 'a' to start add flow
 	updated, _ := app.Update(keyMsg("a"))
 	app = updated.(App)
 	assert.Equal(t, ModeEditing, app.mode)
 
-	// Enter key name
 	app.editor.input.SetValue("NEW_KEY")
 	updated, _ = app.Update(keyMsg("enter"))
 	app = updated.(App)
 
-	// Should still be in editing mode (value step)
 	assert.Equal(t, ModeEditing, app.mode)
 	assert.Equal(t, addStepValue, app.editor.addStep)
 
-	// Enter value
 	app.editor.input.SetValue("new_value")
 	updated, _ = app.Update(keyMsg("enter"))
 	app = updated.(App)
@@ -232,7 +201,6 @@ func TestAddVariableTwoStepFlow(t *testing.T) {
 	assert.Equal(t, "new_value", f.Vars[1].Value)
 }
 
-// startAddWithKey presses 'a' on f and confirms key as the new key's name.
 func startAddWithKey(t *testing.T, f *model.EnvFile, key string) App {
 	t.Helper()
 	app := newTestApp([]*model.EnvFile{f})
@@ -245,9 +213,6 @@ func startAddWithKey(t *testing.T, f *model.EnvFile, key string) App {
 	return updated.(App)
 }
 
-// TestAddVariableRejectsAKeyTheParserWouldDropOnReload checks that the add
-// flow refuses a key the parser would drop when it reads the file back, so a
-// saved variable never vanishes on reload.
 func TestAddVariableRejectsAKeyTheParserWouldDropOnReload(t *testing.T) {
 	for _, key := range []string{"has space", "CAFÉ", "日本", "1ST"} {
 		f := makeTestFile(".env", "EXISTING")
@@ -291,30 +256,24 @@ func TestAddVariableTrimsTheKey(t *testing.T) {
 }
 
 func TestEditWithNoVarSelected(t *testing.T) {
-	// Empty file — no vars to edit
 	f := makeTestFile(".env")
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	// Press 'e' — should stay in normal mode since no var is selected
 	updated, _ := app.Update(keyMsg("e"))
 	app = updated.(App)
 	assert.Equal(t, ModeNormal, app.mode)
 }
-
-// --- handleConfirmDeleteKey tests ---
 
 func TestDeleteConfirmYes(t *testing.T) {
 	f := makeTestFile(".env", "FOO", "BAR", "BAZ")
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	// Press 'd' to trigger delete confirmation
 	updated, _ := app.Update(keyMsg("d"))
 	app = updated.(App)
 	assert.Equal(t, ModeConfirmDelete, app.mode)
 
-	// Press 'y' to confirm
 	updated, _ = app.Update(keyMsg("y"))
 	app = updated.(App)
 
@@ -328,12 +287,10 @@ func TestDeleteConfirmNo(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	// Press 'd' to trigger delete
 	updated, _ := app.Update(keyMsg("d"))
 	app = updated.(App)
 	assert.Equal(t, ModeConfirmDelete, app.mode)
 
-	// Press 'n' to deny
 	updated, _ = app.Update(keyMsg("n"))
 	app = updated.(App)
 
@@ -356,17 +313,13 @@ func TestDeleteConfirmEscape(t *testing.T) {
 	assert.Len(t, f.Vars, 2, "no vars should be deleted on escape")
 }
 
-// --- handleHelpKey tests ---
-
 func TestHelpToggle(t *testing.T) {
 	app := newTestApp(nil)
 
-	// Press '?' to open help
 	updated, _ := app.Update(keyMsg("?"))
 	app = updated.(App)
 	assert.Equal(t, ModeHelp, app.mode)
 
-	// Press Escape to close help
 	updated, _ = app.Update(keyMsg("esc"))
 	app = updated.(App)
 	assert.Equal(t, ModeNormal, app.mode)
@@ -375,12 +328,10 @@ func TestHelpToggle(t *testing.T) {
 func TestHelpToggleWithQuestionMark(t *testing.T) {
 	app := newTestApp(nil)
 
-	// Open help
 	updated, _ := app.Update(keyMsg("?"))
 	app = updated.(App)
 	assert.Equal(t, ModeHelp, app.mode)
 
-	// Close with '?' again
 	updated, _ = app.Update(keyMsg("?"))
 	app = updated.(App)
 	assert.Equal(t, ModeNormal, app.mode)
@@ -393,25 +344,20 @@ func TestHelpExitWithQuit(t *testing.T) {
 	app = updated.(App)
 	assert.Equal(t, ModeHelp, app.mode)
 
-	// 'q' also exits help
 	updated, _ = app.Update(keyMsg("q"))
 	app = updated.(App)
 	assert.Equal(t, ModeNormal, app.mode)
 }
-
-// --- handleSearchKey tests ---
 
 func TestSearchFlowEscape(t *testing.T) {
 	f := makeTestFile(".env", "FOO", "BAR", "BAZ")
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	// Press '/' to start search
 	updated, _ := app.Update(keyMsg("/"))
 	app = updated.(App)
 	assert.Equal(t, ModeSearching, app.mode)
 
-	// Escape clears search and exits
 	updated, _ = app.Update(keyMsg("esc"))
 	app = updated.(App)
 	assert.Equal(t, ModeNormal, app.mode)
@@ -423,39 +369,31 @@ func TestSearchFlowEnter(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	// Press '/' to start search
 	updated, _ := app.Update(keyMsg("/"))
 	app = updated.(App)
 	assert.Equal(t, ModeSearching, app.mode)
 
-	// Set search text directly
 	app.searchInput.SetValue("FOO")
 	app.varList.SetSearch("FOO")
 
-	// Press Enter to keep filter
 	updated, _ = app.Update(keyMsg("enter"))
 	app = updated.(App)
 	assert.Equal(t, ModeNormal, app.mode)
 	assert.Equal(t, "FOO", app.varList.SearchQuery, "search should be preserved on enter")
 }
 
-// --- Normal mode additional tests ---
-
 func TestFocusSwitching(t *testing.T) {
 	f := makeTestFile(".env", "FOO")
 	app := newTestApp([]*model.EnvFile{f})
 
-	// Default focus is files
 	assert.Equal(t, FocusFiles, app.focus)
 
-	// Press right to focus vars
 	updated, _ := app.Update(keyMsg("l"))
 	app = updated.(App)
 	assert.Equal(t, FocusVars, app.focus)
 	assert.True(t, app.varList.Focused)
 	assert.False(t, app.fileList.Focused)
 
-	// Press left to focus files
 	updated, _ = app.Update(keyMsg("h"))
 	app = updated.(App)
 	assert.Equal(t, FocusFiles, app.focus)
@@ -518,7 +456,6 @@ func TestToggleSort(t *testing.T) {
 }
 
 func TestDeleteWithNoFile(t *testing.T) {
-	// No vars — 'd' should not enter confirm delete
 	app := newTestApp(nil)
 	app.focus = FocusVars
 

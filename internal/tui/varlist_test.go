@@ -20,8 +20,8 @@ func TestVarListMoveUp(t *testing.T) {
 	vl.SetFile(f)
 	vl.Height = 20
 
-	vl.MoveDown() // cursor=1
-	vl.MoveDown() // cursor=2
+	vl.MoveDown()
+	vl.MoveDown()
 	assert.Equal(t, 2, vl.Cursor)
 
 	vl.MoveUp()
@@ -144,13 +144,12 @@ func TestVarListToggleSort(t *testing.T) {
 
 	// Default order: file order
 	assert.False(t, vl.SortAlpha)
-	assert.Equal(t, 0, vl.displayItems[0].VarIdx) // ZZZ
-	assert.Equal(t, 1, vl.displayItems[1].VarIdx) // AAA
-	assert.Equal(t, 2, vl.displayItems[2].VarIdx) // MMM
+	assert.Equal(t, 0, vl.displayItems[0].VarIdx)
+	assert.Equal(t, 1, vl.displayItems[1].VarIdx)
+	assert.Equal(t, 2, vl.displayItems[2].VarIdx)
 
 	vl.ToggleSort()
 	assert.True(t, vl.SortAlpha)
-	// Alphabetical: AAA, MMM, ZZZ
 	assert.Equal(t, "AAA", f.Vars[vl.displayItems[0].VarIdx].Key)
 	assert.Equal(t, "MMM", f.Vars[vl.displayItems[1].VarIdx].Key)
 	assert.Equal(t, "ZZZ", f.Vars[vl.displayItems[2].VarIdx].Key)
@@ -191,7 +190,7 @@ func TestVarListScrolling(t *testing.T) {
 	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F", "G", "H")
 	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
-	vl.Height = 8 // visible = 8 - 4 = 4
+	vl.Height = 8
 
 	for range 6 {
 		vl.MoveDown()
@@ -249,11 +248,8 @@ func TestVarListViewTruncatesLongKeys(t *testing.T) {
 	theme := BuildTheme(true, config.ColorConfig{})
 	view := vl.View(theme)
 
-	// The full key should NOT appear (it exceeds the 30-char cap)
 	assert.NotContains(t, view, longKey, "long key should be truncated")
-	// The truncated version with ".." should appear
 	assert.Contains(t, view, "THIS_IS_A_VERY_LONG_ENVIRONM..", "truncated key with .. should appear")
-	// Short key should still be fully visible
 	assert.Contains(t, view, "SHORT")
 }
 
@@ -284,10 +280,7 @@ func TestVarListViewIndicators(t *testing.T) {
 	assert.Contains(t, view, "EMPTY")
 }
 
-// --- Variable grouping (E009) ---
-
 func newGroupingFixture() *model.EnvFile {
-	// DB (3), REDIS (2), Ungrouped: PORT, DEBUG
 	return makeTestFile(".env",
 		"DB_HOST", "DB_PORT", "DB_USER",
 		"REDIS_URL", "REDIS_PORT",
@@ -341,7 +334,6 @@ func TestVarListGrouping_CollapseHidesVars(t *testing.T) {
 	assert.True(t, vl.collapsed["DB"])
 	// 10 items - 3 DB vars = 7 items now (DB header still present).
 	assert.Equal(t, 7, len(vl.displayItems))
-	// No DB_* var rows must remain.
 	for _, item := range vl.displayItems {
 		if item.Kind == displayItemVar {
 			assert.NotContains(t, f.Vars[item.VarIdx].Key, "DB_")
@@ -357,9 +349,9 @@ func TestVarListGrouping_ToggleCollapseExpandsAgain(t *testing.T) {
 	vl.ToggleGrouping()
 	vl.SetCursor(0) // DB header
 
-	vl.ToggleCollapseAtCursor() // collapse DB
+	vl.ToggleCollapseAtCursor()
 	assert.True(t, vl.collapsed["DB"])
-	vl.ToggleCollapseAtCursor() // expand DB
+	vl.ToggleCollapseAtCursor()
 	assert.False(t, vl.collapsed["DB"])
 	assert.Equal(t, 10, len(vl.displayItems))
 }
@@ -371,8 +363,7 @@ func TestVarListGrouping_ToggleCollapseNoOpOnVar(t *testing.T) {
 	vl.Height = 30
 	vl.ToggleGrouping()
 
-	// Move cursor to a var (skip the DB header).
-	vl.MoveDown() // cursor=1, first DB var
+	vl.MoveDown()
 	assert.False(t, vl.IsHeaderAtCursor())
 	ok := vl.ToggleCollapseAtCursor()
 	assert.False(t, ok, "no toggle when cursor is on a var")
@@ -385,7 +376,6 @@ func TestVarListGrouping_CursorFollowsVarOnToggle(t *testing.T) {
 	vl.SetFile(f)
 	vl.Height = 30
 
-	// Linear view: place cursor on REDIS_URL (index 3 in displayItems).
 	vl.SetCursor(3)
 	assert.Equal(t, "REDIS_URL", vl.SelectedVar().Key)
 
@@ -435,21 +425,18 @@ func TestVarListGrouping_SearchDisablesHeaders(t *testing.T) {
 }
 
 func TestVarListGrouping_SortAlphaWithinGroups(t *testing.T) {
-	// Vars deliberately not in alphabetical order within DB.
 	f := makeTestFile(".env", "DB_PORT", "DB_HOST", "DB_USER", "PORT", "DEBUG")
 	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
 	vl.Height = 30
 	vl.ToggleGrouping()
-	vl.ToggleSort() // alpha on
+	vl.ToggleSort()
 
-	// Layout: [DB header, DB_HOST, DB_PORT, DB_USER, UNGROUPED header, DEBUG, PORT]
 	require.Equal(t, 7, len(vl.displayItems))
 	assert.Equal(t, displayItemHeader, vl.displayItems[0].Kind)
 	assert.Equal(t, "DB_HOST", f.Vars[vl.displayItems[1].VarIdx].Key)
 	assert.Equal(t, "DB_PORT", f.Vars[vl.displayItems[2].VarIdx].Key)
 	assert.Equal(t, "DB_USER", f.Vars[vl.displayItems[3].VarIdx].Key)
-	// UNGROUPED header, then PORT/DEBUG sorted alpha → DEBUG, PORT.
 	assert.Equal(t, displayItemHeader, vl.displayItems[4].Kind)
 	assert.True(t, vl.groups[vl.displayItems[4].GroupIdx].IsUngrouped())
 	assert.Equal(t, "DEBUG", f.Vars[vl.displayItems[5].VarIdx].Key)
@@ -457,9 +444,6 @@ func TestVarListGrouping_SortAlphaWithinGroups(t *testing.T) {
 }
 
 func TestVarListGrouping_GroupsSortedAlphaUnderSort(t *testing.T) {
-	// REDIS appears first in the file but DB must come first under alpha
-	// sort, since `o` now reorders groups alphabetically too. Ungrouped
-	// (none here) would still pin last.
 	f := makeTestFile(".env",
 		"REDIS_URL", "REDIS_PORT",
 		"DB_HOST", "DB_PORT",
@@ -478,7 +462,6 @@ func TestVarListGrouping_GroupsSortedAlphaUnderSort(t *testing.T) {
 }
 
 func TestVarListGrouping_GroupsFileOrderWithoutSortAlpha(t *testing.T) {
-	// With grouping ON but sort OFF, groups must stay in file order.
 	f := makeTestFile(".env",
 		"REDIS_URL", "REDIS_PORT",
 		"DB_HOST", "DB_PORT",
@@ -487,7 +470,6 @@ func TestVarListGrouping_GroupsFileOrderWithoutSortAlpha(t *testing.T) {
 	vl.SetFile(f)
 	vl.Height = 30
 	vl.ToggleGrouping()
-	// SortAlpha intentionally left off.
 
 	require.Equal(t, 6, len(vl.displayItems))
 	assert.Equal(t, "REDIS", vl.groups[vl.displayItems[0].GroupIdx].Prefix,
@@ -497,8 +479,6 @@ func TestVarListGrouping_GroupsFileOrderWithoutSortAlpha(t *testing.T) {
 }
 
 func TestVarListGrouping_UngroupedAlwaysLastWithSortAlpha(t *testing.T) {
-	// AAA (Ungrouped — single occurrence, no shared prefix with another)
-	// would alphabetically come before ZZZ, but it must stay pinned last.
 	f := makeTestFile(".env",
 		"ZZZ_A", "ZZZ_B",
 		"AAA",
@@ -509,7 +489,6 @@ func TestVarListGrouping_UngroupedAlwaysLastWithSortAlpha(t *testing.T) {
 	vl.ToggleGrouping()
 	vl.ToggleSort()
 
-	// Layout under sort: [ZZZ header, ZZZ_A, ZZZ_B, UNGROUPED header, AAA]
 	require.Equal(t, 5, len(vl.displayItems))
 	assert.Equal(t, "ZZZ", vl.groups[vl.displayItems[0].GroupIdx].Prefix)
 	assert.True(t, vl.groups[vl.displayItems[3].GroupIdx].IsUngrouped(),
@@ -532,7 +511,6 @@ func TestVarListGrouping_CaseSensitiveAlphaOrder(t *testing.T) {
 	vl.ToggleGrouping()
 	vl.ToggleSort()
 
-	// Expected order: AWS, aws, db (uppercase < lowercase).
 	require.Equal(t, 3, len(vl.groups))
 	assert.Equal(t, "AWS", vl.groups[0].Prefix)
 	assert.Equal(t, "aws", vl.groups[1].Prefix)
@@ -540,8 +518,6 @@ func TestVarListGrouping_CaseSensitiveAlphaOrder(t *testing.T) {
 }
 
 func TestVarListGrouping_ToggleSortFollowsVarCursor(t *testing.T) {
-	// Cursor on a var — toggling sort reorders groups, so the var moves to
-	// a different displayItems index. Cursor must follow the var.
 	f := makeTestFile(".env",
 		"REDIS_URL", "REDIS_PORT",
 		"DB_HOST", "DB_PORT",
@@ -551,21 +527,16 @@ func TestVarListGrouping_ToggleSortFollowsVarCursor(t *testing.T) {
 	vl.Height = 30
 	vl.ToggleGrouping()
 
-	// Cursor on REDIS_URL: header REDIS at 0, REDIS_URL at 1.
 	vl.SetCursor(1)
 	require.Equal(t, "REDIS_URL", f.Vars[vl.SelectedVarIndex()].Key)
 
 	vl.ToggleSort()
 
-	// After alpha sort: header DB at 0, DB_HOST 1, DB_PORT 2, header REDIS 3,
-	// REDIS_PORT 4, REDIS_URL 5. Cursor must land on REDIS_URL.
 	require.NotEqual(t, -1, vl.SelectedVarIndex(), "cursor must be on a var")
 	assert.Equal(t, "REDIS_URL", f.Vars[vl.SelectedVarIndex()].Key)
 }
 
 func TestVarListGrouping_ToggleSortFollowsHeaderCursor(t *testing.T) {
-	// Cursor on header REDIS — toggling sort reorders groups, so the REDIS
-	// header moves. Cursor must follow the REDIS header by prefix.
 	f := makeTestFile(".env",
 		"REDIS_URL", "REDIS_PORT",
 		"DB_HOST", "DB_PORT",
@@ -575,14 +546,12 @@ func TestVarListGrouping_ToggleSortFollowsHeaderCursor(t *testing.T) {
 	vl.Height = 30
 	vl.ToggleGrouping()
 
-	// Cursor on header REDIS at index 0.
 	vl.SetCursor(0)
 	require.True(t, vl.IsHeaderAtCursor())
 	require.Equal(t, "REDIS", vl.groups[vl.displayItems[vl.Cursor].GroupIdx].Prefix)
 
 	vl.ToggleSort()
 
-	// After alpha sort: header DB at 0, header REDIS at 3.
 	require.True(t, vl.IsHeaderAtCursor(), "cursor must still be on a header")
 	assert.Equal(t, "REDIS", vl.groups[vl.displayItems[vl.Cursor].GroupIdx].Prefix,
 		"cursor must follow REDIS header to its new position")
@@ -603,22 +572,18 @@ func TestVarListGrouping_UngroupedAloneNoHeader(t *testing.T) {
 }
 
 func TestVarListGrouping_UngroupedHeaderShownWithNamedGroups(t *testing.T) {
-	// When at least one named group exists, the trailing Ungrouped section
-	// gets its own header (collapsible like the others).
 	f := makeTestFile(".env", "DB_HOST", "DB_PORT", "PORT", "DEBUG")
 	vl := NewVarListModel(config.DefaultConfig().Layout)
 	vl.SetFile(f)
 	vl.Height = 30
 	vl.ToggleGrouping()
 
-	// Layout: DB hdr, DB_HOST, DB_PORT, UNGROUPED hdr, PORT, DEBUG
 	require.Equal(t, 6, len(vl.displayItems))
 	require.Equal(t, 2, countHeaders(vl.displayItems))
 	last := vl.displayItems[3]
 	require.Equal(t, displayItemHeader, last.Kind, "last section starts with a header")
 	assert.True(t, vl.groups[last.GroupIdx].IsUngrouped())
 
-	// And it's collapsible: collapse hides the trailing PORT and DEBUG.
 	vl.SetCursor(3)
 	require.True(t, vl.IsHeaderAtCursor())
 	vl.ToggleCollapseAtCursor()
@@ -633,16 +598,15 @@ func TestVarListGrouping_PreservesCollapsedAcrossDisable(t *testing.T) {
 	vl.Height = 30
 
 	vl.ToggleGrouping()
-	vl.SetCursor(0)             // DB header
-	vl.ToggleCollapseAtCursor() // collapse DB
+	vl.SetCursor(0) // DB header
+	vl.ToggleCollapseAtCursor()
 	assert.True(t, vl.collapsed["DB"])
 
-	vl.ToggleGrouping() // disable
+	vl.ToggleGrouping()
 	assert.False(t, vl.Grouping)
-	// collapsed state must survive
 	assert.True(t, vl.collapsed["DB"])
 
-	vl.ToggleGrouping() // re-enable
+	vl.ToggleGrouping()
 	assert.True(t, vl.Grouping)
 	assert.True(t, vl.collapsed["DB"], "DB stays collapsed after round-trip")
 	// 10 items - 3 DB vars = 7
@@ -667,10 +631,6 @@ func TestVarListGrouping_RefreshAfterAddRecomputesGroups(t *testing.T) {
 }
 
 func TestVarListGrouping_ToggleSortFollowsUngroupedHeaderCursor(t *testing.T) {
-	// Cursor on the UNGROUPED header (Prefix == "") must follow correctly
-	// when ToggleSort reorders the named groups around it. The empty
-	// prefix is the legitimate UNGROUPED identifier — restoreCursor must
-	// not treat it as a "no anchor" sentinel.
 	f := makeTestFile(".env",
 		"REDIS_URL", "REDIS_PORT",
 		"DB_HOST", "DB_PORT",
@@ -681,8 +641,6 @@ func TestVarListGrouping_ToggleSortFollowsUngroupedHeaderCursor(t *testing.T) {
 	vl.Height = 30
 	vl.ToggleGrouping()
 
-	// Layout (file order): [hREDIS, REDIS_URL, REDIS_PORT, hDB, DB_HOST,
-	// DB_PORT, hUNGROUPED, PORT, DEBUG] — UNGROUPED header at index 6.
 	require.Equal(t, 9, len(vl.displayItems))
 	vl.SetCursor(6)
 	require.True(t, vl.IsHeaderAtCursor())
@@ -701,10 +659,6 @@ func TestVarListGrouping_ToggleSortFollowsUngroupedHeaderCursor(t *testing.T) {
 }
 
 func TestVarListGrouping_RefreshPreservesAlphaOrder(t *testing.T) {
-	// With grouping ON + SortAlpha ON, a Refresh after mutating File.Vars
-	// must re-run the alpha sort — including reordering when an added var
-	// promotes a previously-singleton prefix into a new alphabetical-first
-	// group.
 	f := makeTestFile(".env",
 		"REDIS_URL", "REDIS_PORT",
 		"DB_HOST", "DB_PORT",
@@ -733,9 +687,6 @@ func TestVarListGrouping_RefreshPreservesAlphaOrder(t *testing.T) {
 }
 
 func TestVarListSearchFromBottomKeepsMatchVisible(t *testing.T) {
-	// Searching while scrolled to the bottom must clamp the scroll offset
-	// along with the cursor, or the only match renders outside the viewport
-	// and the panel body shows up empty.
 	keys := make([]string, 0, 51)
 	for i := range 50 {
 		keys = append(keys, fmt.Sprintf("VAR_%02d", i))
@@ -748,7 +699,6 @@ func TestVarListSearchFromBottomKeepsMatchVisible(t *testing.T) {
 	vl.Height = panelChromeHeight + 6 // 6 rendered rows
 	vl.Width = 60
 
-	// Scroll all the way to the bottom.
 	for range 50 {
 		vl.MoveDown()
 	}
@@ -785,8 +735,8 @@ func TestVarListNarrowWidthKeepsPeekLineOnOneRow(t *testing.T) {
 	keys := []string{"UPSTREAM_SERVICE_CIRCUIT_BREAKER_THRESHOLD", "DATABASE_URL", "REDIS_URL", "SENTRY_DSN"}
 	f := makeTestFile(".env", keys...)
 	f.Vars[0].Value = strings.Repeat("x", 200)
-	f.UpdateVar(0, "new_value")  // "↳ was:" line
-	f.AddVar("NEW_VAR", "value") // "↳ new variable" line
+	f.UpdateVar(0, "new_value")
+	f.AddVar("NEW_VAR", "value")
 	theme := BuildTheme(true, config.ColorConfig{})
 	layout := config.DefaultConfig().Layout
 	layout.VarListPadding = 1       // raised to config.VarListMinPadding, the tightest rows get

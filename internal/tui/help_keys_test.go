@@ -25,14 +25,10 @@ import (
 // under Files panel) still acts there, and TestHelpScreenMatchesKeybindingsDoc
 // catches it instead.
 
-// helpState is a state of the app a help section describes, reached by
-// pressing keys from the main view with the files panel focused on the first
-// file. In a state with an input bar a printable key or Space is typed, so
-// only the other keys are tried there.
 type helpState struct {
 	name  string
 	keys  []string
-	ready func(App) bool // the state's precondition, beyond its mode
+	ready func(App) bool
 	mode  AppMode
 }
 
@@ -55,9 +51,6 @@ var (
 	}}
 )
 
-// helpSectionStates maps each key section of the help screen to the states
-// it describes. A key acts in at least one of its section's states; in a
-// section marked everyRow, each row acts in every state.
 var helpSectionStates = map[string]struct {
 	states   []*helpState
 	everyRow bool
@@ -117,21 +110,14 @@ func panelReady(focus Focus, modified bool) func(App) bool {
 	}
 }
 
-// fileCursorBetween reports whether the file list's cursor sits between two
-// files, so it can move either way.
 func fileCursorBetween(a App) bool {
 	return a.fileList.Cursor > 0 && a.fileList.Cursor < len(a.fileList.Files)-1
 }
 
-// varCursorBetween reports whether the var list's cursor sits between two
-// items, so it can move either way.
 func varCursorBetween(a App) bool {
 	return a.varList.Cursor > 0 && a.varList.Cursor < len(a.varList.displayItems)-1
 }
 
-// diffCursorBetweenDifferences reports whether the diff view's cursor sits on
-// a difference with another before and after it, so every compare key has
-// something to act on.
 func diffCursorBetweenDifferences(a App) bool {
 	entries, cursor := a.diffView.Entries, a.diffView.Cursor
 	differs := func(e model.DiffEntry) bool { return e.Status != model.DiffEqual }
@@ -139,11 +125,6 @@ func diffCursorBetweenDifferences(a App) bool {
 		slices.ContainsFunc(entries[:cursor], differs) && slices.ContainsFunc(entries[cursor+1:], differs)
 }
 
-// helpKeysFixture is written to disk for every state. It has three files, so
-// the file list's cursor can sit between two, and a DB_ group in the first.
-// The first two files differ on their first two variables, so the diff view's
-// cursor can sit on a difference with another before and after it, and
-// .env.local lacks DEBUG, so a matrix cell can be missing.
 var helpKeysFixture = map[string]string{
 	".env":       "DB_HOST=localhost\nDB_PORT=5432\nAPI_KEY=secret\nDEBUG=false\n",
 	".env.local": "DB_HOST=remote\nDB_PORT=5433\nAPI_KEY=other\nLOG=debug\n",
@@ -209,10 +190,6 @@ func TestHelpScreenKeysActInTheirScreen(t *testing.T) {
 	}
 }
 
-// requireHelpStatesReached checks that each state in helpSectionStates is
-// reached and that pressing the unbound keys F5 and, outside an input bar, x
-// there does nothing. Each state is checked once; it also checks that no two
-// states share a name, so a failure names one state.
 func requireHelpStatesReached(t *testing.T) {
 	t.Helper()
 	bound := slices.Collect(maps.Values(helpKeyNames(t)))
@@ -285,9 +262,6 @@ func openHelpState(t *testing.T, state *helpState) App {
 	return app
 }
 
-// helpKeyActs presses msg in app and returns the updated app and command,
-// and whether the key acted: it changed what the app shows or returned a
-// command, without flashing a warning.
 func helpKeyActs(app App, msg tea.KeyPressMsg) (App, tea.Cmd, bool) {
 	before := app.View().Content
 	updated, cmd := app.Update(msg)
@@ -298,20 +272,15 @@ func helpKeyActs(app App, msg tea.KeyPressMsg) (App, tea.Cmd, bool) {
 	return next, cmd, cmd != nil || next.View().Content != before
 }
 
-// typesText reports whether app's mode has an input bar, where printable keys
-// are typed.
 func typesText(app App) bool {
 	_, in := app.inputBar()
 	return in != nil
 }
 
-// typedKey reports whether an input bar types the key named name as text.
 func typedKey(name string) bool {
 	return len([]rune(name)) == 1 || name == "space"
 }
 
-// helpKeyNames maps each key label the help writes to the key name a KeyMap
-// binding uses for it, failing if two names share a label.
 func helpKeyNames(t *testing.T) map[string]string {
 	t.Helper()
 	names := map[string]string{}
@@ -325,9 +294,6 @@ func helpKeyNames(t *testing.T) map[string]string {
 	return names
 }
 
-// helpRowLabels splits a help row's key column into key labels: alternatives
-// are joined by " / " ("q / Ctrl+C"), the columns of a pair by spaces and its
-// halves by "/" ("↑/↓  k/j"), and "/" alone is the slash key.
 func helpRowLabels(column string) []string {
 	var labels []string
 	for _, alternative := range strings.Split(column, " / ") {

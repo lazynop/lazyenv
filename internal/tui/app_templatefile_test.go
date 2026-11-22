@@ -90,12 +90,10 @@ func TestTemplateFile_Success(t *testing.T) {
 	assert.Equal(t, ModeNormal, app.mode)
 	assert.Contains(t, app.statusBar.Message, "Template from")
 
-	// File exists on disk with keys but no values
 	data, err := os.ReadFile(filepath.Join(dir, ".env.example"))
 	require.NoError(t, err)
 	assert.Equal(t, "# Database config\nDB_HOST=\nDB_PASS=\n", string(data))
 
-	// File is in the list
 	assert.Len(t, app.fileList.Files, 2)
 }
 

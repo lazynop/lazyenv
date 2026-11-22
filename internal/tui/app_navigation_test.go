@@ -11,17 +11,12 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// pageStep is a press of a page or jump key and where it leaves the cursor:
-// on item, drawn on screen row row.
 type pageStep struct {
 	key  string
 	item string
 	row  int
 }
 
-// pressPageStep presses step's key in app and checks that the cursor lands on
-// step's item, as cursorItem names the item at the cursor, and that the
-// screen draws the item on step's row.
 func pressPageStep(t *testing.T, app App, step pageStep, cursorItem func(App) string) App {
 	t.Helper()
 	app = press(app, step.key)
@@ -54,7 +49,6 @@ func pageSteps(names []string, first int) []pageStep {
 	}
 }
 
-// numbered returns n names: prefix followed by 00, 01 and so on.
 func numbered(prefix string, n int) []string {
 	names := make([]string, n)
 	for i := range names {
@@ -63,16 +57,12 @@ func numbered(prefix string, n int) []string {
 	return names
 }
 
-// pageKeys are the 40 variables pageKeyFiles holds.
 var pageKeys = numbered("KEY_", 40)
 
-// pageKeyFiles returns two files that both hold pageKeys, for the compare
-// view and the matrix to page through.
 func pageKeyFiles() []*model.EnvFile {
 	return []*model.EnvFile{makeTestFile(".env", pageKeys...), makeTestFile(".env.local", pageKeys...)}
 }
 
-// screenRow returns row of app's screen, without colors.
 func screenRow(t *testing.T, app App, row int) string {
 	t.Helper()
 	rows := strings.Split(stripAnsi(app.View().Content), "\n")
@@ -80,8 +70,6 @@ func screenRow(t *testing.T, app App, row int) string {
 	return rows[row]
 }
 
-// varCursorItem names the var list's item at the cursor as its row draws it:
-// a variable by its key, a group header by its arrow and prefix.
 func varCursorItem(a App) string {
 	if v := a.varList.SelectedVar(); v != nil {
 		return v.Key
@@ -89,9 +77,6 @@ func varCursorItem(a App) string {
 	return expandedGroupGlyph + " " + a.varList.captureCursor().headerPrefix
 }
 
-// TestPageKeysMoveTheVarListCursor pages through a grouped var list taller
-// than its panel, which shows 18 rows at 80x24: the same keys as pageSteps,
-// over 42 positions that include the group headers.
 func TestPageKeysMoveTheVarListCursor(t *testing.T) {
 	keys := append(numbered("DB_", 20), numbered("API_", 20)...)
 	// Grouped, the positions are the DB header (0), DB_00 to DB_19 (1 to 20),
@@ -118,9 +103,6 @@ func TestPageKeysMoveTheVarListCursor(t *testing.T) {
 	}
 }
 
-// TestPageKeysMoveTheFileListCursor pages through more files than the files
-// panel shows at 80x24: like ↑/↓, each key selects the file it lands on, so
-// the var list shows it.
 func TestPageKeysMoveTheFileListCursor(t *testing.T) {
 	names := numbered(".env.", 40)
 	files := make([]*model.EnvFile, len(names))
@@ -137,8 +119,6 @@ func TestPageKeysMoveTheFileListCursor(t *testing.T) {
 	}
 }
 
-// TestPageKeysMoveTheCompareCursor pages through more entries than the
-// compare view shows at 80x24.
 func TestPageKeysMoveTheCompareCursor(t *testing.T) {
 	app := press(resize(newTestApp(pageKeyFiles()), 80, 24), "c", "j", "enter", "j")
 	require.Equal(t, ModeComparing, app.mode)
@@ -148,9 +128,6 @@ func TestPageKeysMoveTheCompareCursor(t *testing.T) {
 	}
 }
 
-// TestPageKeysMoveTheMatrixRowCursor pages through more variables than the
-// matrix shows at 80x24, with the column cursor on the second file: the keys
-// move the row cursor only.
 func TestPageKeysMoveTheMatrixRowCursor(t *testing.T) {
 	app := press(resize(newTestApp(pageKeyFiles()), 80, 24), "m", "j", "l")
 	require.Equal(t, ModeMatrix, app.mode)
@@ -165,11 +142,6 @@ func TestPageKeysMoveTheMatrixRowCursor(t *testing.T) {
 	}
 }
 
-// varListAtTheEnd returns an app at 80x24 over two files of 30 variables,
-// FIRST_00 to FIRST_29 and LAST_00 to LAST_29, with the file whose variables
-// start with prefix active: its var list has the cursor on the last
-// variable, scrolled to the end, and peek on, and the focus is back on the
-// files panel.
 func varListAtTheEnd(t *testing.T, prefix string) App {
 	t.Helper()
 	files := []*model.EnvFile{
@@ -186,10 +158,6 @@ func varListAtTheEnd(t *testing.T, prefix string) App {
 	return app
 }
 
-// assertVarListKeptAtTheEnd checks that the var list varListAtTheEnd set up
-// for the file whose variables start with prefix kept its cursor, its scroll
-// (prefix_12 on the first row) and its peek, rather than starting the file
-// over from the top.
 func assertVarListKeptAtTheEnd(t *testing.T, app App, prefix string) {
 	t.Helper()
 	assert.Equal(t, prefix+"_29", varCursorItem(app), "the var list's cursor should stay on the last variable")
@@ -197,9 +165,6 @@ func assertVarListKeptAtTheEnd(t *testing.T, app App, prefix string) {
 	assert.True(t, app.varList.Peeking, "the var list should keep peek on")
 }
 
-// TestFileKeysThatKeepTheActiveFileKeepTheVarList presses, at either end of
-// the file list, the keys that leave the active file as it is, Enter
-// included: the var list keeps its cursor, scroll and peek.
 func TestFileKeysThatKeepTheActiveFileKeepTheVarList(t *testing.T) {
 	for _, tt := range []struct {
 		prefix string // of the active file's variables

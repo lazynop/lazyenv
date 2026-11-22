@@ -29,9 +29,8 @@ func TestUpdateWindowSizeMsg(t *testing.T) {
 
 func TestUpdateBackgroundColorMsg(t *testing.T) {
 	app := newTestApp(nil)
-	assert.True(t, app.hasDarkBg) // default
+	assert.True(t, app.hasDarkBg)
 
-	// Simulate light background
 	updated, cmd := app.Update(tea.BackgroundColorMsg{})
 	app = updated.(App)
 	assert.Nil(t, cmd)
@@ -90,10 +89,6 @@ func TestUpdateFilesLoadedMsgEmpty(t *testing.T) {
 	assert.Empty(t, app.fileList.Files)
 }
 
-// TestShowSecretsAppliesWhateverTheStartupScanFinds loads a directory holding
-// a file, then an empty one, with show-secrets on and off: the var list's
-// ShowSecrets, which its masking reads, follows the option, also when the
-// scan finds no file.
 func TestShowSecretsAppliesWhateverTheStartupScanFinds(t *testing.T) {
 	for _, fixture := range []map[string]string{{".env": "API_KEY=s3cret\n"}, {}} {
 		for _, show := range []bool{true, false} {
@@ -125,7 +120,7 @@ func TestUpdateClearMessageMsgIgnoresStaleGen(t *testing.T) {
 	app := newTestApp(nil)
 	app.statusBar.SetMessage("first")
 	staleGen := app.statusBar.msgGen
-	app.statusBar.SetMessage("second") // newer message bumps the generation
+	app.statusBar.SetMessage("second")
 
 	updated, _ := app.Update(ClearMessageMsg{gen: staleGen})
 	app = updated.(App)
@@ -141,13 +136,11 @@ func TestNavigationUpDownInFilePanel(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f1, f2, f3})
 	app.focus = FocusFiles
 
-	// Move down
 	updated, _ := app.Update(keyMsg("j"))
 	app = updated.(App)
 	assert.Equal(t, 1, app.fileList.Cursor)
 	assert.Equal(t, f2, app.varList.File, "var panel should sync with file cursor")
 
-	// Move up
 	updated, _ = app.Update(keyMsg("k"))
 	app = updated.(App)
 	assert.Equal(t, 0, app.fileList.Cursor)
@@ -174,7 +167,6 @@ func TestEnterSelectsFileAndSwitchesToVars(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f1, f2})
 	app.focus = FocusFiles
 
-	// Move to second file and press enter
 	updated, _ := app.Update(keyMsg("j"))
 	app = updated.(App)
 	updated, _ = app.Update(keyMsg("enter"))
@@ -194,7 +186,6 @@ func TestQuitReturnsQuitCmd(t *testing.T) {
 
 func TestViewNotReady(t *testing.T) {
 	app := NewApp(config.DefaultConfig(), StartupMessages{})
-	// ready is false by default
 	view := app.View()
 	assert.Contains(t, view.Content, "Loading")
 }
@@ -270,8 +261,6 @@ func TestConfigErrorScreenNamesTheFile(t *testing.T) {
 	assert.Contains(t, app.View().Content, "/home/user/.lazyenvrc")
 }
 
-// configErrorRows returns the rows of a config error screen, stripped of
-// styling, of the box border and of the centering spaces.
 func configErrorRows(view string) []string {
 	var rows []string
 	for _, row := range strings.Split(stripAnsi(view), "\n") {
@@ -280,9 +269,6 @@ func configErrorRows(view string) []string {
 	return rows
 }
 
-// smallestConfigErrorRows starts an App with startup's config messages in the
-// smallest terminal it draws its screens in, checks the config error screen
-// fits, and returns its rows as configErrorRows does.
 func smallestConfigErrorRows(t *testing.T, startup StartupMessages) []string {
 	t.Helper()
 	cfg := config.DefaultConfig()
@@ -403,16 +389,10 @@ func TestConfigErrorScreenAlsoShowsNotices(t *testing.T) {
 		"the run stops on this screen, so a notice must not be lost behind it")
 }
 
-// TestMinimumTerminalFitsBothPanelMinimums checks that the smallest terminal
-// the panels are drawn in is wide enough for the file list and the variables
-// panel side by side at their minimums.
 func TestMinimumTerminalFitsBothPanelMinimums(t *testing.T) {
 	assert.GreaterOrEqual(t, MinTerminalWidth, config.FileListMinWidth+config.VarListMinWidth)
 }
 
-// TestFileListWidthBeyondTheTerminalLeavesTheVarListItsMinimum sets a
-// file-list-width wider than the terminal: the file list narrows so the
-// variables panel keeps its minimum and the screen fits the terminal.
 func TestFileListWidthBeyondTheTerminalLeavesTheVarListItsMinimum(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{makeTestFile(".env", "A")})
 	app.config.Layout.FileListWidth = 200

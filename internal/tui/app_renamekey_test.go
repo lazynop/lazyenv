@@ -153,7 +153,6 @@ func TestRenameKey_ThenAddDoesNotConfuseFlows(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 
-	// Start rename, then cancel
 	updated, _ := app.Update(keyMsg("E"))
 	app = updated.(App)
 	assert.True(t, app.editor.isRenameKey)
@@ -162,45 +161,32 @@ func TestRenameKey_ThenAddDoesNotConfuseFlows(t *testing.T) {
 	app = updated.(App)
 	assert.Equal(t, ModeNormal, app.mode)
 
-	// Now add a variable — should NOT be treated as rename
 	updated, _ = app.Update(keyMsg("a"))
 	app = updated.(App)
 	assert.Equal(t, ModeEditing, app.mode)
 	assert.False(t, app.editor.isRenameKey)
 	assert.True(t, app.editor.isAdd)
 
-	// Type key name and confirm
 	app.editor.input.SetValue("NEW_VAR")
 	updated, _ = app.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 	app = updated.(App)
 
-	// Should be in add-value step, not confirmRenameKey
 	assert.Equal(t, ModeEditing, app.mode)
 	assert.Contains(t, app.editor.label, "NEW_VAR")
 }
 
-// renameKey renames the var under the cursor of app's var list to name, by
-// keys.
 func renameKey(app App, name string) App {
 	return press(app, renameKeys(name)...)
 }
 
-// renameKeys returns the keys that rename the var under the cursor of the var
-// list to name.
 func renameKeys(name string) []string {
 	return slices.Concat([]string{"E", "ctrl+u"}, typing(name), []string{"enter"})
 }
 
-// renameOntoDeleted deletes the var under the cursor of app's var list, the
-// one named deleted, and renames the var the cursor moves onto to that name,
-// by keys.
 func renameOntoDeleted(app App, deleted string) App {
 	return renameKey(press(app, "d", "y"), deleted)
 }
 
-// TestRenameKey_OntoADeletedKeyRevivesIt deletes FOO and renames BAR to FOO:
-// the var list shows one FOO row, with BAR's value, and no deleted row, and
-// peek shows FOO's value as the original.
 func TestRenameKey_OntoADeletedKeyRevivesIt(t *testing.T) {
 	app := onVars(resize(newTestApp([]*model.EnvFile{makeTestFile(".env", "FOO", "BAR")}), 80, 24))
 
@@ -228,9 +214,6 @@ func TestRenameKey_BackOffARevivedKeyListsItAsDeletedAgain(t *testing.T) {
 	assert.Contains(t, view, "FOO  val_FOO", "the var list should show FOO deleted again")
 }
 
-// TestRenameKey_OntoADeletedSecretKeepsItsOriginalMasked deletes GREETING, a
-// secret by its value only, and renames BAR to GREETING: BAR's plain value
-// stays in clear, and peek shows the original masked.
 func TestRenameKey_OntoADeletedSecretKeepsItsOriginalMasked(t *testing.T) {
 	f := makeTestFile(".env", "GREETING", "BAR")
 	f.Vars[0].Value, f.Vars[0].IsSecret = "ghp_abc123", true
@@ -245,8 +228,6 @@ func TestRenameKey_OntoADeletedSecretKeepsItsOriginalMasked(t *testing.T) {
 	assert.NotContains(t, view, "ghp_abc123", "peek must not reveal the original of a deleted secret")
 }
 
-// TestRenameKey_OntoADeletedKeySavesTheRenamedValue deletes FOO, renames BAR
-// to FOO and saves: the file holds FOO with BAR's value, and no BAR.
 func TestRenameKey_OntoADeletedKeySavesTheRenamedValue(t *testing.T) {
 	app, path := newTestAppWithDiskFile(t, "FOO=1\nBAR=2\n")
 

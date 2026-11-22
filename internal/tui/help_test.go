@@ -14,36 +14,24 @@ import (
 	"github.com/lazynop/lazyenv/internal/config"
 )
 
-// openHelp sizes a new app to the terminal and opens the help screen.
 func openHelp(width, height int) App {
 	return openHelpWith(config.DefaultConfig(), width, height)
 }
 
-// openHelpWith is openHelp for an app started with cfg.
 func openHelpWith(cfg config.Config, width, height int) App {
 	return press(resize(NewApp(cfg, StartupMessages{}), width, height), "?")
 }
 
-// helpLines is how many lines the text of app's help wraps to at app's width,
-// one per screen row. The help never scrolls more lines than it holds, so
-// that many down presses bring its last line on screen at app's size, however
-// long the help grows.
 func helpLines(app App) int {
 	return len(app.helpView.wrappedLines)
 }
 
-// scrollHelpToTheEnd presses down helpLines times, bringing the last line of
-// app's help on screen.
 func scrollHelpToTheEnd(app App) App {
 	return press(app, slices.Repeat([]string{"down"}, helpLines(app))...)
 }
 
-// helpLastRow is the description on the last row of the help.
 const helpLastRow = "Jump to the top/bottom"
 
-// helpScreen is the help screen as plain text, each row without the spaces
-// that pad it to the terminal width, so a failed assertion prints the text
-// rather than a screenful of blanks.
 func helpScreen(app App) string {
 	return plainRows(app.View().Content)
 }
@@ -154,9 +142,6 @@ func TestHelpFooterNamesTheKeysTheKeyMapBinds(t *testing.T) {
 		"Press ↑/↓ i/j PgUp/PgDn to scroll, Esc ? x to close")
 }
 
-// continuationIndent finds the screen row holding description and returns the
-// column the description starts at and the column the text of the row below
-// starts at.
 func continuationIndent(t *testing.T, screen, description string) (descCol, nextCol int) {
 	t.Helper()
 	rows := strings.Split(screen, "\n")
@@ -184,9 +169,6 @@ func TestHelpIndentsWrappedRowsUnderTheirDescription(t *testing.T) {
 	assert.Contains(t, screen, helpLastRow, "scrolling counts the wrapped rows")
 }
 
-// helpSections splits a help screen tall enough for the whole text into its
-// sections: each title, at the text's left margin, maps to its rows, trimmed,
-// each joined with the continuation lines a wrap indents under it.
 func helpSections(screen string) map[string][]string {
 	keyRow := strings.Repeat(" ", helpPaddingWidth+4)
 	sections := map[string][]string{}
@@ -207,7 +189,6 @@ func helpSections(screen string) map[string][]string {
 	return sections
 }
 
-// findHelpRow returns the row of section whose key column is keys, or "".
 func findHelpRow(sections map[string][]string, section, keys string) string {
 	for _, row := range sections[section] {
 		if column, _, _ := strings.Cut(row, "   "); strings.TrimSpace(column) == keys {
@@ -361,7 +342,6 @@ func TestHelpNamesTheMouseWheelOnlyWithTheMouseOn(t *testing.T) {
 	assert.NotContains(t, helpScreen(openHelpWith(cfg, 120, 200)), "mouse wheel")
 }
 
-// helpTopRow is the first row of help text on screen, below the padding.
 func helpTopRow(app App) string {
 	return strings.TrimSpace(strings.Split(helpScreen(app), "\n")[helpPaddingHeight])
 }

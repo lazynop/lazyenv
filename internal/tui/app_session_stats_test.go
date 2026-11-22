@@ -173,18 +173,15 @@ func TestApp_SessionStats_EndToEnd(t *testing.T) {
 	out, _ := app.Update(FilesLoadedMsg{Files: []*model.EnvFile{localEf, stagingEf}})
 	app = out.(App)
 
-	// 1. Edit .env.local (change FOO 1 → 99) and save.
 	app.varList.File.UpdateVar(0, "99")
 	app, _ = app.handleSave()
 
-	// 2. Duplicate .env.staging → .env.backup.
 	app.fileOpSource = stagingEf
 	app.fileInput.SetValue(".env.backup")
 	app.mode = ModeDuplicateFile
 	m, _ := app.confirmDuplicateFile()
 	app = m.(App)
 
-	// 3. Create .env.new from scratch, add NEW=val, save.
 	app.fileInput.SetValue(".env.new")
 	app.mode = ModeCreateFile
 	m, _ = app.confirmCreateFile()
@@ -192,7 +189,6 @@ func TestApp_SessionStats_EndToEnd(t *testing.T) {
 	app.varList.File.AddVar("NEW", "val")
 	app, _ = app.handleSave()
 
-	// 4. Rename .env.local → .env.dev.
 	var localRef *model.EnvFile
 	for _, f := range app.fileList.Files {
 		if f.Path == localPath {
@@ -207,7 +203,6 @@ func TestApp_SessionStats_EndToEnd(t *testing.T) {
 	m, _ = app.confirmRenameFile()
 	app = m.(App)
 
-	// 5. Delete .env.staging.
 	for i, f := range app.fileList.Files {
 		if f.Path == stagingPath {
 			app.fileList.MoveCursorTo(i)
@@ -227,9 +222,6 @@ func TestApp_SessionStats_EndToEnd(t *testing.T) {
 	assert.Equal(t, want, app.SessionSummary())
 }
 
-// A file name can hold any byte but / and NUL: the summary printed on exit
-// draws a line break and an escape sequence in one as stand-ins, so each file
-// keeps its one row and the terminal gets no sequence.
 func TestApp_SessionStats_SummaryFlattensFileNames(t *testing.T) {
 	app, _, dir, _ := setupStatsFixture(t, ".env\n\x1b]0;x\x07", "FOO=1\n")
 

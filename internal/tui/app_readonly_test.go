@@ -23,8 +23,6 @@ func newReadOnlyApp(files []*model.EnvFile) App {
 	return app
 }
 
-// --- Config integration ---
-
 func TestReadOnlyDefaultFalse(t *testing.T) {
 	cfg := config.DefaultConfig()
 	assert.False(t, cfg.ReadOnly)
@@ -35,8 +33,6 @@ func TestReadOnlyFromConfig(t *testing.T) {
 	assert.True(t, app.config.ReadOnly)
 	assert.True(t, app.statusBar.ReadOnly)
 }
-
-// --- Var actions blocked ---
 
 func TestReadOnlyBlocksEdit(t *testing.T) {
 	f := makeTestFile(".env", "FOO")
@@ -85,8 +81,6 @@ func TestReadOnlyBlocksDelete(t *testing.T) {
 	assert.Equal(t, ModeNormal, app.mode, "should not enter ModeConfirmDelete")
 	assert.Contains(t, app.statusBar.Message, "Read-only")
 }
-
-// --- Var read-only actions still work ---
 
 func TestReadOnlyAllowsPeek(t *testing.T) {
 	f := makeTestFile(".env", "FOO")
@@ -143,8 +137,6 @@ func TestReadOnlyAllowsToggleSecrets(t *testing.T) {
 	assert.True(t, app.varList.ShowSecrets, "secrets toggle should work in read-only mode")
 }
 
-// --- File actions blocked ---
-
 func TestReadOnlyBlocksCreateFile(t *testing.T) {
 	f := makeTestFile(".env", "FOO")
 	app := newReadOnlyApp([]*model.EnvFile{f})
@@ -168,8 +160,6 @@ func TestReadOnlyBlocksDeleteFile(t *testing.T) {
 	assert.Equal(t, ModeNormal, app.mode)
 	assert.Contains(t, app.statusBar.Message, "Read-only")
 }
-
-// --- Global actions ---
 
 func TestReadOnlyBlocksSave(t *testing.T) {
 	f := makeTestFile(".env", "FOO")
@@ -215,8 +205,6 @@ func TestReadOnlyAllowsHelp(t *testing.T) {
 	assert.Equal(t, ModeHelp, app.mode, "help should work in read-only mode")
 }
 
-// --- Compare mode ---
-
 func TestReadOnlyBlocksCompareCopy(t *testing.T) {
 	f1 := makeTestFile(".env", "FOO")
 	f2 := makeTestFile(".env.local", "BAR")
@@ -226,7 +214,6 @@ func TestReadOnlyBlocksCompareCopy(t *testing.T) {
 	app.diffView.Height = 30
 	app.mode = ModeComparing
 
-	// Right arrow = copy to right
 	updated, _ := app.Update(keyMsg("right"))
 	app = updated.(App)
 
@@ -265,19 +252,15 @@ func TestReadOnlyBlocksCompareSave(t *testing.T) {
 	assert.Contains(t, app.statusBar.Message, "Read-only")
 }
 
-// --- Matrix mode ---
-
 func TestReadOnlyBlocksMatrixDelete(t *testing.T) {
 	f1 := makeTestFile(".env", "FOO")
 	f2 := makeTestFile(".env.local", "FOO")
 	app := newReadOnlyApp([]*model.EnvFile{f1, f2})
 
-	// Enter matrix mode
 	updated, _ := app.Update(keyMsg("m"))
 	app = updated.(App)
 	assert.Equal(t, ModeMatrix, app.mode)
 
-	// Try to delete — should be blocked
 	updated, _ = app.Update(keyMsg("d"))
 	app = updated.(App)
 
@@ -290,12 +273,10 @@ func TestReadOnlyBlocksMatrixAdd(t *testing.T) {
 	f2 := makeTestFile(".env.local", "BAR")
 	app := newReadOnlyApp([]*model.EnvFile{f1, f2})
 
-	// Enter matrix mode via 'm' key
 	updated, _ := app.Update(keyMsg("m"))
 	app = updated.(App)
 	assert.Equal(t, ModeMatrix, app.mode)
 
-	// Try to add — should be blocked
 	updated, _ = app.Update(keyMsg("a"))
 	app = updated.(App)
 

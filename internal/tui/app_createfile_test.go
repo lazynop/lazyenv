@@ -100,11 +100,6 @@ func TestCreateFile_AlreadyExistsRejected(t *testing.T) {
 }
 
 func TestActiveFileInputDispatch(t *testing.T) {
-	// activeFileInput must return the shared file input for each of the four
-	// file-operation modes, and nil otherwise. The AppMode distinguishes the
-	// operation; the textinput itself is shared. The four confirm-flow tests
-	// bypass handleFileInputKey by calling confirmXxxFile() directly, so this
-	// test pins the dispatch table.
 	app := newTestApp(nil)
 	fileModes := []struct {
 		name string
@@ -129,9 +124,6 @@ func TestActiveFileInputDispatch(t *testing.T) {
 }
 
 func TestHandleFileInputKeyForwardsToActiveInput(t *testing.T) {
-	// Pressing a printable key in a file-input mode must reach the active
-	// textinput. Together with TestActiveFileInputDispatch this covers
-	// handleFileInputKey + activeFileInput end-to-end.
 	app := newTestApp(nil)
 	app.mode = ModeCreateFile
 	app.fileInput.Focus()
@@ -158,11 +150,9 @@ func TestCreateFile_Success(t *testing.T) {
 	assert.Equal(t, ModeNormal, app.mode)
 	assert.Contains(t, app.statusBar.Message, "Created")
 
-	// File exists on disk
 	_, err := os.Stat(filepath.Join(dir, ".env.staging"))
 	require.NoError(t, err)
 
-	// File is in the list and selected
 	assert.Len(t, app.fileList.Files, 1)
 	assert.Equal(t, 0, app.fileList.Selected)
 	assert.Equal(t, 0, app.fileList.Cursor)

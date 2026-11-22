@@ -17,7 +17,6 @@ import (
 func makeDiffFiles() (*model.EnvFile, *model.EnvFile) {
 	a := makeTestFile(".env", "SHARED", "ONLY_A", "CHANGED")
 	b := makeTestFile(".env.prod", "SHARED", "ONLY_B", "CHANGED")
-	// Make CHANGED have different values
 	b.Vars[2].Value = "different"
 	return a, b
 }
@@ -38,7 +37,6 @@ func TestDiffViewRenderEntryFlattensControlChars(t *testing.T) {
 
 	left, right := dv.renderDiffEntry(dv.Entries[0], false, 10, 40, 60, theme)
 
-	// Strip ANSI styling so we compare against the actual rendered text.
 	leftText := stripAnsi(left)
 	rightText := stripAnsi(right)
 
@@ -83,18 +81,15 @@ func TestDiffViewMoveUpDown(t *testing.T) {
 
 	assert.Equal(t, 0, dv.Cursor)
 
-	// Move down
 	dv.MoveDown()
 	assert.Equal(t, 1, dv.Cursor)
 
 	dv.MoveDown()
 	assert.Equal(t, 2, dv.Cursor)
 
-	// Move up
 	dv.MoveUp()
 	assert.Equal(t, 1, dv.Cursor)
 
-	// Move up past beginning — stays at 0
 	dv.MoveUp()
 	dv.MoveUp()
 	dv.MoveUp()
@@ -126,12 +121,10 @@ func TestDiffViewToggleFilter(t *testing.T) {
 	assert.True(t, dv.HideEqual)
 	assert.Less(t, len(dv.Entries), totalBefore, "should hide equal entries")
 
-	// Verify no equal entries are visible
 	for _, e := range dv.Entries {
 		assert.NotEqual(t, model.DiffEqual, e.Status)
 	}
 
-	// Toggle back
 	dv.ToggleFilter()
 	assert.False(t, dv.HideEqual)
 	assert.Equal(t, totalBefore, len(dv.Entries))
@@ -143,7 +136,6 @@ func TestDiffViewCopyToRightChanged(t *testing.T) {
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
-	// Find the changed entry
 	for i, e := range dv.Entries {
 		if e.Status == model.DiffChanged {
 			dv.Cursor = i
@@ -154,7 +146,6 @@ func TestDiffViewCopyToRightChanged(t *testing.T) {
 	key := dv.CopyToRight()
 	assert.Equal(t, "CHANGED", key)
 
-	// After copy, B should have A's value
 	vB := dv.FileB.VarByKey("CHANGED")
 	require.NotNil(t, vB)
 	assert.Equal(t, "val_CHANGED", vB.Value)
@@ -166,7 +157,6 @@ func TestDiffViewCopyToRightAdded(t *testing.T) {
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
-	// Find the added entry (only in A)
 	for i, e := range dv.Entries {
 		if e.Status == model.DiffAdded {
 			dv.Cursor = i
@@ -177,7 +167,6 @@ func TestDiffViewCopyToRightAdded(t *testing.T) {
 	key := dv.CopyToRight()
 	assert.Equal(t, "ONLY_A", key)
 
-	// B should now have ONLY_A
 	vB := dv.FileB.VarByKey("ONLY_A")
 	require.NotNil(t, vB)
 	assert.Equal(t, "val_ONLY_A", vB.Value)
@@ -189,7 +178,6 @@ func TestDiffViewCopyToRightRemoved(t *testing.T) {
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
-	// Find the removed entry (only in B)
 	for i, e := range dv.Entries {
 		if e.Status == model.DiffRemoved {
 			dv.Cursor = i
@@ -200,7 +188,6 @@ func TestDiffViewCopyToRightRemoved(t *testing.T) {
 	key := dv.CopyToRight()
 	assert.Equal(t, "ONLY_B", key)
 
-	// B should no longer have ONLY_B
 	vB := dv.FileB.VarByKey("ONLY_B")
 	assert.Nil(t, vB, "ONLY_B should be deleted from B")
 }
@@ -211,7 +198,6 @@ func TestDiffViewCopyToLeftChanged(t *testing.T) {
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
-	// Find the changed entry
 	for i, e := range dv.Entries {
 		if e.Status == model.DiffChanged {
 			dv.Cursor = i
@@ -222,7 +208,6 @@ func TestDiffViewCopyToLeftChanged(t *testing.T) {
 	key := dv.CopyToLeft()
 	assert.Equal(t, "CHANGED", key)
 
-	// A should now have B's value
 	vA := dv.FileA.VarByKey("CHANGED")
 	require.NotNil(t, vA)
 	assert.Equal(t, "different", vA.Value)
@@ -234,7 +219,6 @@ func TestDiffViewCopyToLeftRemoved(t *testing.T) {
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
-	// Find the removed entry (only in B)
 	for i, e := range dv.Entries {
 		if e.Status == model.DiffRemoved {
 			dv.Cursor = i
@@ -245,7 +229,6 @@ func TestDiffViewCopyToLeftRemoved(t *testing.T) {
 	key := dv.CopyToLeft()
 	assert.Equal(t, "ONLY_B", key)
 
-	// A should now have ONLY_B
 	vA := dv.FileA.VarByKey("ONLY_B")
 	require.NotNil(t, vA)
 }
@@ -256,7 +239,6 @@ func TestDiffViewCopyToLeftAdded(t *testing.T) {
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
-	// Find the added entry (only in A)
 	for i, e := range dv.Entries {
 		if e.Status == model.DiffAdded {
 			dv.Cursor = i
@@ -267,7 +249,6 @@ func TestDiffViewCopyToLeftAdded(t *testing.T) {
 	key := dv.CopyToLeft()
 	assert.Equal(t, "ONLY_A", key)
 
-	// A should no longer have ONLY_A
 	vA := dv.FileA.VarByKey("ONLY_A")
 	assert.Nil(t, vA, "ONLY_A should be deleted from A")
 }
@@ -278,7 +259,6 @@ func TestDiffViewCopyEqualNoOp(t *testing.T) {
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
-	// Find the equal entry
 	for i, e := range dv.Entries {
 		if e.Status == model.DiffEqual {
 			dv.Cursor = i
@@ -299,20 +279,16 @@ func TestDiffViewNextPrevDiff(t *testing.T) {
 	dv.Height = 40
 	dv.SetFiles(a, b)
 
-	// Start at 0 (SHARED, which is equal)
 	assert.Equal(t, 0, dv.Cursor)
 	assert.Equal(t, model.DiffEqual, dv.Entries[0].Status)
 
-	// NextDiff should skip past equal
 	dv.NextDiff()
 	assert.NotEqual(t, model.DiffEqual, dv.Entries[dv.Cursor].Status)
 	firstDiff := dv.Cursor
 
-	// NextDiff again
 	dv.NextDiff()
 	assert.Greater(t, dv.Cursor, firstDiff)
 
-	// PrevDiff should go back
 	dv.PrevDiff()
 	assert.Equal(t, firstDiff, dv.Cursor)
 }
@@ -340,7 +316,6 @@ func TestDiffViewTruncatesLongKeys(t *testing.T) {
 
 	// The full key should NOT appear (it exceeds the 25-char cap)
 	assert.NotContains(t, view, longKey, "long key should be truncated")
-	// The truncated version with ".." should appear
 	assert.Contains(t, view, "THIS_IS_A_VERY_LONG_ENV..", "truncated key with .. should appear")
 }
 
@@ -397,7 +372,6 @@ func TestDiffViewResetPreservesGitWarning(t *testing.T) {
 	dv := NewDiffViewModel(config.DefaultConfig().Layout)
 	dv.SetFiles(fA, fB)
 
-	// Modify and then reset
 	fA.UpdateVar(0, "changed")
 	errMsg := dv.Reset()
 	assert.Empty(t, errMsg)
@@ -407,19 +381,17 @@ func TestDiffViewResetPreservesGitWarning(t *testing.T) {
 }
 
 func TestDiffViewScrolling(t *testing.T) {
-	// Create files with many entries to test scrolling
 	keys := make([]string, 20)
 	for i := range 20 {
 		keys[i] = "VAR_" + string(rune('A'+i))
 	}
 	a := makeTestFile(".env", keys...)
-	b := makeTestFile(".env.prod") // empty — all will be "added"
+	b := makeTestFile(".env.prod")
 
 	dv := NewDiffViewModel(config.DefaultConfig().Layout)
-	dv.Height = 12 // visible = 12 - 4 = 8
+	dv.Height = 12
 	dv.SetFiles(a, b)
 
-	// Move down past visible area
 	for range 10 {
 		dv.MoveDown()
 	}

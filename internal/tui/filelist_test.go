@@ -29,7 +29,6 @@ func TestFileListMoveUp(t *testing.T) {
 	fl.MoveUp()
 	assert.Equal(t, 0, fl.Cursor)
 
-	// Already at top — should stay
 	fl.MoveUp()
 	assert.Equal(t, 0, fl.Cursor)
 }
@@ -45,7 +44,6 @@ func TestFileListMoveDown(t *testing.T) {
 	fl.MoveDown()
 	assert.Equal(t, 1, fl.Cursor)
 
-	// At bottom — should stay
 	fl.MoveDown()
 	assert.Equal(t, 1, fl.Cursor)
 }
@@ -71,11 +69,9 @@ func TestFileListSelectedFile(t *testing.T) {
 
 	assert.Equal(t, f1, fl.SelectedFile())
 
-	// Out of range
 	fl.Selected = 5
 	assert.Nil(t, fl.SelectedFile())
 
-	// Negative
 	fl.Selected = -1
 	assert.Nil(t, fl.SelectedFile())
 }
@@ -88,7 +84,6 @@ func TestFileListCursorFile(t *testing.T) {
 
 	assert.Equal(t, f1, fl.CursorFile())
 
-	// Out of range
 	fl.Cursor = 5
 	assert.Nil(t, fl.CursorFile())
 }
@@ -101,14 +96,13 @@ func TestFileListScrolling(t *testing.T) {
 
 	var fl FileListModel
 	fl.Files = append(fl.Files, f1, f2, f3, f4)
-	fl.Height = panelChromeHeight + 2 // 2 rendered rows
+	fl.Height = panelChromeHeight + 2
 
-	fl.MoveDown() // cursor=1
-	fl.MoveDown() // cursor=2, should scroll
+	fl.MoveDown()
+	fl.MoveDown()
 	assert.Equal(t, 2, fl.Cursor)
 	assert.Greater(t, fl.Offset, 0, "should scroll when cursor exceeds visible area")
 
-	// Move up past offset
 	fl.MoveUp()
 	fl.MoveUp()
 	assert.Equal(t, 0, fl.Cursor)
@@ -124,14 +118,11 @@ func TestFileListSetFilesResetsCursor(t *testing.T) {
 	fl.Cursor = 1
 	fl.Selected = 1
 
-	// Setting to a smaller list should reset
 	fl.SetFiles(nil)
 	assert.Equal(t, 0, fl.Cursor)
 	assert.Equal(t, 0, fl.Selected)
 }
 
-// TestFileListViewEmpty draws an empty file list at its minimum width: the
-// note fits its one row.
 func TestFileListViewEmpty(t *testing.T) {
 	var fl FileListModel
 	fl.Width = config.FileListMinWidth
@@ -155,9 +146,7 @@ func TestFileListViewTruncatesLongNames(t *testing.T) {
 	theme := BuildTheme(true, config.ColorConfig{})
 	view := fl.View(theme)
 
-	// Name should be truncated — full name should NOT appear
 	assert.NotContains(t, view, ".env.development.local.backup.extra")
-	// Truncation marker should appear
 	assert.Contains(t, view, "..")
 }
 
@@ -201,13 +190,9 @@ func TestFileListViewShowsVarCount(t *testing.T) {
 
 	theme := BuildTheme(true, config.ColorConfig{})
 	view := fl.View(theme)
-	// Right-aligned count: number appears after gap
 	assert.Contains(t, view, "3")
 }
 
-// TestFileListViewAlignsVarCountsOfNonASCIINames checks that the var count
-// sits in the same column on every row, whether the file name has accented
-// letters, wide characters or plain ASCII, on the cursor row and the others.
 func TestFileListViewAlignsVarCountsOfNonASCIINames(t *testing.T) {
 	theme := BuildTheme(true, config.ColorConfig{})
 	for _, focused := range []bool{false, true} {
@@ -289,7 +274,7 @@ func TestFileListCursorStaysVisibleWhenScrolling(t *testing.T) {
 		fl.Files = append(fl.Files, makeTestFile(fmt.Sprintf(".env.f%02d", i), "A"))
 	}
 	fl.Width = 40
-	fl.Height = panelChromeHeight + 6 // 6 rendered rows
+	fl.Height = panelChromeHeight + 6
 	fl.Focused = true
 
 	for range 9 {

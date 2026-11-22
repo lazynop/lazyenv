@@ -92,12 +92,10 @@ func TestDuplicateFile_Success(t *testing.T) {
 	assert.Contains(t, app.statusBar.Message, "Duplicated")
 	assert.Contains(t, app.statusBar.Message, "→")
 
-	// File exists on disk with same content
 	data, err := os.ReadFile(filepath.Join(dir, ".env.staging"))
 	require.NoError(t, err)
 	assert.Equal(t, "FOO=bar\nBAZ=qux\n", string(data))
 
-	// File is in the list and selected
 	assert.Len(t, app.fileList.Files, 2)
 	assert.Equal(t, 1, app.fileList.Selected)
 }

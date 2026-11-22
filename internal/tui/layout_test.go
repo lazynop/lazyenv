@@ -25,10 +25,6 @@ var updateGolden = flag.Bool("update", false, "rewrite "+viewsGoldenPath+" from 
 
 const viewsGoldenPath = "testdata/views.golden"
 
-// layoutSecrets are the secret values of layoutFiles: none may be on screen
-// while secrets are masked. A leak shows only what its column fits, so each
-// must be short enough for every column to draw it whole, which
-// TestLayoutSecretsAreDrawnWhole checks.
 var layoutSecrets = []string{"hunter2", "ghp_x7Kq9", "stg-pass"}
 
 // layoutFiles returns two files whose secrets are detected by key name
@@ -37,7 +33,6 @@ func layoutFiles() []*model.EnvFile {
 	return layoutFilesNamed(".env", ".env.local")
 }
 
-// layoutFilesNamed returns layoutFiles under the names env and local.
 func layoutFilesNamed(env, local string) []*model.EnvFile {
 	var vars strings.Builder
 	vars.WriteString("API_TOKEN=hunter2\nGREETING=ghp_x7Kq9\nHOST=localhost\nEMPTY=\n")
@@ -51,22 +46,17 @@ func layoutFilesNamed(env, local string) []*model.EnvFile {
 	}
 }
 
-// viewScenario is one screen of the TUI: one an App draws over files, reached
-// by setup, or one drawn without files by draw.
 type viewScenario struct {
 	name  string
-	mode  AppMode                                      // -1 for a screen outside App
-	setup func(app App) App                            // drives an App over files to the screen
-	draw  func(t *testing.T, width, height int) string // draws the screen when there is no setup
+	mode  AppMode // -1 for a screen outside App
+	setup func(app App) App
+	draw  func(t *testing.T, width, height int) string
 }
 
-// appScenario is the screen setup drives an App over files to.
 func appScenario(name string, mode AppMode, setup func(app App) App) viewScenario {
 	return viewScenario{name: name, mode: mode, setup: setup}
 }
 
-// render renders the scenario's screen at a terminal size, over layoutFiles
-// when it has a setup, with secrets revealed or masked.
 func (sc viewScenario) render(t *testing.T, width, height int, reveal bool) string {
 	t.Helper()
 	if sc.setup == nil {
@@ -75,8 +65,6 @@ func (sc viewScenario) render(t *testing.T, width, height int, reveal bool) stri
 	return sc.renderOver(t, layoutFiles(), width, height, reveal)
 }
 
-// renderOver sizes a fresh App over files, drives it with the scenario's setup
-// and renders it, failing unless setup reached the scenario's mode.
 func (sc viewScenario) renderOver(t *testing.T, files []*model.EnvFile, width, height int, reveal bool) string {
 	t.Helper()
 	app := resize(newTestApp(files), width, height)
@@ -86,8 +74,6 @@ func (sc viewScenario) renderOver(t *testing.T, files []*model.EnvFile, width, h
 	return app.View().Content
 }
 
-// configErrorScenario sizes an App that startup sends to the config error
-// screen and renders it.
 func configErrorScenario(name string, startup StartupMessages) viewScenario {
 	return viewScenario{name: name, mode: ModeConfigError, draw: func(t *testing.T, width, height int) string {
 		t.Helper()
@@ -97,7 +83,6 @@ func configErrorScenario(name string, startup StartupMessages) viewScenario {
 	}}
 }
 
-// press sends keys to app, each as keyMsg builds it.
 func press(app App, keys ...string) App {
 	for _, k := range keys {
 		updated, _ := app.Update(keyMsg(k))
@@ -106,30 +91,23 @@ func press(app App, keys ...string) App {
 	return app
 }
 
-// typing returns the keys that type text, one character each.
 func typing(text string) []string {
 	return strings.Split(text, "")
 }
 
-// down returns the keys that move a cursor n rows down.
 func down(n int) []string {
 	return slices.Repeat([]string{"j"}, n)
 }
 
-// resize sends app the size of a terminal width columns wide and height rows
-// tall, as the terminal does on startup and on every resize.
 func resize(app App, width, height int) App {
 	updated, _ := app.Update(tea.WindowSizeMsg{Width: width, Height: height})
 	return updated.(App)
 }
 
-// onVars moves the focus to the var list, the way the user does.
 func onVars(app App) App {
 	return press(app, "right")
 }
 
-// viewScenarios covers every AppMode and the theme preview. A new mode or
-// screen gets a scenario here; TestViewScenariosCoverEveryMode checks modes.
 var viewScenarios = []viewScenario{
 	appScenario("normal", ModeNormal, func(app App) App { return app }),
 	appScenario("vars", ModeNormal, onVars),
@@ -238,16 +216,11 @@ func TestViewScenariosCoverEveryMode(t *testing.T) {
 // screen found too tall.
 var knownTooTall = map[string]string{}
 
-// gridWidths and gridHeights are the terminal sizes every scenario renders at.
-// The grid starts at the minimum terminal size, below which every screen gives
-// way to tooSmallView (TestTooSmallTerminalShowsANotice).
 var (
 	gridWidths  = []int{MinTerminalWidth, 80, 100, 120}
 	gridHeights = []int{MinTerminalHeight, 12, 16, 24, 40}
 )
 
-// TestViewsFitTheTerminalAndHideSecrets renders every scenario across the grid
-// of terminal sizes.
 func TestViewsFitTheTerminalAndHideSecrets(t *testing.T) {
 	for _, sc := range viewScenarios {
 		_, known := knownTooTall[sc.name]
@@ -298,16 +271,8 @@ func TestLayoutSecretsAreDrawnWhole(t *testing.T) {
 	}
 }
 
-// TestFileNamesAreDrawnFlat renders every screen drawn over files across the
-// grid twice: over files whose names hold a line break and an escape sequence,
-// as a name can hold any byte but / and NUL, and over files named with the
-// stand-ins drawn for those characters. The two renders must match: no name
-// takes a second row or sends the terminal a sequence.
 func TestFileNamesAreDrawnFlat(t *testing.T) {
 	const raw, flat = "\n\x1b]0;x\x07", "↵␛]0;x␇"
-	// These modes open an input holding a name derived from the active file's
-	// as on disk, which the text input sanitizes its own way (a line break
-	// becomes a space), so only the sequence is checked there.
 	prefillsName := map[AppMode]bool{ModeDuplicateFile: true, ModeRenameFile: true, ModeTemplateFile: true}
 	for _, sc := range viewScenarios {
 		if sc.setup == nil {
@@ -327,7 +292,6 @@ func TestFileNamesAreDrawnFlat(t *testing.T) {
 	}
 }
 
-// plainRows returns view without colors or the padding at the end of its rows.
 func plainRows(view string) string {
 	rows := strings.Split(stripAnsi(view), "\n")
 	for i := range rows {
@@ -336,10 +300,6 @@ func plainRows(view string) string {
 	return strings.Join(rows, "\n")
 }
 
-// TestViewsMatchGolden compares every scenario's plain-text render at 80x24
-// with testdata/views.golden, so a change to any screen shows up as a diff.
-// With -update it rewrites the file and still fails: the rewrite is only
-// done once its diff has been read.
 func TestViewsMatchGolden(t *testing.T) {
 	var got strings.Builder
 	for _, sc := range viewScenarios {

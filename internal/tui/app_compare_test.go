@@ -27,7 +27,6 @@ func TestCompareExitRestoresCursorToSelected(t *testing.T) {
 	app.varList.SetFile(f1)
 	app.focus = FocusVars
 
-	// Enter compare mode: press 'c' to start, move down, Enter to confirm.
 	updated, _ := app.Update(keyMsg("c"))
 	app = updated.(App)
 	assert.Equal(t, ModeCompareSelect, app.mode)
@@ -40,7 +39,6 @@ func TestCompareExitRestoresCursorToSelected(t *testing.T) {
 	app = updated.(App)
 	assert.Equal(t, ModeComparing, app.mode)
 
-	// Exit compare with 'q'.
 	updated, _ = app.Update(keyMsg("q"))
 	app = updated.(App)
 
@@ -58,17 +56,14 @@ func TestCompareSelectEscapeRestoresCursor(t *testing.T) {
 	app.varList.SetFile(f1)
 	app.focus = FocusVars
 
-	// Enter compare select mode.
 	updated, _ := app.Update(keyMsg("c"))
 	app = updated.(App)
 	assert.Equal(t, ModeCompareSelect, app.mode)
 
-	// Move cursor to second file.
 	updated, _ = app.Update(keyMsg("j"))
 	app = updated.(App)
 	assert.Equal(t, 1, app.fileList.Cursor)
 
-	// Press Escape to cancel.
 	updated, _ = app.Update(keyMsg("esc"))
 	app = updated.(App)
 
@@ -77,7 +72,6 @@ func TestCompareSelectEscapeRestoresCursor(t *testing.T) {
 		"cursor must match selected file after cancelling compare select")
 }
 
-// enterCompareMode is a helper to set up two files in compare mode.
 func enterCompareMode(t *testing.T, f1, f2 *model.EnvFile) App {
 	t.Helper()
 	app := newTestApp(nil)
@@ -86,14 +80,11 @@ func enterCompareMode(t *testing.T, f1, f2 *model.EnvFile) App {
 	app.varList.SetFile(f1)
 	app.focus = FocusVars
 
-	// Size the views the way a real terminal does
 	app = resize(app, app.width, app.height)
 
-	// Press 'c' to start compare select
 	updated, _ := app.Update(keyMsg("c"))
 	app = updated.(App)
 
-	// Move to second file and confirm
 	updated, _ = app.Update(keyMsg("j"))
 	app = updated.(App)
 	updated, _ = app.Update(keyMsg("enter"))
@@ -130,12 +121,10 @@ func TestCompareToggleSecretsRefiltersKeptSearch(t *testing.T) {
 func TestCompareCopyRight(t *testing.T) {
 	f1 := makeTestFile(".env", "SHARED", "ONLY_LEFT")
 	f2 := makeTestFile(".env.prod", "SHARED")
-	// Make SHARED differ
 	f2.Vars[0].Value = "different"
 
 	app := enterCompareMode(t, f1, f2)
 
-	// Find the changed entry and copy to right
 	for i, e := range app.diffView.Entries {
 		if e.Status == model.DiffChanged {
 			app.diffView.Cursor = i
@@ -154,7 +143,6 @@ func TestCompareCopyLeft(t *testing.T) {
 
 	app := enterCompareMode(t, f1, f2)
 
-	// Find the changed entry and copy to left
 	for i, e := range app.diffView.Entries {
 		if e.Status == model.DiffChanged {
 			app.diffView.Cursor = i
@@ -166,10 +154,6 @@ func TestCompareCopyLeft(t *testing.T) {
 	assert.Contains(t, app.statusBar.Message, "SHARED")
 }
 
-// TestCompareCopyDeletesEveryOccurrenceOfTheKey copies D toward the file that
-// alone holds it, twice with different values around A (#76): every D leaves
-// that file, so neither file holds D and compare lists it no more, while A
-// stays in both.
 func TestCompareCopyDeletesEveryOccurrenceOfTheKey(t *testing.T) {
 	const holding, lacking = "D=1\nA=0\nD=3\n", "A=0\n"
 	for _, tc := range []struct {
@@ -196,10 +180,6 @@ func TestCompareCopyDeletesEveryOccurrenceOfTheKey(t *testing.T) {
 	}
 }
 
-// TestCompareCopyMasksTheCopiedValueWhenItIsASecret copies a value in compare
-// (#52), then leaves compare and shows the target file: its row is masked
-// exactly when the key and the copied value are detected as a secret, as they
-// are once the file is saved and read again.
 func TestCompareCopyMasksTheCopiedValueWhenItIsASecret(t *testing.T) {
 	tests := []struct {
 		name, left, right, copyKey string
@@ -237,14 +217,12 @@ func TestCompareFilterToggle(t *testing.T) {
 	totalBefore := len(app.diffView.Entries)
 	assert.False(t, app.diffView.HideEqual)
 
-	// Press 'f' to filter
 	updated, _ := app.Update(keyMsg("f"))
 	app = updated.(App)
 	assert.True(t, app.diffView.HideEqual)
 	assert.Less(t, len(app.diffView.Entries), totalBefore)
 	assert.Contains(t, app.statusBar.Message, "differences only")
 
-	// Press 'f' again to unfilter
 	updated, _ = app.Update(keyMsg("f"))
 	app = updated.(App)
 	assert.False(t, app.diffView.HideEqual)
@@ -260,12 +238,10 @@ func TestCompareNavigation(t *testing.T) {
 
 	assert.Equal(t, 0, app.diffView.Cursor)
 
-	// Move down
 	updated, _ := app.Update(keyMsg("j"))
 	app = updated.(App)
 	assert.Equal(t, 1, app.diffView.Cursor)
 
-	// Move up
 	updated, _ = app.Update(keyMsg("k"))
 	app = updated.(App)
 	assert.Equal(t, 0, app.diffView.Cursor)
@@ -278,7 +254,6 @@ func TestCompareEditLeft(t *testing.T) {
 
 	app := enterCompareMode(t, f1, f2)
 
-	// Find the entry with key FOO
 	for i, e := range app.diffView.Entries {
 		if e.Key == "FOO" {
 			app.diffView.Cursor = i
@@ -286,13 +261,11 @@ func TestCompareEditLeft(t *testing.T) {
 		}
 	}
 
-	// Press 'e' to edit left file
 	updated, _ := app.Update(keyMsg("e"))
 	app = updated.(App)
 	assert.Equal(t, ModeEditingCompare, app.mode)
 	assert.Equal(t, f1, app.compareEditFile)
 
-	// Cancel with escape
 	updated, _ = app.Update(keyMsg("esc"))
 	app = updated.(App)
 	assert.Equal(t, ModeComparing, app.mode)
@@ -312,7 +285,6 @@ func TestCompareEditRight(t *testing.T) {
 		}
 	}
 
-	// Press 'E' (uppercase) to edit right file
 	updated, _ := app.Update(keyMsg("E"))
 	app = updated.(App)
 	assert.Equal(t, ModeEditingCompare, app.mode)
@@ -333,11 +305,9 @@ func TestCompareEditConfirm(t *testing.T) {
 		}
 	}
 
-	// Edit left
 	updated, _ := app.Update(keyMsg("e"))
 	app = updated.(App)
 
-	// Set new value and confirm
 	app.editor.input.SetValue("edited_value")
 	updated, _ = app.Update(keyMsg("enter"))
 	app = updated.(App)
@@ -347,9 +317,6 @@ func TestCompareEditConfirm(t *testing.T) {
 	assert.Contains(t, app.statusBar.Message, "Modified")
 }
 
-// TestCompareEditMasksTheNewValueWhenItIsASecret edits a value in compare: the
-// row is masked exactly when the key and the new value are detected as a
-// secret, as they are once the file is saved and read again.
 func TestCompareEditMasksTheNewValueWhenItIsASecret(t *testing.T) {
 	tests := []struct {
 		name, left, right, editKey, newValue string
@@ -375,9 +342,6 @@ func TestCompareEditMasksTheNewValueWhenItIsASecret(t *testing.T) {
 	}
 }
 
-// TestCompareEditRefiltersKeptSearch keeps a search that matches a var by its
-// value, edits that value in compare so it no longer matches, and goes back:
-// the var list drops the var.
 func TestCompareEditRefiltersKeptSearch(t *testing.T) {
 	left := parser.ParseBytes(".env", []byte("HOST=localhost\nPORT=80\n"), config.SecretsConfig{})
 	right := parser.ParseBytes(".env.prod", []byte("HOST=example.com\n"), config.SecretsConfig{})
@@ -419,9 +383,6 @@ func TestCompareResetUsesKeyMap(t *testing.T) {
 }
 
 func TestCompareSaveUsesKeyMap(t *testing.T) {
-	// Compare-mode save must route through keys.Save. Sibling of
-	// TestCompareResetUsesKeyMap and TestCompareEditRightUsesKeyMap: a
-	// rebound Save key must persist the change end-to-end.
 	dir := t.TempDir()
 	pathA := filepath.Join(dir, ".env")
 	pathB := filepath.Join(dir, ".env.prod")
@@ -451,8 +412,6 @@ func TestCompareSaveUsesKeyMap(t *testing.T) {
 }
 
 func TestCompareEditRightUsesKeyMap(t *testing.T) {
-	// Compare-mode edit-right must route through keys.EditRight, not a
-	// hardcoded 'E'. Rebinding EditRight to a different key must take effect.
 	f1 := makeTestFile(".env", "FOO")
 	f2 := makeTestFile(".env.prod", "FOO")
 	app := enterCompareMode(t, f1, f2)
@@ -469,16 +428,11 @@ func TestCompareEditRightUsesKeyMap(t *testing.T) {
 }
 
 func TestCompareCopyDeleteThenExitDoesNotPanic(t *testing.T) {
-	// Copying a left-only entry to the left deletes it from the active file
-	// (FileA). The var list must be refreshed before returning to normal
-	// mode, or its display rows still reference the removed var index and
-	// the next render indexes out of range.
 	f1 := makeTestFile(".env", "SHARED", "ONLY_LEFT")
 	f2 := makeTestFile(".env.prod", "SHARED")
 
 	app := enterCompareMode(t, f1, f2)
 
-	// Move the cursor to the entry that exists only in the left file.
 	for i, e := range app.diffView.Entries {
 		if e.Status == model.DiffAdded {
 			app.diffView.Cursor = i
@@ -486,12 +440,10 @@ func TestCompareCopyDeleteThenExitDoesNotPanic(t *testing.T) {
 		}
 	}
 
-	// 'h' copies to the left: for a left-only entry this deletes it from f1.
 	updated, _ := app.Update(keyMsg("h"))
 	app = updated.(App)
 	require.Len(t, f1.Vars, 1, "ONLY_LEFT should have been deleted from the active file")
 
-	// Exit compare mode back to normal.
 	updated, _ = app.Update(keyMsg("esc"))
 	app = updated.(App)
 	require.Equal(t, ModeNormal, app.mode)
@@ -502,8 +454,6 @@ func TestCompareCopyDeleteThenExitDoesNotPanic(t *testing.T) {
 		"rendering after compare exit must not index removed vars")
 }
 
-// panelBottomRow returns the row of the last panel bottom border in a
-// rendered view, or -1 when there is none.
 func panelBottomRow(view string) int {
 	row := -1
 	for i, line := range strings.Split(stripAnsi(view), "\n") {
@@ -529,9 +479,6 @@ func TestCompareViewFillsTheNormalPanelHeight(t *testing.T) {
 		"the editor bar must still fit in the terminal")
 }
 
-// TestCompareSelectQuitKeysCancel presses q and Ctrl+C while picking the
-// second file to compare: like Esc, they cancel the pick and go back to the
-// main view, as they go back from compare and matrix, instead of quitting.
 func TestCompareSelectQuitKeysCancel(t *testing.T) {
 	for name, msg := range map[string]tea.KeyPressMsg{
 		"q":      {Code: 'q', Text: "q"},
@@ -553,8 +500,6 @@ func TestCompareSelectQuitKeysCancel(t *testing.T) {
 	}
 }
 
-// TestCompareKeyNeedsAtLeast2Files presses c with a single file: like m, it
-// stays in the main view and says why.
 func TestCompareKeyNeedsAtLeast2Files(t *testing.T) {
 	app := press(newTestApp([]*model.EnvFile{makeTestFile(".env", "A")}), "c")
 
@@ -562,9 +507,6 @@ func TestCompareKeyNeedsAtLeast2Files(t *testing.T) {
 	assert.Contains(t, app.statusBar.Message, "at least 2 files")
 }
 
-// TestCompareSelectEnterOnTheFirstFileWarns presses Enter while picking the
-// second file with the cursor still on the first: the pick stays open and
-// says why nothing happened.
 func TestCompareSelectEnterOnTheFirstFileWarns(t *testing.T) {
 	app := press(newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.prod", "B")}), "c", "enter")
 
@@ -572,8 +514,6 @@ func TestCompareSelectEnterOnTheFirstFileWarns(t *testing.T) {
 	assert.Contains(t, app.statusBar.Message, "different file")
 }
 
-// TestCompareSelectPromptReturnsAfterAWarning lets the warning from Enter on
-// the first file expire: the picker's prompt shows again.
 func TestCompareSelectPromptReturnsAfterAWarning(t *testing.T) {
 	app := press(newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.prod", "B")}), "c")
 	require.Contains(t, stripAnsi(app.View().Content), "Select second file to compare")

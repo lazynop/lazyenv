@@ -39,9 +39,6 @@ func TestEveryBoundKeyHasALabel(t *testing.T) {
 	}
 }
 
-// TestEveryBoundKeyCanBePressed checks that keyMsg, which the tests press keys
-// with, builds for every key a KeyMap binding uses a press that reads as that
-// key, as key.Matches compares it.
 func TestEveryBoundKeyCanBePressed(t *testing.T) {
 	for _, b := range keyMapBindings(t) {
 		for _, k := range b.binding.Keys() {
@@ -54,11 +51,6 @@ func TestEveryBoundKeyCanBePressed(t *testing.T) {
 	}
 }
 
-// TestKeyPressesCarryTheirCode fails on a tea.KeyPressMsg literal, in this
-// package's test files, that sets Text but no Code: no terminal sends one, and
-// a named key pressed that way ({Text: "enter"}) still matches its binding
-// through String() while a handler reading Code sees no key at all. It checks
-// elided literals too, as in []tea.KeyPressMsg{{Text: "q"}}.
 func TestKeyPressesCarryTheirCode(t *testing.T) {
 	names, err := filepath.Glob("*_test.go")
 	require.NoError(t, err)
@@ -106,7 +98,6 @@ func TestKeyPressesCarryTheirCode(t *testing.T) {
 	assert.Empty(t, textOnly, "press keys with keyMsg(k), or press(app, k...), which build the press a terminal sends")
 }
 
-// elemType returns the element type of a slice, array or map type, or nil.
 func elemType(typ ast.Expr) ast.Expr {
 	switch typ := typ.(type) {
 	case *ast.ArrayType:
@@ -117,7 +108,6 @@ func elemType(typ ast.Expr) ast.Expr {
 	return nil
 }
 
-// keyedFields returns the field names a struct literal sets by key.
 func keyedFields(lit *ast.CompositeLit) map[string]bool {
 	fields := make(map[string]bool, len(lit.Elts))
 	for _, elt := range lit.Elts {
@@ -130,14 +120,11 @@ func keyedFields(lit *ast.CompositeLit) map[string]bool {
 	return fields
 }
 
-// keyMapBinding is one field of the KeyMap: its name and its binding.
 type keyMapBinding struct {
 	field   string
 	binding key.Binding
 }
 
-// keyMapBindings returns every field of DefaultKeyMap, in order, failing if
-// one is unexported or not a key.Binding.
 func keyMapBindings(t *testing.T) []keyMapBinding {
 	t.Helper()
 	var bindings []keyMapBinding
@@ -160,11 +147,6 @@ var keyCodes = map[string]rune{
 	"f5": tea.KeyF5,
 }
 
-// keyMsg returns the key press a terminal delivers for the key a binding
-// names: a special key carries its code (Space also its text), a Ctrl chord
-// its letter and the modifier, an uppercase letter the lowercase code with
-// Shift, any other single character its code and text. It panics on a name it
-// does not know, so a misspelt key fails the test instead of being typed.
 func keyMsg(k string) tea.KeyPressMsg {
 	if c, ok := strings.CutPrefix(k, "ctrl+"); ok && len([]rune(c)) == 1 {
 		return tea.KeyPressMsg{Code: []rune(c)[0], Mod: tea.ModCtrl}

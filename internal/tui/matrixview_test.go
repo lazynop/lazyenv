@@ -13,7 +13,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// makeTestFile creates a test EnvFile with the given name and variable keys.
 func makeTestFile(name string, keys ...string) *model.EnvFile {
 	vars := make([]model.EnvVar, len(keys))
 	lines := make([]model.RawLine, len(keys))
@@ -24,7 +23,6 @@ func makeTestFile(name string, keys ...string) *model.EnvFile {
 	return &model.EnvFile{Name: name, Vars: vars, Lines: lines}
 }
 
-// matrixKeys returns the keys of entries, in order.
 func matrixKeys(entries []model.MatrixEntry) []string {
 	keys := make([]string, len(entries))
 	for i, e := range entries {
@@ -39,7 +37,6 @@ func TestNewMatrixModel(t *testing.T) {
 
 	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 
-	// Union of keys: DB, HOST, PORT, SECRET = 4 (sorted alpha)
 	assert.Equal(t, 4, len(m.entries), "should have 4 unique keys")
 	assert.Equal(t, []*model.EnvFile{f1, f2}, m.files, "the columns should be the files, in order")
 	assert.Equal(t, 0, m.rows.Cursor, "initial rows.Cursor should be 0")
@@ -54,7 +51,6 @@ func TestMatrixMoveDown(t *testing.T) {
 	m.Width = 120
 	m.Height = 40
 
-	// entries: A, B, C (3 keys total)
 	assert.Equal(t, 0, m.rows.Cursor)
 
 	m.MoveDown()
@@ -63,7 +59,6 @@ func TestMatrixMoveDown(t *testing.T) {
 	m.MoveDown()
 	assert.Equal(t, 2, m.rows.Cursor)
 
-	// At the bottom: should not go beyond
 	m.MoveDown()
 	assert.Equal(t, 2, m.rows.Cursor, "should stop at last row")
 }
@@ -76,11 +71,9 @@ func TestMatrixMoveUp(t *testing.T) {
 	m.Width = 120
 	m.Height = 40
 
-	// Start at 0, move up should stay at 0
 	m.MoveUp()
 	assert.Equal(t, 0, m.rows.Cursor, "should stop at 0")
 
-	// Move to row 2, then up
 	m.MoveDown()
 	m.MoveDown()
 	assert.Equal(t, 2, m.rows.Cursor)
@@ -109,7 +102,6 @@ func TestMatrixMoveRight(t *testing.T) {
 	m.MoveRight()
 	assert.Equal(t, 2, m.cols.Cursor)
 
-	// At the rightmost column: should not go beyond
 	m.MoveRight()
 	assert.Equal(t, 2, m.cols.Cursor, "should stop at last column")
 }
@@ -123,11 +115,9 @@ func TestMatrixMoveLeft(t *testing.T) {
 	m.Width = 120
 	m.Height = 40
 
-	// At col 0, move left should stay at 0
 	m.MoveLeft()
 	assert.Equal(t, 0, m.cols.Cursor, "should stop at 0")
 
-	// Move to col 2, then left
 	m.MoveRight()
 	m.MoveRight()
 	assert.Equal(t, 2, m.cols.Cursor)
@@ -140,7 +130,6 @@ func TestMatrixMoveLeft(t *testing.T) {
 }
 
 func TestMatrixToggleSort(t *testing.T) {
-	// f1 has all keys, f2 is missing B => B has fewer present
 	f1 := makeTestFile(".env", "A", "B", "C")
 	f2 := makeTestFile(".env.local", "A", "C")
 
@@ -148,17 +137,14 @@ func TestMatrixToggleSort(t *testing.T) {
 	m.Width = 120
 	m.Height = 40
 
-	// Default: SortAlpha => A, B, C
 	assert.Equal(t, model.SortAlpha, m.sortMode)
 	assert.Equal(t, []string{"A", "B", "C"}, matrixKeys(m.entries))
 
-	// Toggle to SortCompleteness: B (1 present) first, then A and C (2) alphabetically
 	m.ToggleSort()
 	assert.Equal(t, model.SortCompleteness, m.sortMode)
 	assert.Equal(t, []string{"B", "A", "C"}, matrixKeys(m.entries), "B has fewest present, should be first")
 	assert.Equal(t, 1, m.rows.Cursor, "the cursor should follow A, its key, to row 1")
 
-	// Toggle back to SortAlpha
 	m.ToggleSort()
 	assert.Equal(t, model.SortAlpha, m.sortMode)
 	assert.Equal(t, []string{"A", "B", "C"}, matrixKeys(m.entries))
@@ -234,21 +220,18 @@ func TestMatrixConfirmEdit(t *testing.T) {
 	m.StartEdit()
 	require.NotNil(t, m.edit.File)
 
-	// Simulate typing a value
 	m.editor.SetValue("new_value")
 
 	assert.Same(t, missing, m.ConfirmEdit(), "ConfirmEdit should return the file it added to")
 
 	assert.Nil(t, m.edit.File, "the edit should close after confirm")
 
-	// The variable should have been added to .env.local
 	found := missing.VarByKey("C")
 	require.NotNil(t, found, "C should exist in .env.local after confirm")
 	assert.Equal(t, "new_value", found.Value)
 	assert.Equal(t, makeTestFile(".env", "A", "B", "D"), m.files[0], ".env should stay as it was")
 	assert.Equal(t, makeTestFile(".env.prod", "A", "B", "C", "D"), m.files[2], ".env.prod should stay as it was")
 
-	// Matrix should be recomputed: C should now be present in .env.local too
 	require.Len(t, m.entries, 4)
 	require.Equal(t, "C", m.entries[2].Key)
 	assert.Equal(t, []bool{false, true, true}, m.entries[2].Present, "C should be present in .env.local after confirm")
@@ -283,7 +266,7 @@ func TestMatrixConfirmEditResorts(t *testing.T) {
 				m.ToggleSort()
 			}
 			require.Equal(t, tc.before, matrixKeys(m.entries))
-			m.SetCursor(tc.row, 0) // M in .env
+			m.SetCursor(tc.row, 0)
 			m.StartEdit()
 			m.editor.SetValue("new_value")
 
@@ -310,21 +293,14 @@ func TestMatrixCancelEdit(t *testing.T) {
 	assert.Equal(t, origVarCount, len(missing.Vars), ".env.local should not have new vars after cancel")
 }
 
-// TestMatrixDeleteAtCursorKeepsTheCursorOnItsKey deletes C from .env.local
-// under the completeness sort, the view two rows tall and scrolled down to C:
-// C's row moves up among the rows with a gap, and the cursor and the view
-// follow it. C lands on row 1, where neither the key now at C's old row nor
-// the one there in the rows rebuilt in alphabetical order is C, and the view
-// scrolls only as far as C, not back to the top.
 func TestMatrixDeleteAtCursorKeepsTheCursorOnItsKey(t *testing.T) {
-	// B, D and F have a gap in .env.local; A, C and E have none
 	files := []*model.EnvFile{makeTestFile(".env", "A", "B", "C", "D", "E", "F"), makeTestFile(".env.local", "A", "C", "E")}
 	m := NewMatrixModel(files, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = matrixChromeHeight + 2
 	m.ToggleSort()
 	require.Equal(t, []string{"B", "D", "F", "A", "C", "E"}, matrixKeys(m.entries))
-	m.SetCursor(4, 1) // C in .env.local
+	m.SetCursor(4, 1)
 	require.Equal(t, 3, m.rows.Offset, "the view should show C on its last row")
 
 	_, from := m.DeleteAtCursor()
@@ -335,10 +311,6 @@ func TestMatrixDeleteAtCursorKeepsTheCursorOnItsKey(t *testing.T) {
 	assert.Equal(t, 1, m.rows.Offset, "the view should scroll up just as far as C")
 }
 
-// TestMatrixDeleteAtCursorKeepsTheCursorIndexWhenTheRowGoes deletes B or D
-// from .env, the only file holding either: the key's row goes, and the cursor
-// keeps its index, within the rows: on C, a middle row, after B, and on the
-// new last row after D.
 func TestMatrixDeleteAtCursorKeepsTheCursorIndexWhenTheRowGoes(t *testing.T) {
 	for _, tc := range []struct {
 		name   string
@@ -366,17 +338,14 @@ func TestMatrixDeleteAtCursorKeepsTheCursorIndexWhenTheRowGoes(t *testing.T) {
 }
 
 func TestMatrixViewContainsCheckAndCross(t *testing.T) {
-	// f1 has A, f2 does not => one check, one cross
 	f1 := makeTestFile(".env", "A")
 	f2 := makeTestFile(".env.local")
 
-	// f2 needs at least one var to have a key in the union,
-	// but here A is only in f1, so A will be present in f1, absent in f2
 	m := NewMatrixModel([]*model.EnvFile{f1, f2}, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
 
-	theme := BuildTheme(true, config.ColorConfig{}) // dark theme
+	theme := BuildTheme(true, config.ColorConfig{})
 	view := m.View(theme)
 
 	assert.True(t, strings.Contains(view, "\u2713"), "view should contain check mark")
@@ -420,10 +389,6 @@ func TestMatrixViewNarrowWidthKeepsEachRowOnOneRow(t *testing.T) {
 	})
 }
 
-// TestMatrixViewAlignsColumnsAfterANonASCIIFileName checks that a file name
-// whose display width differs from its rune count (wide characters, a
-// combining accent) fills exactly one column, so the next file's name starts
-// where the column layout puts it, right above that file's check mark.
 func TestMatrixViewAlignsColumnsAfterANonASCIIFileName(t *testing.T) {
 	layout := config.DefaultConfig().Layout
 	theme := BuildTheme(true, config.ColorConfig{})
@@ -434,7 +399,6 @@ func TestMatrixViewAlignsColumnsAfterANonASCIIFileName(t *testing.T) {
 	}
 
 	for _, name := range []string{".env.日本", ".env.cafe\u0301"} {
-		// KEY_A is only in the second file: its row reads ✗ then ✓.
 		files := []*model.EnvFile{makeTestFile(name), makeTestFile(".env", "KEY_A")}
 		m := NewMatrixModel(files, layout)
 		m.Width, m.Height = 80, 10

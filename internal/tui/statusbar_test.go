@@ -23,10 +23,6 @@ func TestStatusBarSetClearMessage(t *testing.T) {
 	assert.Equal(t, "", sb.Message)
 }
 
-// TestStatusBarMessagesAreFlattened sets messages naming a file whose name
-// holds a line break and an escape sequence, as a name can hold any byte but /
-// and NUL: each kind of message keeps one row and sends the terminal no
-// sequence.
 func TestStatusBarMessagesAreFlattened(t *testing.T) {
 	for name, set := range map[string]func(*StatusBarModel, string){
 		"message": (*StatusBarModel).SetMessage,
@@ -44,7 +40,6 @@ func TestStatusBarViewNormal(t *testing.T) {
 	sb.Width = 120
 	theme := BuildTheme(true, config.ColorConfig{})
 
-	// Normal mode, file panel
 	view := sb.View(theme, DefaultKeyMap(), ModeNormal, FocusFiles, ".env", 5)
 	assert.Contains(t, view, "compare")
 	assert.Contains(t, view, "help")
@@ -142,12 +137,6 @@ func TestStatusBarReadOnlyBadge(t *testing.T) {
 	assert.Contains(t, view, ".env")
 }
 
-// TestStatusBarKeepsTheFileInfoWholeOnTheLastRow renders the bar over a file
-// at every width from the minimum up to one where it fits a row, with either
-// panel focused, read-only or not. Wherever the bar wraps, the file info (the
-// read-only badge, the file name and its variable count) stays whole on the
-// last row, right-aligned as on a single row, and every row keeps the bar's
-// left margin; the words read as on a single row, so no hint is lost.
 func TestStatusBarKeepsTheFileInfoWholeOnTheLastRow(t *testing.T) {
 	theme := BuildTheme(true, config.ColorConfig{})
 	for _, focus := range []Focus{FocusFiles, FocusVars} {
@@ -173,9 +162,6 @@ func TestStatusBarKeepsTheFileInfoWholeOnTheLastRow(t *testing.T) {
 	}
 }
 
-// TestStatusBarFitsALongFileNameIntoItsRow renders the bar over a file whose
-// name is wider than the bar: the name is cut to fill the last row, so the
-// read-only badge and the variable count still show beside it.
 func TestStatusBarFitsALongFileNameIntoItsRow(t *testing.T) {
 	theme := BuildTheme(true, config.ColorConfig{})
 	name := ".env." + strings.Repeat("x", 200)
@@ -190,8 +176,6 @@ func TestStatusBarFitsALongFileNameIntoItsRow(t *testing.T) {
 	}
 }
 
-// statusBarRows renders the normal mode's bar, width columns wide, over the
-// file fileName holding 16 variables, and returns its rows as plain text.
 func statusBarRows(theme Theme, width int, readOnly bool, focus Focus, fileName string) []string {
 	sb := NewStatusBarModel()
 	sb.Width = width
@@ -199,11 +183,6 @@ func statusBarRows(theme Theme, width int, readOnly bool, focus Focus, fileName 
 	return strings.Split(stripAnsi(sb.View(theme, DefaultKeyMap(), ModeNormal, focus, fileName, 16)), "\n")
 }
 
-// TestStatusRowsPartsTheSidesByABlankColumn lays the right side out on the
-// left side's last row only with a blank column between them, and on a row of
-// its own otherwise; beside an empty left side it needs none, so a right side
-// as wide as the bar's text takes the one row, and one wider than the bar
-// stays whole on its row.
 func TestStatusRowsPartsTheSidesByABlankColumn(t *testing.T) {
 	assert.Equal(t, "x .env  4 vars", statusRows("x", ".env  4 vars", 14), "one column between the sides")
 	assert.Equal(t, "x\n .env  4 vars", statusRows("x", ".env  4 vars", 13), "no column between the sides")
@@ -230,8 +209,6 @@ func TestStatusBarMessageOverridesHints(t *testing.T) {
 	assert.Contains(t, view, "File saved successfully")
 }
 
-// SGR fragments of the primary, warning and error colors in statusColorTheme,
-// used to tell which of them a status-bar message was rendered in.
 const (
 	statusPrimarySGR = "38;2;0;255;0"
 	statusWarningSGR = "38;2;0;0;255"
@@ -242,8 +219,6 @@ func statusColorTheme() Theme {
 	return BuildTheme(true, config.ColorConfig{Primary: "#00FF00", Warning: "#0000FF", Error: "#FF0000"})
 }
 
-// assertStatusColor checks that view renders its message in want, one of the
-// status*SGR fragments, and in neither of the other two colors.
 func assertStatusColor(t *testing.T, view, want string) {
 	t.Helper()
 	for _, sgr := range []string{statusPrimarySGR, statusWarningSGR, statusErrorSGR} {
@@ -255,7 +230,6 @@ func assertStatusColor(t *testing.T, view, want string) {
 	}
 }
 
-// statusView renders app's status bar with statusColorTheme.
 func statusView(app App) string {
 	return app.statusBar.View(statusColorTheme(), app.keys, app.mode, app.focus, "", 0)
 }

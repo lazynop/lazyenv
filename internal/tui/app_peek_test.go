@@ -55,11 +55,9 @@ func TestPeekShowsOriginalForModifiedVar(t *testing.T) {
 	app.varList.Width = 80
 	app.varList.Height = 20
 
-	// Edit the variable.
 	f.UpdateVar(0, "new_value")
 	assert.Equal(t, "val_FOO", f.Vars[0].OriginalValue)
 
-	// Enable peek.
 	app.varList.Peeking = true
 	theme := BuildTheme(true, config.ColorConfig{})
 	view := app.varList.View(theme)
@@ -77,10 +75,9 @@ func TestPeekShowsNewVariableHint(t *testing.T) {
 	app.varList.Width = 80
 	app.varList.Height = 20
 
-	// Add a new variable and move cursor to it.
 	f.AddVar("NEW_VAR", "some_val")
 	app.varList.Refresh()
-	app.varList.MoveDown() // cursor on NEW_VAR
+	app.varList.MoveDown()
 
 	app.varList.Peeking = true
 	theme := BuildTheme(true, config.ColorConfig{})
@@ -99,7 +96,6 @@ func TestPeekShowsNothingForUnmodifiedVar(t *testing.T) {
 	app.varList.Width = 80
 	app.varList.Height = 20
 
-	// Enable peek without editing anything.
 	app.varList.Peeking = true
 	theme := BuildTheme(true, config.ColorConfig{})
 	view := app.varList.View(theme)
@@ -119,7 +115,7 @@ func TestPeekHiddenWhenNotFocused(t *testing.T) {
 	f.UpdateVar(0, "new_value")
 
 	app.varList.Peeking = true
-	app.varList.Focused = false // not focused
+	app.varList.Focused = false
 	theme := BuildTheme(true, config.ColorConfig{})
 	view := app.varList.View(theme)
 
@@ -134,7 +130,7 @@ func TestDeletedVarsShownInVarList(t *testing.T) {
 	vlm.Width = 80
 	vlm.Height = 20
 
-	f.DeleteVar(1) // delete BAR
+	f.DeleteVar(1)
 	vlm.Refresh()
 
 	theme := BuildTheme(true, config.ColorConfig{})
@@ -152,9 +148,9 @@ func TestDeletedVarsDisappearAfterReAdd(t *testing.T) {
 	vlm.Width = 80
 	vlm.Height = 20
 
-	f.DeleteVar(1) // delete BAR
+	f.DeleteVar(1)
 	vlm.Refresh()
-	f.AddVar("BAR", "new_val") // re-add BAR
+	f.AddVar("BAR", "new_val")
 	vlm.Refresh()
 
 	assert.Empty(t, f.DeletedVars, "re-added var should be removed from DeletedVars")
@@ -169,8 +165,8 @@ func TestPeekAfterDeleteAndReAdd(t *testing.T) {
 	vlm.Width = 80
 	vlm.Height = 20
 
-	f.DeleteVar(0)               // delete FOO (original value: val_FOO)
-	f.AddVar("FOO", "new_value") // re-add with different value
+	f.DeleteVar(0)
+	f.AddVar("FOO", "new_value")
 	vlm.Refresh()
 
 	theme := BuildTheme(true, config.ColorConfig{})
@@ -402,8 +398,6 @@ func TestPeekReservesNoRowWhenUnfocused(t *testing.T) {
 	assert.Contains(t, rows[len(rows)-2], "val_C", "with no peek line drawn, the last inner row should hold a var")
 }
 
-// fourRowPanelsHeight is the terminal height that leaves the panels four
-// rows inside their chrome.
 const fourRowPanelsHeight = bottomChromeHeight + panelChromeHeight + 4
 
 // peekedBottomRowApp returns an App whose file list has the focus, with peek
@@ -420,10 +414,6 @@ func peekedBottomRowApp() App {
 	return app
 }
 
-// TestFocusingTheVarListKeepsThePeekedCursorRowVisible scrolls the var cursor
-// onto the bottom row while the file list has the focus, so no peek line is
-// counted, then focuses the var list: the peek line now drawn under the
-// cursor row must not push that row out of the panel.
 func TestFocusingTheVarListKeepsThePeekedCursorRowVisible(t *testing.T) {
 	focusVars := map[string]tea.Msg{
 		"right key": tea.KeyPressMsg{Code: tea.KeyRight},
@@ -441,8 +431,6 @@ func TestFocusingTheVarListKeepsThePeekedCursorRowVisible(t *testing.T) {
 	}
 }
 
-// TestPeekLineLeavesRoomForDeletedVars fills a ten-row panel with five vars,
-// a peek line and deleted vars: four deleted vars fit below.
 func TestPeekLineLeavesRoomForDeletedVars(t *testing.T) {
 	f := makeTestFile(".env", "A", "B", "C", "D", "E", "X1", "X2", "X3", "X4", "X5")
 	for range 5 {
@@ -467,9 +455,6 @@ func TestPeekLineLeavesRoomForDeletedVars(t *testing.T) {
 	assert.Equal(t, 4, drawn, "the rows left under five vars and the peek line should hold four deleted vars")
 }
 
-// lastVarAboveDeletedApp returns an App whose var list, four rows tall and
-// focused, has its cursor on H, the last of eight vars, with GONE1 and GONE2
-// deleted below it.
 func lastVarAboveDeletedApp() App {
 	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F", "G", "H", "GONE1", "GONE2")
 	f.DeleteVar(9)
@@ -477,9 +462,6 @@ func lastVarAboveDeletedApp() App {
 	return press(resize(newTestApp([]*model.EnvFile{f}), 80, fourRowPanelsHeight), "right", "j", "j", "j", "j", "j", "j", "j")
 }
 
-// TestDeletedVarsShowAtTheEndOfALongList moves the cursor to the last var of a
-// list longer than its panel: the list scrolls on to show the deleted vars
-// below it, keeping the cursor row in view.
 func TestDeletedVarsShowAtTheEndOfALongList(t *testing.T) {
 	app := lastVarAboveDeletedApp()
 
@@ -490,28 +472,22 @@ func TestDeletedVarsShowAtTheEndOfALongList(t *testing.T) {
 	assert.Contains(t, view, "GONE2")
 }
 
-// TestMovingUpFromTheLastVarKeepsTheScroll shows the deleted vars from the last
-// var, then moves up one var: the list keeps its scroll instead of jumping
-// back, since the cursor row is still in view.
 func TestMovingUpFromTheLastVarKeepsTheScroll(t *testing.T) {
 	app := lastVarAboveDeletedApp()
 	offset := app.varList.Offset
 
-	app = press(app, "k") // G
+	app = press(app, "k")
 
 	assert.Equal(t, offset, app.varList.Offset, "the list should not scroll while G is in view")
 	assert.Contains(t, stripAnsi(app.View().Content), "GONE2")
 }
 
-// TestMoreDeletedVarsThanRowsKeepTheCursorInView deletes more vars than the
-// panel has rows, then moves to the last var: the cursor row stays in view,
-// with as many deleted vars below it as fit.
 func TestMoreDeletedVarsThanRowsKeepTheCursorInView(t *testing.T) {
 	f := makeTestFile(".env", "A", "B", "GONE1", "GONE2", "GONE3", "GONE4", "GONE5", "GONE6")
 	for range 6 {
 		f.DeleteVar(2)
 	}
-	app := press(resize(newTestApp([]*model.EnvFile{f}), 80, fourRowPanelsHeight), "right", "j") // B, the last var
+	app := press(resize(newTestApp([]*model.EnvFile{f}), 80, fourRowPanelsHeight), "right", "j")
 
 	view := stripAnsi(app.View().Content)
 
@@ -521,9 +497,6 @@ func TestMoreDeletedVarsThanRowsKeepTheCursorInView(t *testing.T) {
 	}
 }
 
-// TestDeletingTheLastVarListsItUnderTheNote deletes a file's only var: the
-// panel says it has no variables and still lists the deleted one below, as it
-// does under the vars that are left.
 func TestDeletingTheLastVarListsItUnderTheNote(t *testing.T) {
 	app := press(onVars(resize(newTestApp([]*model.EnvFile{makeTestFile(".env", "ONLY")}), 80, 24)), "d", "y")
 	require.Equal(t, ModeNormal, app.mode)

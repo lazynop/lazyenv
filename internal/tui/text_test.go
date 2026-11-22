@@ -9,14 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// maskValueAllowed lists the functions that may call util.MaskValue directly,
-// keyed by "file:function".
 var maskValueAllowed = map[string]string{
 	"text.go:displayText": "the helper itself",
 }
 
-// TestSecretsMaskOnlyThroughDisplayText fails on a util.MaskValue call outside
-// displayText: one masking path keeps every view hiding the same values.
 func TestSecretsMaskOnlyThroughDisplayText(t *testing.T) {
 	assertRefsAllowed(t, sourceRefs(t, internalUtilPath, "MaskValue"), maskValueAllowed,
 		"draw a variable value with displayText(value, masked), so every view masks it the same way")
@@ -54,7 +50,6 @@ func TestTruncate(t *testing.T) {
 		maxCols int
 		want    string
 	}{
-		// ── Pure ASCII ──
 		{"ascii_fits", "hello", 10, "hello"},
 		{"ascii_exact", "hello", 5, "hello"},
 		{"ascii_truncate", "hello world", 8, "hello .."},
@@ -62,9 +57,6 @@ func TestTruncate(t *testing.T) {
 		{"ascii_truncate_tight", "hello", 4, "he.."},
 		{"empty", "", 5, ""},
 
-		// ── Bullets (U+2022, 1 col, 3 bytes) — the secret-masking case ──
-		// The value is 15 bytes but 5 columns. The old byte-based truncate
-		// would slice mid-sequence and produce tofu `•�..`.
 		{"bullets_fit_exactly", "•••••", 5, "•••••"},
 		{"bullets_byte_over_col_under", "•••••", 6, "•••••"},
 		{"bullets_col_over_truncate", "••••••", 5, "•••.."},
@@ -72,7 +64,6 @@ func TestTruncate(t *testing.T) {
 		{"bullets_three_cols_keeps_ellipsis", "•••••", 3, "•.."},
 		{"bullets_no_tofu_at_7_cols", "••••••••", 7, "•••••.."},
 
-		// ── Arrow glyphs from flattenText (U+21B5, U+21E5, U+21A9) ──
 		{"arrow_truncate", "line1↵line2", 7, "line1.."},
 		{"tab_arrow_truncate", "a⇥b⇥c⇥d", 5, "a⇥b.."},
 
@@ -105,9 +96,6 @@ func TestTruncateMeasuresLikeLipgloss(t *testing.T) {
 	}
 }
 
-// TestDisplayTextNeutralizesTerminalControls draws values holding terminal
-// control sequences: no control byte reaches the screen, so a value can't
-// write the clipboard, clear the screen or restyle the panel.
 func TestDisplayTextNeutralizesTerminalControls(t *testing.T) {
 	for _, value := range []string{
 		"\x1b]52;c;ZXZpbA==\x07", // OSC 52: write the clipboard

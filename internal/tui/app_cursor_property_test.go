@@ -10,24 +10,11 @@ import (
 	"github.com/lazynop/lazyenv/internal/config"
 )
 
-// The property: in the main view the file list's cursor sits on the active
-// file (FileListModel.Cursor == Selected) and the var list shows that file, so
-// the highlighted file is the one the var list shows; selectCursorFile relies
-// on it to reload the var list only on another file. Modes that move the
-// cursor without changing the active file (the compare picker, the matrix)
-// must put it back on the way out. Every pair of inputs from the main view is
-// tried, then the keys that leave or answer a mode, checking the property
-// after each input that lands in the main view. Bindings come from KeyMap by
-// reflection, so a new one is covered.
-
-// cursorInput is one input the property test sends: a key press or a wheel tick.
 type cursorInput struct {
 	name string
 	msg  tea.Msg
 }
 
-// cursorInputs returns the first key of every KeyMap binding, plus a wheel
-// tick down over each panel.
 func cursorInputs(t *testing.T, app App) []cursorInput {
 	t.Helper()
 	var inputs []cursorInput
@@ -58,7 +45,7 @@ func TestMainViewCursorStaysOnTheActiveFile(t *testing.T) {
 		for _, second := range inputs {
 			for _, followUps := range cursorFollowUps {
 				t.Run(fmt.Sprintf("%s then %s then %v", first.name, second.name, followUps), func(t *testing.T) {
-					t.Parallel() // each case owns its temp dir and App
+					t.Parallel()
 					app := newApp(t)
 					sent := []cursorInput{first, second}
 					for _, k := range followUps {

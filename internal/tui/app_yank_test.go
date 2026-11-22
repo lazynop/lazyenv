@@ -49,7 +49,7 @@ func TestYankNoOpOnFilePanel(t *testing.T) {
 }
 
 func TestYankNoOpWithNoVar(t *testing.T) {
-	f := makeTestFile(".env") // no variables
+	f := makeTestFile(".env")
 	app := newTestApp(nil)
 	app.fileList.Files = append(app.fileList.Files, f)
 	app.varList.SetFile(f)

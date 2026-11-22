@@ -17,11 +17,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/parser"
 )
 
-// These tests verify the flash message contract: after an action that shows
-// a transient status message, statusBar.Message is set and a non-nil cmd
-// (the clear timer) is returned. They must pass both before and after
-// extracting a flashMessage/flashError helper.
-
 // TestLongMessageKeepsTheScreenInTheTerminal shows a message that wraps the
 // status bar onto many rows, in a view without an input bar and in one that
 // opens it while the message is still up: the screen stays within the
@@ -209,8 +204,6 @@ func TestFlash_SaveSilentlyDowngradesSingleQuoteWithApostrophe(t *testing.T) {
 func TestFlash_SaveSingleQuoteSafeNoDowngradeMessage(t *testing.T) {
 	app, envPath := newTestAppWithDiskFile(t, "FOO='original'\n")
 
-	// A safe update (no apostrophe in value) must not trigger the downgrade
-	// suffix and must preserve the user's single-quote style on disk.
 	app.fileList.Files[0].UpdateVar(0, "plain update")
 	require.True(t, app.fileList.Files[0].Modified)
 
@@ -286,18 +279,12 @@ func TestFlashMessage_AfterErrorRendersInPrimaryColor(t *testing.T) {
 	assertStatusColor(t, view, statusPrimarySGR)
 }
 
-// TestClearMessageAfterOnlyInFlashHelpers keeps transient status messages
-// behind flashMessage/flashWarning/flashError: only app_flash.go may schedule
-// the auto-clear, so every message gets the timeout matching its kind.
 func TestClearMessageAfterOnlyInFlashHelpers(t *testing.T) {
 	assertRefsAllowed(t, sourceRefs(t, "", "clearMessageAfter"),
 		map[string]string{"app_flash.go": "the flash helpers"},
 		"call a.flashMessage, a.flashWarning or a.flashError instead of clearMessageAfter")
 }
 
-// TestRefusedActionsFlashWarning walks every action refused because of the
-// input or the current state: each must report the reason in the warning
-// color, not in the primary color of a completed action.
 func TestRefusedActionsFlashWarning(t *testing.T) {
 	confirm := func(app App, run func(App) (tea.Model, tea.Cmd)) App {
 		result, _ := run(app)

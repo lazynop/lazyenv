@@ -11,14 +11,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// The property: in read-only mode no key press writes to disk, marks a file
-// modified, or enters a mode that exists only to change a file. Bindings come
-// from KeyMap by reflection, so a new binding is covered without touching this
-// file; a mode that a key press reaches but neither table below lists fails
-// the test until someone classifies it.
-
-// mutatingModes are the AppModes that exist only to change a file, so their
-// entry key must be guarded in read-only mode.
 var mutatingModes = map[AppMode]string{
 	ModeEditing:             "edits a value or key, or adds a variable",
 	ModeEditingCompare:      "edits a value in the diff view",
@@ -40,9 +32,9 @@ var mutatingModes = map[AppMode]string{
 // enters it, never a key.
 var readOnlyStartStates = []struct {
 	name  string
-	keys  []string       // pressed from Normal mode, files panel, first file selected
-	mode  AppMode        // the mode the keys must reach
-	ready func(App) bool // extra precondition, nil when the mode is enough
+	keys  []string // pressed from Normal mode, files panel, first file selected
+	mode  AppMode
+	ready func(App) bool
 }{
 	{name: "normal-files", mode: ModeNormal},
 	{name: "normal-vars", keys: []string{"l"}, mode: ModeNormal, ready: func(a App) bool {
@@ -101,8 +93,6 @@ func TestReadOnlyNoKeyChangesFiles(t *testing.T) {
 	}
 }
 
-// newReadOnlyDiskApp writes readOnlyFixture to a temp dir and loads it into a
-// sized read-only App the way the program does: scan, then FilesLoadedMsg.
 func newReadOnlyDiskApp(t *testing.T) (App, string) {
 	t.Helper()
 	cfg := config.DefaultConfig()
@@ -133,7 +123,6 @@ func requireReadOnlyHeld(t *testing.T, app App, dir, pressed string) {
 		pressed, app.mode)
 }
 
-// readDirContents maps every entry in dir to its content ("" for a directory).
 func readDirContents(t *testing.T, dir string) map[string]string {
 	t.Helper()
 	entries, err := os.ReadDir(dir)
@@ -158,7 +147,6 @@ func matrixCellPresent(m MatrixModel) bool {
 	return cell.Present
 }
 
-// loadedFiles returns every EnvFile the app holds in memory.
 func loadedFiles(app App) []*model.EnvFile {
 	files := append([]*model.EnvFile{}, app.fileList.Files...)
 	for _, f := range []*model.EnvFile{app.varList.File, app.diffView.FileA, app.diffView.FileB} {

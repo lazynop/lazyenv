@@ -27,8 +27,6 @@ func TestApp_GroupConfigDefaultDisabled(t *testing.T) {
 	assert.False(t, app.varList.Grouping, "grouping must default to off")
 }
 
-// newGroupingApp returns an App focused on the var panel with a file that
-// produces two named groups (DB, REDIS) plus an Ungrouped bucket.
 func newGroupingApp(t *testing.T) (App, *model.EnvFile) {
 	t.Helper()
 	f := makeTestFile(".env",
@@ -73,13 +71,11 @@ func TestApp_EnterOnHeaderTogglesCollapse(t *testing.T) {
 	app.varList.SetCursor(0) // DB header
 	require.True(t, app.varList.IsHeaderAtCursor())
 
-	// Enter is a special key — Code is meaningful, Text is empty.
 	updated, _ := app.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 	app = updated.(App)
 
 	assert.True(t, app.varList.collapsed["DB"], "DB should be collapsed after Enter on header")
 
-	// Pressing Enter again expands.
 	updated, _ = app.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 	app = updated.(App)
 	assert.False(t, app.varList.collapsed["DB"], "DB should be expanded after second Enter")
@@ -92,7 +88,6 @@ func TestApp_SpaceOnHeaderTogglesCollapse(t *testing.T) {
 	app.varList.SetCursor(0) // DB header
 	require.True(t, app.varList.IsHeaderAtCursor())
 
-	// Space: Text=" ", Code=' ' (space rune)
 	updated, _ := app.Update(keyMsg("space"))
 	app = updated.(App)
 
@@ -100,14 +95,13 @@ func TestApp_SpaceOnHeaderTogglesCollapse(t *testing.T) {
 }
 
 func TestApp_EnterOnVarStillWorksOnFileFocus(t *testing.T) {
-	// Regression: enter on file focus must still load the file as before.
 	f1 := makeTestFile(".env", "FOO")
 	f2 := makeTestFile(".env.local", "BAR")
 	app := newTestApp([]*model.EnvFile{f1, f2})
 	app.focus = FocusFiles
 	app.fileList.Focused = true
 	app.varList.Focused = false
-	app.fileList.Cursor = 1 // .env.local
+	app.fileList.Cursor = 1
 
 	updated, _ := app.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 	app = updated.(App)
@@ -170,8 +164,6 @@ func TestApp_DeleteOnHeaderFlashes(t *testing.T) {
 }
 
 func TestApp_EditOnVarStillWorksWithGrouping(t *testing.T) {
-	// Regression: when grouping is on and the cursor is on a var (not a
-	// header), editing must still open the editor.
 	app, _ := newGroupingApp(t)
 	app.varList.Grouping = true
 	app.varList.Refresh()

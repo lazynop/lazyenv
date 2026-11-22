@@ -115,13 +115,11 @@ func TestRenameFile_Success(t *testing.T) {
 	assert.Contains(t, app.statusBar.Message, "Renamed")
 	assert.Contains(t, app.statusBar.Message, "→")
 
-	// Old file gone, new file exists
 	_, err = os.Stat(path)
 	assert.True(t, os.IsNotExist(err))
 	_, err = os.Stat(filepath.Join(dir, ".env.local"))
 	require.NoError(t, err)
 
-	// In-memory file updated
 	assert.Equal(t, ".env.local", f.Name)
 	assert.Equal(t, filepath.Join(dir, ".env.local"), f.Path)
 }

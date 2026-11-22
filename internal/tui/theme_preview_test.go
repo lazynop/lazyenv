@@ -21,7 +21,6 @@ func TestNewThemePreview(t *testing.T) {
 	assert.Equal(t, 0, m.cursor, "cursor should start at 0")
 	assert.Equal(t, "", m.selected, "selected should start empty")
 
-	// Themes list should match config.ThemeNames()
 	expected := config.ThemeNames()
 	assert.Equal(t, expected, m.themes)
 }
@@ -30,12 +29,10 @@ func TestThemePreviewNavigateDown(t *testing.T) {
 	m := NewThemePreview(config.DefaultConfig())
 	require.Greater(t, len(m.themes), 1, "need at least 2 themes to test navigation")
 
-	// "j" key moves cursor down
 	updated, _ := m.Update(keyMsg("j"))
 	m = updated.(ThemePreviewModel)
 	assert.Equal(t, 1, m.cursor)
 
-	// "down" arrow also moves cursor down
 	updated, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyDown})
 	m = updated.(ThemePreviewModel)
 	assert.Equal(t, 2, m.cursor)
@@ -45,19 +42,16 @@ func TestThemePreviewNavigateUp(t *testing.T) {
 	m := NewThemePreview(config.DefaultConfig())
 	require.Greater(t, len(m.themes), 1, "need at least 2 themes to test navigation")
 
-	// Move down first
 	updated, _ := m.Update(keyMsg("j"))
 	m = updated.(ThemePreviewModel)
 	updated, _ = m.Update(keyMsg("j"))
 	m = updated.(ThemePreviewModel)
 	assert.Equal(t, 2, m.cursor)
 
-	// "k" key moves cursor up
 	updated, _ = m.Update(keyMsg("k"))
 	m = updated.(ThemePreviewModel)
 	assert.Equal(t, 1, m.cursor)
 
-	// "up" arrow also moves cursor up
 	updated, _ = m.Update(tea.KeyPressMsg{Code: tea.KeyUp})
 	m = updated.(ThemePreviewModel)
 	assert.Equal(t, 0, m.cursor)
@@ -67,7 +61,6 @@ func TestThemePreviewCursorDoesNotGoBelowZero(t *testing.T) {
 	m := NewThemePreview(config.DefaultConfig())
 	assert.Equal(t, 0, m.cursor)
 
-	// Pressing up at top should not go below 0
 	updated, _ := m.Update(keyMsg("k"))
 	m = updated.(ThemePreviewModel)
 	assert.Equal(t, 0, m.cursor, "cursor should not go below 0")
@@ -81,7 +74,6 @@ func TestThemePreviewCursorDoesNotExceedMax(t *testing.T) {
 	m := NewThemePreview(config.DefaultConfig())
 	maxIdx := len(m.themes) - 1
 
-	// Move to the end
 	for range len(m.themes) + 5 {
 		updated, _ := m.Update(keyMsg("j"))
 		m = updated.(ThemePreviewModel)
@@ -107,7 +99,6 @@ func TestThemePreviewSelectWithEnterAfterNavigation(t *testing.T) {
 	m := NewThemePreview(config.DefaultConfig())
 	require.Greater(t, len(m.themes), 1)
 
-	// Navigate to index 1
 	updated, _ := m.Update(keyMsg("j"))
 	m = updated.(ThemePreviewModel)
 
@@ -171,7 +162,6 @@ func TestThemePreviewWindowSizeMsg(t *testing.T) {
 
 func TestThemePreviewViewEmptyWhenWidthZero(t *testing.T) {
 	m := NewThemePreview(config.DefaultConfig())
-	// No WindowSizeMsg sent — width stays 0
 
 	view := m.View()
 	assert.Equal(t, "", view.Content, "View should return empty string when width is 0")
@@ -227,7 +217,6 @@ func TestThemePreviewSelectedMethod(t *testing.T) {
 	m := NewThemePreview(config.DefaultConfig())
 	assert.Equal(t, "", m.Selected())
 
-	// After Enter, Selected() should return the theme name
 	updated, _ := m.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
 	m = updated.(ThemePreviewModel)
 	assert.Equal(t, m.themes[0], m.Selected())
@@ -237,7 +226,6 @@ func TestThemePreviewMouseClick(t *testing.T) {
 	m := NewThemePreview(config.DefaultConfig())
 	require.Greater(t, len(m.themes), 5, "need at least 5 themes")
 
-	// Send WindowSizeMsg first so width/height are set
 	updated, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 	m = updated.(ThemePreviewModel)
 
@@ -249,10 +237,6 @@ func TestThemePreviewMouseClick(t *testing.T) {
 	assert.Equal(t, 4, m.cursor, "click at Y=6 with offset=0 should set cursor to 4")
 }
 
-// TestThemePreviewMouseClickOutsideTheDrawnRowsKeepsTheCursor scrolls the
-// theme list to its middle, then clicks its title row, its bottom border and
-// the status bar: they draw no theme, though themes sit just off screen on
-// either side, so the cursor stays put.
 func TestThemePreviewMouseClickOutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	updated, _ := NewThemePreview(config.DefaultConfig()).Update(tea.WindowSizeMsg{Width: 80, Height: MinTerminalHeight})
 	m := updated.(ThemePreviewModel)
@@ -269,8 +253,6 @@ func TestThemePreviewMouseClickOutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	}
 }
 
-// TestThemePreviewMouseWheel scrolls the theme list with the wheel: each tick
-// moves the cursor by mouse-scroll-lines themes, and 0 turns the wheel off.
 func TestThemePreviewMouseWheel(t *testing.T) {
 	for _, lines := range []int{0, 1, 3} {
 		cfg := config.DefaultConfig()
@@ -295,11 +277,9 @@ func TestThemePreviewScrollOffset(t *testing.T) {
 	updated, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 	m = updated.(ThemePreviewModel)
 
-	// cursor=0 < visibleLines=20 → offset should be 0
 	m.cursor = 0
 	assert.Equal(t, 0, m.scrollOffset(), "scrollOffset should be 0 when cursor < visibleLines")
 
-	// cursor=5 < visibleLines=20 → offset should still be 0
 	m.cursor = 5
 	assert.Equal(t, 0, m.scrollOffset(), "scrollOffset should be 0 when cursor < visibleLines")
 
@@ -315,9 +295,6 @@ func TestThemePreviewScrollOffset(t *testing.T) {
 }
 
 func TestThemePreviewFitsSmallTerminals(t *testing.T) {
-	// From the minimum terminal size: below it the preview draws tooSmallView.
-	// The panels fill the terminal in both directions, with no columns left
-	// over on the right.
 	for _, width := range []int{MinTerminalWidth, 80, 120} {
 		for height := MinTerminalHeight; height <= 40; height++ {
 			m := NewThemePreview(config.DefaultConfig())
@@ -346,9 +323,6 @@ func TestThemePreviewCurrentColors(t *testing.T) {
 		"current theme must resolve to a non-zero palette")
 }
 
-// TestThemePreviewViewRendersAllPanels exercises the full View() body and every
-// render* helper (list, showcase, config box, status bar), which the width==0
-// early-return test never reaches.
 func TestThemePreviewViewRendersAllPanels(t *testing.T) {
 	m := NewThemePreview(config.DefaultConfig())
 	updated, _ := m.Update(tea.WindowSizeMsg{Width: 120, Height: 40})
@@ -375,9 +349,6 @@ func TestThemePreviewViewRendersWithMouseDisabled(t *testing.T) {
 	assert.NotEmpty(t, m.View().Content, "view should still render with mouse disabled")
 }
 
-// TestThemePreviewTooSmallTerminal sizes the preview below the minimum: it
-// draws the notice that fits the terminal, ignores navigation, and quits on
-// Ctrl+C.
 func TestThemePreviewTooSmallTerminal(t *testing.T) {
 	updated, _ := NewThemePreview(config.DefaultConfig()).Update(tea.WindowSizeMsg{Width: 40, Height: 8})
 	m := updated.(ThemePreviewModel)

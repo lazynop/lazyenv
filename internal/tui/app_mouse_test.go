@@ -14,8 +14,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// --- FileListModel.MoveCursorTo ---
-
 func TestFileListMoveCursorTo(t *testing.T) {
 	files := make([]*model.EnvFile, 5)
 	for i := range files {
@@ -41,7 +39,6 @@ func TestFileListMoveCursorTo(t *testing.T) {
 
 func TestFileListMoveCursorToEmpty(t *testing.T) {
 	var fl FileListModel
-	// Files is nil/empty — should not panic
 	assert.NotPanics(t, func() {
 		fl.MoveCursorTo(0)
 		fl.MoveCursorTo(-1)
@@ -50,8 +47,6 @@ func TestFileListMoveCursorToEmpty(t *testing.T) {
 	assert.Equal(t, 0, fl.Cursor)
 	assert.Equal(t, 0, fl.Selected)
 }
-
-// --- VarListModel.SetCursor ---
 
 func TestVarListSetCursor(t *testing.T) {
 	m := NewVarListModel(config.DefaultConfig().Layout)
@@ -73,7 +68,6 @@ func TestVarListSetCursor(t *testing.T) {
 
 func TestVarListSetCursorEmpty(t *testing.T) {
 	m := NewVarListModel(config.DefaultConfig().Layout)
-	// No file set — displayItems is empty; should not panic
 	assert.NotPanics(t, func() {
 		m.SetCursor(0)
 		m.SetCursor(-1)
@@ -82,8 +76,6 @@ func TestVarListSetCursorEmpty(t *testing.T) {
 	assert.Equal(t, 0, m.Cursor)
 }
 
-// --- Click on group header toggles collapse (E009) ---
-
 func TestMouseClickOnHeader_TogglesCollapse(t *testing.T) {
 	f := makeTestFile(".env",
 		"DB_HOST", "DB_PORT", "DB_USER",
@@ -91,7 +83,6 @@ func TestMouseClickOnHeader_TogglesCollapse(t *testing.T) {
 		"PORT",
 	)
 	app := newTestApp([]*model.EnvFile{f})
-	// Trigger layout so fileWidth is computed for the click X dispatch.
 	app = resize(app, 120, 40)
 	app.varList.Grouping = true
 	app.varList.Refresh()
@@ -107,7 +98,6 @@ func TestMouseClickOnHeader_TogglesCollapse(t *testing.T) {
 	assert.True(t, app.varList.collapsed["DB"],
 		"clicking the DB header must toggle collapse on")
 
-	// Click again to expand.
 	updated, _ = app.Update(tea.MouseClickMsg{X: clickX, Y: 2, Button: tea.MouseLeft})
 	app = updated.(App)
 	assert.False(t, app.varList.collapsed["DB"],
@@ -132,8 +122,6 @@ func TestMouseClickOnVar_DoesNotToggleCollapse(t *testing.T) {
 	assert.Equal(t, "DB_HOST", app.varList.SelectedVar().Key)
 }
 
-// --- DiffViewModel.SetCursor ---
-
 func TestDiffViewSetCursor(t *testing.T) {
 	m := DiffViewModel{
 		Entries: make([]model.DiffEntry, 10),
@@ -152,15 +140,12 @@ func TestDiffViewSetCursor(t *testing.T) {
 
 func TestDiffViewSetCursorEmpty(t *testing.T) {
 	m := DiffViewModel{Height: 20}
-	// Entries is nil/empty — should not panic
 	assert.NotPanics(t, func() {
 		m.SetCursor(0)
 		m.SetCursor(5)
 	})
 	assert.Equal(t, 0, m.Cursor)
 }
-
-// --- MatrixModel.SetCursor ---
 
 func TestMatrixSetCursor(t *testing.T) {
 	m := NewMatrixModel(fiveKeyFiles(), config.DefaultConfig().Layout)
@@ -171,7 +156,6 @@ func TestMatrixSetCursor(t *testing.T) {
 	assert.Equal(t, 3, m.rows.Cursor, "rows.Cursor should be set to 3")
 	assert.Equal(t, 1, m.cols.Cursor, "cols.Cursor should be set to 1")
 
-	// Bounds clamping
 	m.SetCursor(-1, -1)
 	assert.Equal(t, 0, m.rows.Cursor, "rows.Cursor should clamp to 0")
 	assert.Equal(t, 0, m.cols.Cursor, "cols.Cursor should clamp to 0")
@@ -187,7 +171,6 @@ func TestMatrixSetCursorEmpty(t *testing.T) {
 		Width:  80,
 		layout: config.DefaultConfig().Layout,
 	}
-	// No entries, no files — should not panic
 	assert.NotPanics(t, func() {
 		m.SetCursor(0, 0)
 		m.SetCursor(5, 5)
@@ -196,8 +179,6 @@ func TestMatrixSetCursorEmpty(t *testing.T) {
 	assert.Equal(t, 0, m.cols.Cursor)
 }
 
-// --- Mouse wheel: Normal mode scrolls the file and var lists ---
-
 func TestMouseWheelNormal_FileList(t *testing.T) {
 	f1 := makeTestFile(".env", "A")
 	f2 := makeTestFile(".env.prod", "B")
@@ -205,14 +186,12 @@ func TestMouseWheelNormal_FileList(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f1, f2, f3})
 	app = resize(app, 120, 40)
 
-	// Wheel down over the file panel (X < fileWidth)
 	updated, _ := app.Update(tea.MouseWheelMsg{X: 1, Y: 5, Button: tea.MouseWheelDown})
 	app = updated.(App)
 	require.Greater(t, app.fileList.Cursor, 0, "wheel down should advance the file cursor")
 	assert.Equal(t, app.fileList.SelectedFile(), app.varList.File,
 		"var panel should follow the scrolled file selection")
 
-	// Wheel up returns to the top
 	updated, _ = app.Update(tea.MouseWheelMsg{X: 1, Y: 5, Button: tea.MouseWheelUp})
 	app = updated.(App)
 	assert.Equal(t, 0, app.fileList.Cursor)
@@ -229,8 +208,6 @@ func TestMouseWheelNormal_VarList(t *testing.T) {
 		"wheel down over the var panel should advance the var cursor")
 }
 
-// rowDrawing returns the screen row of view that holds text, failing when none
-// does.
 func rowDrawing(t *testing.T, view, text string) int {
 	t.Helper()
 	row := slices.IndexFunc(strings.Split(stripAnsi(view), "\n"), func(line string) bool {
@@ -330,7 +307,7 @@ func TestMouseClickCompareMode_UnderALongFileName(t *testing.T) {
 func TestMouseClickVarList_OnADeletedVarKeepsTheCursor(t *testing.T) {
 	f := makeTestFile(".env", "A", "B", "GONE")
 	f.DeleteVar(2)
-	app := press(resize(newTestApp([]*model.EnvFile{f}), 80, 24), "right", "j") // B
+	app := press(resize(newTestApp([]*model.EnvFile{f}), 80, 24), "right", "j")
 	row := rowDrawing(t, app.View().Content, "GONE")
 
 	updated, _ := app.Update(tea.MouseClickMsg{X: 40, Y: row, Button: tea.MouseLeft})
@@ -345,7 +322,7 @@ func TestMouseClickVarList_OnADeletedVarKeepsTheCursor(t *testing.T) {
 // so the cursor stays put.
 func TestMouseClickVarList_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J")
-	app := press(resize(newTestApp([]*model.EnvFile{f}), 80, fourRowPanelsHeight), "right", "j", "j", "j", "j", "j") // F, with C to F drawn
+	app := press(resize(newTestApp([]*model.EnvFile{f}), 80, fourRowPanelsHeight), "right", "j", "j", "j", "j", "j")
 	require.Equal(t, 2, app.varList.Offset)
 
 	for _, y := range []int{panelContentOffsetY - 1, panelContentOffsetY + 4} {
@@ -365,7 +342,7 @@ func TestMouseClickFileList_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	for i := range files {
 		files[i] = makeTestFile(fmt.Sprintf(".env.%d", i), "K")
 	}
-	app := press(resize(newTestApp(files), 80, fourRowPanelsHeight), "j", "j", "j", "j", "j") // .env.5, with .env.2 to .env.5 drawn
+	app := press(resize(newTestApp(files), 80, fourRowPanelsHeight), "j", "j", "j", "j", "j")
 	require.Equal(t, 2, app.fileList.Offset)
 
 	for _, mode := range []AppMode{ModeNormal, ModeCompareSelect} {
@@ -379,10 +356,6 @@ func TestMouseClickFileList_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	}
 }
 
-// TestMouseClickFileList_BelowTheLastFileKeepsTheCursor clicks the blank rows
-// under the last of three files, in the main view and while picking the file
-// to compare: they draw no file, so the cursor stays put, and with it the
-// active file in the main view.
 func TestMouseClickFileList_BelowTheLastFileKeepsTheCursor(t *testing.T) {
 	files := []*model.EnvFile{makeTestFile(".env", "K"), makeTestFile(".env.a", "K"), makeTestFile(".env.b", "K")}
 	app := resize(newTestApp(files), 80, 24)
@@ -410,8 +383,6 @@ func TestMouseClickVarList_FromTheFileListSelectsTheVarDrawnAtTheRow(t *testing.
 	assert.Equal(t, "D", app.varList.SelectedVar().Key)
 }
 
-// --- Compare mode: click and wheel drive the diff view ---
-
 func TestMouseClickCompareMode_SelectsTheClickedEntry(t *testing.T) {
 	keys := []string{"ALPHA", "BRAVO", "CHARLIE", "DELTA"}
 	app := enterCompareMode(t, makeTestFile(".env", keys...), makeTestFile(".env.prod", keys...))
@@ -430,7 +401,7 @@ func TestMouseClickCompareMode_SelectsTheClickedEntry(t *testing.T) {
 func TestMouseClickCompareMode_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	keys := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"}
 	app := enterCompareMode(t, makeTestFile(".env", keys...), makeTestFile(".env.prod", keys...))
-	app = press(resize(app, 80, fourRowPanelsHeight), "j", "j", "j", "j", "j") // F, with C to F drawn
+	app = press(resize(app, 80, fourRowPanelsHeight), "j", "j", "j", "j", "j")
 	require.Equal(t, 2, app.diffView.Offset)
 
 	for _, y := range []int{panelContentOffsetY - 1, panelContentOffsetY + 4} {
@@ -452,8 +423,6 @@ func TestMouseWheelCompareMode_ScrollsDiff(t *testing.T) {
 	assert.Greater(t, app.diffView.Cursor, 0, "wheel down should scroll the diff view")
 }
 
-// --- Compare-select mode: click moves the cursor without changing the active file ---
-
 func TestMouseClickCompareSelectMode_MovesCursorOnly(t *testing.T) {
 	f1 := makeTestFile(".env", "A")
 	f2 := makeTestFile(".env.prod", "B")
@@ -470,9 +439,6 @@ func TestMouseClickCompareSelectMode_MovesCursorOnly(t *testing.T) {
 		"compare-select must not change the active file (Selected)")
 }
 
-// TestMouseWheelCompareSelectMode_MovesCursorOnly scrolls the file list while
-// picking the second file to compare: like the keys and clicks there, the
-// wheel moves the cursor to the compare target and keeps the active file.
 func TestMouseWheelCompareSelectMode_MovesCursorOnly(t *testing.T) {
 	f1 := makeTestFile(".env", "A")
 	f2 := makeTestFile(".env.prod", "B")
@@ -487,9 +453,6 @@ func TestMouseWheelCompareSelectMode_MovesCursorOnly(t *testing.T) {
 	assert.Same(t, f1, app.varList.File, "the var list keeps the active file")
 }
 
-// TestMouseWheelCompareSelectMode_IgnoresTheVarPanel scrolls the wheel over
-// the var panel while picking the second file to compare: like a click there,
-// it leaves the compare target alone.
 func TestMouseWheelCompareSelectMode_IgnoresTheVarPanel(t *testing.T) {
 	f1, f2 := makeTestFile(".env", "A"), makeTestFile(".env.prod", "B")
 	app := press(resize(newTestApp([]*model.EnvFile{f1, f2}), 120, 40), "c")
@@ -515,12 +478,9 @@ func TestMouseClickEditingCompareMode_KeepsTheEditedEntry(t *testing.T) {
 	assert.Equal(t, 0, updated.(App).diffView.Cursor, "the click should not move off the edited entry")
 }
 
-// TestMouseWheelConfirmMatrixDelete_KeepsTheKeyToDelete scrolls the matrix
-// while a delete waits for confirmation: the delete removes the key the
-// prompt names.
 func TestMouseWheelConfirmMatrixDelete_KeepsTheKeyToDelete(t *testing.T) {
 	a := makeTestFile(".env", "ALPHA", "BRAVO", "CHARLIE")
-	app := press(resize(newTestApp([]*model.EnvFile{a, makeTestFile(".env.prod", "ALPHA")}), 120, 24), "m", "d") // delete ALPHA from .env
+	app := press(resize(newTestApp([]*model.EnvFile{a, makeTestFile(".env.prod", "ALPHA")}), 120, 24), "m", "d")
 	require.Equal(t, ModeConfirmMatrixDelete, app.mode)
 	require.Contains(t, app.statusBar.Message, "ALPHA")
 
@@ -531,9 +491,6 @@ func TestMouseWheelConfirmMatrixDelete_KeepsTheKeyToDelete(t *testing.T) {
 	assert.NotNil(t, a.VarByKey("BRAVO"), "the wheel should not retarget the delete")
 }
 
-// TestMouseClickCompareSelectMode_IgnoresTheVarPanel clicks the var panel
-// while picking the second file to compare: only the file list picks it, so
-// the cursor stays on the first file.
 func TestMouseClickCompareSelectMode_IgnoresTheVarPanel(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.prod", "B"), makeTestFile(".env.local", "C")})
 	app = press(resize(app, 120, 40), "c")
@@ -544,14 +501,10 @@ func TestMouseClickCompareSelectMode_IgnoresTheVarPanel(t *testing.T) {
 	assert.Equal(t, 0, updated.(App).fileList.Cursor, "a click on the var panel should not move the file cursor")
 }
 
-// --- Matrix mode: click sets a cell, wheel scrolls rows ---
-
-// fiveKeyFiles returns a, holding the keys K1 to K5, and the empty b and c.
 func fiveKeyFiles() []*model.EnvFile {
 	return []*model.EnvFile{makeTestFile("a", "K1", "K2", "K3", "K4", "K5"), makeTestFile("b"), makeTestFile("c")}
 }
 
-// newMatrixTestApp opens the matrix over fiveKeyFiles in a 120x40 terminal.
 func newMatrixTestApp(t *testing.T) App {
 	t.Helper()
 	app := press(resize(newTestApp(fiveKeyFiles()), 120, 40), "m")
@@ -570,7 +523,6 @@ func TestMouseClickMatrixMode_SetsCell(t *testing.T) {
 	assert.Equal(t, 2, app.matrixView.rows.Cursor)
 	assert.Equal(t, 1, app.matrixView.cols.Cursor)
 
-	// Key-column click (X < keyWidth) keeps the column, only moves the row
 	updated, _ = app.Update(tea.MouseClickMsg{X: kw - 1, Y: 3, Button: tea.MouseLeft})
 	app = updated.(App)
 	assert.Equal(t, 1, app.matrixView.rows.Cursor)
@@ -592,11 +544,6 @@ func TestMouseClickMatrixMode_SelectsTheColumnDrawnAtX(t *testing.T) {
 	}
 }
 
-// TestMouseClickMatrixMode_OutsideTheDrawnCellsKeepsTheCursor scrolls a matrix
-// of 40 keys over two files to its middle, then clicks the header, the
-// separator and the stats footer, which draw no key though keys sit just off
-// screen on either side, and the row counter right of the last column, which
-// draws no file: the cursor stays on its cell.
 func TestMouseClickMatrixMode_OutsideTheDrawnCellsKeepsTheCursor(t *testing.T) {
 	keys := make([]string, 40)
 	for i := range keys {
@@ -627,8 +574,6 @@ func TestMouseClickMatrixMode_OutsideTheDrawnCellsKeepsTheCursor(t *testing.T) {
 	}
 }
 
-// TestMouseClickMatrixMode_BelowTheLastKeyKeepsTheCursor clicks a padding row
-// under the last of five keys: it draws no key, so the cursor stays put.
 func TestMouseClickMatrixMode_BelowTheLastKeyKeepsTheCursor(t *testing.T) {
 	app := newMatrixTestApp(t)
 	require.Greater(t, app.matrixView.visibleLines(), len(app.matrixView.entries), "the matrix needs padding rows")
@@ -646,10 +591,6 @@ func TestMouseWheelMatrixMode_Scrolls(t *testing.T) {
 	assert.Greater(t, app.matrixView.rows.Cursor, 0, "wheel down should scroll the matrix rows")
 }
 
-// TestMouseOnTheActiveFileKeepsTheVarList clicks the active file, and turns
-// the wheel over the file list past its end, where the active file stays as
-// it is: the var list keeps its cursor, scroll and peek, as it does under the
-// keys (TestFileKeysThatKeepTheActiveFileKeepTheVarList).
 func TestMouseOnTheActiveFileKeepsTheVarList(t *testing.T) {
 	for _, tt := range []struct {
 		name   string

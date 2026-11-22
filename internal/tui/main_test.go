@@ -31,8 +31,6 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-// rerunWithout runs this test binary again, with the same arguments and
-// without the environment variable env, and returns its exit code.
 func rerunWithout(env string) int {
 	cmd := exec.Command(os.Args[0], os.Args[1:]...)
 	cmd.Env = slices.DeleteFunc(os.Environ(), func(kv string) bool { return strings.HasPrefix(kv, env+"=") })

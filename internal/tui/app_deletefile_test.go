@@ -81,11 +81,9 @@ func TestDeleteFile_ConfirmDeletes(t *testing.T) {
 	assert.Equal(t, ModeNormal, app.mode)
 	assert.Contains(t, app.statusBar.Message, "Deleted")
 
-	// File removed from disk
 	_, err = os.Stat(path)
 	assert.True(t, os.IsNotExist(err))
 
-	// File removed from list
 	assert.Empty(t, app.fileList.Files)
 	assert.Nil(t, app.varList.File)
 }
@@ -137,7 +135,6 @@ func TestDeleteFile_ConfirmDeletesLastFile(t *testing.T) {
 	app.config.NoGitCheck = true
 	app.focus = FocusFiles
 	app.mode = ModeConfirmDeleteFile
-	// Select the last file (index 1)
 	app.fileList.Cursor = 1
 	app.fileList.Selected = 1
 	app.varList.SetFile(f2)
@@ -148,7 +145,6 @@ func TestDeleteFile_ConfirmDeletesLastFile(t *testing.T) {
 	assert.Equal(t, ModeNormal, app.mode)
 	assert.Len(t, app.fileList.Files, 1)
 	assert.Equal(t, ".env", app.fileList.Files[0].Name)
-	// Cursor clamped back to 0
 	assert.Equal(t, 0, app.fileList.Cursor)
 	assert.Equal(t, 0, app.fileList.Selected)
 }

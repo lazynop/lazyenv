@@ -23,8 +23,6 @@ func setupScanDir(t *testing.T, files map[string]string) string {
 	return dir
 }
 
-// loadFixtureApp writes fixture to a temp dir and loads it into an app sized
-// width x height the way the program does: scan, then FilesLoadedMsg.
 func loadFixtureApp(t *testing.T, cfg config.Config, fixture map[string]string, width, height int) App {
 	t.Helper()
 	cfg.Dir = setupScanDir(t, fixture)
@@ -121,7 +119,6 @@ func TestScanDirSortsByDepthThenName(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Len(t, files, 4)
-	// Root files first (sorted by name), then sub/ files
 	assert.Equal(t, ".env", files[0].Name)
 	assert.Equal(t, ".env.prod", files[1].Name)
 }
@@ -175,7 +172,6 @@ func TestIsEnvFile(t *testing.T) {
 }
 
 func TestIsEnvFileCustomPatterns(t *testing.T) {
-	// Custom include: only "*.conf" files
 	cfg := config.FileConfig{
 		Include: []string{"*.conf"},
 		Exclude: []string{"secret.*"},
@@ -197,7 +193,6 @@ func TestScanDirCustomExclude(t *testing.T) {
 		".env.local": "LOCAL=1\n",
 	})
 
-	// Exclude .env.local specifically
 	cfg := config.FileConfig{
 		Include: []string{".env", ".env.*", "*.env"},
 		Exclude: []string{".env.local"},
