@@ -320,10 +320,6 @@ func (a App) handleNormalKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 
-	if key.Matches(msg, a.keys.Reorder) {
-		return a.startReorder()
-	}
-
 	if a.focus == FocusFiles {
 		if m, cmd, handled := a.handleNormalFileAction(msg); handled {
 			return m, cmd
@@ -455,6 +451,9 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 
 	case key.Matches(msg, a.keys.Reset):
 		return a.handleReset()
+
+	case key.Matches(msg, a.keys.Reorder):
+		return a.startReorder()
 
 	case key.Matches(msg, a.keys.ToggleSecret):
 		a.varList.SetShowSecrets(!a.varList.ShowSecrets)
