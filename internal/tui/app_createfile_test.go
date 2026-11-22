@@ -3,6 +3,7 @@ package tui
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -167,4 +168,23 @@ func TestCreateFile_Success(t *testing.T) {
 	assert.Equal(t, 0, app.fileList.Selected)
 	assert.Equal(t, 0, app.fileList.Cursor)
 	assert.NotNil(t, app.varList.File)
+}
+
+func TestCreatedFileEndsWithANewlineAfterItsFirstSave(t *testing.T) {
+	dir := t.TempDir()
+	app := newTestApp(nil)
+	app.config.Dir = dir
+	app.config.NoGitCheck = true
+	app.config.NoBackup = true
+	app.mode = ModeCreateFile
+	app.fileInput.SetValue(".env.staging")
+	result, _ := app.confirmCreateFile()
+	app = result.(App)
+
+	app.varList.File.AddVar("KEY", "value")
+	app, _ = app.handleSave()
+
+	data, err := os.ReadFile(filepath.Join(dir, ".env.staging"))
+	require.NoError(t, err)
+	assert.True(t, strings.HasSuffix(string(data), "KEY=value\n"), "%q", data)
 }
