@@ -214,6 +214,40 @@ func TestWriteFileNoPath(t *testing.T) {
 	assert.ErrorContains(t, err, "no file path set")
 }
 
+func TestWriteFileGivesANewFileMode0644(t *testing.T) {
+	path := filepath.Join(t.TempDir(), ".env")
+	ef := ParseBytes(".env", []byte("FOO=bar\n"), config.SecretsConfig{})
+	ef.Path = path
+
+	require.NoError(t, WriteFile(ef))
+
+	info, err := os.Stat(path)
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0o644), info.Mode().Perm())
+}
+
+func TestWriteFileKeepsTheModeOfAnExistingFile(t *testing.T) {
+	for _, mode := range []os.FileMode{0o600, 0o640} {
+		t.Run(mode.String(), func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), ".env")
+			require.NoError(t, os.WriteFile(path, []byte("FOO=bar\n"), mode))
+			require.NoError(t, os.Chmod(path, mode))
+			ef, err := ParseFile(path, config.SecretsConfig{})
+			require.NoError(t, err)
+			ef.UpdateVar(0, "baz")
+
+			require.NoError(t, WriteFile(ef))
+
+			info, err := os.Stat(path)
+			require.NoError(t, err)
+			assert.Equal(t, mode, info.Mode().Perm())
+			got, err := os.ReadFile(path)
+			require.NoError(t, err)
+			assert.Equal(t, "FOO=baz\n", string(got))
+		})
+	}
+}
+
 func TestNormalizeForWriteSingleQuoteWithApostrophe(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO='original'\n"), config.SecretsConfig{})
 	ef.UpdateVar(0, "it's a trap")
