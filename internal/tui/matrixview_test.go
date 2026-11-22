@@ -229,16 +229,8 @@ func TestMatrixConfirmEdit(t *testing.T) {
 	assert.Equal(t, []bool{false, true, true}, m.entries[2].Present, "C should be present in .env.local after confirm")
 }
 
-// TestMatrixConfirmEditResorts confirms an edit in each sort mode: M fills its
-// gap in .env while B and Z keep theirs, so the rows keep their alphabetical
-// order, or by completeness keep B and Z ahead of the rest, in an order that
-// is alphabetical neither way. The cursor stays on M; only the completeness
-// case moves the rows, so only it sees the cursor follow M from row 1 to row
-// 3, which is neither the last row (Y's), M's alphabetical index (2), nor the
-// row of Z, now at row 1, or of B, at row 1 of the rows rebuilt
-// alphabetically. The view, two rows tall, scrolls just enough to show M: by
-// completeness M goes below it and lands on its last row, not its first.
 func TestMatrixConfirmEditResorts(t *testing.T) {
+	const viewRows = 2
 	for _, tc := range []struct {
 		name          string
 		mode          model.SortMode
@@ -253,7 +245,7 @@ func TestMatrixConfirmEditResorts(t *testing.T) {
 			env := makeTestFile(".env", "A", "Y")
 			m := NewMatrixModel([]*model.EnvFile{env, makeTestFile(".env.local", "A", "B", "M", "Y", "Z")}, config.DefaultConfig().Layout)
 			m.Width = 120
-			m.Height = matrixChromeHeight + 2
+			m.Height = matrixChromeHeight + viewRows
 			if tc.mode != m.sortMode {
 				m.ToggleSort()
 			}
@@ -264,10 +256,13 @@ func TestMatrixConfirmEditResorts(t *testing.T) {
 
 			require.Same(t, env, m.ConfirmEdit())
 
-			assert.Equal(t, tc.after, matrixKeys(m.entries), "the rows should follow the sort mode after confirm")
+			assert.Equal(t, tc.after, matrixKeys(m.entries),
+				"M fills its gap in .env while B and Z keep theirs: the rows stay alphabetical, or by completeness put B and Z ahead in an order alphabetical neither way")
 			cell, _ := m.CursorCell()
-			assert.Equal(t, "M", cell.Key, "the cursor should stay on M, the key it filled")
-			assert.Equal(t, tc.offsetAfter, m.rows.Offset, "the view should scroll just enough to show M")
+			assert.Equal(t, "M", cell.Key,
+				"the cursor should stay on M; by completeness it follows M from row 1 to row 3, neither the last row (Y's), M's alphabetical index (2), nor the row Z or B now hold")
+			assert.Equal(t, tc.offsetAfter, m.rows.Offset,
+				"the two-row view should scroll just enough to show M: by completeness M lands on its last row, not its first")
 		})
 	}
 }
