@@ -193,10 +193,7 @@ func TestInitReturnsBatch(t *testing.T) {
 	assert.NotNil(t, app.Init())
 }
 
-// startApp runs the commands Init batches and feeds their messages to Update,
-// as the Bubble Tea runtime does at startup. cfg.Dir is scanned, so callers
-// point it at an empty directory.
-func startApp(t *testing.T, app App) App {
+func startAppOnEmptyDir(t *testing.T, app App) App {
 	t.Helper()
 	batch, ok := app.Init()().(tea.BatchMsg)
 	require.True(t, ok, "Init must batch its startup commands")
@@ -213,7 +210,7 @@ func TestStartupNoticeFlashesWithoutBlocking(t *testing.T) {
 	cfg.Dir = t.TempDir()
 	notice := `unknown theme "does-not-exist" (see --list-themes)`
 
-	app := startApp(t, NewApp(cfg, StartupMessages{Notices: []string{notice}}))
+	app := startAppOnEmptyDir(t, NewApp(cfg, StartupMessages{Notices: []string{notice}}))
 
 	assert.Equal(t, ModeNormal, app.mode, "a notice must not open the blocking config error screen")
 	assert.Equal(t, notice, app.statusBar.Message)
@@ -225,7 +222,7 @@ func TestStartupNoticeRendersInErrorColor(t *testing.T) {
 	cfg := config.DefaultConfig()
 	cfg.Dir = t.TempDir()
 
-	app := startApp(t, NewApp(cfg, StartupMessages{Notices: []string{`unknown theme "does-not-exist"`}}))
+	app := startAppOnEmptyDir(t, NewApp(cfg, StartupMessages{Notices: []string{`unknown theme "does-not-exist"`}}))
 
 	view := statusView(app)
 	assertStatusColor(t, view, statusErrorSGR)
@@ -235,7 +232,7 @@ func TestConfigErrorBlocksAndQuitsOnNextKey(t *testing.T) {
 	cfg := config.DefaultConfig()
 	cfg.Dir = t.TempDir()
 
-	app := startApp(t, NewApp(cfg, StartupMessages{ConfigErrors: []string{`invalid sort value: "random"`}}))
+	app := startAppOnEmptyDir(t, NewApp(cfg, StartupMessages{ConfigErrors: []string{`invalid sort value: "random"`}}))
 
 	assert.Equal(t, ModeConfigError, app.mode)
 	assert.Contains(t, app.View().Content, `invalid sort value: "random"`)
@@ -248,7 +245,7 @@ func TestConfigErrorScreenNamesTheFile(t *testing.T) {
 	cfg := config.DefaultConfig()
 	cfg.Dir = t.TempDir()
 
-	app := startApp(t, NewApp(cfg, StartupMessages{
+	app := startAppOnEmptyDir(t, NewApp(cfg, StartupMessages{
 		ConfigPath:   "/home/user/.lazyenvrc",
 		ConfigErrors: []string{`invalid sort value: "random"`},
 	}))
@@ -277,7 +274,7 @@ func TestConfigErrorScreenWithoutAPathLeavesNoGap(t *testing.T) {
 	cfg := config.DefaultConfig()
 	cfg.Dir = t.TempDir()
 
-	app := startApp(t, NewApp(cfg, StartupMessages{ConfigErrors: []string{`invalid sort value: "random"`}}))
+	app := startAppOnEmptyDir(t, NewApp(cfg, StartupMessages{ConfigErrors: []string{`invalid sort value: "random"`}}))
 
 	rows := configErrorRows(app.View().Content)
 	title := slices.Index(rows, "Configuration Error")
@@ -290,7 +287,7 @@ func TestConfigErrorScreenShowsOneErrorPerRow(t *testing.T) {
 	cfg := config.DefaultConfig()
 	cfg.Dir = t.TempDir()
 
-	app := startApp(t, NewApp(cfg, StartupMessages{
+	app := startAppOnEmptyDir(t, NewApp(cfg, StartupMessages{
 		ConfigPath:   ".lazyenvrc",
 		ConfigErrors: []string{`invalid sort value: "random"`, "invalid file-list-width: -1 (must be >= 0)"},
 		Notices:      []string{`unknown theme "nope" (see --list-themes)`},
@@ -374,7 +371,7 @@ func TestConfigErrorScreenAlsoShowsNotices(t *testing.T) {
 	cfg := config.DefaultConfig()
 	cfg.Dir = t.TempDir()
 
-	app := startApp(t, NewApp(cfg, StartupMessages{
+	app := startAppOnEmptyDir(t, NewApp(cfg, StartupMessages{
 		ConfigErrors: []string{`invalid sort value: "random"`},
 		Notices:      []string{`unknown theme "nope"`},
 	}))

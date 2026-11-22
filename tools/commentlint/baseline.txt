@@ -19,7 +19,6 @@
 14 internal/parser/writer.go
 5 internal/parser/writer_roundtrip_test.go
 16 internal/parser/writer_test.go
-3 internal/tui/app_test.go
 9 internal/tui/matrixview_test.go
 14 internal/tui/source_scan_test.go
 9 internal/util/secrets.go
