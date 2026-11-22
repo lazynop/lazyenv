@@ -3,6 +3,7 @@
 package docstest
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -15,6 +16,8 @@ import (
 
 // SectionHeadingPrefix starts the heading of a section that Section finds.
 const SectionHeadingPrefix = "## "
+
+const subsectionHeadingPrefix = "### "
 
 var codeSpanRe = regexp.MustCompile("`([^`]+)`")
 
@@ -89,15 +92,16 @@ func isSeparatorRow(line string) bool {
 }
 
 // TableRows returns the rows of the first table in doc with a column named
-// header, and fails the test when there is none.
-func TableRows(t *testing.T, doc, header string) [][]string {
+// header, and fails the test when there is none, adding msgAndArgs to the
+// failure message.
+func TableRows(t *testing.T, doc, header string, msgAndArgs ...any) [][]string {
 	t.Helper()
 	for _, table := range Tables(doc) {
 		if slices.Contains(table.Header, header) {
 			return table.Rows
 		}
 	}
-	require.Failf(t, "missing table", "no table with a %q column", header)
+	require.Fail(t, fmt.Sprintf("no table with a %q column", header), msgAndArgs...)
 	return nil
 }
 
@@ -145,8 +149,21 @@ func LineStartingWith(t *testing.T, doc, prefix string) string {
 // test when there is none.
 func Section(t *testing.T, doc, heading string) string {
 	t.Helper()
-	_, body, ok := strings.Cut(doc, "\n"+SectionHeadingPrefix+heading+"\n")
-	require.True(t, ok, "no section %q", SectionHeadingPrefix+heading)
-	body, _, _ = strings.Cut(body, "\n"+SectionHeadingPrefix)
+	return headedBody(t, doc, SectionHeadingPrefix, heading)
+}
+
+// Subsection returns the body of the subsection under the heading
+// "### " + heading in the section Section finds under section, up to the next
+// subsection or the end of the section, and fails the test when there is none.
+func Subsection(t *testing.T, doc, section, heading string) string {
+	t.Helper()
+	return headedBody(t, Section(t, doc, section), subsectionHeadingPrefix, heading)
+}
+
+func headedBody(t *testing.T, doc, prefix, heading string) string {
+	t.Helper()
+	_, body, ok := strings.Cut(doc, "\n"+prefix+heading+"\n")
+	require.True(t, ok, "no section %q", prefix+heading)
+	body, _, _ = strings.Cut(body, "\n"+prefix)
 	return body
 }

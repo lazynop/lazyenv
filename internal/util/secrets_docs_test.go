@@ -17,8 +17,9 @@ import (
 var valueEntropyRuleRe = regexp.MustCompile(`^Values ≥(\d+) chars .* entropy ≥(\d+(?:\.\d+)?) bits/char`)
 
 func TestConfigurationDocumentsTheBuiltinSecretRules(t *testing.T) {
+	rules := docstest.Subsection(t, docstest.ReadFile(t, "docs/configuration.md"), "[secrets]", "Built-in detection rules")
 	patternsByRule := map[string]string{}
-	for _, row := range docstest.TableRows(t, docstest.ReadFile(t, "docs/configuration.md"), "Patterns") {
+	for _, row := range docstest.TableRows(t, rules, "Patterns", "docs/configuration.md § Built-in detection rules should list the rules in a table") {
 		patternsByRule[row[0]] = row[1]
 	}
 	require.Equal(t, []string{"Exact match", "Prefix match", "Suffix match", "Value entropy", "Value prefix"}, slices.Sorted(maps.Keys(patternsByRule)),
