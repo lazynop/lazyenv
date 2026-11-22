@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"image/color"
 	"slices"
 	"strings"
 	"testing"
@@ -30,10 +31,23 @@ func TestUpdateWindowSizeMsg(t *testing.T) {
 func TestUpdateBackgroundColorMsg(t *testing.T) {
 	app := newTestApp(nil)
 	assert.True(t, app.hasDarkBg)
+	app.config.Colors.Primary = "#123456"
 
-	updated, cmd := app.Update(tea.BackgroundColorMsg{})
-	app = updated.(App)
-	assert.Nil(t, cmd)
+	for _, tc := range []struct {
+		name string
+		bg   color.Color
+		dark bool
+	}{
+		{"light", color.White, false},
+		{"dark", color.Black, true},
+	} {
+		updated, cmd := app.Update(tea.BackgroundColorMsg{Color: tc.bg})
+		app = updated.(App)
+
+		assert.Nil(t, cmd, tc.name)
+		assert.Equal(t, tc.dark, app.hasDarkBg, tc.name)
+		assert.Equal(t, BuildTheme(tc.dark, app.config.Colors), app.theme, tc.name)
+	}
 }
 
 func TestUpdateFilesLoadedMsg(t *testing.T) {
