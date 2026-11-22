@@ -610,7 +610,7 @@ func TestVarListGrouping_RefreshAfterAddRecomputesGroups(t *testing.T) {
 	assert.Equal(t, "DB", vl.groups[vl.displayItems[0].GroupIdx].Prefix)
 }
 
-func TestVarListGrouping_ToggleSortFollowsUngroupedHeaderCursor(t *testing.T) {
+func TestVarListGrouping_ToggleSortKeepsTheCursorOnTheEmptyPrefixUngroupedHeader(t *testing.T) {
 	f := makeTestFile(".env",
 		"REDIS_URL", "REDIS_PORT",
 		"DB_HOST", "DB_PORT",

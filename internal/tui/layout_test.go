@@ -268,7 +268,7 @@ func TestLayoutSecretsAreDrawnWholeSoTheLeakCheckCanCatchThem(t *testing.T) {
 
 func TestFileNamesAreDrawnFlat(t *testing.T) {
 	const raw, flat = "\n\x1b]0;x\x07", "↵␛]0;x␇"
-	prefillsName := map[AppMode]bool{ModeDuplicateFile: true, ModeRenameFile: true, ModeTemplateFile: true}
+	prefillSanitizedByTheInput := map[AppMode]bool{ModeDuplicateFile: true, ModeRenameFile: true, ModeTemplateFile: true}
 	for _, sc := range viewScenarios {
 		if sc.setup == nil {
 			continue
@@ -278,7 +278,7 @@ func TestFileNamesAreDrawnFlat(t *testing.T) {
 				at := fmt.Sprintf("%s at %dx%d", sc.name, width, height)
 				got := sc.renderOver(t, layoutFilesNamed(".env"+raw, ".env.local"+raw), width, height, false)
 				assert.NotContains(t, got, "\x1b]", "%s: a file name sent the terminal a sequence", at)
-				if !prefillsName[sc.mode] {
+				if !prefillSanitizedByTheInput[sc.mode] {
 					want := sc.renderOver(t, layoutFilesNamed(".env"+flat, ".env.local"+flat), width, height, false)
 					assert.Equal(t, want, got, "%s: a file name is drawn unflattened", at)
 				}
