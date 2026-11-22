@@ -366,8 +366,8 @@ func helpScreen(height int) string {
 
 func helpKeys(column string) []string {
 	var keys []string
-	for _, alternative := range strings.Split(column, " / ") {
-		for _, part := range strings.Fields(alternative) {
+	for alternative := range strings.SplitSeq(column, " / ") {
+		for part := range strings.FieldsSeq(alternative) {
 			if part == "/" {
 				keys = append(keys, part)
 				continue

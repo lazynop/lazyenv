@@ -255,7 +255,7 @@ func TestConfigErrorScreenNamesTheFile(t *testing.T) {
 
 func configErrorRows(view string) []string {
 	var rows []string
-	for _, row := range strings.Split(stripAnsi(view), "\n") {
+	for row := range strings.SplitSeq(stripAnsi(view), "\n") {
 		rows = append(rows, strings.Trim(row, " │╭╮╰╯─"))
 	}
 	return rows

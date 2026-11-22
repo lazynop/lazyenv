@@ -56,8 +56,7 @@ func Load(projectDir, configPath string) LoadResult {
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		var pathErr *fs.PathError
-		if errors.As(err, &pathErr) {
+		if pathErr, ok := errors.AsType[*fs.PathError](err); ok {
 			err = pathErr.Err
 		}
 		return LoadResult{Config: cfg, Path: path, Errors: []string{fmt.Sprintf("cannot read the file: %v", err)}}

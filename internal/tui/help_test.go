@@ -146,13 +146,13 @@ func continuationIndent(t *testing.T, screen, description string) (descCol, next
 	t.Helper()
 	rows := strings.Split(screen, "\n")
 	for i, row := range rows {
-		col := strings.Index(row, description)
-		if col < 0 {
+		before, _, ok := strings.Cut(row, description)
+		if !ok {
 			continue
 		}
 		require.Less(t, i+1, len(rows), "a row follows %q", description)
 		next := rows[i+1]
-		return lipgloss.Width(row[:col]), lipgloss.Width(next) - lipgloss.Width(strings.TrimLeft(next, " "))
+		return lipgloss.Width(before), lipgloss.Width(next) - lipgloss.Width(strings.TrimLeft(next, " "))
 	}
 	require.Failf(t, "row not on screen", "%q", description)
 	return 0, 0
@@ -173,7 +173,7 @@ func helpSections(screen string) map[string][]string {
 	keyRow := strings.Repeat(" ", helpPaddingWidth+4)
 	sections := map[string][]string{}
 	title := ""
-	for _, row := range strings.Split(screen, "\n") {
+	for row := range strings.SplitSeq(screen, "\n") {
 		text := strings.TrimSpace(row)
 		rows := sections[title]
 		switch {

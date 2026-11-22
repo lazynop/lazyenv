@@ -493,7 +493,7 @@ func TestMouseClickMatrixMode_SetsCell(t *testing.T) {
 
 func TestMouseClickMatrixMode_SelectsTheColumnDrawnAtX(t *testing.T) {
 	app := press(resize(newTestApp([]*model.EnvFile{makeTestFile(".env.a", "K"), makeTestFile(".env.b", "K")}), 120, 24), "m")
-	header := strings.Split(stripAnsi(app.View().Content), "\n")[0]
+	header, _, _ := strings.Cut(stripAnsi(app.View().Content), "\n")
 	x := strings.Index(header, ".env.b")
 	require.Positive(t, x, "the header should name .env.b")
 

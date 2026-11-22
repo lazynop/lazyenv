@@ -227,8 +227,8 @@ func (ef *EnvFile) DeleteVar(idx int) {
 // semantics) is listed first among the deleted ones, and taking the key again
 // revives it (see reviveDeleted).
 func (ef *EnvFile) DeleteKey(key string) {
-	for i := len(ef.Vars) - 1; i >= 0; i-- {
-		if ef.Vars[i].Key == key {
+	for i, v := range slices.Backward(ef.Vars) {
+		if v.Key == key {
 			ef.DeleteVar(i)
 		}
 	}
@@ -237,8 +237,8 @@ func (ef *EnvFile) DeleteKey(key string) {
 // LastIndexOfKey returns the index in Vars of the last variable with the
 // given key (shell semantics), or -1 when there is none.
 func (ef *EnvFile) LastIndexOfKey(key string) int {
-	for i := len(ef.Vars) - 1; i >= 0; i-- {
-		if ef.Vars[i].Key == key {
+	for i, v := range slices.Backward(ef.Vars) {
+		if v.Key == key {
 			return i
 		}
 	}

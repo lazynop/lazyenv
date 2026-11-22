@@ -271,8 +271,8 @@ func helpKeyNames(t *testing.T) map[string]string {
 
 func helpRowLabels(column string) []string {
 	var labels []string
-	for _, alternative := range strings.Split(column, " / ") {
-		for _, part := range strings.Fields(alternative) {
+	for alternative := range strings.SplitSeq(column, " / ") {
+		for part := range strings.FieldsSeq(alternative) {
 			if part == "/" {
 				labels = append(labels, part)
 				continue

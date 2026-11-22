@@ -51,10 +51,10 @@ type fileSnapshot struct {
 func snapshot(vars []model.EnvVar) *fileSnapshot {
 	values := make(map[string]string, len(vars))
 	var order []string
-	for i := len(vars) - 1; i >= 0; i-- {
-		if _, seen := values[vars[i].Key]; !seen {
-			values[vars[i].Key] = vars[i].Value
-			order = append(order, vars[i].Key)
+	for _, v := range slices.Backward(vars) {
+		if _, seen := values[v.Key]; !seen {
+			values[v.Key] = v.Value
+			order = append(order, v.Key)
 		}
 	}
 	slices.Reverse(order)

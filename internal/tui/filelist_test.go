@@ -205,7 +205,7 @@ func TestFileListViewAlignsVarCountsOfNonASCIINames(t *testing.T) {
 		fl.Focused = focused
 
 		var countCols []int
-		for _, line := range strings.Split(stripAnsi(fl.View(theme)), "\n") {
+		for line := range strings.SplitSeq(stripAnsi(fl.View(theme)), "\n") {
 			if i := strings.LastIndex(line, "3"); i >= 0 && strings.Contains(line, ".env") {
 				countCols = append(countCols, ansi.StringWidth(line[:i]))
 			}
