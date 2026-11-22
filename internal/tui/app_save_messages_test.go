@@ -154,19 +154,6 @@ func TestReorderStatusMessages(t *testing.T) {
 	})
 }
 
-func newCompareAppOnDisk(t *testing.T) (app App, pathA, pathB string) {
-	t.Helper()
-	pathA = filepath.Join(t.TempDir(), ".env")
-	pathB = filepath.Join(t.TempDir(), ".env.prod")
-	fA := writeAndParse(t, pathA, "FOO=a\n")
-	fB := writeAndParse(t, pathB, "FOO=b\n")
-
-	app = enterCompareMode(t, fA, fB)
-	require.Same(t, fA, app.diffView.FileA)
-	require.Same(t, fB, app.diffView.FileB)
-	return app, pathA, pathB
-}
-
 func modifyBothCompared(app App) {
 	app.diffView.FileA.UpdateVar(0, "a2")
 	app.diffView.FileB.UpdateVar(0, "b2")

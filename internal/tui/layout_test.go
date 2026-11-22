@@ -113,6 +113,19 @@ func blockBackup(t *testing.T, path string) {
 	require.NoError(t, os.MkdirAll(filepath.Join(path+".bak", "blocker"), 0o755))
 }
 
+func newCompareAppOnDisk(t *testing.T) (app App, pathA, pathB string) {
+	t.Helper()
+	pathA = filepath.Join(t.TempDir(), ".env")
+	pathB = filepath.Join(t.TempDir(), ".env.prod")
+	fA := writeAndParse(t, pathA, "FOO=a\n")
+	fB := writeAndParse(t, pathB, "FOO=b\n")
+
+	app = enterCompareMode(t, fA, fB)
+	require.Same(t, fA, app.diffView.FileA)
+	require.Same(t, fB, app.diffView.FileB)
+	return app, pathA, pathB
+}
+
 func replaceInput(openKey, text string) []string {
 	return slices.Concat([]string{openKey, "ctrl+u"}, typing(text), []string{"enter"})
 }
