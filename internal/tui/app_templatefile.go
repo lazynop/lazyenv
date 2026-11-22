@@ -40,7 +40,9 @@ func (a App) confirmTemplateFile() (tea.Model, tea.Cmd) {
 		b.WriteString(v.Key)
 		b.WriteByte('=')
 	}
-	b.WriteByte('\n')
+	if len(src.Lines) > 0 {
+		b.WriteByte('\n')
+	}
 
 	if err := a.templateFile(destPath, []byte(b.String()), src); err != nil {
 		return a, a.flashError("Error creating file: " + err.Error())

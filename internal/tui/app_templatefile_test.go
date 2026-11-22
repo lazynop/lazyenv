@@ -196,3 +196,28 @@ func TestTemplateFile_EmptyName(t *testing.T) {
 	assert.Equal(t, ModeNormal, app.mode)
 	assert.Empty(t, app.statusBar.Message)
 }
+
+func TestTemplateOfAnEmptyFileGainsNoBlankFirstLine(t *testing.T) {
+	dir := t.TempDir()
+	srcPath := filepath.Join(dir, ".env")
+	require.NoError(t, os.WriteFile(srcPath, nil, 0644))
+	src, err := parser.ParseFile(srcPath, config.SecretsConfig{})
+	require.NoError(t, err)
+
+	app := newTestApp([]*model.EnvFile{src})
+	app.config.Dir = dir
+	app.config.NoGitCheck = true
+	app.config.NoBackup = true
+	app.mode = ModeTemplateFile
+	app.fileOpSource = src
+	app.fileInput.SetValue(".env.example")
+	result, _ := app.confirmTemplateFile()
+	app = result.(App)
+
+	app.varList.File.AddVar("KEY", "")
+	app, _ = app.handleSave()
+
+	data, err := os.ReadFile(filepath.Join(dir, ".env.example"))
+	require.NoError(t, err)
+	assert.Equal(t, "KEY=\n", string(data))
+}
