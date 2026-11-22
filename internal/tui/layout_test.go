@@ -100,6 +100,14 @@ func typing(text string) []string {
 	return strings.Split(text, "")
 }
 
+func replaceInput(openKey, text string) []string {
+	return slices.Concat([]string{openKey, "ctrl+u"}, typing(text), []string{"enter"})
+}
+
+func down(n int) []string {
+	return slices.Repeat([]string{"j"}, n)
+}
+
 func writeAndParse(t *testing.T, path, content string) *model.EnvFile {
 	t.Helper()
 	require.NoError(t, os.WriteFile(path, []byte(content), 0o644))
@@ -126,18 +134,10 @@ func newCompareAppOnDisk(t *testing.T) (app App, pathA, pathB string) {
 	return app, pathA, pathB
 }
 
-func replaceInput(openKey, text string) []string {
-	return slices.Concat([]string{openKey, "ctrl+u"}, typing(text), []string{"enter"})
-}
-
 func assertQuits(t *testing.T, cmd tea.Cmd, msgAndArgs ...any) {
 	t.Helper()
 	require.NotNil(t, cmd, msgAndArgs...)
 	assert.IsType(t, tea.QuitMsg{}, cmd(), msgAndArgs...)
-}
-
-func down(n int) []string {
-	return slices.Repeat([]string{"j"}, n)
 }
 
 func resize(app App, width, height int) App {
