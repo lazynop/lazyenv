@@ -146,13 +146,15 @@ func WriteFile(ef *model.EnvFile) error {
 	return WriteFileAtomic(ef.Path, data, existingFileMode(ef.Path))
 }
 
-const defaultFileMode = os.FileMode(0644)
+// NewFileMode is the mode of a new .env file, or of a backup, when no
+// existing file supplies a mode to keep.
+const NewFileMode os.FileMode = 0o644
 
 func existingFileMode(path string) os.FileMode {
 	if info, err := os.Stat(path); err == nil {
 		return info.Mode()
 	}
-	return defaultFileMode
+	return NewFileMode
 }
 
 // WriteFileAtomic writes data to path atomically: it writes to a temp file in

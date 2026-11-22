@@ -9,8 +9,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/parser"
 )
 
-const envFilePerm os.FileMode = 0o644
-
 func (a App) saveFile(f *model.EnvFile) error {
 	if err := parser.WriteFile(f); err != nil {
 		return err
@@ -20,7 +18,7 @@ func (a App) saveFile(f *model.EnvFile) error {
 }
 
 func (a App) createFile(path string) error {
-	if err := parser.WriteFileAtomic(path, nil, envFilePerm); err != nil {
+	if err := parser.WriteFileAtomic(path, nil, parser.NewFileMode); err != nil {
 		return err
 	}
 	a.sessionStats.RecordCreateScratch(path, nil)
@@ -28,7 +26,7 @@ func (a App) createFile(path string) error {
 }
 
 func (a App) duplicateFile(path string, srcOnDisk []byte, srcPath string) error {
-	if err := parser.WriteFileAtomic(path, srcOnDisk, envFilePerm); err != nil {
+	if err := parser.WriteFileAtomic(path, srcOnDisk, parser.NewFileMode); err != nil {
 		return err
 	}
 	copied := parser.ParseBytes(filepath.Base(path), srcOnDisk, config.SecretsConfig{})
@@ -37,7 +35,7 @@ func (a App) duplicateFile(path string, srcOnDisk []byte, srcPath string) error 
 }
 
 func (a App) templateFile(path string, strippedSrc []byte, src *model.EnvFile) error {
-	if err := parser.WriteFileAtomic(path, strippedSrc, envFilePerm); err != nil {
+	if err := parser.WriteFileAtomic(path, strippedSrc, parser.NewFileMode); err != nil {
 		return err
 	}
 	keysOnly := make([]model.EnvVar, 0, len(src.Vars))
