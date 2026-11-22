@@ -89,10 +89,7 @@ func TestThemePreviewSelectWithEnter(t *testing.T) {
 	m = updated.(ThemePreviewModel)
 
 	assert.Equal(t, expectedTheme, m.selected, "selected should be set to current theme")
-	require.NotNil(t, cmd, "cmd should not be nil after Enter")
-
-	msg := cmd()
-	assert.IsType(t, tea.QuitMsg{}, msg, "Enter should return tea.Quit")
+	assertQuits(t, cmd, "Enter should return tea.Quit")
 }
 
 func TestThemePreviewSelectWithEnterAfterNavigation(t *testing.T) {
@@ -107,9 +104,7 @@ func TestThemePreviewSelectWithEnterAfterNavigation(t *testing.T) {
 	m = updated.(ThemePreviewModel)
 
 	assert.Equal(t, expectedTheme, m.selected)
-	require.NotNil(t, cmd)
-	msg := cmd()
-	assert.IsType(t, tea.QuitMsg{}, msg)
+	assertQuits(t, cmd, "Enter should return tea.Quit")
 }
 
 func TestThemePreviewQuitWithQ(t *testing.T) {
@@ -119,9 +114,7 @@ func TestThemePreviewQuitWithQ(t *testing.T) {
 	m = updated.(ThemePreviewModel)
 
 	assert.Equal(t, "", m.selected, "selected should remain empty on quit")
-	require.NotNil(t, cmd)
-	msg := cmd()
-	assert.IsType(t, tea.QuitMsg{}, msg, "q should return tea.Quit")
+	assertQuits(t, cmd, "q should return tea.Quit")
 }
 
 func TestThemePreviewQuitWithCtrlC(t *testing.T) {
@@ -131,8 +124,7 @@ func TestThemePreviewQuitWithCtrlC(t *testing.T) {
 	m = updated.(ThemePreviewModel)
 
 	assert.Equal(t, "", m.selected, "selected should remain empty on quit")
-	require.NotNil(t, cmd)
-	assert.IsType(t, tea.QuitMsg{}, cmd(), "Ctrl+C should return tea.Quit")
+	assertQuits(t, cmd, "Ctrl+C should return tea.Quit")
 }
 
 func TestThemePreviewQuitWithEsc(t *testing.T) {
@@ -142,9 +134,7 @@ func TestThemePreviewQuitWithEsc(t *testing.T) {
 	m = updated.(ThemePreviewModel)
 
 	assert.Equal(t, "", m.selected, "selected should remain empty on Esc")
-	require.NotNil(t, cmd)
-	msg := cmd()
-	assert.IsType(t, tea.QuitMsg{}, msg, "Esc should return tea.Quit")
+	assertQuits(t, cmd, "Esc should return tea.Quit")
 }
 
 func TestThemePreviewWindowSizeMsg(t *testing.T) {
@@ -361,6 +351,5 @@ func TestThemePreviewTooSmallTerminal(t *testing.T) {
 	assert.Equal(t, 0, updated.(ThemePreviewModel).cursor, "j should not move the cursor")
 
 	_, cmd = updated.Update(tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl})
-	require.NotNil(t, cmd)
-	assert.IsType(t, tea.QuitMsg{}, cmd())
+	assertQuits(t, cmd, "Ctrl+C must quit the too-small notice")
 }

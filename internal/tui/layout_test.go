@@ -103,6 +103,12 @@ func replaceInput(openKey, text string) []string {
 	return slices.Concat([]string{openKey, "ctrl+u"}, typing(text), []string{"enter"})
 }
 
+func assertQuits(t *testing.T, cmd tea.Cmd, msgAndArgs ...any) {
+	t.Helper()
+	require.NotNil(t, cmd, msgAndArgs...)
+	assert.IsType(t, tea.QuitMsg{}, cmd(), msgAndArgs...)
+}
+
 func down(n int) []string {
 	return slices.Repeat([]string{"j"}, n)
 }

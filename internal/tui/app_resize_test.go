@@ -8,7 +8,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/lazynop/lazyenv/internal/model"
 )
@@ -130,6 +129,5 @@ func TestTooSmallTerminalDropsInputItCannotShowAndQuitsOnCtrlC(t *testing.T) {
 
 	_, cmd = app.Update(tea.KeyPressMsg{Code: 'c', Mod: tea.ModCtrl})
 
-	require.NotNil(t, cmd)
-	assert.IsType(t, tea.QuitMsg{}, cmd())
+	assertQuits(t, cmd, "Ctrl+C must quit a too-small terminal")
 }

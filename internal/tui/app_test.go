@@ -195,8 +195,7 @@ func TestQuitReturnsQuitCmd(t *testing.T) {
 	app := newTestApp(nil)
 
 	_, cmd := app.Update(keyMsg("q"))
-	require.NotNil(t, cmd)
-	assert.IsType(t, tea.QuitMsg{}, cmd(), "q must quit the app")
+	assertQuits(t, cmd, "q must quit the app")
 }
 
 func TestViewNotReady(t *testing.T) {
@@ -277,8 +276,7 @@ func TestConfigErrorBlocksAndQuitsOnNextKey(t *testing.T) {
 	assert.Equal(t, ModeConfigError, app.mode)
 	assert.Contains(t, app.View().Content, `invalid sort value: "random"`)
 	_, cmd := app.Update(keyMsg("j"))
-	require.NotNil(t, cmd)
-	assert.IsType(t, tea.QuitMsg{}, cmd(), "a rejected config file must quit on the next key")
+	assertQuits(t, cmd, "a rejected config file must quit on the next key")
 }
 
 func TestConfigErrorScreenNamesTheFile(t *testing.T) {
