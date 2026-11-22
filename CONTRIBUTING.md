@@ -20,6 +20,7 @@ just build        # build to bin/lazyenv
 just test         # run tests only
 just check        # fmt + vet + lint + tests (same as CI)
 just install-hooks  # once per clone: fmt + vet before each commit
+just comment-baseline  # after deleting comments: lower the comment ratchet
 ```
 
 ### Before submitting

@@ -93,7 +93,8 @@ just
 | `just fmt`        | Format all Go source files and group their imports (gofmt + gci).                          |
 | `just fix`        | Apply Go modernization fixes (`go fix`). Run this before `just check`.                     |
 | `just vet`        | Run static analysis.                                                                       |
-| `just lint`       | Run the linters: `gocyclo`, `ineffassign`, `deadcode`, `exhaustive`.                       |
+| `just lint`       | Run the linters: `gocyclo`, `ineffassign`, `deadcode`, `exhaustive`, and the comment ratchet `commentlint`. |
+| `just comment-baseline` | Lower the comment ratchet's per-file counts after deleting comments. |
 | `just clean`      | Remove build artifacts (`bin/`, `coverage.out`, `dist/`).                  |
 | `just install-hooks` | Use the repo's git hooks: formatting and vet before each commit, and a `Screens:` line in the message of a commit that changes the screen snapshots. |
 | `just demo`       | Regenerate the README demo GIF from `docs/assets/demo.tape`. Needs `vhs`, `ttyd`, `ffmpeg`, `gifsicle`. |
