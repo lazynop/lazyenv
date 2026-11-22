@@ -14,17 +14,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// The property: each key a help section names acts in the screen the section
-// describes. Pressed there, it changes what the screen shows or returns a
-// command (a quit, a clipboard write), and flashes no warning: a refusal is
-// not the action the help describes. A no-op reported as plain info ("No
-// changes to save") would still count, so each section has a state where its
-// keys have something to act on: the edited panel states hold a change for
-// save, reset and peek. A key filed under a section whose screens all refuse
-// or ignore it fails; one filed under a narrower section than it works in (w
-// under Files panel) still acts there, and TestHelpScreenMatchesKeybindingsDoc
-// catches it instead.
-
 type helpState struct {
 	name  string
 	keys  []string
@@ -32,11 +21,6 @@ type helpState struct {
 	mode  AppMode
 }
 
-// Each panel has an edited state, which changes a value first so save, reset
-// and peek have a change to act on, and a clean one, with the file
-// unchanged: deleting and renaming a file need it so, and Both panels checks
-// each of its rows there too. A state listed under two sections is one of
-// these vars, the same pointer in both.
 var (
 	cleanFilesPanelState = &helpState{name: "files panel, file unchanged", keys: []string{"j"},
 		mode: ModeNormal, ready: panelReady(FocusFiles, false)}

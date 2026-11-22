@@ -2,12 +2,6 @@ package tui
 
 import "testing"
 
-// TestDiskWritesGoThroughChokepoint fails on any reference, outside
-// app_disk.go, to an os or internal/parser function that creates, writes,
-// truncates, renames, links or deletes files: such a call would skip the
-// SessionStats hook that the App methods in app_disk.go run right after each
-// disk operation succeeds. Functions that leave file content and existence
-// alone (Mkdir, Chmod, ...) are out of scope: the summary compares variables.
 func TestDiskWritesGoThroughChokepoint(t *testing.T) {
 	// OpenFile and OpenRoot count whatever they are used for, since either can
 	// write: read a file with os.Open or os.ReadFile.

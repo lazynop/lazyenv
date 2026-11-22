@@ -101,9 +101,6 @@ func newReadOnlyDiskApp(t *testing.T) (App, string) {
 	return app, app.config.Dir
 }
 
-// requireReadOnlyHeld fails the test if the last key press (pressed) broke the
-// property. Commands returned by Update are not run: every disk write in this
-// package happens synchronously inside Update.
 func requireReadOnlyHeld(t *testing.T, app App, dir, pressed string) {
 	t.Helper()
 	require.Equal(t, readOnlyFixture, readDirContents(t, dir), "key %q changed files on disk", pressed)
