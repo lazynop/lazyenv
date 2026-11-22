@@ -26,20 +26,18 @@ import (
 )
 
 var (
-	codeSpanRe   = regexp.MustCompile("`([^`]+)`")
-	wordRe       = regexp.MustCompile(`[A-Za-z_]\w*`)
-	identRefRe   = regexp.MustCompile(`^\*?([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)(\*?)(?:\(.*\))?$`)
-	justRefRe    = regexp.MustCompile(`^just ([a-z][\w-]*)$`)
-	justRecipeRe = regexp.MustCompile(`(?m)^([A-Za-z][\w-]*)(?:\s[^:\n]*)?:(?:\s|$)`)
-	minimumRe    = regexp.MustCompile("Minimum `(\\d+)`")
-	themeCountRe = regexp.MustCompile(`(\d+) built-in (?:color )?themes`)
-	goVersionRe  = regexp.MustCompile(`Go (\d+\.\d+)\+`)
-	goModRe      = regexp.MustCompile(`(?m)^go (\d+\.\d+)`)
-	terminalRe   = regexp.MustCompile(`at least (\d+)x(\d+)`)
-	varListMinRe = regexp.MustCompile("terminal width (?:minus|-) `?(\\d+)")
-	// A help row's key column ends at its last run of two or more spaces,
-	// where wrapHelpRow starts the description: "↑/↓  k/j" is one column.
-	helpRowRe = regexp.MustCompile(`^ {2}(\S.*\S|\S) {2,}\S`)
+	codeSpanRe                   = regexp.MustCompile("`([^`]+)`")
+	wordRe                       = regexp.MustCompile(`[A-Za-z_]\w*`)
+	identRefRe                   = regexp.MustCompile(`^\*?([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)(\*?)(?:\(.*\))?$`)
+	justRefRe                    = regexp.MustCompile(`^just ([a-z][\w-]*)$`)
+	justRecipeRe                 = regexp.MustCompile(`(?m)^([A-Za-z][\w-]*)(?:\s[^:\n]*)?:(?:\s|$)`)
+	minimumRe                    = regexp.MustCompile("Minimum `(\\d+)`")
+	themeCountRe                 = regexp.MustCompile(`(\d+) built-in (?:color )?themes`)
+	goVersionRe                  = regexp.MustCompile(`Go (\d+\.\d+)\+`)
+	goModRe                      = regexp.MustCompile(`(?m)^go (\d+\.\d+)`)
+	terminalRe                   = regexp.MustCompile(`at least (\d+)x(\d+)`)
+	varListMinRe                 = regexp.MustCompile("terminal width (?:minus|-) `?(\\d+)")
+	helpKeyColumnToLastWideGapRe = regexp.MustCompile(`^ {2}(\S.*\S|\S) {2,}\S`)
 )
 
 func TestUsageDocumentsEveryFlag(t *testing.T) {
@@ -352,7 +350,7 @@ func helpScreenSections(t *testing.T) []helpSection {
 		if listsGlyphsNotKeys {
 			continue
 		}
-		m := helpRowRe.FindStringSubmatch(line)
+		m := helpKeyColumnToLastWideGapRe.FindStringSubmatch(line)
 		require.NotNil(t, m, "row %q of help section %s has no key column; if it is a wrapped line, raise helpScreenWidth (%d)", line, section.title, helpScreenWidth)
 		section.rows = append(section.rows, helpKeys(m[1]))
 	}
