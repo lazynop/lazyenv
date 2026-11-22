@@ -12,7 +12,7 @@ var kanagawa = Colors{
 	Bg:       "#1F1F28",
 	Border:   "#363646",
 	CursorBg: "#363646",
-	Modified: "#DCA561", // carp yellow (warmer, more visible than surimi orange)
+	Modified: "#DCA561",
 	Added:    "#76946A",
 	Deleted:  "#C34043",
 }

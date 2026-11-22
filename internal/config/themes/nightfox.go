@@ -4,7 +4,7 @@ package themes
 // https://github.com/EdenEast/nightfox.nvim
 var nightfox = Colors{
 	Primary:  "#719CD6",
-	Warning:  "#DFDFE0", // white (nightfox uses it for warnings)
+	Warning:  "#DFDFE0",
 	Error:    "#C94F6D",
 	Success:  "#81B29A",
 	Muted:    "#738091",
