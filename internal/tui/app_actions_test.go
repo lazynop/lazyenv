@@ -36,7 +36,7 @@ func TestBackupAndSaveBacksUpOnceThenWrites(t *testing.T) {
 func TestBackupAndSaveReturnsTheBackupWarningAndStillWrites(t *testing.T) {
 	app, envPath := newTestAppWithDiskFile(t, "A=1\n")
 	f := app.varList.File
-	require.NoError(t, os.MkdirAll(filepath.Join(envPath+".bak", "blocker"), 0o755))
+	blockBackup(t, envPath)
 
 	f.UpdateVar(0, "2")
 	warn, err := app.backupAndSave(f)
