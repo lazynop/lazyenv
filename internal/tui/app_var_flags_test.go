@@ -47,7 +47,7 @@ func assertShows(t *testing.T, app App, values ...shownValue) {
 }
 
 func editValueKeys(row int, value string) []string {
-	return slices.Concat([]string{"right"}, down(row), []string{"e", "ctrl+u"}, typing(value), []string{"enter"})
+	return slices.Concat([]string{"right"}, down(row), replaceInput("e", value))
 }
 
 func renameVarKeys(row int, name string) []string {

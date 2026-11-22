@@ -2,7 +2,6 @@ package tui
 
 import (
 	"os"
-	"slices"
 	"strings"
 	"testing"
 
@@ -180,7 +179,7 @@ func renameKey(app App, name string) App {
 }
 
 func renameKeys(name string) []string {
-	return slices.Concat([]string{"E", "ctrl+u"}, typing(name), []string{"enter"})
+	return replaceInput("E", name)
 }
 
 func renameOntoDeleted(app App, deleted string) App {

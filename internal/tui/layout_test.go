@@ -99,6 +99,10 @@ func typing(text string) []string {
 	return strings.Split(text, "")
 }
 
+func replaceInput(openKey, text string) []string {
+	return slices.Concat([]string{openKey, "ctrl+u"}, typing(text), []string{"enter"})
+}
+
 func down(n int) []string {
 	return slices.Repeat([]string{"j"}, n)
 }
