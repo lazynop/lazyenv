@@ -41,7 +41,7 @@
 23 internal/tui/app_inputbar_test.go
 2 internal/tui/app_matrix.go
 56 internal/tui/app_matrix_test.go
-19 internal/tui/app_mouse.go
+17 internal/tui/app_mouse.go
 106 internal/tui/app_mouse_test.go
 45 internal/tui/app_navigation_test.go
 50 internal/tui/app_peek_test.go

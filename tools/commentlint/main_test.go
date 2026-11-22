@@ -213,3 +213,12 @@ func TestListTreePrintsEachBannedGroup(t *testing.T) {
 		t.Errorf("listTree:\n%s\nwant:\n%s", out.String(), want)
 	}
 }
+
+func TestBannedCommentsKeepToolDirectives(t *testing.T) {
+	src := "package p\n\nfunc f() {\n\t// banned\n\t//exhaustive:enforce\n\t//nolint:errcheck\n\t// see: not a directive\n}\n"
+	got := bannedAt(t, "p.go", src)
+	want := []string{"4+2"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("banned at %v, want %v", got, want)
+	}
+}

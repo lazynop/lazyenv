@@ -1,9 +1,10 @@
 // Command commentlint ratchets the number of banned comment lines in each Go
 // file of the lazyenv module down to zero.
 //
-// Allowed: compiler directives, the package doc comment, and doc comments on
-// identifiers godoc shows (exported names, and the fields and methods of
-// exported types) outside _test.go files. Every other comment line is banned.
+// Allowed: directives (//go:build, //exhaustive:enforce, …), the package doc
+// comment, and doc comments on identifiers godoc shows (exported names, and the
+// fields and methods of exported types) outside _test.go files. Every other
+// comment line is banned.
 // Each file may hold at most the banned lines its baseline entry records; the
 // check also fails when a file holds fewer, until -update locks in the drop.
 //
@@ -146,11 +147,13 @@ func skipDir(root, path, name string) error {
 	return nil
 }
 
-var generated = regexp.MustCompile(`^// Code generated .* DO NOT EDIT\.$`)
+var (
+	generated = regexp.MustCompile(`^// Code generated .* DO NOT EDIT\.$`)
+	directive = regexp.MustCompile(`^//([a-z0-9]+:[a-z0-9]|line |extern |export )`)
+)
 
 func isDirective(text string) bool {
-	return strings.HasPrefix(text, "//go:") || strings.HasPrefix(text, "//line ") ||
-		strings.HasPrefix(text, "//export ") || generated.MatchString(text)
+	return directive.MatchString(text) || generated.MatchString(text)
 }
 
 func bannedComments(path string, src []byte) ([]banned, error) {
