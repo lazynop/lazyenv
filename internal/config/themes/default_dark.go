@@ -7,7 +7,7 @@ var defaultDark = Colors{
 	Success:  "#50FA7B",
 	Muted:    "#6272A4",
 	Fg:       "#F8F8F2",
-	Bg:       "", // terminal native
+	Bg:       "",
 	Border:   "#44475A",
 	CursorBg: "#44475A",
 	Modified: "#FFB86C",

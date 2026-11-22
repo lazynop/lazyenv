@@ -7,7 +7,7 @@ var defaultLight = Colors{
 	Success:  "#059669",
 	Muted:    "#6B7280",
 	Fg:       "#1F2937",
-	Bg:       "", // terminal native
+	Bg:       "",
 	Border:   "#D1D5DB",
 	CursorBg: "#E5E7EB",
 	Modified: "#D97706",

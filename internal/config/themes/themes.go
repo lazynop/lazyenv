@@ -10,7 +10,7 @@ type Colors struct {
 	Success  string
 	Muted    string
 	Fg       string
-	Bg       string
+	Bg       string // empty keeps the terminal's own background
 	Border   string
 	CursorBg string
 	Modified string
