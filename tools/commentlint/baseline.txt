@@ -18,8 +18,8 @@
 3 internal/config/themes/catppuccin_mocha.go
 2 internal/config/themes/cobalt2.go
 3 internal/config/themes/dawnfox.go
-3 internal/config/themes/default_dark.go
-3 internal/config/themes/default_light.go
+1 internal/config/themes/default_dark.go
+1 internal/config/themes/default_light.go
 2 internal/config/themes/dracula.go
 3 internal/config/themes/everforest.go
 2 internal/config/themes/github_dark.go

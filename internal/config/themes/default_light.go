@@ -1,7 +1,5 @@
 package themes
 
-// Default light color theme.
-// Used when no theme is specified and the terminal has a light background.
 var defaultLight = Colors{
 	Primary:  "#7B2FBE",
 	Warning:  "#D97706",

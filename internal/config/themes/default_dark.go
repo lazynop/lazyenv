@@ -1,7 +1,5 @@
 package themes
 
-// Default dark color theme.
-// Used when no theme is specified and the terminal has a dark background.
 var defaultDark = Colors{
 	Primary:  "#BD93F9",
 	Warning:  "#FFB86C",
