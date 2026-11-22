@@ -155,7 +155,7 @@ func assertDiskFileShows(t *testing.T, app App, name string, values []shownValue
 }
 
 func TestCustomSecretsConfigMasksADuplicateLikeEveryNewFile(t *testing.T) {
-	app := press(customSecretsApp(t), slices.Concat([]string{"C", "ctrl+u"}, typing(".env.copy"), []string{"enter"})...)
+	app := submitFileName(customSecretsApp(t), "C", ".env.copy")
 	require.Equal(t, ".env.copy", app.varList.File.Name)
 	assertShows(t, app, customSecretsLoaded[".env"]...)
 
