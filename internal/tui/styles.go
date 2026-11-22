@@ -7,7 +7,6 @@ import (
 	"charm.land/lipgloss/v2"
 
 	"github.com/lazynop/lazyenv/internal/config"
-	"github.com/lazynop/lazyenv/internal/config/themes"
 )
 
 // Theme holds all Lip Gloss styles.
@@ -61,31 +60,24 @@ type Theme struct {
 // Each empty color falls back to the default-dark palette on a dark terminal
 // and to the default-light palette on a light one.
 func BuildTheme(isDark bool, colors config.ColorConfig) Theme {
-	fallback := defaultPalette(isDark)
+	palette := config.OverlayColors(defaultPalette(isDark), colors)
 
-	resolve := func(override, defaultColor string) color.Color {
-		if override != "" {
-			return lipgloss.Color(override)
-		}
-		return lipgloss.Color(defaultColor)
-	}
+	colorPrimary := lipgloss.Color(palette.Primary)
+	colorWarning := lipgloss.Color(palette.Warning)
+	colorError := lipgloss.Color(palette.Error)
+	colorSuccess := lipgloss.Color(palette.Success)
+	colorMuted := lipgloss.Color(palette.Muted)
+	colorFg := lipgloss.Color(palette.Fg)
+	colorBorder := lipgloss.Color(palette.Border)
+	colorCursorBg := lipgloss.Color(palette.CursorBg)
 
-	colorPrimary := resolve(colors.Primary, fallback.Primary)
-	colorWarning := resolve(colors.Warning, fallback.Warning)
-	colorError := resolve(colors.Error, fallback.Error)
-	colorSuccess := resolve(colors.Success, fallback.Success)
-	colorMuted := resolve(colors.Muted, fallback.Muted)
-	colorFg := resolve(colors.Fg, fallback.Fg)
-	colorBorder := resolve(colors.Border, fallback.Border)
-	colorCursorBg := resolve(colors.CursorBg, fallback.CursorBg)
-
-	colorModified := resolve(colors.Modified, fallback.Modified)
-	colorAdded := resolve(colors.Added, fallback.Added)
-	colorDeleted := resolve(colors.Deleted, fallback.Deleted)
+	colorModified := lipgloss.Color(palette.Modified)
+	colorAdded := lipgloss.Color(palette.Added)
+	colorDeleted := lipgloss.Color(palette.Deleted)
 
 	var colorBg color.Color
-	if colors.Bg != "" {
-		colorBg = lipgloss.Color(colors.Bg)
+	if palette.Bg != "" {
+		colorBg = lipgloss.Color(palette.Bg)
 	}
 
 	return Theme{
@@ -170,12 +162,12 @@ func BuildTheme(isDark bool, colors config.ColorConfig) Theme {
 	}
 }
 
-func defaultPalette(isDark bool) themes.Colors {
+func defaultPalette(isDark bool) config.ColorConfig {
 	name := "default-light"
 	if isDark {
 		name = "default-dark"
 	}
-	palette, ok := themes.Lookup(name)
+	palette, ok := config.LookupTheme(name)
 	if !ok {
 		panic("built-in theme " + name + " is missing")
 	}

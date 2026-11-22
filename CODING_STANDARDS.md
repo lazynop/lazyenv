@@ -58,10 +58,10 @@ Caught by `TestExampleDocumentsEveryKey`: the key documented in `examples/config
 Runtime precedence: explicit `[colors]` > `theme` preset > the `default-dark` or `default-light` palette, picked from the terminal background (`tea.BackgroundColorMsg`).
 
 1. `internal/config/config.go` → `ColorConfig`: field with `toml:"kebab-name,omitempty"`.
-2. `internal/tui/styles.go` → `BuildTheme()`: `resolve(colors.X, fallback.X)`, which falls back to the `default-dark` or `default-light` palette, and the styles that use it.
+2. `internal/tui/styles.go` → `BuildTheme()`: `lipgloss.Color(palette.X)`, where `palette` is the user's colors laid over the `default-dark` or `default-light` palette, and the styles that use it.
 3. `internal/tui/theme_preview.go`: the showcase list in `renderShowcase()`, plus `resolvedColors` / `resolveThemeColors()` if the preview renders with the color.
 
-Caught by the build (`LookupTheme` converts one struct into the other): the same field at the same position in `internal/config/themes/themes.go` → `Colors`. Caught by `TestColorFieldsWiredEverywhere`: a valid value in every theme file (`internal/config/themes/*.go`), the override in `resolveColors()` and the entry in the `validate()` color list (`internal/config/load.go`). Caught by `TestExampleDocumentsEveryKey`: the key in `examples/config/full.toml`. Caught by `TestConfigurationDocumentsThemeColors`: the row in the `docs/configuration.md` colors table, with the default-dark and default-light values.
+Caught by the build (`LookupTheme` converts one struct into the other): the same field at the same position in `internal/config/themes/themes.go` → `Colors`. Caught by `TestColorFieldsWiredEverywhere`: a valid value in every theme file (`internal/config/themes/*.go`), the override in `OverlayColors()` (`internal/config/theme.go`), which both `resolveColors()` and `BuildTheme()` use, and the entry in the `validate()` color list (`internal/config/load.go`). Caught by `TestExampleDocumentsEveryKey`: the key in `examples/config/full.toml`. Caught by `TestConfigurationDocumentsThemeColors`: the row in the `docs/configuration.md` colors table, with the default-dark and default-light values.
 
 ### Checklist: scrollable view
 

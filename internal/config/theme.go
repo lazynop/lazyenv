@@ -33,41 +33,47 @@ func resolveColors(theme string, colors ColorConfig) ColorConfig {
 	if !ok {
 		return colors
 	}
-	if colors.Primary != "" {
-		base.Primary = colors.Primary
+	return OverlayColors(base, colors)
+}
+
+// OverlayColors returns base with every non-empty field of overrides
+// copied over it.
+func OverlayColors(base, overrides ColorConfig) ColorConfig {
+	if overrides.Primary != "" {
+		base.Primary = overrides.Primary
 	}
-	if colors.Warning != "" {
-		base.Warning = colors.Warning
+	if overrides.Warning != "" {
+		base.Warning = overrides.Warning
 	}
-	if colors.Error != "" {
-		base.Error = colors.Error
+	if overrides.Error != "" {
+		base.Error = overrides.Error
 	}
-	if colors.Success != "" {
-		base.Success = colors.Success
+	if overrides.Success != "" {
+		base.Success = overrides.Success
 	}
-	if colors.Muted != "" {
-		base.Muted = colors.Muted
+	if overrides.Muted != "" {
+		base.Muted = overrides.Muted
 	}
-	if colors.Fg != "" {
-		base.Fg = colors.Fg
+	if overrides.Fg != "" {
+		base.Fg = overrides.Fg
 	}
-	if colors.Bg != "" {
-		base.Bg = colors.Bg
+	if overrides.Bg != "" {
+		base.Bg = overrides.Bg
 	}
-	if colors.Border != "" {
-		base.Border = colors.Border
+	if overrides.Border != "" {
+		base.Border = overrides.Border
 	}
-	if colors.CursorBg != "" {
-		base.CursorBg = colors.CursorBg
+	if overrides.CursorBg != "" {
+		base.CursorBg = overrides.CursorBg
 	}
-	if colors.Modified != "" {
-		base.Modified = colors.Modified
+	if overrides.Modified != "" {
+		base.Modified = overrides.Modified
 	}
-	if colors.Added != "" {
-		base.Added = colors.Added
+	if overrides.Added != "" {
+		base.Added = overrides.Added
 	}
-	if colors.Deleted != "" {
-		base.Deleted = colors.Deleted
+	if overrides.Deleted != "" {
+		base.Deleted = overrides.Deleted
 	}
 	return base
 }

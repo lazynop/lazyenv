@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lazynop/lazyenv/internal/config"
-	"github.com/lazynop/lazyenv/internal/config/themes"
 )
 
 var terminalPalettes = []struct {
@@ -23,9 +22,9 @@ var terminalPalettes = []struct {
 
 func lookupPalette(t *testing.T, name string) config.ColorConfig {
 	t.Helper()
-	palette, ok := themes.Lookup(name)
+	palette, ok := config.LookupTheme(name)
 	require.True(t, ok, "theme %s should exist", name)
-	return config.ColorConfig(palette)
+	return palette
 }
 
 func TestBuildThemeWithoutThemeMatchesTheDefaultPalette(t *testing.T) {
