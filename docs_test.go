@@ -22,11 +22,11 @@ import (
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/config/themes"
+	"github.com/lazynop/lazyenv/internal/docstest"
 	"github.com/lazynop/lazyenv/internal/tui"
 )
 
 var (
-	codeSpanRe                   = regexp.MustCompile("`([^`]+)`")
 	wordRe                       = regexp.MustCompile(`[A-Za-z_]\w*`)
 	identRefRe                   = regexp.MustCompile(`^\*?([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)(\*?)(?:\(.*\))?$`)
 	justRefRe                    = regexp.MustCompile(`^just ([a-z][\w-]*)$`)
@@ -43,7 +43,7 @@ var (
 func TestUsageDocumentsEveryFlag(t *testing.T) {
 	parser, err := kong.New(&cli)
 	require.NoError(t, err)
-	doc := readFile(t, "docs/usage.md")
+	doc := docstest.ReadFile(t, "docs/usage.md")
 
 	flagNameBySpelling := map[string]string{}
 	for _, f := range parser.Model.Flags {
@@ -57,8 +57,8 @@ func TestUsageDocumentsEveryFlag(t *testing.T) {
 	}
 
 	listed := map[string]bool{}
-	for _, row := range markdownTable(t, doc, "Long form") {
-		for _, s := range slices.Concat(codeSpans(row[0]), codeSpans(row[1])) {
+	for _, row := range docstest.TableRows(t, doc, "Long form") {
+		for _, s := range slices.Concat(docstest.CodeSpans(row[0]), docstest.CodeSpans(row[1])) {
 			listed[s] = true
 			assert.Contains(t, flagNameBySpelling, s, "docs/usage.md lists %s in the flags table, but it is not a flag", s)
 		}
@@ -69,16 +69,16 @@ func TestUsageDocumentsEveryFlag(t *testing.T) {
 
 	keys := configKeys("", reflect.TypeFor[config.Config]())
 	accounted := map[string]bool{}
-	for _, row := range markdownTable(t, doc, "Config key") {
-		for _, s := range codeSpans(row[0]) {
+	for _, row := range docstest.TableRows(t, doc, "Config key") {
+		for _, s := range docstest.CodeSpans(row[0]) {
 			assert.Contains(t, flagNameBySpelling, s, "docs/usage.md maps %s to a config key, but it is not a flag", s)
 			accounted[flagNameBySpelling[s]] = true
 		}
-		for _, k := range codeSpans(row[1]) {
+		for _, k := range docstest.CodeSpans(row[1]) {
 			assert.True(t, keys[k], "docs/usage.md maps a flag to %q, which is not a config key (nested keys are dotted: layout.file-list-width)", k)
 		}
 	}
-	for _, s := range codeSpans(lineStartingWith(t, doc, "Flags without a config equivalent")) {
+	for _, s := range docstest.CodeSpans(docstest.LineStartingWith(t, doc, "Flags without a config equivalent")) {
 		assert.Contains(t, flagNameBySpelling, s, "docs/usage.md lists %s among the flags without a config equivalent, but it is not a flag", s)
 		accounted[flagNameBySpelling[s]] = true
 	}
@@ -101,18 +101,18 @@ func TestConfigurationDocumentsDefaults(t *testing.T) {
 	defaultByOption["value_heuristic"] = reflect.ValueOf(cfg.Secrets.ValueHeuristicEnabled())
 
 	documented := map[string]bool{}
-	for _, table := range markdownTables(readFile(t, "docs/configuration.md")) {
-		if !slices.Equal(table.header, []string{"Key", "Default", "Description"}) {
+	for _, table := range docstest.Tables(docstest.ReadFile(t, "docs/configuration.md")) {
+		if !slices.Equal(table.Header, []string{"Key", "Default", "Description"}) {
 			continue
 		}
-		for _, row := range table.rows {
-			name := codeSpans(row[0])[0]
+		for _, row := range table.Rows {
+			name := docstest.CodeSpans(row[0])[0]
 			documented[name] = true
 			want, ok := defaultByOption[name]
 			if !assert.True(t, ok, "docs/configuration.md documents option %s, which Config does not have", name) {
 				continue
 			}
-			for _, span := range codeSpans(row[1]) {
+			for _, span := range docstest.CodeSpans(row[1]) {
 				assertDocDefault(t, name, span, want)
 			}
 			if m := minimumRe.FindStringSubmatch(row[2]); m != nil {
@@ -166,17 +166,17 @@ func TestConfigurationDocumentsThemeColors(t *testing.T) {
 		require.True(t, ok, "no %s theme", name)
 		themes[name] = colorsByKey(colors)
 	}
-	rows := markdownTable(t, readFile(t, "docs/configuration.md"), "Dark default")
+	rows := docstest.TableRows(t, docstest.ReadFile(t, "docs/configuration.md"), "Dark default")
 	documented := map[string]bool{}
 	for _, row := range rows {
-		name := codeSpans(row[0])[0]
+		name := docstest.CodeSpans(row[0])[0]
 		documented[name] = true
 		for i, theme := range []string{"default-dark", "default-light"} {
 			want, ok := themes[theme][name]
 			if !assert.True(t, ok, "docs/configuration.md lists color %s, which ColorConfig does not have", name) {
 				break
 			}
-			got := strings.Join(codeSpans(row[1+i]), "")
+			got := strings.Join(docstest.CodeSpans(row[1+i]), "")
 			assert.Equal(t, want, got, "docs/configuration.md states the wrong %s color for %s (an empty color is written (none), outside a code span)", theme, name)
 		}
 	}
@@ -196,12 +196,12 @@ func colorsByKey(c config.ColorConfig) map[string]string {
 }
 
 func TestDocsStateCurrentCounts(t *testing.T) {
-	m := goModRe.FindStringSubmatch(readFile(t, "go.mod"))
+	m := goModRe.FindStringSubmatch(docstest.ReadFile(t, "go.mod"))
 	require.NotNil(t, m, "go.mod has no go directive")
 	goVersion := m[1]
 	themeCount := strconv.Itoa(len(config.ThemeNames()))
 	terminal := []string{strconv.Itoa(tui.MinTerminalWidth), strconv.Itoa(tui.MinTerminalHeight)}
-	assert.Regexp(t, terminalRe, readFile(t, "docs/installation.md"), "docs/installation.md should state the minimum terminal size")
+	assert.Regexp(t, terminalRe, docstest.ReadFile(t, "docs/installation.md"), "docs/installation.md should state the minimum terminal size")
 
 	docs, err := filepath.Glob("docs/*.md")
 	require.NoError(t, err)
@@ -210,7 +210,7 @@ func TestDocsStateCurrentCounts(t *testing.T) {
 		if recordsPastReleases {
 			continue
 		}
-		doc := readFile(t, path)
+		doc := docstest.ReadFile(t, path)
 		for _, m := range themeCountRe.FindAllStringSubmatch(doc, -1) {
 			assert.Equal(t, themeCount, m[1], "%s states the wrong number of built-in themes", path)
 		}
@@ -228,7 +228,7 @@ func TestDocsStateTheVarListMinimum(t *testing.T) {
 	require.True(t, ok, "cli has no FileListWidth field to read the --file-list-width help from")
 	surfaces := map[string]string{"the --file-list-width help": flag.Tag.Get("help")}
 	for _, path := range []string{"docs/configuration.md", "docs/usage.md", "examples/config/full.toml"} {
-		surfaces[path] = readFile(t, path)
+		surfaces[path] = docstest.ReadFile(t, path)
 	}
 	for _, name := range slices.Sorted(maps.Keys(surfaces)) {
 		m := varListMinRe.FindStringSubmatch(surfaces[name])
@@ -254,7 +254,7 @@ func TestHelpScreenMatchesKeybindingsDoc(t *testing.T) {
 		help[section.title] = section.rows
 	}
 	mapped := map[string]bool{}
-	doc := readFile(t, "docs/keybindings.md")
+	doc := docstest.ReadFile(t, "docs/keybindings.md")
 	for _, heading := range slices.Sorted(maps.Keys(helpDocSections)) {
 		helpKeys := map[string]bool{}
 		for _, title := range helpDocSections[heading] {
@@ -273,7 +273,7 @@ func TestHelpScreenMatchesKeybindingsDoc(t *testing.T) {
 		assert.True(t, mapped[title], "help section %q maps to no docs/keybindings.md section in helpDocSections", title)
 	}
 	for line := range strings.Lines(doc) {
-		heading, ok := strings.CutPrefix(strings.TrimSuffix(line, "\n"), sectionHeadingPrefix)
+		heading, ok := strings.CutPrefix(strings.TrimSuffix(line, "\n"), docstest.SectionHeadingPrefix)
 		if !ok || helpDocSections[heading] != nil || docOnlySections[heading] != "" {
 			continue
 		}
@@ -293,16 +293,16 @@ var docOnlySections = map[string]string{
 func docSectionKeys(t *testing.T, doc, heading string) map[string]bool {
 	t.Helper()
 	keys := map[string]bool{}
-	for _, table := range markdownTables(markdownSection(t, doc, heading)) {
-		for _, row := range table.rows {
-			require.Len(t, row, len(table.header), "a row of the %q table has the wrong number of cells: %v", heading, row)
+	for _, table := range docstest.Tables(docstest.Section(t, doc, heading)) {
+		for _, row := range table.Rows {
+			require.Len(t, row, len(table.Header), "a row of the %q table has the wrong number of cells: %v", heading, row)
 		}
-		for i, column := range table.header {
+		for i, column := range table.Header {
 			if column != "Key" && column != "Confirm" && column != "Cancel" {
 				continue
 			}
-			for _, row := range table.rows {
-				for _, s := range codeSpans(row[i]) {
+			for _, row := range table.Rows {
+				for _, s := range docstest.CodeSpans(row[i]) {
 					keys[s] = true
 				}
 			}
@@ -384,12 +384,12 @@ func helpKeys(column string) []string {
 
 func TestKeybindingsDocumentsEveryKey(t *testing.T) {
 	documented := map[string]bool{}
-	for _, table := range markdownTables(readFile(t, "docs/keybindings.md")) {
-		if table.header[0] != "Key" {
+	for _, table := range docstest.Tables(docstest.ReadFile(t, "docs/keybindings.md")) {
+		if table.Header[0] != "Key" {
 			continue
 		}
-		for _, row := range table.rows {
-			for _, s := range codeSpans(row[0]) {
+		for _, row := range table.Rows {
+			for _, s := range docstest.CodeSpans(row[0]) {
 				documented[s] = true
 			}
 		}
@@ -421,11 +421,11 @@ var notInRepo = map[string]string{
 
 func TestCodingStandardsNamesExistingCode(t *testing.T) {
 	repo := newRepoIndex(t)
-	doc := readFile(t, "CODING_STANDARDS.md")
+	doc := docstest.ReadFile(t, "CODING_STANDARDS.md")
 	for ref := range notInRepo {
 		assert.Contains(t, doc, "`"+ref+"`", "notInRepo lists `%s`, which CODING_STANDARDS.md no longer names: drop it", ref)
 	}
-	for _, ref := range codeSpans(doc) {
+	for _, ref := range docstest.CodeSpans(doc) {
 		if _, ok := notInRepo[ref]; ok {
 			continue
 		}
@@ -444,7 +444,7 @@ type repoIndex struct {
 
 func newRepoIndex(t *testing.T) repoIndex {
 	t.Helper()
-	repo := repoIndex{sourceWords: map[string]bool{}, baseNames: map[string]bool{}, justRecipes: map[string]bool{}, goMod: readFile(t, "go.mod")}
+	repo := repoIndex{sourceWords: map[string]bool{}, baseNames: map[string]bool{}, justRecipes: map[string]bool{}, goMod: docstest.ReadFile(t, "go.mod")}
 	sources, err := filepath.Glob(".github/workflows/*.yml")
 	require.NoError(t, err)
 	sources = append(sources, "justfile", "go.mod", ".goreleaser.yml")
@@ -472,11 +472,11 @@ func newRepoIndex(t *testing.T) repoIndex {
 	require.NoError(t, err)
 
 	for _, path := range sources {
-		for _, w := range wordRe.FindAllString(readFile(t, path), -1) {
+		for _, w := range wordRe.FindAllString(docstest.ReadFile(t, path), -1) {
 			repo.sourceWords[w] = true
 		}
 	}
-	for _, m := range justRecipeRe.FindAllStringSubmatch(readFile(t, "justfile"), -1) {
+	for _, m := range justRecipeRe.FindAllStringSubmatch(docstest.ReadFile(t, "justfile"), -1) {
 		repo.justRecipes[m[1]] = true
 	}
 	return repo
@@ -562,96 +562,14 @@ func configKeys(table string, typ reflect.Type) map[string]bool {
 	return keys
 }
 
-type docTable struct {
-	header []string
-	rows   [][]string
-}
-
-func markdownTables(doc string) []docTable {
-	var tables []docTable
-	inTable := false
-	for line := range strings.Lines(doc) {
-		line = strings.TrimSpace(line)
-		if !strings.HasPrefix(line, "|") {
-			inTable = false
-			continue
-		}
-		cells := strings.Split(strings.Trim(line, "|"), "|")
-		for i := range cells {
-			cells[i] = strings.TrimSpace(cells[i])
-		}
-		switch {
-		case !inTable:
-			tables = append(tables, docTable{header: cells})
-			inTable = true
-		case isSeparatorRow(line):
-		default:
-			last := &tables[len(tables)-1]
-			last.rows = append(last.rows, cells)
-		}
-	}
-	return tables
-}
-
-func isSeparatorRow(line string) bool {
-	return strings.Trim(line, "|-: ") == ""
-}
-
-func markdownTable(t *testing.T, doc, header string) [][]string {
-	t.Helper()
-	for _, table := range markdownTables(doc) {
-		if slices.Contains(table.header, header) {
-			return table.rows
-		}
-	}
-	require.Failf(t, "missing table", "no table with a %q column", header)
-	return nil
-}
-
-func lineStartingWith(t *testing.T, doc, prefix string) string {
-	t.Helper()
-	for line := range strings.Lines(doc) {
-		if strings.HasPrefix(line, prefix) {
-			return line
-		}
-	}
-	require.Failf(t, "missing line", "no line starts with %q", prefix)
-	return ""
-}
-
-const sectionHeadingPrefix = "## "
-
-func markdownSection(t *testing.T, doc, heading string) string {
-	t.Helper()
-	_, body, ok := strings.Cut(doc, "\n"+sectionHeadingPrefix+heading+"\n")
-	require.True(t, ok, "no section %q", sectionHeadingPrefix+heading)
-	body, _, _ = strings.Cut(body, "\n"+sectionHeadingPrefix)
-	return body
-}
-
-func codeSpans(s string) []string {
-	var spans []string
-	for _, m := range codeSpanRe.FindAllStringSubmatch(s, -1) {
-		spans = append(spans, m[1])
-	}
-	return spans
-}
-
-func readFile(t *testing.T, path string) string {
-	t.Helper()
-	data, err := os.ReadFile(path)
-	require.NoError(t, err)
-	return string(data)
-}
-
 func TestConfigurationCreditsEveryTheme(t *testing.T) {
 	var credited []string
-	for _, table := range markdownTables(readFile(t, "docs/configuration.md")) {
-		if !slices.Equal(table.header, []string{"Theme", "Palette source"}) {
+	for _, table := range docstest.Tables(docstest.ReadFile(t, "docs/configuration.md")) {
+		if !slices.Equal(table.Header, []string{"Theme", "Palette source"}) {
 			continue
 		}
-		for _, row := range table.rows {
-			name := codeSpans(row[0])[0]
+		for _, row := range table.Rows {
+			name := docstest.CodeSpans(row[0])[0]
 			credited = append(credited, name)
 			assert.Regexp(t, `^(<https://\S+>|lazyenv original)$`, row[1], "credit of %s", name)
 		}
