@@ -26,19 +26,19 @@ type createOrigin struct {
 // SessionStats tracks disk-level changes during a lazyenv session.
 // All maps are keyed by absolute file path.
 type SessionStats struct {
-	initial map[string]*fileSnapshot
-	final   map[string]*fileSnapshot // path → vars after latest save; nil value = deleted
-	renames map[string]string        // currentPath → originalPath (chain collapsed)
-	created map[string]createOrigin
+	initial  map[string]*fileSnapshot
+	final    map[string]*fileSnapshot // path → vars after latest save; nil value = deleted
+	originOf map[string]string
+	created  map[string]createOrigin
 }
 
 // NewSessionStats returns an empty stats tracker.
 func NewSessionStats() *SessionStats {
 	return &SessionStats{
-		initial: map[string]*fileSnapshot{},
-		final:   map[string]*fileSnapshot{},
-		renames: map[string]string{},
-		created: map[string]createOrigin{},
+		initial:  map[string]*fileSnapshot{},
+		final:    map[string]*fileSnapshot{},
+		originOf: map[string]string{},
+		created:  map[string]createOrigin{},
 	}
 }
 
@@ -135,12 +135,12 @@ func (s *SessionStats) RecordRename(oldPath, newPath string) {
 		return
 	}
 	origin := oldPath
-	if prev, ok := s.renames[oldPath]; ok {
+	if prev, ok := s.originOf[oldPath]; ok {
 		origin = prev
-		delete(s.renames, oldPath)
+		delete(s.originOf, oldPath)
 	}
 	if origin != newPath {
-		s.renames[newPath] = origin
+		s.originOf[newPath] = origin
 	}
 	switch {
 	case s.final[oldPath] != nil:
@@ -216,7 +216,7 @@ func (s *SessionStats) formatLiveRow(path string, content *fileSnapshot) (string
 	if co, ok := s.created[path]; ok {
 		return s.formatCreatedRow(path, co, content), true
 	}
-	if origin, ok := s.renames[path]; ok {
+	if origin, ok := s.originOf[path]; ok {
 		desc, _ := describeChanges(s.initial[origin], content)
 		return fmt.Sprintf("%s (renamed from %s) — %s", path, origin, desc), true
 	}
@@ -233,7 +233,7 @@ func (s *SessionStats) formatLiveRow(path string, content *fileSnapshot) (string
 
 func (s *SessionStats) formatDeletedRow(path string) (string, string, bool) {
 	target := path
-	if origin, ok := s.renames[path]; ok {
+	if origin, ok := s.originOf[path]; ok {
 		target = origin
 	}
 	if _, hadInitial := s.initial[target]; !hadInitial {

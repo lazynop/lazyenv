@@ -32,22 +32,17 @@ func (a App) createFile(path string) error {
 	return nil
 }
 
-// duplicateFile writes data, a byte copy of the file at srcPath, to the new
-// file at path and records it as a duplicate holding the vars parsed from
-// data: the source's unsaved edits are not in the copy.
-func (a App) duplicateFile(path string, data []byte, srcPath string) error {
-	if err := parser.WriteFileAtomic(path, data, envFilePerm); err != nil {
+func (a App) duplicateFile(path string, srcOnDisk []byte, srcPath string) error {
+	if err := parser.WriteFileAtomic(path, srcOnDisk, envFilePerm); err != nil {
 		return err
 	}
-	copied := parser.ParseBytes(filepath.Base(path), data, config.SecretsConfig{})
+	copied := parser.ParseBytes(filepath.Base(path), srcOnDisk, config.SecretsConfig{})
 	a.sessionStats.RecordCreateDuplicate(path, srcPath, copied.Vars)
 	return nil
 }
 
-// templateFile writes data, src with every value stripped, to the new file at
-// path and records it as a template holding src's keys with empty values.
-func (a App) templateFile(path string, data []byte, src *model.EnvFile) error {
-	if err := parser.WriteFileAtomic(path, data, envFilePerm); err != nil {
+func (a App) templateFile(path string, strippedSrc []byte, src *model.EnvFile) error {
+	if err := parser.WriteFileAtomic(path, strippedSrc, envFilePerm); err != nil {
 		return err
 	}
 	keysOnly := make([]model.EnvVar, 0, len(src.Vars))

@@ -189,7 +189,7 @@ func TestRenameFile_UpdatesBackupTracking(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{f})
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
-	app.backedUpPaths[path] = true
+	app.backupAttempted[path] = true
 	app.mode = ModeRenameFile
 	app.fileOpSource = f
 	app.fileInput.SetValue(".env.local")
@@ -198,6 +198,6 @@ func TestRenameFile_UpdatesBackupTracking(t *testing.T) {
 	app = result.(App)
 
 	newPath := filepath.Join(dir, ".env.local")
-	assert.False(t, app.backedUpPaths[path])
-	assert.True(t, app.backedUpPaths[newPath])
+	assert.False(t, app.backupAttempted[path])
+	assert.True(t, app.backupAttempted[newPath])
 }

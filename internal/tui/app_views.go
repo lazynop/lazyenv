@@ -25,20 +25,20 @@ func (a App) viewConfigError() string {
 
 	room := max(a.width-box.GetHorizontalFrameSize(), 1)
 	var path []string
-	if a.configPath != "" {
-		path = wrapRows(a.configPath, room)
+	if a.configErrorPath != "" {
+		path = wrapRows(a.configErrorPath, room)
 	}
 	if len(path) > configPathMaxRows {
 		const ellipsis, wideCharRowSlack = "…", 1
 		keep := configPathMaxRows*room - ansi.StringWidth(ellipsis) - wideCharRowSlack
-		tail := ansi.TruncateLeft(a.configPath, ansi.StringWidth(a.configPath)-keep, ellipsis)
+		tail := ansi.TruncateLeft(a.configErrorPath, ansi.StringWidth(a.configErrorPath)-keep, ellipsis)
 		path = strings.Split(ansi.Hardwrap(tail, room, false), "\n")
 	}
 	hint := configErrorHint
 
 	blankRows := 2
 	rowsBesideMsg := func() int { return box.GetVerticalFrameSize() + 1 + len(path) + blankRows + 1 }
-	msg := wrapEach(a.configLines, room)
+	msg := wrapEach(a.configErrorLines, room)
 	msgRows := len(slices.Concat(msg...))
 	if rowsBesideMsg()+msgRows > a.height {
 		box = box.PaddingTop(0).PaddingBottom(0)

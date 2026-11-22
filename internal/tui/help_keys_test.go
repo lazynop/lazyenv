@@ -94,7 +94,7 @@ var helpSectionStates = map[string]struct {
 	"This help": {states: []*helpState{
 		{name: "help scrolled a page", keys: []string{"?", "pgdown"}, mode: ModeHelp, ready: func(a App) bool {
 			h := a.helpView
-			return h.offset > 0 && h.offset+h.visibleLines() < len(h.lines)
+			return h.offset > 0 && h.offset+h.visibleLines() < len(h.wrappedLines)
 		}},
 	}},
 }

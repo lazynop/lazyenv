@@ -7,14 +7,13 @@ import (
 )
 
 func (a App) backupIfNeeded(path string) string {
-	if a.config.NoBackup || a.backedUpPaths[path] {
+	if a.config.NoBackup || a.backupAttempted[path] {
 		return ""
 	}
+	a.backupAttempted[path] = true
 	if err := parser.CreateBackup(path); err != nil {
-		a.backedUpPaths[path] = true // don't retry on every save
 		return "backup failed: " + err.Error() + " - "
 	}
-	a.backedUpPaths[path] = true
 	return ""
 }
 

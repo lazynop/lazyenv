@@ -29,7 +29,7 @@ func openHelpWith(cfg config.Config, width, height int) App {
 // that many down presses bring its last line on screen at app's size, however
 // long the help grows.
 func helpLines(app App) int {
-	return len(app.helpView.lines)
+	return len(app.helpView.wrappedLines)
 }
 
 // scrollHelpToTheEnd presses down helpLines times, bringing the last line of

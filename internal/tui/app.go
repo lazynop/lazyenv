@@ -99,14 +99,12 @@ type App struct {
 	searchInput textinput.Model
 	matrixView  MatrixModel
 
-	// File and lines (errors, then notices) of the blocking config error
-	// screen (ModeConfigError).
-	configPath  string
-	configLines []string
+	configErrorPath  string
+	configErrorLines []string
 
 	startupNotice string
 
-	backedUpPaths map[string]bool
+	backupAttempted map[string]bool
 
 	compareFirstFile *model.EnvFile
 	compareEditFile  *model.EnvFile
@@ -145,27 +143,27 @@ func NewApp(cfg config.Config, startup StartupMessages) App {
 
 	keys := DefaultKeyMap()
 	app := App{
-		config:        cfg,
-		keys:          keys,
-		theme:         BuildTheme(true, cfg.Colors),
-		hasDarkBg:     true,
-		mode:          ModeNormal,
-		fileList:      NewFileListModel(),
-		varList:       varList,
-		statusBar:     sb,
-		diffView:      NewDiffViewModel(cfg.Layout),
-		helpView:      NewHelpViewModel(keys, !cfg.NoMouse && cfg.Layout.MouseScrollLines > 0),
-		matrixView:    NewMatrixModel(nil, cfg.Layout),
-		editor:        NewEditorModel(),
-		searchInput:   ti,
-		fileInput:     fi,
-		backedUpPaths: make(map[string]bool),
-		sessionStats:  stats,
+		config:          cfg,
+		keys:            keys,
+		theme:           BuildTheme(true, cfg.Colors),
+		hasDarkBg:       true,
+		mode:            ModeNormal,
+		fileList:        NewFileListModel(),
+		varList:         varList,
+		statusBar:       sb,
+		diffView:        NewDiffViewModel(cfg.Layout),
+		helpView:        NewHelpViewModel(keys, !cfg.NoMouse && cfg.Layout.MouseScrollLines > 0),
+		matrixView:      NewMatrixModel(nil, cfg.Layout),
+		editor:          NewEditorModel(),
+		searchInput:     ti,
+		fileInput:       fi,
+		backupAttempted: make(map[string]bool),
+		sessionStats:    stats,
 	}
 	app.setFocus(FocusFiles)
 	if len(startup.ConfigErrors) > 0 {
-		app.configPath = startup.ConfigPath
-		app.configLines = slices.Concat(startup.ConfigErrors, startup.Notices)
+		app.configErrorPath = startup.ConfigPath
+		app.configErrorLines = slices.Concat(startup.ConfigErrors, startup.Notices)
 		app.mode = ModeConfigError
 	} else {
 		app.startupNotice = strings.Join(startup.Notices, "; ")
@@ -545,9 +543,8 @@ func (a App) handleNormalVarAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, boo
 		return a, nil, false
 	}
 
-	// Mutating actions (edit, add, delete) — blocked in read-only mode
 	if key.Matches(msg, a.keys.Edit, a.keys.EditKey, a.keys.Add, a.keys.Delete) {
-		return a.handleNormalVarEdit(msg)
+		return a.handleNormalVarMutation(msg)
 	}
 
 	switch {
@@ -578,7 +575,7 @@ func (a App) handleNormalVarAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, boo
 	return a, nil, false
 }
 
-func (a App) handleNormalVarEdit(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bool) {
+func (a App) handleNormalVarMutation(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bool) {
 	if cmd := a.readOnlyFlash(); cmd != nil {
 		return a, cmd, true
 	}

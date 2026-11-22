@@ -123,8 +123,7 @@ func KeyLabel(k string) string {
 	return label
 }
 
-// keyLabel is KeyLabel, also reporting whether k has a label of its own.
-func keyLabel(k string) (string, bool) {
+func keyLabel(k string) (label string, own bool) {
 	if len([]rune(k)) == 1 {
 		return k, true
 	}

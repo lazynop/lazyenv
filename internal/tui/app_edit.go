@@ -27,7 +27,7 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				if newKey == "" {
 					return a, nil
 				}
-				if problem := newKeyProblem(a.varList.File, newKey, -1); problem != "" {
+				if problem := newKeyProblem(a.varList.File, newKey, noVarToSkip); problem != "" {
 					return a, a.flashWarning(problem)
 				}
 				a.editor.StartAddValue(newKey)
@@ -58,15 +58,14 @@ func (a *App) commitValueEdit(f *model.EnvFile, result EditorResult) tea.Cmd {
 	return a.flashMessage("Modified " + varKey)
 }
 
-// newKeyProblem returns why name cannot name a variable of f, the one at index
-// self aside (-1 when adding), or "" when it can. A name the parser rejects
-// would be saved and then dropped on the next read of the file.
-func newKeyProblem(f *model.EnvFile, name string, self int) string {
+const noVarToSkip = -1
+
+func newKeyProblem(f *model.EnvFile, name string, skipIndex int) string {
 	if !parser.IsValidKey(name) {
 		return "Invalid key name"
 	}
 	for i, v := range f.Vars {
-		if i != self && v.Key == name {
+		if i != skipIndex && v.Key == name {
 			return "Key already exists: " + name
 		}
 	}

@@ -550,9 +550,7 @@ func (m *VarListModel) drawsPeekLine() bool {
 	return v.Modified || v.IsNew
 }
 
-// calcColumnWidths returns the key column width and max value width.
-// Headers are excluded from key-width measurement.
-func (m *VarListModel) calcColumnWidths() (int, int) {
+func (m *VarListModel) calcColumnWidths() (keyWidth, maxValWidth int) {
 	longestKey := 0
 	for _, item := range m.displayItems {
 		if item.Kind != displayItemVar {
@@ -577,13 +575,11 @@ func (m *VarListModel) note() string {
 	case m.File == nil:
 		return "  Select a file"
 	case m.SearchQuery != "":
-		// The query gives way to the quotes around it, so they close on a long
-		// query too. Its escapes, as strconv.Quote writes them, take their
-		// columns.
 		quoted := strconv.Quote(m.SearchQuery)
+		escapedQuery := quoted[1 : len(quoted)-1]
 		const format = `  No matches for "%s"`
 		room := m.contentCols() - lipgloss.Width(fmt.Sprintf(format, ""))
-		return fmt.Sprintf(format, truncate(quoted[1:len(quoted)-1], room))
+		return fmt.Sprintf(format, truncate(escapedQuery, room))
 	}
 	return "  No variables"
 }

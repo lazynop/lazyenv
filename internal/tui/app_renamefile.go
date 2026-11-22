@@ -28,9 +28,9 @@ func (a App) confirmRenameFile() (tea.Model, tea.Cmd) {
 		return a, a.flashError("Error renaming file: " + err.Error())
 	}
 
-	if a.backedUpPaths[src.Path] {
-		delete(a.backedUpPaths, src.Path)
-		a.backedUpPaths[newPath] = true
+	if a.backupAttempted[src.Path] {
+		delete(a.backupAttempted, src.Path)
+		a.backupAttempted[newPath] = true
 	}
 
 	oldName := src.Name

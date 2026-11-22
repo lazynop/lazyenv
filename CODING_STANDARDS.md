@@ -79,7 +79,7 @@ Caught by `just lint` (`exhaustive`): both switches name every `AppMode`, so a n
 
 `--read-only` (`config.ReadOnly`) blocks every write while navigation, search, peek, sorting and toggles keep working. Guard the mutating keys only, with one of the existing patterns:
 
-- **Mixed handler** (mutating and non-mutating keys in one switch): before the switch, route the mutating keys (`key.Matches(msg, a.keys.Edit, ...)`) to a sub-handler whose first statement is the `a.readOnlyFlash()` check. Examples: `handleNormalVarEdit`, `handleComparingEdit`.
+- **Mixed handler** (mutating and non-mutating keys in one switch): before the switch, route the mutating keys (`key.Matches(msg, a.keys.Edit, ...)`) to a sub-handler whose first statement is the `a.readOnlyFlash()` check. Examples: `handleNormalVarMutation`, `handleComparingEdit`.
 - **Key-group guard**: `if a.config.ReadOnly && key.Matches(msg, ...) { return a, a.readOnlyFlash(), true }` ahead of the switch (see `handleNormalFileAction`).
 - **Mutation-only entry point** (a flow that only writes, e.g. `startReorder`): the `readOnlyFlash()` check as its first statement.
 

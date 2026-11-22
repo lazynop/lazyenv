@@ -145,23 +145,23 @@ func helpText(sections []helpSection) string {
 // HelpViewModel manages the help screen (?): the help text, scrolled when it
 // is taller than the terminal.
 type HelpViewModel struct {
-	text   string
-	scroll string // the scroll keys the footer names: "↑/↓ k/j PgUp/PgDn"
-	close  string // the close keys the footer names: "Esc ? q"
-	offset int
-	width  int
-	height int
-	lines  []string // text wrapped to width, one row per line
-	rows   []int    // for each of lines, the row of text it wraps
+	text             string
+	footerScrollKeys string
+	footerCloseKeys  string
+	offset           int
+	width            int
+	height           int
+	wrappedLines     []string
+	textRowOfLine    []int
 }
 
 // NewHelpViewModel creates the help screen for keys; wheel says whether the
 // mouse wheel scrolls it, so the help names the wheel only then.
 func NewHelpViewModel(keys KeyMap, wheel bool) HelpViewModel {
 	return HelpViewModel{
-		text:   helpText(helpContents(keys, wheel)),
-		scroll: strings.Join(slices.Concat(pairColumns(keys.Up, keys.Down), pairColumns(keys.PageUp, keys.PageDown)), " "),
-		close:  strings.Join([]string{shortKeys(keys.Escape), shortKeys(keys.Help), shortKeys(keys.Quit)}, " "),
+		text:             helpText(helpContents(keys, wheel)),
+		footerScrollKeys: strings.Join(slices.Concat(pairColumns(keys.Up, keys.Down), pairColumns(keys.PageUp, keys.PageDown)), " "),
+		footerCloseKeys:  strings.Join([]string{shortKeys(keys.Escape), shortKeys(keys.Help), shortKeys(keys.Quit)}, " "),
 	}
 }
 
@@ -172,19 +172,19 @@ func NewHelpViewModel(keys KeyMap, wheel bool) HelpViewModel {
 func (m *HelpViewModel) SetSize(width, height int) {
 	if width != m.width {
 		top := 0
-		if m.offset < len(m.rows) {
-			top = m.rows[m.offset]
+		if m.offset < len(m.textRowOfLine) {
+			top = m.textRowOfLine[m.offset]
 		}
 		m.width = width
 		textWidth := max(width-2*helpPaddingWidth, 1)
-		m.lines, m.rows = nil, nil
+		m.wrappedLines, m.textRowOfLine = nil, nil
 		for i, row := range strings.Split(m.text, "\n") {
 			if i == top {
-				m.offset = len(m.lines)
+				m.offset = len(m.wrappedLines)
 			}
 			for _, line := range wrapHelpRow(row, textWidth) {
-				m.lines = append(m.lines, line)
-				m.rows = append(m.rows, i)
+				m.wrappedLines = append(m.wrappedLines, line)
+				m.textRowOfLine = append(m.textRowOfLine, i)
 			}
 		}
 	}
@@ -217,7 +217,7 @@ func (m *HelpViewModel) visibleLines() int {
 }
 
 func (m *HelpViewModel) scrollTo(offset int) {
-	m.offset = scrollOffset(offset, offset, m.visibleLines(), len(m.lines))
+	m.offset = scrollOffset(offset, offset, m.visibleLines(), len(m.wrappedLines))
 }
 
 // MoveToFirst shows the text from its first row.
@@ -227,7 +227,7 @@ func (m *HelpViewModel) MoveToFirst() {
 
 // MoveToLast shows the last row of the text at the bottom of the screen.
 func (m *HelpViewModel) MoveToLast() {
-	m.scrollTo(len(m.lines))
+	m.scrollTo(len(m.wrappedLines))
 }
 
 // PageUp scrolls the text up one screen.
@@ -254,12 +254,12 @@ func (m *HelpViewModel) MoveDown() {
 // the scroll keys only when the text does not fit.
 func (m *HelpViewModel) View(theme Theme) string {
 	visible := m.visibleLines()
-	end := min(m.offset+visible, len(m.lines))
-	text := theme.NormalItem.Render(strings.Join(m.lines[m.offset:end], "\n"))
+	end := min(m.offset+visible, len(m.wrappedLines))
+	text := theme.NormalItem.Render(strings.Join(m.wrappedLines[m.offset:end], "\n"))
 
-	hint := "  Press " + m.close + " to close"
-	if len(m.lines) > visible {
-		hint = "  Press " + m.scroll + " to scroll, " + m.close + " to close"
+	hint := "  Press " + m.footerCloseKeys + " to close"
+	if len(m.wrappedLines) > visible {
+		hint = "  Press " + m.footerScrollKeys + " to scroll, " + m.footerCloseKeys + " to close"
 	}
 	footer := theme.MutedItem.Render(hint)
 

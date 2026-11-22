@@ -31,14 +31,14 @@ type EditorResult struct {
 
 // EditorModel manages inline editing of variable values.
 type EditorModel struct {
-	input       textinput.Model
-	varIndex    int
-	isAdd       bool
-	isRenameKey bool
-	addStep     addStep
-	addKey      string
-	label       string
-	shown       string // the value as the bar showed it when the edit started
+	input        textinput.Model
+	varIndex     int
+	isAdd        bool
+	isRenameKey  bool
+	addStep      addStep
+	addKey       string
+	label        string
+	valueAtStart string
 }
 
 // NewEditorModel creates a new editor model.
@@ -62,7 +62,7 @@ func (m *EditorModel) StartEdit(v *model.EnvVar, idx int) bool {
 		return false
 	}
 	m.input = input
-	m.shown = v.Value
+	m.valueAtStart = v.Value
 	m.input.CursorEnd()
 	m.varIndex = idx
 	m.isAdd = false
@@ -111,6 +111,6 @@ func (m *EditorModel) Finish() EditorResult {
 		IsAdd:       m.isAdd,
 		IsRenameKey: m.isRenameKey,
 		AddStep:     m.addStep,
-		Untouched:   !m.isAdd && !m.isRenameKey && m.input.Value() == m.shown,
+		Untouched:   !m.isAdd && !m.isRenameKey && m.input.Value() == m.valueAtStart,
 	}
 }
