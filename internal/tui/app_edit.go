@@ -33,7 +33,8 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				}
 				a.editor.StartAddValue(newKey)
 				a.mode = ModeEditing
-				return a, a.editor.input.Focus()
+				cmd := a.editor.input.Focus()
+				return a, cmd
 			}
 			a.varList.File.AddVar(a.editor.addKey, result.Value)
 			a.varList.Refresh()

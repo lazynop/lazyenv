@@ -385,7 +385,8 @@ func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bo
 		a.fileInput.SetValue("")
 		a.fileInput.Placeholder = ".env.example"
 		a.mode = ModeCreateFile
-		return a, a.fileInput.Focus(), true
+		cmd := a.fileInput.Focus()
+		return a, cmd, true
 	}
 
 	f := a.fileList.SelectedFile()
@@ -401,7 +402,8 @@ func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bo
 		a.fileOpSource = f
 		a.fileInput.SetValue(duplicateName(f.Name))
 		a.mode = ModeDuplicateFile
-		return a, a.fileInput.Focus(), true
+		cmd := a.fileInput.Focus()
+		return a, cmd, true
 
 	case key.Matches(msg, a.keys.DeleteFile):
 		if f.Modified {
@@ -420,13 +422,15 @@ func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bo
 		a.fileOpSource = f
 		a.fileInput.SetValue(f.Name)
 		a.mode = ModeRenameFile
-		return a, a.fileInput.Focus(), true
+		cmd := a.fileInput.Focus()
+		return a, cmd, true
 
 	case key.Matches(msg, a.keys.TemplateFile):
 		a.fileOpSource = f
 		a.fileInput.SetValue(templateName(f.Name))
 		a.mode = ModeTemplateFile
-		return a, a.fileInput.Focus(), true
+		cmd := a.fileInput.Focus()
+		return a, cmd, true
 	}
 
 	return a, nil, false
@@ -480,7 +484,8 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 	case key.Matches(msg, a.keys.Search):
 		a.mode = ModeSearching
 		a.searchInput.SetValue("")
-		return a, a.searchInput.Focus()
+		cmd := a.searchInput.Focus()
+		return a, cmd
 
 	case key.Matches(msg, a.keys.Matrix):
 		if len(a.fileList.Files) < 2 {
@@ -599,7 +604,8 @@ func (a App) handleNormalVarMutation(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, b
 				return a, cmd, true
 			}
 			a.mode = ModeEditing
-			return a, a.editor.input.Focus(), true
+			cmd := a.editor.input.Focus()
+			return a, cmd, true
 		}
 
 	case key.Matches(msg, a.keys.EditKey):
@@ -608,14 +614,16 @@ func (a App) handleNormalVarMutation(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, b
 			idx := a.varList.SelectedVarIndex()
 			a.editor.StartEditKey(v, idx)
 			a.mode = ModeEditing
-			return a, a.editor.input.Focus(), true
+			cmd := a.editor.input.Focus()
+			return a, cmd, true
 		}
 
 	case key.Matches(msg, a.keys.Add):
 		if a.varList.File != nil {
 			a.editor.StartAdd()
 			a.mode = ModeEditing
-			return a, a.editor.input.Focus(), true
+			cmd := a.editor.input.Focus()
+			return a, cmd, true
 		}
 
 	case key.Matches(msg, a.keys.Delete):
@@ -710,24 +718,29 @@ func (a App) View() tea.View {
 }
 
 func (a App) screen() string {
+	var body, status string
 	switch a.mode {
 	case ModeConfigError:
 		return a.viewConfigError()
 	case ModeHelp:
 		return a.helpView.View(a.theme)
 	case ModeComparing:
-		return a.withBottom(a.diffView.View(a.theme), a.statusBar.View(a.theme, a.keys, a.mode, a.focus, "", 0, a.diffView.Stats))
+		body = a.diffView.View(a.theme)
+		status = a.statusBar.View(a.theme, a.keys, a.mode, a.focus, "", 0, a.diffView.Stats)
 	case ModeEditingCompare:
-		return a.withBottom(a.diffView.View(a.theme), a.statusBar.View(a.theme, a.keys, ModeEditing, a.focus, "", 0))
+		body = a.diffView.View(a.theme)
+		status = a.statusBar.View(a.theme, a.keys, ModeEditing, a.focus, "", 0)
 	case ModeMatrix, ModeConfirmMatrixDelete:
-		return a.withBottom(a.matrixView.View(a.theme), a.statusBar.View(a.theme, a.keys, a.mode, a.focus, "", 0))
+		body = a.matrixView.View(a.theme)
+		status = a.statusBar.View(a.theme, a.keys, a.mode, a.focus, "", 0)
 	case ModeMatrixEditing:
-		return a.withBottom(a.matrixView.View(a.theme), a.statusBar.View(a.theme, a.keys, ModeEditing, a.focus, "", 0))
+		body = a.matrixView.View(a.theme)
+		status = a.statusBar.View(a.theme, a.keys, ModeEditing, a.focus, "", 0)
 	default:
 		filePanel := a.fileList.View(a.theme)
 		varPanel := a.varList.View(a.theme)
 
-		panels := lipgloss.JoinHorizontal(lipgloss.Top, filePanel, varPanel)
+		body = lipgloss.JoinHorizontal(lipgloss.Top, filePanel, varPanel)
 
 		fileName := ""
 		varCount := 0
@@ -736,8 +749,9 @@ func (a App) screen() string {
 			varCount = len(f.Vars)
 		}
 
-		return a.withBottom(panels, a.statusBar.View(a.theme, a.keys, a.mode, a.focus, fileName, varCount))
+		status = a.statusBar.View(a.theme, a.keys, a.mode, a.focus, fileName, varCount)
 	}
+	return a.withBottom(body, status)
 }
 
 func (a App) withBottom(body, status string) string {

@@ -191,7 +191,8 @@ func (a App) startCompareEdit(file *model.EnvFile) (tea.Model, tea.Cmd) {
 	a.compareEditFile = file
 	a.editor.label = fmt.Sprintf("Edit %s in %s: ", e.Key, file.Name)
 	a.mode = ModeEditingCompare
-	return a, a.editor.input.Focus()
+	cmd := a.editor.input.Focus()
+	return a, cmd
 }
 
 func (a App) handleEditingCompareKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
