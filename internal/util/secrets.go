@@ -32,6 +32,8 @@ var secretValuePrefixes = []string{
 // while hostnames and URLs score 3.0–4.0.
 const EntropyThreshold = 4.0
 
+const tokenMinLength = 16
+
 // IsSecret returns true if the key or value looks like a secret.
 func IsSecret(key, value string, cfg config.SecretsConfig) bool {
 	upper := strings.ToUpper(key)
@@ -90,7 +92,7 @@ func hasSecretValuePrefix(value string) bool {
 }
 
 func looksLikeToken(value string) bool {
-	return len(value) >= 16 && hasAlphanumericMix(value) && ShannonEntropy(value) >= EntropyThreshold
+	return len(value) >= tokenMinLength && hasAlphanumericMix(value) && ShannonEntropy(value) >= EntropyThreshold
 }
 
 // ShannonEntropy returns the Shannon entropy in bits per byte.
