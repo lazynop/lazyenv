@@ -36,14 +36,12 @@ const EntropyThreshold = 4.0
 func IsSecret(key, value string, cfg config.SecretsConfig) bool {
 	upper := strings.ToUpper(key)
 
-	// User-defined safe patterns override everything.
 	for _, p := range cfg.SafePatterns {
 		if matchesPattern(upper, p) {
 			return false
 		}
 	}
 
-	// User-defined extra patterns.
 	for _, p := range cfg.ExtraPatterns {
 		if matchesPattern(upper, p) {
 			return true
@@ -65,12 +63,10 @@ func IsSecret(key, value string, cfg config.SecretsConfig) bool {
 		}
 	}
 
-	// Value prefix detection (deterministic, always active).
 	if hasSecretValuePrefix(value) {
 		return true
 	}
 
-	// Value heuristic (entropy-based, can be disabled via config).
 	if cfg.ValueHeuristicEnabled() && looksLikeToken(value) {
 		return true
 	}
@@ -113,9 +109,6 @@ func ShannonEntropy(s string) float64 {
 	return entropy
 }
 
-// matchesPattern checks if key matches a pattern using the convention:
-// "_HOST" (starts with _) → suffix, "PUBLIC_" (ends with _) → prefix, "DATABASE_HOST" → exact.
-// Both upperKey and pattern must already be uppercased.
 func matchesPattern(upperKey, upperPattern string) bool {
 	if strings.HasPrefix(upperPattern, "_") {
 		return strings.HasSuffix(upperKey, upperPattern)
@@ -138,7 +131,6 @@ func hasAlphanumericMix(s string) bool {
 			hasDigit = true
 		}
 	}
-	// Must have at least digit + (upper or lower).
 	return hasDigit && (hasUpper || hasLower)
 }
 

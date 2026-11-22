@@ -44,8 +44,7 @@ type EnvVar struct {
 	// OriginalIsSecret is IsSecret as it was for OriginalValue, so the
 	// original stays masked after the var stops being a secret.
 	OriginalIsSecret bool
-	// revival is set while the var holds a key it revived (see reviveDeleted).
-	revival *revival
+	revival          *revival
 }
 
 // revival is a variable deleted this session whose key another variable took,
@@ -119,9 +118,6 @@ func (ef *EnvFile) DeriveFlags() {
 	ef.markDuplicates()
 }
 
-// deriveVarFlags sets the flags of the variable at idx that follow from its
-// key and value: whether it is empty, a secret under the file's [secrets]
-// config, or a placeholder.
 func (ef *EnvFile) deriveVarFlags(idx int) {
 	v := &ef.Vars[idx]
 	v.IsEmpty = v.Value == ""
@@ -129,7 +125,6 @@ func (ef *EnvFile) deriveVarFlags(idx int) {
 	v.IsPlaceholder = util.IsPlaceholderValue(v.Value)
 }
 
-// markDuplicates flags every variable whose key another variable shares.
 func (ef *EnvFile) markDuplicates() {
 	count := make(map[string]int, len(ef.Vars))
 	for _, v := range ef.Vars {
@@ -140,8 +135,6 @@ func (ef *EnvFile) markDuplicates() {
 	}
 }
 
-// markModified flags the variable at idx and the file as changed, saving the
-// variable's value before its first change as its OriginalValue.
 func (ef *EnvFile) markModified(idx int) {
 	v := &ef.Vars[idx]
 	v.OriginalValue, v.OriginalIsSecret = v.original()
@@ -176,10 +169,6 @@ func (ef *EnvFile) reviveDeleted(idx int) {
 	ef.DeletedVars = slices.Delete(ef.DeletedVars, i, i+1)
 }
 
-// undoRevival reverses reviveDeleted for the variable at idx, before a rename
-// or a delete takes it off the key it revived: the deleted variable is listed
-// again where it was, and the variable gets back its original and whether it
-// is new.
 func (ef *EnvFile) undoRevival(idx int) {
 	v := &ef.Vars[idx]
 	r := v.revival
@@ -224,18 +213,15 @@ func (ef *EnvFile) DeleteVar(idx int) {
 		return
 	}
 	ef.undoRevival(idx)
-	// Track deleted var for UI display (skip if it was newly added this session).
 	if !ef.Vars[idx].IsNew {
 		ef.DeletedVars = append(ef.DeletedVars, ef.Vars[idx])
 	}
-	// Find and remove the corresponding RawLine
 	for i, line := range ef.Lines {
 		if line.Type == LineVariable && line.VarIdx == idx {
 			ef.Lines = slices.Delete(ef.Lines, i, i+1)
 			break
 		}
 	}
-	// Fix VarIdx references for lines after the deleted variable
 	for i := range ef.Lines {
 		if ef.Lines[i].Type == LineVariable && ef.Lines[i].VarIdx > idx {
 			ef.Lines[i].VarIdx--
@@ -288,17 +274,12 @@ const (
 	ReorderGrouped
 )
 
-// reorderUnit is a variable together with the comment lines attached directly
-// above it (no blank line in between). Attached comments travel with the
-// variable when the file is reordered.
 type reorderUnit struct {
-	varIdx   int       // index into the pre-reorder ef.Vars
-	varLine  RawLine   // the variable's original RawLine (Content preserved)
+	varIdx   int // index into the pre-reorder ef.Vars
+	varLine  RawLine
 	comments []RawLine // attached comment lines, in original order
 }
 
-// orderedUnit pairs a unit with its group id, used to insert a blank line at
-// group boundaries in grouped mode.
 type orderedUnit struct {
 	unit  reorderUnit
 	group int
@@ -327,7 +308,7 @@ func (ef *EnvFile) Reorder(mode ReorderMode) {
 		}
 	}
 	if firstVar == -1 {
-		return // nothing to reorder
+		return
 	}
 
 	// The head ends just before the first variable's attached comment block,
@@ -415,7 +396,6 @@ func (ef *EnvFile) orderGrouped(units []reorderUnit) []orderedUnit {
 
 	groups := ComputeGroups(ef.Vars)
 	sort.SliceStable(groups, func(i, j int) bool {
-		// Ungrouped pinned last, named groups alphabetical by prefix.
 		if groups[i].IsUngrouped() != groups[j].IsUngrouped() {
 			return !groups[i].IsUngrouped()
 		}

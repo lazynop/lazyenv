@@ -45,14 +45,9 @@ func needsQuoteUpgrade(v *model.EnvVar) bool {
 		if strings.ContainsAny(v.Value, "\n\r\t") {
 			return true
 		}
-		// A leading quote char would make the re-parse treat the value as
-		// quoted — an unterminated quote then swallows the rest of the file.
 		if len(v.Value) > 0 && (v.Value[0] == '"' || v.Value[0] == '\'') {
 			return true
 		}
-		// The value is emitted verbatim after `KEY=`, so it must read back
-		// exactly: parseUnquoted truncates at whitespace+`#` (inline
-		// comment) and trims trailing whitespace.
 		parsed, comment := parseUnquoted(v.Value)
 		return parsed != v.Value || comment != ""
 	}
@@ -80,7 +75,6 @@ func Marshal(ef *model.EnvFile) []byte {
 			continue
 		}
 
-		// Reconstruct the line from metadata
 		b.WriteString(reconstructLine(&v))
 	}
 

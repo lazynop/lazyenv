@@ -38,11 +38,8 @@ func ParseBytes(name string, data []byte, secrets config.SecretsConfig) *model.E
 	content := string(data)
 	// Strip UTF-8 BOM if present (common with files saved by Windows editors).
 	content = strings.TrimPrefix(content, "\uFEFF")
-	// Normalize line endings
 	content = strings.ReplaceAll(content, "\r\n", "\n")
 	content = strings.ReplaceAll(content, "\r", "\n")
-	// Track whether the source ended with a newline so Marshal can preserve
-	// the round-trip exactly (no silent injection of \n on files without one).
 	ef.TrailingNewline = content == "" || strings.HasSuffix(content, "\n")
 
 	var lines []string
@@ -50,7 +47,6 @@ func ParseBytes(name string, data []byte, secrets config.SecretsConfig) *model.E
 		lines = strings.Split(content, "\n")
 	}
 
-	// If file ends with newline, Split produces a trailing empty string — remove it
 	if len(lines) > 0 && lines[len(lines)-1] == "" && strings.HasSuffix(content, "\n") {
 		lines = lines[:len(lines)-1]
 	}
@@ -62,7 +58,6 @@ func ParseBytes(name string, data []byte, secrets config.SecretsConfig) *model.E
 
 		trimmed := strings.TrimSpace(line)
 
-		// Empty line
 		if trimmed == "" {
 			ef.Lines = append(ef.Lines, model.RawLine{
 				Type:    model.LineEmpty,
@@ -73,7 +68,6 @@ func ParseBytes(name string, data []byte, secrets config.SecretsConfig) *model.E
 			continue
 		}
 
-		// Comment line
 		if strings.HasPrefix(trimmed, "#") {
 			ef.Lines = append(ef.Lines, model.RawLine{
 				Type:    model.LineComment,
@@ -84,10 +78,8 @@ func ParseBytes(name string, data []byte, secrets config.SecretsConfig) *model.E
 			continue
 		}
 
-		// Try to parse as KEY=VALUE
 		key, value, comment, quoteStyle, hasExport, rawContent, consumed := parseLine(lines, i)
 		if key == "" {
-			// Not a valid variable line — treat as comment
 			ef.Lines = append(ef.Lines, model.RawLine{
 				Type:    model.LineComment,
 				Content: line,
@@ -127,7 +119,6 @@ func parseLine(lines []string, i int) (string, string, string, model.QuoteStyle,
 	line := lines[i]
 	trimmed := strings.TrimSpace(line)
 
-	// Check for export prefix
 	hasExport := false
 	working := trimmed
 	if strings.HasPrefix(working, "export ") {
@@ -138,7 +129,6 @@ func parseLine(lines []string, i int) (string, string, string, model.QuoteStyle,
 		working = strings.TrimSpace(working[7:])
 	}
 
-	// Find the = sign
 	before, after, ok := strings.Cut(working, "=")
 	if !ok {
 		return "", "", "", model.QuoteNone, false, "", 0
@@ -151,19 +141,15 @@ func parseLine(lines []string, i int) (string, string, string, model.QuoteStyle,
 
 	rest := after
 
-	// Determine quoting
 	if len(rest) > 0 && rest[0] == '"' {
-		// Double-quoted value — may span multiple lines
 		value, comment, rawContent, consumed := parseDoubleQuoted(lines, i, rest)
 		return key, value, comment, model.QuoteDouble, hasExport, rawContent, consumed
 	}
 	if len(rest) > 0 && rest[0] == '\'' {
-		// Single-quoted value — may span multiple lines
 		value, comment, rawContent, consumed := parseSingleQuoted(lines, i, rest)
 		return key, value, comment, model.QuoteSingle, hasExport, rawContent, consumed
 	}
 
-	// Unquoted value
 	value, comment := parseUnquoted(rest)
 	return key, value, comment, model.QuoteNone, hasExport, line, 1
 }
@@ -200,7 +186,6 @@ func parseQuoted(
 			return value, extractInlineComment(remainder), strings.Join(rawLines, "\n"), consumed
 		}
 
-		// No closing quote on this line — consume the next one.
 		valueParts = append(valueParts, content)
 		consumed++
 		if startIdx+consumed-1 >= len(lines) {
@@ -212,12 +197,10 @@ func parseQuoted(
 	}
 }
 
-// findClosingDoubleQuote returns the index of the first unescaped `"` in content,
-// or -1 if none is present.
 func findClosingDoubleQuote(content string) int {
 	for j := 0; j < len(content); j++ {
 		if content[j] == '\\' && j+1 < len(content) {
-			j++ // skip the next char, loop increments past it
+			j++
 			continue
 		}
 		if content[j] == '"' {
@@ -227,17 +210,12 @@ func findClosingDoubleQuote(content string) int {
 	return -1
 }
 
-// findClosingSingleQuote returns the index of the first `'` in content, or -1.
-// Single-quoted values have no escape mechanism in shell semantics.
 func findClosingSingleQuote(content string) int {
 	return strings.Index(content, "'")
 }
 
 func identityTransform(s string) string { return s }
 
-// extractInlineComment returns the comment text from a remainder string that
-// starts with `#`, trimming at most one leading space. Returns empty string
-// when there is no `#` at the start of remainder.
 func extractInlineComment(remainder string) string {
 	if !strings.HasPrefix(remainder, "#") {
 		return ""
@@ -250,7 +228,6 @@ func extractInlineComment(remainder string) string {
 }
 
 func parseUnquoted(rest string) (string, string) {
-	// Inline comments on unquoted values are delimited by whitespace + `#`.
 	value := rest
 	comment := ""
 

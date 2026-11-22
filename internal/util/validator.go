@@ -19,11 +19,9 @@ func IsPlaceholderValue(value string) bool {
 	if slices.Contains(placeholderExact, lower) {
 		return true
 	}
-	// "your_*_here" pattern
 	if strings.HasPrefix(lower, "your_") && strings.HasSuffix(lower, "_here") {
 		return true
 	}
-	// "your-*-here" pattern
 	if strings.HasPrefix(lower, "your-") && strings.HasSuffix(lower, "-here") {
 		return true
 	}

@@ -8,7 +8,6 @@ func LookupTheme(name string) (ColorConfig, bool) {
 	if !ok {
 		return ColorConfig{}, false
 	}
-	// Struct conversion: compiles only while ColorConfig and themes.Colors have the same fields in the same order.
 	return ColorConfig(t), true
 }
 
@@ -29,8 +28,6 @@ func FinalizeColors(cfg *Config) {
 	}
 }
 
-// resolveColors merges theme defaults with explicit color overrides.
-// Explicit (non-empty) fields in colors take priority over the theme.
 func resolveColors(theme string, colors ColorConfig) ColorConfig {
 	base, ok := LookupTheme(theme)
 	if !ok {

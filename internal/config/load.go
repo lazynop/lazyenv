@@ -15,13 +15,8 @@ import (
 	toml "github.com/pelletier/go-toml/v2"
 )
 
-// hexColorRE matches a hex color literal with an explicit '#' prefix.
-// Length is checked separately so we can pin valid digit counts (3/4/6/8).
 var hexColorRE = regexp.MustCompile(`^#[0-9a-fA-F]+$`)
 
-// isValidColor reports whether s is a valid color string for lipgloss:
-// either a hex literal (#RGB, #RGBA, #RRGGBB, #RRGGBBAA) or an ANSI 256
-// numeric (0-255). Empty is valid and means "fall back to theme/default".
 func isValidColor(s string) bool {
 	if s == "" {
 		return true
@@ -86,7 +81,6 @@ func ConfigSearchPaths(projectDir, configPath string) []string {
 	return paths
 }
 
-// findConfigFile returns the first config file found, or "".
 func findConfigFile(projectDir, configPath string) string {
 	for _, p := range ConfigSearchPaths(projectDir, configPath) {
 		if fileExists(p) {

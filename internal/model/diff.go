@@ -25,7 +25,6 @@ type DiffEntry struct {
 // Uses last occurrence for duplicates (shell semantics).
 // Returns entries ordered: equal/changed first (by A's order), then added (A only), then removed (B only).
 func ComputeDiff(a, b *EnvFile) []DiffEntry {
-	// Build maps using last occurrence (shell semantics)
 	bMap := make(map[string]string)
 	bSecret := make(map[string]bool)
 	for _, v := range b.Vars {
@@ -42,7 +41,6 @@ func ComputeDiff(a, b *EnvFile) []DiffEntry {
 	seen := make(map[string]bool)
 	var entries []DiffEntry
 
-	// Walk A's vars in order (using last occurrence per key)
 	for _, v := range slices.Backward(a.Vars) {
 		key := v.Key
 		if seen[key] {
@@ -51,7 +49,6 @@ func ComputeDiff(a, b *EnvFile) []DiffEntry {
 		seen[key] = true
 	}
 
-	// Reset and walk in forward order for output
 	seen = make(map[string]bool)
 	for _, v := range a.Vars {
 		if seen[v.Key] {
@@ -88,7 +85,6 @@ func ComputeDiff(a, b *EnvFile) []DiffEntry {
 		}
 	}
 
-	// Keys only in B (removed from A's perspective)
 	seenB := make(map[string]bool)
 	for _, v := range b.Vars {
 		if seenB[v.Key] {

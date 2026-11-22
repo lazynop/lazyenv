@@ -126,7 +126,6 @@ func DefaultConfig() Config {
 			MessageTimeout:       2 * time.Second,
 			ErrorMessageTimeout:  3 * time.Second,
 		},
-		// Colors: all empty = use theme auto-detection
 		Files: FileConfig{
 			Include: []string{".env", ".env.*", "*.env"},
 			Exclude: []string{"*.bak"},

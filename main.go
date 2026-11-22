@@ -90,17 +90,12 @@ func applyCLIOverrides(cfg *config.Config) []string {
 	return notices
 }
 
-// applyFileListWidthOverride sets the file list width from the flag; the TUI
-// raises a value below config.FileListMinWidth to it, and narrows one that
-// would leave the variables panel less than config.VarListMinWidth.
 func applyFileListWidthOverride(cfg *config.Config) {
 	if cli.FileListWidth != nil {
 		cfg.Layout.FileListWidth = *cli.FileListWidth
 	}
 }
 
-// applySessionSummaryOverride resolves the final SessionSummary value: CLI flag
-// wins over config file, and --read-only forces it off.
 func applySessionSummaryOverride(cfg *config.Config) {
 	if cli.SessionSummary != nil {
 		cfg.SessionSummary = *cli.SessionSummary
@@ -140,7 +135,6 @@ func checkConfig(stdout, stderr io.Writer, projectDir, configPath string) int {
 	return 1
 }
 
-// writeConfigErrors lists the reasons the config file at path was rejected.
 func writeConfigErrors(w io.Writer, path string, errs []string) {
 	fmt.Fprintf(w, "Config errors in %s:\n", path)
 	for _, e := range errs {

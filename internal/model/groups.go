@@ -19,9 +19,6 @@ func (g VarGroup) IsUngrouped() bool {
 	return g.Prefix == ""
 }
 
-// prefixOf returns the substring before the first '_' in key. Returns ""
-// if key has no '_' or starts with '_' (in which case the var is considered
-// ungroupable).
 func prefixOf(key string) string {
 	if i := strings.IndexByte(key, '_'); i > 0 {
 		return key[:i]
@@ -73,7 +70,6 @@ func ComputeGroups(vars []EnvVar) []VarGroup {
 		}
 	}
 
-	// Second pass: distribute vars into either a named group or Ungrouped.
 	var ungrouped VarGroup
 	for i, v := range vars {
 		p := prefixOf(v.Key)

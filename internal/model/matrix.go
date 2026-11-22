@@ -52,7 +52,7 @@ func SortEntries(entries []MatrixEntry, mode SortMode) {
 			ci := countPresent(entries[i].Present)
 			cj := countPresent(entries[j].Present)
 			if ci != cj {
-				return ci < cj // fewer present = more gaps = first
+				return ci < cj
 			}
 			return entries[i].Key < entries[j].Key
 		})
