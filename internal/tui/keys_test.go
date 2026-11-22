@@ -3,7 +3,6 @@ package tui
 import (
 	"fmt"
 	"go/ast"
-	goparser "go/parser"
 	"go/token"
 	"reflect"
 	"strings"
@@ -53,9 +52,7 @@ func TestEveryBoundKeyCanBePressed(t *testing.T) {
 func TestKeyPressesCarryTheirCode(t *testing.T) {
 	fset := token.NewFileSet()
 	var textOnly []string
-	for _, name := range listPackageSource(t).testFiles {
-		file, err := goparser.ParseFile(fset, name, nil, goparser.SkipObjectResolution)
-		require.NoError(t, err)
+	for _, file := range parseFiles(t, fset, listPackageSource(t).testFiles) {
 		local := importName(file, bubbleteaPath)
 		if local == "" {
 			continue

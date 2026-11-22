@@ -78,6 +78,17 @@ func listPackageSource(t *testing.T) packageSource {
 	}
 }
 
+func parseFiles(t *testing.T, fset *token.FileSet, names []string) []*ast.File {
+	t.Helper()
+	files := make([]*ast.File, 0, len(names))
+	for _, name := range names {
+		file, err := goparser.ParseFile(fset, name, nil, goparser.SkipObjectResolution)
+		require.NoError(t, err)
+		files = append(files, file)
+	}
+	return files
+}
+
 func inspectDecls(file *ast.File, visit func(n ast.Node, enclosingFunc string) bool) {
 	for _, decl := range file.Decls {
 		enclosingFunc := ""
@@ -92,9 +103,7 @@ func sourceMatches(t *testing.T, importPath string, match identMatcher) []source
 	t.Helper()
 	fset := token.NewFileSet()
 	var refs []sourceRef
-	for _, name := range listPackageSource(t).goFiles {
-		file, err := goparser.ParseFile(fset, name, nil, goparser.SkipObjectResolution)
-		require.NoError(t, err)
+	for _, file := range parseFiles(t, fset, listPackageSource(t).goFiles) {
 		importedAs := thisPackage
 		if importPath != thisPackage {
 			if importedAs = importName(file, importPath); importedAs == "" {

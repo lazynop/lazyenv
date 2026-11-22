@@ -3,7 +3,6 @@ package tui
 import (
 	"go/ast"
 	"go/importer"
-	goparser "go/parser"
 	"go/token"
 	"go/types"
 	"testing"
@@ -28,11 +27,7 @@ func typeCheckThisPackage(t *testing.T) typedSource {
 			Selections: map[*ast.SelectorExpr]*types.Selection{},
 		},
 	}
-	for _, name := range pkg.goFiles {
-		file, err := goparser.ParseFile(src.fset, name, nil, goparser.SkipObjectResolution)
-		require.NoError(t, err)
-		src.files = append(src.files, file)
-	}
+	src.files = parseFiles(t, src.fset, pkg.goFiles)
 	conf := types.Config{Importer: importer.ForCompiler(src.fset, "source", nil)}
 	_, err := conf.Check(pkg.importPath, src.fset, src.files, src.info)
 	require.NoError(t, err)
