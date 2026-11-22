@@ -3,6 +3,9 @@ package tui
 import (
 	"fmt"
 	"image/color"
+	"os"
+	"path/filepath"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -202,10 +205,32 @@ func TestViewNotReady(t *testing.T) {
 	assert.Contains(t, view.Content, "Loading")
 }
 
-func TestInitReturnsBatch(t *testing.T) {
-	app := newTestApp(nil)
+func TestInitBatchesTheDirectoryScanAndTheBackgroundColorRequest(t *testing.T) {
+	cfg := config.DefaultConfig()
+	cfg.Dir = t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(cfg.Dir, ".env"), []byte("A=1\n"), 0o600))
+	app := NewApp(cfg, StartupMessages{})
 
-	assert.NotNil(t, app.Init())
+	batch, ok := app.Init()().(tea.BatchMsg)
+	require.True(t, ok, "Init must batch its startup commands")
+	require.Len(t, batch, 2)
+	var msgTypes []reflect.Type
+	var scan FilesLoadedMsg
+	for _, cmd := range batch {
+		msg := cmd()
+		msgTypes = append(msgTypes, reflect.TypeOf(msg))
+		if loaded, ok := msg.(FilesLoadedMsg); ok {
+			scan = loaded
+		}
+	}
+
+	assert.ElementsMatch(t, []reflect.Type{
+		reflect.TypeFor[FilesLoadedMsg](),
+		reflect.TypeOf(tea.RequestBackgroundColor()),
+	}, msgTypes)
+	require.NoError(t, scan.Err)
+	require.Len(t, scan.Files, 1)
+	assert.Equal(t, ".env", scan.Files[0].Name)
 }
 
 func startAppOnEmptyDir(t *testing.T, app App) App {
