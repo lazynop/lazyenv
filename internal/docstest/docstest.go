@@ -44,13 +44,29 @@ func repoRoot(t *testing.T) string {
 	}
 }
 
-// CodeSpans returns the text of each inline code span in s, in order.
+// CodeSpans returns the text of each inline code span in s, in order. It
+// skips fenced code blocks, whose backticks are literal text.
 func CodeSpans(s string) []string {
 	var spans []string
-	for _, m := range codeSpanRe.FindAllStringSubmatch(s, -1) {
+	for _, m := range codeSpanRe.FindAllStringSubmatch(withoutFencedBlocks(s), -1) {
 		spans = append(spans, m[1])
 	}
 	return spans
+}
+
+func withoutFencedBlocks(s string) string {
+	lines := strings.Split(s, "\n")
+	inFence := false
+	for i, line := range lines {
+		fence := strings.HasPrefix(strings.TrimSpace(line), "```")
+		if fence || inFence {
+			lines[i] = ""
+		}
+		if fence {
+			inFence = !inFence
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 // Table is a Markdown table: the header cells and, for each row, its cells,
