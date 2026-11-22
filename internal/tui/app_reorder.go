@@ -70,8 +70,6 @@ func (a App) handleReorderConfirmKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	return a, nil
 }
 
-// executeReorder reorders the active file and persists it to disk, mirroring
-// the save flow (backup, atomic write, session stats, re-parse).
 func (a App) executeReorder() (tea.Model, tea.Cmd) {
 	a.mode = ModeNormal
 	f := a.varList.File

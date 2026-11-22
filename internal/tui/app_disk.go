@@ -15,8 +15,6 @@ import (
 // SessionStats before returning, so callers can neither forget the hook nor
 // run fallible post-processing (re-parse, CheckGitIgnore) ahead of it.
 
-// envFilePerm is the permission mode for newly created .env files
-// (owner-writable, world-readable), matching parser.WriteFile.
 const envFilePerm os.FileMode = 0o644
 
 func (a App) saveFile(f *model.EnvFile) error {

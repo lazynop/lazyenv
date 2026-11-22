@@ -322,8 +322,6 @@ func (a App) handleNormalKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 
-	// Reorder-on-disk (O): a global mutation handled here so the global-action
-	// dispatcher stays within the project's cyclomatic-complexity limit.
 	if key.Matches(msg, a.keys.Reorder) {
 		return a.startReorder()
 	}
@@ -804,9 +802,6 @@ func (a App) inputBarView() string {
 	}
 	room := a.theme.barRoom(a.width)
 	label, _ = layoutInputBar(room, label, in)
-	// textinput measures runes with go-runewidth, which counts some emoji
-	// (those with a variation selector) one column narrower than drawn: cut
-	// what overflows so the bar keeps its one row.
 	return a.theme.StatusBar.Width(a.width).Render(ansi.Truncate(label+in.View(), room, ""))
 }
 

@@ -19,14 +19,14 @@
 14 internal/parser/writer.go
 5 internal/parser/writer_roundtrip_test.go
 16 internal/parser/writer_test.go
-12 internal/tui/app.go
+7 internal/tui/app.go
 1 internal/tui/app_actions.go
 66 internal/tui/app_compare_test.go
 10 internal/tui/app_createfile_test.go
 16 internal/tui/app_cursor_property_test.go
 1 internal/tui/app_deletefile.go
 5 internal/tui/app_deletefile_test.go
-17 internal/tui/app_disk.go
+15 internal/tui/app_disk.go
 8 internal/tui/app_disk_test.go
 2 internal/tui/app_duplicatefile_test.go
 3 internal/tui/app_edit.go
@@ -43,7 +43,6 @@
 12 internal/tui/app_readonly_test.go
 2 internal/tui/app_renamefile_test.go
 22 internal/tui/app_renamekey_test.go
-2 internal/tui/app_reorder.go
 6 internal/tui/app_reorder_test.go
 4 internal/tui/app_reparse.go
 24 internal/tui/app_reparse_test.go
