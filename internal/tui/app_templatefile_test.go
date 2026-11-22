@@ -80,17 +80,14 @@ func TestTemplateFile_Success(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{src})
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
-	app.mode = ModeTemplateFile
-	app.fileOpSource = src
-	app.fileInput.SetValue(".env.example")
+	app.focus = FocusFiles
 
-	result, _ := app.confirmTemplateFile()
-	app = result.(App)
+	app = submitFileName(app, "T", ".env.template")
 
 	assert.Equal(t, ModeNormal, app.mode)
 	assert.Contains(t, app.statusBar.Message, "Template from")
 
-	data, err := os.ReadFile(filepath.Join(dir, ".env.example"))
+	data, err := os.ReadFile(filepath.Join(dir, ".env.template"))
 	require.NoError(t, err)
 	assert.Equal(t, "# Database config\nDB_HOST=\nDB_PASS=\n", string(data))
 
@@ -108,12 +105,9 @@ func TestTemplateFile_PreservesExportPrefix(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{src})
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
-	app.mode = ModeTemplateFile
-	app.fileOpSource = src
-	app.fileInput.SetValue(".env.example")
+	app.focus = FocusFiles
 
-	result, _ := app.confirmTemplateFile()
-	app = result.(App)
+	app = submitFileName(app, "T", ".env.example")
 
 	data, err := os.ReadFile(filepath.Join(dir, ".env.example"))
 	require.NoError(t, err)
@@ -132,12 +126,9 @@ func TestTemplateFile_PreservesCommentsAndBlankLines(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{src})
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
-	app.mode = ModeTemplateFile
-	app.fileOpSource = src
-	app.fileInput.SetValue(".env.example")
+	app.focus = FocusFiles
 
-	result, _ := app.confirmTemplateFile()
-	app = result.(App)
+	app = submitFileName(app, "T", ".env.example")
 
 	data, err := os.ReadFile(filepath.Join(dir, ".env.example"))
 	require.NoError(t, err)
@@ -206,11 +197,8 @@ func TestTemplateOfAnEmptyFileGainsNoBlankFirstLine(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.config.NoBackup = true
-	app.mode = ModeTemplateFile
-	app.fileOpSource = src
-	app.fileInput.SetValue(".env.example")
-	result, _ := app.confirmTemplateFile()
-	app = result.(App)
+	app.focus = FocusFiles
+	app = submitFileName(app, "T", ".env.example")
 
 	app.varList.File.AddVar("KEY", "")
 	app, _ = app.handleSave()

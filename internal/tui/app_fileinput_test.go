@@ -3,11 +3,16 @@ package tui
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func submitFileName(app App, openKey, name string) App {
+	return press(app, slices.Concat([]string{openKey, "ctrl+u"}, typing(name), []string{"enter"})...)
+}
 
 func TestFinaliseNewFileCleanupCancelsCreate(t *testing.T) {
 	app := newTestApp(nil)

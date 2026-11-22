@@ -141,11 +141,9 @@ func TestCreateFile_Success(t *testing.T) {
 	app := newTestApp(nil)
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
-	app.mode = ModeCreateFile
-	app.fileInput.SetValue(".env.staging")
+	app.focus = FocusFiles
 
-	result, _ := app.confirmCreateFile()
-	app = result.(App)
+	app = submitFileName(app, "N", ".env.staging")
 
 	assert.Equal(t, ModeNormal, app.mode)
 	assert.Contains(t, app.statusBar.Message, "Created")
@@ -165,10 +163,8 @@ func TestCreatedFileEndsWithANewlineAfterItsFirstSave(t *testing.T) {
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
 	app.config.NoBackup = true
-	app.mode = ModeCreateFile
-	app.fileInput.SetValue(".env.staging")
-	result, _ := app.confirmCreateFile()
-	app = result.(App)
+	app.focus = FocusFiles
+	app = submitFileName(app, "N", ".env.staging")
 
 	app.varList.File.AddVar("KEY", "value")
 	app, _ = app.handleSave()

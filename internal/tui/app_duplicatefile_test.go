@@ -81,12 +81,9 @@ func TestDuplicateFile_Success(t *testing.T) {
 	app := newTestApp([]*model.EnvFile{src})
 	app.config.Dir = dir
 	app.config.NoGitCheck = true
-	app.mode = ModeDuplicateFile
-	app.fileOpSource = src
-	app.fileInput.SetValue(".env.staging")
+	app.focus = FocusFiles
 
-	result, _ := app.confirmDuplicateFile()
-	app = result.(App)
+	app = submitFileName(app, "C", ".env.staging")
 
 	assert.Equal(t, ModeNormal, app.mode)
 	assert.Contains(t, app.statusBar.Message, "Duplicated")
