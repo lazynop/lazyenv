@@ -23,7 +23,6 @@
 10 internal/tui/app_createfile_test.go
 16 internal/tui/app_cursor_property_test.go
 5 internal/tui/app_deletefile_test.go
-5 internal/tui/app_disk.go
 8 internal/tui/app_disk_test.go
 2 internal/tui/app_duplicatefile_test.go
 63 internal/tui/app_edit_test.go
