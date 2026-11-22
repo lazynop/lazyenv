@@ -10,7 +10,10 @@
 //
 // -list prints each banned comment group as path:line: first line (+more lines).
 //
-// Usage: commentlint [-update | -list] [-baseline FILE] [ROOT]
+// -update refuses a count above the current baseline unless -allow-raise is
+// given, which is meant for code moved from one file to another.
+//
+// Usage: commentlint [-update [-allow-raise] | -list] [-baseline FILE] [ROOT]
 package main
 
 import (
@@ -33,6 +36,7 @@ import (
 
 func main() {
 	update := flag.Bool("update", false, "rewrite the baseline with the current counts")
+	allowRaise := flag.Bool("allow-raise", false, "with -update, accept counts above the baseline (code moved between files)")
 	list := flag.Bool("list", false, "print every banned comment instead of checking the baseline")
 	baseline := flag.String("baseline", "tools/commentlint/baseline.txt", "baseline file, relative to ROOT")
 	flag.Parse()
@@ -41,10 +45,12 @@ func main() {
 		root = flag.Arg(0)
 	}
 	var err error
-	if *list {
+	if *allowRaise && !*update {
+		err = errors.New("-allow-raise works only with -update")
+	} else if *list {
 		err = listTree(root, os.Stdout)
 	} else {
-		err = run(root, filepath.Join(root, *baseline), *update)
+		err = run(root, filepath.Join(root, *baseline), *update, *allowRaise)
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -52,7 +58,7 @@ func main() {
 	}
 }
 
-func run(root, baselinePath string, update bool) error {
+func run(root, baselinePath string, update, allowRaise bool) error {
 	found, err := scanTree(root)
 	if err != nil {
 		return err
@@ -61,12 +67,18 @@ func run(root, baselinePath string, update bool) error {
 	for file, groups := range found {
 		counts[file] = sumLines(groups)
 	}
-	if update {
-		return writeBaseline(baselinePath, counts)
-	}
 	base, err := readBaseline(baselinePath)
+	if update && errors.Is(err, fs.ErrNotExist) {
+		base, err = map[string]int{}, nil
+	}
 	if err != nil {
 		return err
+	}
+	if update {
+		if raised := raises(counts, base); len(raised) > 0 && !allowRaise {
+			return errors.New(strings.Join(raised, "\n"))
+		}
+		return writeBaseline(baselinePath, counts)
 	}
 	problems := compare(counts, base)
 	if len(problems) == 0 {
@@ -312,7 +324,7 @@ func readBaseline(path string) (map[string]int, error) {
 
 func writeBaseline(path string, counts map[string]int) error {
 	var b strings.Builder
-	b.WriteString("# Banned comment lines allowed per file; only ever lower these.\n")
+	b.WriteString("# Banned comment lines allowed per file; lower only, except -allow-raise for moved code.\n")
 	b.WriteString("# Regenerate with: just comment-baseline\n")
 	for _, file := range sortedKeys(counts) {
 		fmt.Fprintf(&b, "%d %s\n", counts[file], file)
@@ -336,12 +348,22 @@ func compare(counts, base map[string]int) []string {
 		got, want := counts[file], base[file]
 		switch {
 		case got > want:
-			problems = append(problems, fmt.Sprintf("%s: %d banned comment lines, baseline allows %d: delete the new comments; code moved here brings its count (CODING_STANDARDS.md, Comments)", file, got, want))
+			problems = append(problems, fmt.Sprintf("%s: %d banned comment lines, baseline allows %d: delete the new comments, or run `just comment-baseline -allow-raise` if the lines moved here from another file (CODING_STANDARDS.md, Comments)", file, got, want))
 		case got < want:
 			problems = append(problems, fmt.Sprintf("%s: %d banned comment lines, baseline allows %d: run `just comment-baseline` to lock in the drop", file, got, want))
 		}
 	}
 	return problems
+}
+
+func raises(counts, base map[string]int) []string {
+	var raised []string
+	for _, file := range sortedKeys(counts) {
+		if counts[file] > base[file] {
+			raised = append(raised, fmt.Sprintf("%s: %d banned comment lines, baseline allows %d: the baseline only goes down; delete the new comments, or pass -allow-raise if the lines moved here from another file", file, counts[file], base[file]))
+		}
+	}
+	return raised
 }
 
 func sortedKeys[V any](m map[string]V) []string {

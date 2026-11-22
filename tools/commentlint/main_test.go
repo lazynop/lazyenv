@@ -167,23 +167,23 @@ func TestRunRatchetsAgainstTheBaseline(t *testing.T) {
 	write("tools/t.go", "package t\n\n// skipped: nested module\n")
 	baseline := filepath.Join(root, "baseline.txt")
 
-	if err := run(root, baseline, true); err != nil {
+	if err := run(root, baseline, true, true); err != nil {
 		t.Fatal(err)
 	}
 	data, _ := os.ReadFile(baseline)
-	wantBaseline := "# Banned comment lines allowed per file; only ever lower these.\n# Regenerate with: just comment-baseline\n1 a/a.go\n"
+	wantBaseline := "# Banned comment lines allowed per file; lower only, except -allow-raise for moved code.\n# Regenerate with: just comment-baseline\n1 a/a.go\n"
 	if string(data) != wantBaseline {
 		t.Fatalf("baseline:\n%s", data)
 	}
-	if err := run(root, baseline, false); err != nil {
+	if err := run(root, baseline, false, false); err != nil {
 		t.Errorf("unchanged tree: %v", err)
 	}
 	write("a/a.go", "package a\n\n// new\nvar x = 1 // banned\n")
-	if err := run(root, baseline, false); err == nil || !strings.Contains(err.Error(), "delete the new comments") {
+	if err := run(root, baseline, false, false); err == nil || !strings.Contains(err.Error(), "delete the new comments") {
 		t.Errorf("grown file: err = %v", err)
 	}
 	write("a/a.go", "package a\n\nvar x = 1\n")
-	if err := run(root, baseline, false); err == nil || !strings.Contains(err.Error(), "lock in the drop") {
+	if err := run(root, baseline, false, false); err == nil || !strings.Contains(err.Error(), "lock in the drop") {
 		t.Errorf("shrunk file: err = %v", err)
 	}
 }
@@ -220,5 +220,49 @@ func TestBannedCommentsKeepToolDirectives(t *testing.T) {
 	want := []string{"4+2"}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("banned at %v, want %v", got, want)
+	}
+}
+
+func TestUpdateRefusesARaiseUnlessAllowed(t *testing.T) {
+	root := t.TempDir()
+	src := filepath.Join(root, "a.go")
+	baseline := filepath.Join(root, "baseline.txt")
+	if err := os.WriteFile(src, []byte("package a\n\nvar x = 1 // banned\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(root, baseline, true, false); err == nil || !strings.Contains(err.Error(), "only goes down") {
+		t.Fatalf("first -update without -allow-raise: err = %v, want a refusal, the missing baseline allows nothing", err)
+	}
+	if _, err := os.Stat(baseline); !os.IsNotExist(err) {
+		t.Fatalf("a refused first -update wrote the baseline")
+	}
+	if err := run(root, baseline, true, true); err != nil {
+		t.Fatalf("first -update with -allow-raise: %v", err)
+	}
+	if err := os.WriteFile(src, []byte("package a\n\n// new\nvar x = 1 // banned\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(root, baseline, true, false); err == nil || !strings.Contains(err.Error(), "only goes down") {
+		t.Errorf("raise without -allow-raise: err = %v", err)
+	}
+	if data, _ := os.ReadFile(baseline); !strings.HasSuffix(string(data), "\n1 a.go\n") {
+		t.Errorf("a refused raise rewrote the baseline:\n%s", data)
+	}
+	if err := os.WriteFile(src, []byte("package a\n\nvar x = 1\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(root, baseline, true, false); err != nil {
+		t.Errorf("a drop needs no -allow-raise: %v", err)
+	}
+}
+
+func TestUpdateOnACleanTreeNeedsNoBaseline(t *testing.T) {
+	root := t.TempDir()
+	baseline := filepath.Join(root, "baseline.txt")
+	if err := os.WriteFile(filepath.Join(root, "a.go"), []byte("package a\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(root, baseline, true, false); err != nil {
+		t.Fatalf("-update with no banned comment and no baseline: %v", err)
 	}
 }

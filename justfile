@@ -99,9 +99,9 @@ lint:
     go -C tools run ./commentlint .. || rc=1
     exit $rc
 
-# Rewrite the comment ratchet baseline after deleting comments; never to allow new ones
-comment-baseline:
-    go -C tools run ./commentlint -update ..
+# Lower the comment ratchet baseline after deleting comments; it refuses a raise, except with -allow-raise for code moved between files
+comment-baseline *flags:
+    go -C tools run ./commentlint -update {{flags}} ..
 
 # Check formatting and import grouping (CI-friendly, fails if unformatted)
 fmt-check:

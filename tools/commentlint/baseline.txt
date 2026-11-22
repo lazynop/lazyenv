@@ -1,2 +1,2 @@
-# Banned comment lines allowed per file; only ever lower these.
+# Banned comment lines allowed per file; lower only, except -allow-raise for moved code.
 # Regenerate with: just comment-baseline
