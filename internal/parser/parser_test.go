@@ -21,9 +21,7 @@ func TestBasicKeyValue(t *testing.T) {
 	assert.Equal(t, model.QuoteNone, ef.Vars[0].QuoteStyle)
 }
 
-func TestBasename(t *testing.T) {
-	// EnvFile.Name must be the filename, not the full path, on every OS.
-	// The helper must therefore split on both '/' and '\'.
+func TestBasenameIsTheSameOnLinuxAndWindows(t *testing.T) {
 	cases := []struct {
 		name, path, want string
 	}{
@@ -39,10 +37,7 @@ func TestBasename(t *testing.T) {
 	}
 }
 
-func TestUTF8BOMStripped(t *testing.T) {
-	// Files saved by Windows editors may start with a UTF-8 BOM (EF BB BF).
-	// Without stripping, the first key parses with BOM bytes prepended and the
-	// line is misclassified as a comment.
+func TestUTF8BOMFromWindowsEditorsIsStripped(t *testing.T) {
 	data := append([]byte{0xEF, 0xBB, 0xBF}, []byte("FOO=bar\n")...)
 	ef := ParseBytes(".env", data, config.SecretsConfig{})
 
@@ -276,33 +271,34 @@ func TestIsValidKey(t *testing.T) {
 }
 
 func TestParseSingleQuotedEdgeCases(t *testing.T) {
-	// Unterminated single quote
-	ef := ParseBytes(".env", []byte("FOO='no closing quote\n"), config.SecretsConfig{})
-	require.Len(t, ef.Vars, 1)
-	assert.Equal(t, "no closing quote", ef.Vars[0].Value)
-	assert.Equal(t, model.QuoteSingle, ef.Vars[0].QuoteStyle)
+	t.Run("unterminated", func(t *testing.T) {
+		ef := ParseBytes(".env", []byte("FOO='no closing quote\n"), config.SecretsConfig{})
+		require.Len(t, ef.Vars, 1)
+		assert.Equal(t, "no closing quote", ef.Vars[0].Value)
+		assert.Equal(t, model.QuoteSingle, ef.Vars[0].QuoteStyle)
+	})
 
-	// Empty single-quoted value
-	ef = ParseBytes(".env", []byte("FOO=''\n"), config.SecretsConfig{})
-	require.Len(t, ef.Vars, 1)
-	assert.Equal(t, "", ef.Vars[0].Value)
-	assert.Equal(t, model.QuoteSingle, ef.Vars[0].QuoteStyle)
-	assert.True(t, ef.Vars[0].IsEmpty)
+	t.Run("empty", func(t *testing.T) {
+		ef := ParseBytes(".env", []byte("FOO=''\n"), config.SecretsConfig{})
+		require.Len(t, ef.Vars, 1)
+		assert.Equal(t, "", ef.Vars[0].Value)
+		assert.Equal(t, model.QuoteSingle, ef.Vars[0].QuoteStyle)
+		assert.True(t, ef.Vars[0].IsEmpty)
+	})
 
-	// Single-quoted value with inline comment
-	ef = ParseBytes(".env", []byte("FOO='bar' # comment\n"), config.SecretsConfig{})
-	require.Len(t, ef.Vars, 1)
-	assert.Equal(t, "bar", ef.Vars[0].Value)
-	assert.Equal(t, "comment", ef.Vars[0].Comment)
+	t.Run("inline comment", func(t *testing.T) {
+		ef := ParseBytes(".env", []byte("FOO='bar' # comment\n"), config.SecretsConfig{})
+		require.Len(t, ef.Vars, 1)
+		assert.Equal(t, "bar", ef.Vars[0].Value)
+		assert.Equal(t, "comment", ef.Vars[0].Comment)
+	})
 }
 
 func TestProcessEscapesEdgeCases(t *testing.T) {
-	// Unrecognized escapes are preserved literally
-	assert.Equal(t, "\\x", processEscapes(`\x`))
-	assert.Equal(t, "\\z", processEscapes(`\z`))
+	assert.Equal(t, "\\x", processEscapes(`\x`), "an unrecognized escape is kept literally")
+	assert.Equal(t, "\\z", processEscapes(`\z`), "an unrecognized escape is kept literally")
 
-	// Trailing backslash (no char after it) — preserved as-is
-	assert.Equal(t, "end\\", processEscapes(`end\`))
+	assert.Equal(t, "end\\", processEscapes(`end\`), "a trailing backslash, with no char after it, is kept")
 
 	assert.Equal(t, "\r", processEscapes(`\r`))
 
@@ -312,7 +308,6 @@ func TestProcessEscapesEdgeCases(t *testing.T) {
 }
 
 func TestParseDoubleQuotedUnterminated(t *testing.T) {
-	// Unterminated double quote: value extends to EOF
 	ef := ParseBytes(".env", []byte("FOO=\"no closing\n"), config.SecretsConfig{})
 	require.Len(t, ef.Vars, 1)
 	assert.Equal(t, "no closing", ef.Vars[0].Value)
@@ -326,8 +321,7 @@ func TestExportWithTab(t *testing.T) {
 	assert.True(t, ef.Vars[0].HasExport)
 }
 
-func TestKeyWithNoEquals(t *testing.T) {
-	// A line with no = sign should be treated as a comment
+func TestLineWithoutEqualsIsAComment(t *testing.T) {
 	ef := ParseBytes(".env", []byte("NOEQUALS\nFOO=bar\n"), config.SecretsConfig{})
 	require.Len(t, ef.Vars, 1)
 	assert.Equal(t, "FOO", ef.Vars[0].Key)
@@ -342,8 +336,7 @@ func TestMultilineSingleQuoted(t *testing.T) {
 	assert.Equal(t, "line1\nline2\nline3", ef.Vars[0].Value)
 	assert.Equal(t, model.QuoteSingle, ef.Vars[0].QuoteStyle)
 
-	// One LineVariable, no phantom comment lines for the continuations.
-	require.Len(t, ef.Lines, 1)
+	require.Len(t, ef.Lines, 1, "continuation lines belong to the variable, not to comment lines")
 	assert.Equal(t, model.LineVariable, ef.Lines[0].Type)
 }
 

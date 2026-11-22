@@ -52,7 +52,6 @@ func TestTomlTagsMatchExample(t *testing.T) {
 	data, err := os.ReadFile("../../examples/config/full.toml")
 	require.NoError(t, err)
 
-	// Unmarshal into defaults so unset toml:"-" fields keep their values
 	cfg := DefaultConfig()
 	err = toml.Unmarshal(data, &cfg)
 	require.NoError(t, err)
@@ -64,15 +63,18 @@ func TestTomlTagsMatchExample(t *testing.T) {
 	assert.Equal(t, 25, cfg.Layout.DiffMaxKeyWidth)
 	assert.Equal(t, []string{".env", ".env.*", "*.env"}, cfg.Files.Include)
 	assert.Equal(t, []string{"*.bak"}, cfg.Files.Exclude)
-	// toml:"-" fields should keep defaults
-	assert.Equal(t, 2*time.Second, cfg.Layout.MessageTimeout)
-	assert.Equal(t, 3*time.Second, cfg.Layout.ErrorMessageTimeout)
+	assert.Equal(t, 2*time.Second, cfg.Layout.MessageTimeout, `toml:"-" fields keep the defaults the file was unmarshaled over`)
+	assert.Equal(t, 3*time.Second, cfg.Layout.ErrorMessageTimeout, `toml:"-" fields keep the defaults the file was unmarshaled over`)
+}
+
+func isolateFromUserConfig(t *testing.T) {
+	t.Helper()
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
 }
 
 func TestLoadNoConfigFile(t *testing.T) {
-	// Isolate from user's global config
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	t.Setenv("HOME", t.TempDir())
+	isolateFromUserConfig(t)
 
 	dir := t.TempDir()
 	r := Load(dir, "")
@@ -177,8 +179,8 @@ func TestLoadKeepsWidthsBelowTheirMinimum(t *testing.T) {
 
 func TestLoadUnknownKey(t *testing.T) {
 	dir := t.TempDir()
-	content := []byte("recusrive = true\n") // typo
-	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
+	misspelledKey := []byte("recusrive = true\n")
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), misspelledKey, 0644))
 
 	r := Load(dir, "")
 	assert.Len(t, r.Errors, 1)
@@ -375,8 +377,7 @@ func TestLoadUnreadableFileErrorOmitsThePath(t *testing.T) {
 }
 
 func TestLoadNoConfig(t *testing.T) {
-	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	t.Setenv("HOME", t.TempDir())
+	isolateFromUserConfig(t)
 
 	dir := t.TempDir()
 	r := Load(dir, "")
@@ -462,11 +463,7 @@ func TestLoadSecretsNormalizesCase(t *testing.T) {
 	assert.Equal(t, []string{"_CREDENTIAL"}, r.Config.Secrets.ExtraPatterns)
 }
 
-func TestFinalizeColorsAfterCLIOverride(t *testing.T) {
-	// Scenario: config sets no-theme-bg=true on top of a theme. The CLI later
-	// disables no-theme-bg. The final Bg must be the theme's Bg, not "".
-	// On the buggy code, merge() zeroes Bg before the CLI has a chance to
-	// flip NoThemeBg back, and Bg is unrecoverable.
+func TestFinalizeColorsAfterTheCLIClearsNoThemeBg(t *testing.T) {
 	dir := t.TempDir()
 	content := []byte("theme = \"dracula\"\nno-theme-bg = true\n")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))
@@ -474,7 +471,6 @@ func TestFinalizeColorsAfterCLIOverride(t *testing.T) {
 	r := Load(dir, "")
 	require.Empty(t, r.Errors)
 
-	// Simulate CLI: user passed --no-theme-bg=false.
 	r.Config.NoThemeBg = false
 
 	FinalizeColors(&r.Config)
@@ -483,9 +479,7 @@ func TestFinalizeColorsAfterCLIOverride(t *testing.T) {
 		"Bg must reflect the post-override NoThemeBg, not be pre-zeroed by Load")
 }
 
-func TestLoadRejectsInvalidColor(t *testing.T) {
-	// A bogus color value in [colors] must reject the config, not silently
-	// pass through to lipgloss and render as blank.
+func TestLoadRejectsAColorThatWouldRenderBlank(t *testing.T) {
 	dir := t.TempDir()
 	content := []byte("[colors]\nprimary = \"not-a-color\"\n")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".lazyenvrc"), content, 0644))

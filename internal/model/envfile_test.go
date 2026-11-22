@@ -124,18 +124,17 @@ func TestDeleteVar(t *testing.T) {
 		EnvVar{Key: "BAZ", Value: "3"},
 	)
 
-	ef.DeleteVar(1) // delete BAR
+	ef.DeleteVar(ef.LastIndexOfKey("BAR"))
 
 	require.Len(t, ef.Vars, 2)
 	assert.Equal(t, "FOO", ef.Vars[0].Key)
 	assert.Equal(t, "BAZ", ef.Vars[1].Key)
 	assert.True(t, ef.Modified)
 
-	// VarIdx references should be updated
 	for _, line := range ef.Lines {
 		if line.Type == LineVariable {
 			assert.True(t, line.VarIdx >= 0 && line.VarIdx < len(ef.Vars),
-				"VarIdx %d out of range", line.VarIdx)
+				"VarIdx %d should be updated into range", line.VarIdx)
 		}
 	}
 }
@@ -146,7 +145,7 @@ func TestDeleteVarTracksDeleted(t *testing.T) {
 		EnvVar{Key: "BAR", Value: "2"},
 	)
 
-	ef.DeleteVar(1) // delete BAR
+	ef.DeleteVar(ef.LastIndexOfKey("BAR"))
 
 	require.Len(t, ef.DeletedVars, 1)
 	assert.Equal(t, "BAR", ef.DeletedVars[0].Key)
@@ -158,7 +157,7 @@ func TestDeleteNewVarNotTracked(t *testing.T) {
 	ef.AddVar("NEW", "val")
 	require.Len(t, ef.Vars, 2)
 
-	ef.DeleteVar(1) // delete the newly added var
+	ef.DeleteVar(ef.LastIndexOfKey("NEW"))
 
 	assert.Empty(t, ef.DeletedVars, "newly added vars should not appear in DeletedVars")
 }
@@ -246,9 +245,6 @@ func TestRenameVarDetectsASecretKey(t *testing.T) {
 	assert.False(t, ef.Vars[0].IsSecret)
 }
 
-// TestChangingASecretKeepsItsOriginalSecret changes a secret, not changed
-// before, so that it is no longer one: the variable is not a secret, but its
-// original keeps the status it had, so peek still masks it.
 func TestChangingASecretKeepsItsOriginalSecret(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -267,7 +263,7 @@ func TestChangingASecretKeepsItsOriginalSecret(t *testing.T) {
 			tt.change(ef)
 
 			assert.False(t, ef.Vars[0].IsSecret, "the changed var should no longer be a secret")
-			assert.True(t, ef.Vars[0].OriginalIsSecret, "its original should keep its secret status")
+			assert.True(t, ef.Vars[0].OriginalIsSecret, "its original should keep its secret status, so peek still masks it")
 		})
 	}
 }
@@ -289,9 +285,9 @@ func TestChangesDetectPlaceholders(t *testing.T) {
 
 func TestChangesMarkDuplicates(t *testing.T) {
 	tests := []struct {
-		name   string
-		change func(ef *EnvFile)
-		want   []bool // IsDuplicate of each variable, in order
+		name            string
+		change          func(ef *EnvFile)
+		wantIsDuplicate []bool
 	}{
 		{"rename one of two A away", func(ef *EnvFile) { ef.RenameVar(0, "C") }, []bool{false, false, false}},
 		{"rename B onto A", func(ef *EnvFile) { ef.RenameVar(2, "A") }, []bool{true, true, true}},
@@ -313,21 +309,17 @@ func TestChangesMarkDuplicates(t *testing.T) {
 			for _, v := range ef.Vars {
 				got = append(got, v.IsDuplicate)
 			}
-			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.wantIsDuplicate, got)
 		})
 	}
 }
 
-// TestChangesDetectSecretsWithTheFileConfig changes the variables of a file
-// whose [secrets] config makes keys ending in _HOST secrets and keys starting
-// with PUBLIC_ never secrets: each changed variable is a secret as that config
-// judges it, the other way round from the built-in rules.
 func TestChangesDetectSecretsWithTheFileConfig(t *testing.T) {
 	tests := []struct {
-		name   string
-		change func(ef *EnvFile) // changes the var that then has key want
-		want   string
-		secret bool
+		name       string
+		change     func(ef *EnvFile)
+		changedKey string
+		secret     bool
 	}{
 		{"edit, secret key", func(ef *EnvFile) { ef.UpdateVar(0, "alpha") }, "DB_HOST", true},
 		{"edit, safe key", func(ef *EnvFile) { ef.UpdateVar(1, "ghp_abc123") }, "PUBLIC_TOKEN", false},
@@ -347,16 +339,16 @@ func TestChangesDetectSecretsWithTheFileConfig(t *testing.T) {
 
 			tt.change(ef)
 
-			v := ef.VarByKey(tt.want)
+			v := ef.VarByKey(tt.changedKey)
 			require.NotNil(t, v)
-			assert.Equal(t, tt.secret, v.IsSecret)
+			assert.Equal(t, tt.secret, v.IsSecret, "the file's [secrets] config, not the built-in rules, should judge the changed var")
 		})
 	}
 }
 
 var revivals = map[string]func(ef *EnvFile){
 	"add":    func(ef *EnvFile) { ef.AddVar("API_KEY", "2") },
-	"rename": func(ef *EnvFile) { ef.RenameVar(0, "API_KEY") }, // BAR
+	"rename": func(ef *EnvFile) { ef.RenameVar(ef.LastIndexOfKey("BAR"), "API_KEY") },
 	"rename a var added this session": func(ef *EnvFile) {
 		ef.AddVar("NEW", "2")
 		ef.RenameVar(ef.LastIndexOfKey("NEW"), "API_KEY")
@@ -391,7 +383,7 @@ func TestTakingADeletedKeyRevivesIt(t *testing.T) {
 			v := ef.VarByKey("API_KEY")
 			require.NotNil(t, v)
 			assert.Equal(t, "2", v.Value)
-			assert.Equal(t, "1", v.OriginalValue, "the original should be the deleted var's")
+			assert.Equal(t, "1", v.OriginalValue, "the original, which peek shows, should be the deleted var's")
 			assert.True(t, v.OriginalIsSecret, "the original should keep the deleted var's secret status")
 			assert.False(t, v.IsNew, "the var should no longer be new")
 			assert.True(t, v.Modified)
@@ -450,19 +442,16 @@ func TestUndoingARevivalListsTheDeletedVarInItsPlace(t *testing.T) {
 		EnvVar{Key: "BAZ", Value: "3"},
 		EnvVar{Key: "BAR", Value: "2"},
 	)
-	ef.DeleteVar(0) // FOO
-	ef.DeleteVar(0) // BAZ
+	ef.DeleteVar(ef.LastIndexOfKey("FOO"))
+	ef.DeleteVar(ef.LastIndexOfKey("BAZ"))
+	bar := ef.LastIndexOfKey("BAR")
 
-	ef.RenameVar(0, "FOO") // BAR
-	ef.RenameVar(0, "BAR")
+	ef.RenameVar(bar, "FOO")
+	ef.RenameVar(bar, "BAR")
 
 	assert.Equal(t, []string{"FOO=1", "BAZ=3"}, deletedVars(ef))
 }
 
-// TestUndoingRevivalsInReverseOrderListsBothDeletedVars deletes FOO, then BAZ,
-// renames X to BAZ and Y to FOO, then X and Y back, the first undone revival
-// being BAZ's, whose place is past the end of the emptied DeletedVars: both
-// are listed again, in their order.
 func TestUndoingRevivalsInReverseOrderListsBothDeletedVars(t *testing.T) {
 	ef := newTestFile(
 		EnvVar{Key: "FOO", Value: "1"},
@@ -470,14 +459,15 @@ func TestUndoingRevivalsInReverseOrderListsBothDeletedVars(t *testing.T) {
 		EnvVar{Key: "X", Value: "4"},
 		EnvVar{Key: "Y", Value: "5"},
 	)
-	ef.DeleteVar(0)        // FOO
-	ef.DeleteVar(0)        // BAZ
-	ef.RenameVar(0, "BAZ") // X
-	ef.RenameVar(1, "FOO") // Y
-	require.Empty(t, ef.DeletedVars)
+	ef.DeleteVar(ef.LastIndexOfKey("FOO"))
+	ef.DeleteVar(ef.LastIndexOfKey("BAZ"))
+	x, y := ef.LastIndexOfKey("X"), ef.LastIndexOfKey("Y")
+	ef.RenameVar(x, "BAZ")
+	ef.RenameVar(y, "FOO")
+	require.Empty(t, ef.DeletedVars, "BAZ's place should now be past the end of the emptied DeletedVars")
 
-	ef.RenameVar(0, "X")
-	ef.RenameVar(1, "Y")
+	ef.RenameVar(x, "X")
+	ef.RenameVar(y, "Y")
 
 	assert.Equal(t, []string{"FOO=1", "BAZ=3"}, deletedVars(ef))
 }
@@ -485,10 +475,12 @@ func TestUndoingRevivalsInReverseOrderListsBothDeletedVars(t *testing.T) {
 func TestRenameVarOntoAKeyNotDeletedKeepsItsOwnOriginal(t *testing.T) {
 	ef := deletedAPIKeyFile()
 
-	ef.RenameVar(0, "BAZ") // BAR
+	bar := ef.LastIndexOfKey("BAR")
 
-	assert.Equal(t, "2", ef.Vars[0].OriginalValue)
-	assert.False(t, ef.Vars[0].OriginalIsSecret)
+	ef.RenameVar(bar, "BAZ")
+
+	assert.Equal(t, "2", ef.Vars[bar].OriginalValue)
+	assert.False(t, ef.Vars[bar].OriginalIsSecret)
 	assert.Equal(t, []string{"API_KEY=1"}, deletedVars(ef))
 }
 
@@ -629,11 +621,10 @@ func TestReorderGroupedUngroupedLast(t *testing.T) {
 	assert.Equal(t, want, dumpLines(ef))
 }
 
-func TestReorderDuplicatesKeepRelativeOrder(t *testing.T) {
+func TestReorderDuplicatesKeepTheirOrderSoTheLastStillWins(t *testing.T) {
 	ef := parseTestEnv("KEY=first\nKEY=second\nAAA=x")
 	ef.Reorder(ReorderAlphabetical)
 
-	// Stable sort keeps first before second, so last-wins semantics survive.
 	assert.Equal(t, "AAA=x\nKEY=first\nKEY=second", dumpLines(ef))
 }
 

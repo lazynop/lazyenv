@@ -74,16 +74,16 @@ func TestIsSecretByValuePrefix(t *testing.T) {
 }
 
 func TestIsSecretByValueHeuristic(t *testing.T) {
-	// High-entropy token with upper+lower+digit — should be flagged
-	assert.True(t, IsSecret("NORMAL", "aB3cD4eF5gH6iJ7kL8mN9", defaultCfg))
-	// Too short
-	assert.False(t, IsSecret("NORMAL", "short123", defaultCfg))
-	// Long but no alphanumeric mix
-	assert.False(t, IsSecret("NORMAL", "aaaaaaaaaaaaaaaaaaaaa", defaultCfg))
-	// Uppercase+digit — below entropy threshold (3.78 < 4.0)
-	assert.False(t, IsSecret("NORMAL", "AKIAIOSFODNN7EXAMPLE1", defaultCfg))
-	// Lowercase+digit — below entropy threshold (3.91 < 4.0)
-	assert.False(t, IsSecret("NORMAL", "a1b2c3d4e5f6a7b8c9d0e1", defaultCfg))
+	assert.True(t, IsSecret("NORMAL", "aB3cD4eF5gH6iJ7kL8mN9", defaultCfg),
+		"a long, high-entropy token mixing upper, lower and digits should be flagged")
+	assert.False(t, IsSecret("NORMAL", "short123", defaultCfg),
+		"a value shorter than 16 characters should not be flagged")
+	assert.False(t, IsSecret("NORMAL", "aaaaaaaaaaaaaaaaaaaaa", defaultCfg),
+		"a long value without digits should not be flagged")
+	assert.False(t, IsSecret("NORMAL", "AKIAIOSFODNN7EXAMPLE1", defaultCfg),
+		"uppercase and digits stay below the entropy threshold (3.78 < 4.0)")
+	assert.False(t, IsSecret("NORMAL", "a1b2c3d4e5f6a7b8c9d0e1", defaultCfg),
+		"lowercase and digits stay below the entropy threshold (3.91 < 4.0)")
 }
 
 func TestIsSecretCaseInsensitiveKey(t *testing.T) {
@@ -113,25 +113,21 @@ func TestShannonEntropy(t *testing.T) {
 }
 
 func TestEntropyFalsePositiveFix(t *testing.T) {
-	// The original bug: hostname flagged as secret due to length+alphanumeric mix
 	assert.False(t, IsSecret("DATABASE_HOST", "db-prod-ap-03.internal", defaultCfg),
-		"hostname should not be flagged as secret")
+		"a long hostname mixing letters and digits should not be flagged as secret")
 	assert.False(t, IsSecret("API_ENDPOINT", "https://api.example.com/v2", defaultCfg),
 		"short URL should not be flagged as secret")
-	// Very long URLs with high entropy may be flagged — users can use safe_patterns
 	cfg := config.SecretsConfig{SafePatterns: []string{"_ENDPOINT"}}
 	assert.False(t, IsSecret("API_ENDPOINT", "https://api.example.com/v2/resources", cfg),
-		"URL with safe_pattern should not be flagged")
+		"a long URL the heuristic may flag should not be flagged once a safe pattern covers it")
 }
 
 func TestIsSecretSafePatterns(t *testing.T) {
 	cfg := config.SecretsConfig{
 		SafePatterns: []string{"_TOKEN"},
 	}
-	// AUTH_TOKEN matches built-in _TOKEN suffix, but safe_patterns overrides
-	assert.False(t, IsSecret("AUTH_TOKEN", "", cfg))
-	// DB_PASSWORD is not in safe_patterns, still secret
-	assert.True(t, IsSecret("DB_PASSWORD", "", cfg))
+	assert.False(t, IsSecret("AUTH_TOKEN", "", cfg), "a safe pattern should override the built-in _TOKEN suffix")
+	assert.True(t, IsSecret("DB_PASSWORD", "", cfg), "a key no safe pattern matches should stay secret")
 }
 
 func TestIsSecretSafePatternsExact(t *testing.T) {
@@ -139,7 +135,7 @@ func TestIsSecretSafePatternsExact(t *testing.T) {
 		SafePatterns: []string{"PASSWORD"},
 	}
 	assert.False(t, IsSecret("PASSWORD", "", cfg))
-	assert.True(t, IsSecret("DB_PASSWORD", "", cfg)) // suffix still matches built-in
+	assert.True(t, IsSecret("DB_PASSWORD", "", cfg), "the built-in suffix should still match")
 }
 
 func TestIsSecretSafePatternsPrefix(t *testing.T) {
@@ -147,7 +143,7 @@ func TestIsSecretSafePatternsPrefix(t *testing.T) {
 		SafePatterns: []string{"SECRET_"},
 	}
 	assert.False(t, IsSecret("SECRET_VALUE", "", cfg))
-	assert.True(t, IsSecret("MY_SECRET", "", cfg)) // suffix still matches built-in
+	assert.True(t, IsSecret("MY_SECRET", "", cfg), "the built-in suffix should still match")
 }
 
 func TestIsSecretExtraPatterns(t *testing.T) {
@@ -170,12 +166,9 @@ func TestIsSecretExtraPatternExact(t *testing.T) {
 func TestIsSecretValueHeuristicDisabled(t *testing.T) {
 	f := false
 	cfg := config.SecretsConfig{ValueHeuristic: &f}
-	// High-entropy token should NOT be flagged when heuristic is disabled
-	assert.False(t, IsSecret("NORMAL", "aB3cD4eF5gH6iJ7kL8mN9", cfg))
-	// But key-name detection still works
-	assert.True(t, IsSecret("DB_PASSWORD", "", cfg))
-	// And value prefix detection still works
-	assert.True(t, IsSecret("NORMAL", "sk-abc123", cfg))
+	assert.False(t, IsSecret("NORMAL", "aB3cD4eF5gH6iJ7kL8mN9", cfg), "the disabled heuristic should not flag a high-entropy token")
+	assert.True(t, IsSecret("DB_PASSWORD", "", cfg), "key-name detection should still work")
+	assert.True(t, IsSecret("NORMAL", "sk-abc123", cfg), "value-prefix detection should still work")
 }
 
 func TestIsSecretSafePatternsOverrideExtraPatterns(t *testing.T) {
@@ -188,21 +181,22 @@ func TestIsSecretSafePatternsOverrideExtraPatterns(t *testing.T) {
 
 func TestMatchesPattern(t *testing.T) {
 	tests := []struct {
+		name    string
 		key     string
 		pattern string
 		match   bool
 	}{
-		{"DATABASE_HOST", "_HOST", true},         // suffix
-		{"MY_HOST_NAME", "_HOST", false},         // not a suffix
-		{"PUBLIC_URL", "PUBLIC_", true},          // prefix
-		{"NOT_PUBLIC_URL", "PUBLIC_", false},     // not a prefix
-		{"DATABASE_HOST", "DATABASE_HOST", true}, // exact
-		{"database_host", "DATABASE_HOST", true}, // case insensitive
-		{"OTHER", "DATABASE_HOST", false},        // no match
+		{"suffix", "DATABASE_HOST", "_HOST", true},
+		{"not a suffix", "MY_HOST_NAME", "_HOST", false},
+		{"prefix", "PUBLIC_URL", "PUBLIC_", true},
+		{"not a prefix", "NOT_PUBLIC_URL", "PUBLIC_", false},
+		{"exact", "DATABASE_HOST", "DATABASE_HOST", true},
+		{"case insensitive", "database_host", "DATABASE_HOST", true},
+		{"no match", "OTHER", "DATABASE_HOST", false},
 	}
 	for _, tt := range tests {
 		result := matchesPattern(strings.ToUpper(tt.key), tt.pattern)
-		assert.Equal(t, tt.match, result, "key=%s pattern=%s", tt.key, tt.pattern)
+		assert.Equal(t, tt.match, result, "%s: key=%s pattern=%s", tt.name, tt.key, tt.pattern)
 	}
 }
 

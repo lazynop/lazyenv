@@ -33,10 +33,8 @@ func checkKeysDocumented(t *testing.T, documented map[string]bool, table string,
 		if key == "-" {
 			continue
 		}
-		// go-toml still decodes an untagged exported field, under its Go name,
-		// so it would be a config key this test cannot name.
 		if key == "" {
-			t.Errorf(`%s.%s has no toml tag: add a kebab-case one, or toml:"-" if it is not a config key`, typ.Name(), field.Name)
+			t.Errorf(`%s.%s has no toml tag, so go-toml decodes it as a config key under its Go name: add a kebab-case tag, or toml:"-" if it is not a config key`, typ.Name(), field.Name)
 			continue
 		}
 

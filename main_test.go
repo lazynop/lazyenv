@@ -120,10 +120,14 @@ func TestCheckConfigAcceptsAValidFile(t *testing.T) {
 	assert.Empty(t, stderr.String())
 }
 
-func TestCheckConfigWithoutAFile(t *testing.T) {
-	// Isolate from the user's global config
+func isolateFromUserConfig(t *testing.T) {
+	t.Helper()
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("HOME", t.TempDir())
+}
+
+func TestCheckConfigWithoutAFile(t *testing.T) {
+	isolateFromUserConfig(t)
 	var stdout, stderr bytes.Buffer
 
 	status := checkConfig(&stdout, &stderr, t.TempDir(), "")

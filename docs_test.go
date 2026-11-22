@@ -47,15 +47,14 @@ func TestUsageDocumentsEveryFlag(t *testing.T) {
 	require.NoError(t, err)
 	doc := readFile(t, "docs/usage.md")
 
-	// Every spelling a user can type, mapped to the flag's name.
-	spellings := map[string]string{}
+	flagNameBySpelling := map[string]string{}
 	for _, f := range parser.Model.Flags {
-		spellings["--"+f.Name] = f.Name
+		flagNameBySpelling["--"+f.Name] = f.Name
 		if f.Short != 0 {
-			spellings["-"+string(f.Short)] = f.Name
+			flagNameBySpelling["-"+string(f.Short)] = f.Name
 		}
 		if f.Tag.Negatable != "" {
-			spellings["--no-"+f.Name] = f.Name
+			flagNameBySpelling["--no-"+f.Name] = f.Name
 		}
 	}
 
@@ -63,10 +62,10 @@ func TestUsageDocumentsEveryFlag(t *testing.T) {
 	for _, row := range markdownTable(t, doc, "Long form") {
 		for _, s := range slices.Concat(codeSpans(row[0]), codeSpans(row[1])) {
 			listed[s] = true
-			assert.Contains(t, spellings, s, "docs/usage.md lists %s in the flags table, but it is not a flag", s)
+			assert.Contains(t, flagNameBySpelling, s, "docs/usage.md lists %s in the flags table, but it is not a flag", s)
 		}
 	}
-	for _, s := range slices.Sorted(maps.Keys(spellings)) {
+	for _, s := range slices.Sorted(maps.Keys(flagNameBySpelling)) {
 		assert.True(t, listed[s], "docs/usage.md has no flags-table row for %s", s)
 	}
 
@@ -74,16 +73,16 @@ func TestUsageDocumentsEveryFlag(t *testing.T) {
 	accounted := map[string]bool{}
 	for _, row := range markdownTable(t, doc, "Config key") {
 		for _, s := range codeSpans(row[0]) {
-			assert.Contains(t, spellings, s, "docs/usage.md maps %s to a config key, but it is not a flag", s)
-			accounted[spellings[s]] = true
+			assert.Contains(t, flagNameBySpelling, s, "docs/usage.md maps %s to a config key, but it is not a flag", s)
+			accounted[flagNameBySpelling[s]] = true
 		}
 		for _, k := range codeSpans(row[1]) {
 			assert.True(t, keys[k], "docs/usage.md maps a flag to %q, which is not a config key (nested keys are dotted: layout.file-list-width)", k)
 		}
 	}
 	for _, s := range codeSpans(lineStartingWith(t, doc, "Flags without a config equivalent")) {
-		assert.Contains(t, spellings, s, "docs/usage.md lists %s among the flags without a config equivalent, but it is not a flag", s)
-		accounted[spellings[s]] = true
+		assert.Contains(t, flagNameBySpelling, s, "docs/usage.md lists %s among the flags without a config equivalent, but it is not a flag", s)
+		accounted[flagNameBySpelling[s]] = true
 	}
 	for _, f := range parser.Model.Flags {
 		assert.True(t, accounted[f.Name],
@@ -99,9 +98,9 @@ var layoutMinimums = map[string]int{
 
 func TestConfigurationDocumentsDefaults(t *testing.T) {
 	cfg := config.DefaultConfig()
-	defaults := map[string]reflect.Value{} // option name → default
-	configDefaults(t, reflect.ValueOf(cfg), defaults)
-	defaults["value_heuristic"] = reflect.ValueOf(cfg.Secrets.ValueHeuristicEnabled())
+	defaultByOption := map[string]reflect.Value{}
+	configDefaults(t, reflect.ValueOf(cfg), defaultByOption)
+	defaultByOption["value_heuristic"] = reflect.ValueOf(cfg.Secrets.ValueHeuristicEnabled())
 
 	documented := map[string]bool{}
 	for _, table := range markdownTables(readFile(t, "docs/configuration.md")) {
@@ -111,7 +110,7 @@ func TestConfigurationDocumentsDefaults(t *testing.T) {
 		for _, row := range table.rows {
 			name := codeSpans(row[0])[0]
 			documented[name] = true
-			want, ok := defaults[name]
+			want, ok := defaultByOption[name]
 			if !assert.True(t, ok, "docs/configuration.md documents option %s, which Config does not have", name) {
 				continue
 			}
@@ -127,7 +126,7 @@ func TestConfigurationDocumentsDefaults(t *testing.T) {
 			}
 		}
 	}
-	for _, name := range slices.Sorted(maps.Keys(defaults)) {
+	for _, name := range slices.Sorted(maps.Keys(defaultByOption)) {
 		assert.True(t, documented[name], "docs/configuration.md has no options-table row for %s", name)
 	}
 }
@@ -162,9 +161,6 @@ func assertDocDefault(t *testing.T, name, span string, want reflect.Value) {
 	assert.Equal(t, want.Interface(), got.Interface(), "docs/configuration.md states the wrong default for %s", name)
 }
 
-// TestConfigurationDocumentsThemeColors checks the Dark default and Light
-// default columns of the colors table against the default-dark and
-// default-light themes; "(none)" stands for an empty color.
 func TestConfigurationDocumentsThemeColors(t *testing.T) {
 	themes := map[string]map[string]string{}
 	for _, name := range []string{"default-dark", "default-light"} {
@@ -183,7 +179,7 @@ func TestConfigurationDocumentsThemeColors(t *testing.T) {
 				break
 			}
 			got := strings.Join(codeSpans(row[1+i]), "")
-			assert.Equal(t, want, got, "docs/configuration.md states the wrong %s color for %s", theme, name)
+			assert.Equal(t, want, got, "docs/configuration.md states the wrong %s color for %s (an empty color is written (none), outside a code span)", theme, name)
 		}
 	}
 	for _, name := range slices.Sorted(maps.Keys(themes["default-dark"])) {
@@ -212,8 +208,9 @@ func TestDocsStateCurrentCounts(t *testing.T) {
 	docs, err := filepath.Glob("docs/*.md")
 	require.NoError(t, err)
 	for _, path := range append(docs, "README.md") {
-		if path == "docs/changelog.md" {
-			continue // generated from CHANGELOG.md, which records history
+		recordsPastReleases := path == "docs/changelog.md"
+		if recordsPastReleases {
+			continue
 		}
 		doc := readFile(t, path)
 		for _, m := range themeCountRe.FindAllStringSubmatch(doc, -1) {
@@ -278,8 +275,7 @@ func TestHelpScreenMatchesKeybindingsDoc(t *testing.T) {
 		assert.True(t, mapped[title], "help section %q maps to no docs/keybindings.md section in helpDocSections", title)
 	}
 	for line := range strings.Lines(doc) {
-		// The same heading markdownSection looks for: "## " at the line start.
-		heading, ok := strings.CutPrefix(strings.TrimSuffix(line, "\n"), "## ")
+		heading, ok := strings.CutPrefix(strings.TrimSuffix(line, "\n"), sectionHeadingPrefix)
 		if !ok || helpDocSections[heading] != nil || docOnlySections[heading] != "" {
 			continue
 		}
@@ -333,27 +329,28 @@ func helpScreenSections(t *testing.T) []helpSection {
 	require.Equal(t, strings.Fields(helpScreen(2*helpScreenHeight)), strings.Fields(screen),
 		"the help does not fit in %d rows: raise helpScreenHeight", helpScreenHeight)
 
-	// Section titles sit at the screen's left margin, key rows two columns in.
 	var lines []string
-	margin := len(screen)
+	titleColumn := len(screen)
 	for line := range strings.Lines(screen) {
 		line = strings.TrimRight(line, " \n")
 		if line != "" {
 			lines = append(lines, line)
-			margin = min(margin, len(line)-len(strings.TrimLeft(line, " ")))
+			titleColumn = min(titleColumn, len(line)-len(strings.TrimLeft(line, " ")))
 		}
 	}
 	var sections []helpSection
 	for _, line := range lines {
-		line = line[margin:]
-		if !strings.HasPrefix(line, " ") {
+		line = line[titleColumn:]
+		isSectionTitle := !strings.HasPrefix(line, " ")
+		if isSectionTitle {
 			sections = append(sections, helpSection{title: line})
 			continue
 		}
 		require.NotEmpty(t, sections, "the help screen has a key row before any section title: %q", line)
 		section := &sections[len(sections)-1]
-		if strings.Contains(section.title, "Indicators") {
-			continue // glyphs, not keys
+		listsGlyphsNotKeys := strings.Contains(section.title, "Indicators")
+		if listsGlyphsNotKeys {
+			continue
 		}
 		m := helpRowRe.FindStringSubmatch(line)
 		require.NotNil(t, m, "row %q of help section %s has no key column; if it is a wrapped line, raise helpScreenWidth (%d)", line, section.title, helpScreenWidth)
@@ -441,15 +438,15 @@ func TestCodingStandardsNamesExistingCode(t *testing.T) {
 }
 
 type repoIndex struct {
-	words   map[string]bool // identifier-like words of the Go sources and build files
-	files   map[string]bool // base names of the files at the root and under internal/
-	recipes map[string]bool // just recipes
-	goMod   string
+	sourceWords map[string]bool
+	baseNames   map[string]bool
+	justRecipes map[string]bool
+	goMod       string
 }
 
 func newRepoIndex(t *testing.T) repoIndex {
 	t.Helper()
-	repo := repoIndex{words: map[string]bool{}, files: map[string]bool{}, recipes: map[string]bool{}, goMod: readFile(t, "go.mod")}
+	repo := repoIndex{sourceWords: map[string]bool{}, baseNames: map[string]bool{}, justRecipes: map[string]bool{}, goMod: readFile(t, "go.mod")}
 	sources, err := filepath.Glob(".github/workflows/*.yml")
 	require.NoError(t, err)
 	sources = append(sources, "justfile", "go.mod", ".goreleaser.yml")
@@ -458,7 +455,7 @@ func newRepoIndex(t *testing.T) repoIndex {
 	require.NoError(t, err)
 	for _, e := range entries {
 		if !e.IsDir() {
-			repo.files[e.Name()] = true
+			repo.baseNames[e.Name()] = true
 		}
 		if filepath.Ext(e.Name()) == ".go" {
 			sources = append(sources, e.Name())
@@ -468,7 +465,7 @@ func newRepoIndex(t *testing.T) repoIndex {
 		if err != nil || d.IsDir() {
 			return err
 		}
-		repo.files[d.Name()] = true
+		repo.baseNames[d.Name()] = true
 		if filepath.Ext(path) == ".go" {
 			sources = append(sources, path)
 		}
@@ -478,18 +475,18 @@ func newRepoIndex(t *testing.T) repoIndex {
 
 	for _, path := range sources {
 		for _, w := range wordRe.FindAllString(readFile(t, path), -1) {
-			repo.words[w] = true
+			repo.sourceWords[w] = true
 		}
 	}
 	for _, m := range justRecipeRe.FindAllStringSubmatch(readFile(t, "justfile"), -1) {
-		repo.recipes[m[1]] = true
+		repo.justRecipes[m[1]] = true
 	}
 	return repo
 }
 
 func (r repoIndex) missing(ref string) string {
 	if m := justRefRe.FindStringSubmatch(ref); m != nil {
-		if !r.recipes[m[1]] {
+		if !r.justRecipes[m[1]] {
 			return "the justfile has no " + m[1] + " recipe"
 		}
 		return ""
@@ -497,7 +494,7 @@ func (r repoIndex) missing(ref string) string {
 	if strings.Contains(ref, "/") {
 		return r.missingPath(ref)
 	}
-	if r.files[ref] {
+	if r.baseNames[ref] {
 		return ""
 	}
 	switch filepath.Ext(ref) {
@@ -511,8 +508,9 @@ func (r repoIndex) missing(ref string) string {
 }
 
 func (r repoIndex) missingPath(ref string) string {
-	if strings.Contains(ref, "...") || strings.ContainsAny(ref, " \"") {
-		return "" // an elided path or a snippet
+	elidedOrSnippet := strings.Contains(ref, "...") || strings.ContainsAny(ref, " \"")
+	if elidedOrSnippet {
+		return ""
 	}
 	if first, _, _ := strings.Cut(ref, "/"); strings.Contains(first, ".") && !strings.HasPrefix(first, ".") {
 		if !strings.Contains(r.goMod, ref) {
@@ -526,21 +524,20 @@ func (r repoIndex) missingPath(ref string) string {
 	return ""
 }
 
-// missingIdent is missing for a dotted identifier chain; with prefix, its
-// last segment only has to start a word.
-func (r repoIndex) missingIdent(chain string, prefix bool) string {
+func (r repoIndex) missingIdent(chain string, lastSegmentIsPrefix bool) string {
 	segments := strings.Split(chain, ".")
 	for i, seg := range segments {
-		if len(seg) == 1 {
-			continue // a receiver or placeholder such as a or X
+		receiverOrPlaceholder := len(seg) == 1
+		if receiverOrPlaceholder {
+			continue
 		}
-		if i == len(segments)-1 && prefix {
-			if !slices.ContainsFunc(slices.Collect(maps.Keys(r.words)), func(w string) bool { return strings.HasPrefix(w, seg) }) {
+		if i == len(segments)-1 && lastSegmentIsPrefix {
+			if !slices.ContainsFunc(slices.Collect(maps.Keys(r.sourceWords)), func(w string) bool { return strings.HasPrefix(w, seg) }) {
 				return "no word in a Go source or build file starts with " + seg
 			}
 			continue
 		}
-		if !r.words[seg] {
+		if !r.sourceWords[seg] {
 			return seg + " appears in no Go source or build file"
 		}
 	}
@@ -589,13 +586,17 @@ func markdownTables(doc string) []docTable {
 		case !inTable:
 			tables = append(tables, docTable{header: cells})
 			inTable = true
-		case strings.Trim(line, "|-: ") == "": // the |---|---| separator
+		case isSeparatorRow(line):
 		default:
 			last := &tables[len(tables)-1]
 			last.rows = append(last.rows, cells)
 		}
 	}
 	return tables
+}
+
+func isSeparatorRow(line string) bool {
+	return strings.Trim(line, "|-: ") == ""
 }
 
 func markdownTable(t *testing.T, doc, header string) [][]string {
@@ -620,11 +621,13 @@ func lineStartingWith(t *testing.T, doc, prefix string) string {
 	return ""
 }
 
+const sectionHeadingPrefix = "## "
+
 func markdownSection(t *testing.T, doc, heading string) string {
 	t.Helper()
-	_, body, ok := strings.Cut(doc, "\n## "+heading+"\n")
-	require.True(t, ok, "no section %q", "## "+heading)
-	body, _, _ = strings.Cut(body, "\n## ")
+	_, body, ok := strings.Cut(doc, "\n"+sectionHeadingPrefix+heading+"\n")
+	require.True(t, ok, "no section %q", sectionHeadingPrefix+heading)
+	body, _, _ = strings.Cut(body, "\n"+sectionHeadingPrefix)
 	return body
 }
 
