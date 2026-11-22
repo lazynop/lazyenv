@@ -119,11 +119,15 @@ func TestHelpGrowingTheTerminalScrollsBackToFit(t *testing.T) {
 		"a terminal tall enough for the whole help shows it from the top")
 }
 
-func TestHelpIgnoresClicks(t *testing.T) {
-	app := press(openHelp(80, 24), "down", "down")
+func TestHelpIgnoresAStrayClickWhileWheelScrolling(t *testing.T) {
+	app := openHelp(80, 24)
+	top := helpScreen(app)
+	updated, _ := app.Update(tea.MouseWheelMsg{X: 10, Y: 5, Button: tea.MouseWheelDown})
+	app = updated.(App)
 	before := helpScreen(app)
+	require.NotEqual(t, top, before, "the wheel scrolls the help")
 
-	updated, _ := app.Update(tea.MouseClickMsg{X: 10, Y: 5, Button: tea.MouseLeft})
+	updated, _ = app.Update(tea.MouseClickMsg{X: 10, Y: 5, Button: tea.MouseLeft})
 	app = updated.(App)
 
 	assert.Equal(t, ModeHelp, app.mode, "a click keeps the help open")
