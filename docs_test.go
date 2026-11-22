@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/lazynop/lazyenv/internal/config"
+	"github.com/lazynop/lazyenv/internal/config/themes"
 	"github.com/lazynop/lazyenv/internal/tui"
 )
 
@@ -717,4 +718,20 @@ func readFile(t *testing.T, path string) string {
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
 	return string(data)
+}
+
+func TestConfigurationCreditsEveryTheme(t *testing.T) {
+	var credited []string
+	for _, table := range markdownTables(readFile(t, "docs/configuration.md")) {
+		if !slices.Equal(table.header, []string{"Theme", "Palette source"}) {
+			continue
+		}
+		for _, row := range table.rows {
+			name := codeSpans(row[0])[0]
+			credited = append(credited, name)
+			assert.Regexp(t, `^(<https://\S+>|lazyenv original)$`, row[1], "credit of %s", name)
+		}
+	}
+	slices.Sort(credited)
+	assert.Equal(t, themes.Names(), credited)
 }

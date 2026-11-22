@@ -16,7 +16,7 @@ Create a `.lazyenvrc` file (TOML) in the directory you run lazyenv from, or `laz
 | `group`        | `false`         | Start with prefix grouping enabled (variables sharing a prefix collapse under headers). Toggleable at runtime with `g`.           |
 | `theme`        | See description | Built-in color theme. When empty, `default-dark` or `default-light` is used automatically based on terminal background detection. |
 
-Run `lazyenv --list-themes` to see all available themes, or `lazyenv --themes` to browse them interactively with a live preview.
+Run `lazyenv --list-themes` to see all available themes, or `lazyenv --themes` to browse them interactively with a live preview. [Theme credits](#theme-credits) names the palette each one comes from.
 
 ## [files]
 
@@ -141,3 +141,66 @@ Files are not merged: the file found is used whole, and a key it leaves out take
 The file is validated as a whole. A TOML syntax error, an unknown key or an invalid value rejects the entire file: lazyenv opens on an error screen naming the file and listing the problems and quits on the next key press; on a terminal too small for the whole list, the screen cuts it and points to `--check-config`. `--show-config` lists the errors on stderr, prints the built-in defaults instead, with any command-line flags applied, and exits with status 1. Run `lazyenv --check-config` to validate the file without starting the TUI: it lists the errors and exits with status 1.
 
 Two inputs are adjusted instead of rejected. An unknown `--theme` on the command line shows a notice in the status bar for 3 seconds (`--show-config` prints it on stderr), and the TUI runs with the default colors plus any `[colors]` overrides. A layout value below its minimum is raised to it (see [`[layout]`](#layout)).
+
+## Theme credits
+
+The built-in themes map these palettes onto lazyenv's colors. Thanks to their authors.
+
+| Theme | Palette source |
+|---|---|
+| `andromeda` | <https://github.com/EliverLara/Andromeda> |
+| `ayu-dark` | <https://github.com/ayu-theme/ayu-colors> |
+| `ayu-light` | <https://github.com/ayu-theme/ayu-colors> |
+| `ayu-mirage` | <https://github.com/ayu-theme/ayu-colors> |
+| `base16-eighties` | <https://github.com/chriskempson/base16> |
+| `catppuccin-frappe` | <https://catppuccin.com/palette> |
+| `catppuccin-latte` | <https://catppuccin.com/palette> |
+| `catppuccin-macchiato` | <https://catppuccin.com/palette> |
+| `catppuccin-mocha` | <https://catppuccin.com/palette> |
+| `cobalt2` | <https://github.com/wesbos/cobalt2-vscode> |
+| `cyberpunk` | lazyenv original |
+| `dawnfox` | <https://github.com/EdenEast/nightfox.nvim> |
+| `default-dark` | lazyenv original |
+| `default-light` | lazyenv original |
+| `dracula` | <https://draculatheme.com/contribute#color-palette> |
+| `everforest` | <https://github.com/sainnhe/everforest> |
+| `github-dark` | <https://github.com/primer/github-vscode-theme> |
+| `github-light` | <https://github.com/primer/github-vscode-theme> |
+| `gruvbox-dark` | <https://github.com/morhetz/gruvbox> |
+| `gruvbox-light` | <https://github.com/morhetz/gruvbox> |
+| `horizon` | <https://horizontheme.com> |
+| `iceberg` | <https://cocopon.github.io/iceberg.vim/> |
+| `kanagawa` | <https://github.com/rebelot/kanagawa.nvim> |
+| `material-darker` | <https://github.com/material-theme/vsc-material-theme> |
+| `material-ocean` | <https://github.com/material-theme/vsc-material-theme> |
+| `melange` | <https://github.com/savq/melange-nvim> |
+| `monokai` | <https://monokai.pro/classic> |
+| `monokai-pro` | <https://monokai.pro> |
+| `moonlight` | <https://github.com/atomiks/moonlight-vscode-theme> |
+| `night-owl` | <https://github.com/sdras/night-owl-vscode-theme> |
+| `nightfox` | <https://github.com/EdenEast/nightfox.nvim> |
+| `nord` | <https://www.nordtheme.com> |
+| `one-dark` | <https://github.com/Binaryify/OneDark-Pro> |
+| `one-light` | <https://github.com/atom/atom/tree/master/packages/one-light-syntax> |
+| `oxocarbon` | <https://github.com/nyoom-engineering/oxocarbon.nvim> |
+| `palenight` | <https://github.com/material-theme/vsc-material-theme> |
+| `poimandres` | <https://github.com/drcmda/poimandres-theme> |
+| `rose-pine` | <https://rosepinetheme.com> |
+| `rose-pine-dawn` | <https://rosepinetheme.com/palette> |
+| `rose-pine-moon` | <https://rosepinetheme.com/palette> |
+| `shades-of-purple` | <https://github.com/ahmadawais/shades-of-purple-vscode> |
+| `snazzy` | <https://github.com/sindresorhus/hyper-snazzy> |
+| `solarized-dark` | <https://ethanschoonover.com/solarized> |
+| `solarized-light` | <https://ethanschoonover.com/solarized> |
+| `sonokai` | <https://github.com/sainnhe/sonokai> |
+| `synthwave-84` | <https://github.com/robb0wen/synthwave-vscode> |
+| `tokyo-night` | <https://github.com/enkia/tokyo-night-vscode-theme> |
+| `tokyo-night-light` | <https://github.com/enkia/tokyo-night-vscode-theme> |
+| `tokyo-night-moon` | <https://github.com/enkia/tokyo-night-vscode-theme> |
+| `tokyo-night-storm` | <https://github.com/enkia/tokyo-night-vscode-theme> |
+| `tomorrow` | <https://github.com/chriskempson/tomorrow-theme> |
+| `tomorrow-night` | <https://github.com/chriskempson/tomorrow-theme> |
+| `vesper` | <https://github.com/raunofreiberg/vesper> |
+| `vitesse-dark` | <https://github.com/antfu/vscode-theme-vitesse> |
+| `vitesse-light` | <https://github.com/antfu/vscode-theme-vitesse> |
+| `zenburn` | <https://kippura.org/zenburnpage/> |
