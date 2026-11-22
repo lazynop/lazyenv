@@ -28,7 +28,7 @@ func flattenRune(r rune) rune {
 	case r == '\r':
 		return '↩'
 	case r < 0x20:
-		return 0x2400 + r // Control Pictures: ␀ … ␟, ␛ for ESC
+		return '␀' + r
 	case r == 0x7f:
 		return '␡'
 	case r >= 0x80 && r < 0xa0: // C1 controls
@@ -44,12 +44,13 @@ func truncate(s string, maxCols int) string {
 	if ansi.StringWidth(s) <= maxCols {
 		return s
 	}
-	if maxCols <= 2 {
-		// Not enough room for the ".." ellipsis — hard-truncate with no tail.
+	if maxCols <= len(truncateEllipsis) {
 		return ansi.Truncate(s, maxCols, "")
 	}
-	return ansi.Truncate(s, maxCols, "..")
+	return ansi.Truncate(s, maxCols, truncateEllipsis)
 }
+
+const truncateEllipsis = ".."
 
 func fitName(name string, maxCols int) string {
 	return truncate(flattenText(name), maxCols)

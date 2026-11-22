@@ -130,8 +130,7 @@ func (m *MatrixModel) visibleLines() int {
 func (m *MatrixModel) CellAt(x, y int) (row, col int) {
 	row = visibleIndex(y-matrixContentOffsetY, m.rows.Offset, m.visibleLines(), len(m.entries))
 	col = m.cols.Cursor
-	// The matrix is drawn after its left padding.
-	if x -= matrixPaddingWidth/2 + m.layout.MatrixKeyWidth; x >= 0 {
+	if x -= matrixSidePaddingWidth + m.layout.MatrixKeyWidth; x >= 0 {
 		if c := visibleIndex(x/m.layout.MatrixColWidth, m.cols.Offset, m.visibleCols(), len(m.files)); c >= 0 {
 			col = c
 		}
@@ -364,7 +363,7 @@ func (m *MatrixModel) View(theme Theme) string {
 
 	style := lipgloss.NewStyle().
 		Width(m.Width).
-		Padding(0, matrixPaddingWidth/2)
+		Padding(0, matrixSidePaddingWidth)
 
 	return style.Render(content + stats)
 }

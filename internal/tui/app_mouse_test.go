@@ -565,7 +565,7 @@ func TestMouseClickMatrixMode_SetsCell(t *testing.T) {
 	cw := app.matrixView.layout.MatrixColWidth
 
 	// Data cell: row 2 (Y=4), column 1 (X one column band past the key column)
-	updated, _ := app.Update(tea.MouseClickMsg{X: matrixPaddingWidth/2 + kw + cw, Y: 4, Button: tea.MouseLeft})
+	updated, _ := app.Update(tea.MouseClickMsg{X: matrixSidePaddingWidth + kw + cw, Y: 4, Button: tea.MouseLeft})
 	app = updated.(App)
 	assert.Equal(t, 2, app.matrixView.rows.Cursor)
 	assert.Equal(t, 1, app.matrixView.cols.Cursor)

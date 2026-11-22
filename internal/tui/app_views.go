@@ -29,11 +29,9 @@ func (a App) viewConfigError() string {
 		path = wrapRows(a.configPath, room)
 	}
 	if len(path) > configPathMaxRows {
-		// Keep the end, which names the file. The ellipsis takes one cell, and
-		// one more is left for a wide character that a row boundary would
-		// otherwise push onto an extra row.
-		keep := configPathMaxRows*room - 2
-		tail := ansi.TruncateLeft(a.configPath, ansi.StringWidth(a.configPath)-keep, "…")
+		const ellipsis, wideCharRowSlack = "…", 1
+		keep := configPathMaxRows*room - ansi.StringWidth(ellipsis) - wideCharRowSlack
+		tail := ansi.TruncateLeft(a.configPath, ansi.StringWidth(a.configPath)-keep, ellipsis)
 		path = strings.Split(ansi.Hardwrap(tail, room, false), "\n")
 	}
 	hint := configErrorHint
@@ -86,7 +84,7 @@ func cutToRows(texts [][]string, rows, width int) ([][]string, bool) {
 		return texts, false
 	}
 	more := func(n int) []string { return []string{fmt.Sprintf("… and %d more", n)} }
-	used := 1 // the "… and N more" row
+	used := len(more(0))
 	kept := 0
 	for kept < len(texts) && used+len(texts[kept]) <= rows {
 		used += len(texts[kept])

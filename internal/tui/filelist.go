@@ -139,25 +139,24 @@ func (m *FileListModel) View(theme Theme) string {
 	var lines []string
 	end := min(m.Offset+m.visibleLines(), len(m.Files))
 	inner := m.Width - panelChromeWidth
+	indicatorWidth := lipgloss.Width(selectedFileGlyph + " ")
+	const minNameGap = 1
 
 	for i := m.Offset; i < end; i++ {
 		f := m.Files[i]
 		varCount := fmt.Sprintf("%d", len(f.Vars))
 
-		// Layout: indicator(2) + warn(0|2) + name + gap + varCount + modified(0|1)
 		warnLen := 0
 		if f.GitWarning {
-			warnLen = 2
+			warnLen = lipgloss.Width(gitWarningGlyph + " ")
 		}
 		modLen := 0
 		if f.Modified {
-			modLen = 1
+			modLen = lipgloss.Width(modifiedFileGlyph)
 		}
-		// Space for name: inner - indicator - warn - gap(1 min) - varCount - modified
-		nameMax := max(inner-2-warnLen-1-len(varCount)-modLen, 1)
+		nameMax := max(inner-indicatorWidth-warnLen-minNameGap-len(varCount)-modLen, 1)
 		name := fitName(f.Name, nameMax)
-		// Gap fills remaining space to push varCount to the right
-		gap := max(inner-2-warnLen-lipgloss.Width(name)-len(varCount)-modLen, 1)
+		gap := max(inner-indicatorWidth-warnLen-lipgloss.Width(name)-len(varCount)-modLen, minNameGap)
 
 		var line string
 		if i == m.Cursor && m.Focused {

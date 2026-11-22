@@ -123,9 +123,8 @@ func promptsHelp(keys KeyMap) helpSection {
 	}}
 }
 
-// helpText lays sections out as the help screen's text, one row per line:
-// the title, then each section's title and its rows, the descriptions
-// aligned three columns past the widest key column.
+const helpKeyDescGap = 3
+
 func helpText(sections []helpSection) string {
 	width := 0
 	for _, section := range sections {
@@ -137,7 +136,7 @@ func helpText(sections []helpSection) string {
 	for _, section := range sections {
 		lines = append(lines, "", "  "+section.title)
 		for _, row := range section.rows {
-			lines = append(lines, "    "+padRight(row.keys, width+3)+row.desc)
+			lines = append(lines, "    "+padRight(row.keys, width+helpKeyDescGap)+row.desc)
 		}
 	}
 	return strings.Join(lines, "\n")

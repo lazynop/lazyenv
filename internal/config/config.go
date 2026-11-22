@@ -48,6 +48,10 @@ func (s SecretsConfig) ValueHeuristicEnabled() bool {
 // smaller fixed width to it.
 const FileListMinWidth = 20
 
+// FileListWidthAuto is the file-list-width that sizes the file list to a
+// quarter of the terminal.
+const FileListWidthAuto = 0
+
 // VarListMinWidth is the narrowest the variables panel gets: the TUI narrows
 // a file-list-width that would leave it less. The minimum terminal width
 // leaves room for it beside a file list at FileListMinWidth.

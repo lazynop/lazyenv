@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/lazynop/lazyenv/internal/parser"
 )
+
+var skippedDirNames = []string{"node_modules", "vendor", ".git"}
 
 // ScanDir finds and parses all .env files in the given directory.
 func ScanDir(path string, recursive bool, fileCfg config.FileConfig, secrets config.SecretsConfig) ([]*model.EnvFile, error) {
@@ -27,9 +30,7 @@ func ScanDir(path string, recursive bool, fileCfg config.FileConfig, secrets con
 			if p != path && strings.HasPrefix(d.Name(), ".") {
 				return filepath.SkipDir
 			}
-			// Skip common non-useful directories
-			name := d.Name()
-			if name == "node_modules" || name == "vendor" || name == ".git" {
+			if slices.Contains(skippedDirNames, d.Name()) {
 				return filepath.SkipDir
 			}
 			return nil
