@@ -162,7 +162,7 @@ func (m ThemePreviewModel) Selected() string {
 }
 
 func (m ThemePreviewModel) View() tea.View {
-	if m.width == 0 {
+	if awaitingWindowSize(m.width) {
 		return tea.NewView("")
 	}
 

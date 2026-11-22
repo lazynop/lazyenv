@@ -31,7 +31,7 @@ func flattenRune(r rune) rune {
 		return '␀' + r
 	case r == 0x7f:
 		return '␡'
-	case r >= 0x80 && r < 0xa0: // C1 controls
+	case isC1Control(r):
 		return utf8.RuneError
 	}
 	return r
@@ -51,6 +51,8 @@ func truncate(s string, maxCols int) string {
 }
 
 const truncateEllipsis = ".."
+
+func isC1Control(r rune) bool { return r >= 0x80 && r < 0xa0 }
 
 func fitName(name string, maxCols int) string {
 	return truncate(flattenText(name), maxCols)

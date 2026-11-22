@@ -50,7 +50,11 @@ func ScanDir(path string, recursive bool, fileCfg config.FileConfig, secrets con
 		return nil, err
 	}
 
-	// Sort: files in root first, then by name
+	sortByDepthThenName(files)
+	return files, nil
+}
+
+func sortByDepthThenName(files []*model.EnvFile) {
 	sort.Slice(files, func(i, j int) bool {
 		depthI := strings.Count(files[i].Path, string(filepath.Separator))
 		depthJ := strings.Count(files[j].Path, string(filepath.Separator))
@@ -59,8 +63,6 @@ func ScanDir(path string, recursive bool, fileCfg config.FileConfig, secrets con
 		}
 		return files[i].Name < files[j].Name
 	})
-
-	return files, nil
 }
 
 func isEnvFile(name string, cfg config.FileConfig) bool {

@@ -128,10 +128,10 @@ func TestTooSmallTerminalShowsANotice(t *testing.T) {
 	}
 }
 
-// TestTooSmallTerminalIgnoresInputButCtrlC presses keys and clicks while the
-// terminal is below the minimum: none acts on the hidden screen, and Ctrl+C
-// still quits.
-func TestTooSmallTerminalIgnoresInputButCtrlC(t *testing.T) {
+// TestTooSmallTerminalDropsInputItCannotShowAndQuitsOnCtrlC presses keys and
+// clicks while the terminal is below the minimum: none acts on the hidden
+// screen, and Ctrl+C still quits.
+func TestTooSmallTerminalDropsInputItCannotShowAndQuitsOnCtrlC(t *testing.T) {
 	app := onVars(resize(newTestApp([]*model.EnvFile{makeTestFile(".env", "A", "B")}), 80, 24))
 	app = resize(app, MinTerminalWidth-1, 24)
 

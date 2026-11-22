@@ -47,6 +47,8 @@ const (
 	helpChromeHeight = 2*helpPaddingHeight + helpFooterHeight
 )
 
+func panelLaidOut(height int) bool { return height > panelChromeHeight }
+
 // MinTerminalWidth and MinTerminalHeight are the smallest terminal the TUI
 // lays its screens out in: below either, every screen outgrows the terminal
 // (the status bar wraps past the rows reserved for it, matrix rows wrap), so

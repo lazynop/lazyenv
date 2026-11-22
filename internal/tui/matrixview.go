@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 
 	"charm.land/bubbles/v2/textinput"
@@ -40,7 +41,7 @@ type MatrixModel struct {
 // NewMatrixModel creates a matrix model from the loaded files.
 func NewMatrixModel(files []*model.EnvFile, layout config.LayoutConfig) MatrixModel {
 	entries := model.ComputeMatrix(files)
-	ti := textinput.New() // no CharLimit, like the value editor
+	ti := newUncappedValueInput()
 	return MatrixModel{
 		files:   files,
 		entries: entries,
@@ -177,14 +178,17 @@ func (m *MatrixModel) ensureHorizontalVisible() {
 }
 
 func (m *MatrixModel) counterWidth() int {
-	// " X/Y" where X and Y have the same digit count as len(files)
-	digits := len(fmt.Sprintf("%d", len(m.files)))
-	return 1 + digits + 1 + digits // space + digits + slash + digits
+	return len(rowCounter(len(m.files), len(m.files)))
+}
+
+func rowCounter(present, total int) string {
+	return fmt.Sprintf(" %*d/%d", len(strconv.Itoa(total)), present, total)
 }
 
 func (m *MatrixModel) visibleCols() int {
 	available := m.Width - matrixPaddingWidth - m.layout.MatrixKeyWidth - m.counterWidth()
-	if m.layout.MatrixColWidth <= 0 || available < m.layout.MatrixColWidth { // no layout: a zero MatrixModel
+	noLayout := m.layout.MatrixColWidth <= 0
+	if noLayout || available < m.layout.MatrixColWidth {
 		return 1
 	}
 	return min(available/m.layout.MatrixColWidth, len(m.files))
@@ -294,7 +298,6 @@ func (m *MatrixModel) renderBodyRow(ri, endCol int, theme Theme) string {
 		row.WriteString(cell)
 	}
 
-	// Row counter: present/total, right-aligned
 	present := 0
 	for _, p := range entry.Present {
 		if p {
@@ -302,8 +305,7 @@ func (m *MatrixModel) renderBodyRow(ri, endCol int, theme Theme) string {
 		}
 	}
 	total := len(entry.Present)
-	totalWidth := len(fmt.Sprintf("%d", total))
-	counter := fmt.Sprintf(" %*d/%d", totalWidth, present, total)
+	counter := rowCounter(present, total)
 	if present == total {
 		row.WriteString(theme.DiffEqual.Render(counter))
 	} else {

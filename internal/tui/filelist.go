@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"charm.land/lipgloss/v2"
@@ -91,7 +92,7 @@ func (m *FileListModel) SetSize(width, height int) {
 }
 
 func (m *FileListModel) ensureCursorVisible() {
-	if m.Height > panelChromeHeight { // not before the first layout
+	if panelLaidOut(m.Height) {
 		m.follow(m.visibleLines(), len(m.Files))
 	}
 }
@@ -211,4 +212,10 @@ func (m *FileListModel) View(theme Theme) string {
 
 	content := strings.Join(lines, "\n")
 	return renderPanel(m.Width, m.Height, m.Focused, title, content, theme)
+}
+
+func (m *FileListModel) removeFile(path string) {
+	if i := slices.IndexFunc(m.Files, func(f *model.EnvFile) bool { return f.Path == path }); i >= 0 {
+		m.Files = slices.Delete(m.Files, i, i+1)
+	}
 }

@@ -43,7 +43,7 @@ type EditorModel struct {
 
 // NewEditorModel creates a new editor model.
 func NewEditorModel() EditorModel {
-	ti := textinput.New()
+	ti := newUncappedValueInput()
 	return EditorModel{
 		input:    ti,
 		varIndex: -1,
@@ -114,3 +114,5 @@ func (m *EditorModel) Finish() EditorResult {
 		Untouched:   !m.isAdd && !m.isRenameKey && m.input.Value() == m.valueAtStart,
 	}
 }
+
+func newUncappedValueInput() textinput.Model { return textinput.New() }

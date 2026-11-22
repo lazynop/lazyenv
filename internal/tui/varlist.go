@@ -174,8 +174,8 @@ func (m *VarListModel) SetSize(width, height int) {
 }
 
 func (m *VarListModel) ensureCursorVisible() {
-	if m.Height <= panelChromeHeight {
-		return // not laid out yet
+	if !panelLaidOut(m.Height) {
+		return
 	}
 	visible := m.visibleLines()
 	rows := len(m.displayItems)
@@ -322,16 +322,17 @@ func (m *VarListModel) IsHeaderAtCursor() bool {
 	return m.displayItems[m.Cursor].Kind == displayItemHeader
 }
 
-// cursorAnchor remembers the user's logical cursor position before a
-// recomputeDisplay so it can be restored even if the row index changes.
-//
-// At most one of hasHeader/hasVar is true at a time (since a row is either
-// a header or a var). Both false means "no anchor" — restoreCursor is a
-// no-op and the cursor stays wherever clampCursor leaves it.
+type anchorKind int
+
+const (
+	anchorNone anchorKind = iota
+	anchorHeader
+	anchorVar
+)
+
 type cursorAnchor struct {
-	hasHeader    bool
+	kind         anchorKind
 	headerPrefix string
-	hasVar       bool
 	varIdx       int
 }
 
@@ -344,16 +345,16 @@ func (m *VarListModel) captureCursor() cursorAnchor {
 	case displayItemHeader:
 		gi := item.GroupIdx
 		if gi >= 0 && gi < len(m.groups) {
-			return cursorAnchor{hasHeader: true, headerPrefix: m.groups[gi].Prefix}
+			return cursorAnchor{kind: anchorHeader, headerPrefix: m.groups[gi].Prefix}
 		}
 	case displayItemVar:
-		return cursorAnchor{hasVar: true, varIdx: item.VarIdx}
+		return cursorAnchor{kind: anchorVar, varIdx: item.VarIdx}
 	}
 	return cursorAnchor{}
 }
 
 func (m *VarListModel) restoreCursor(a cursorAnchor) {
-	if a.hasHeader {
+	if a.kind == anchorHeader {
 		for i, item := range m.displayItems {
 			if item.Kind == displayItemHeader && m.groups[item.GroupIdx].Prefix == a.headerPrefix {
 				m.SetCursor(i)
@@ -361,7 +362,7 @@ func (m *VarListModel) restoreCursor(a cursorAnchor) {
 			}
 		}
 	}
-	if a.hasVar {
+	if a.kind == anchorVar {
 		for i, item := range m.displayItems {
 			if item.Kind == displayItemVar && item.VarIdx == a.varIdx {
 				m.SetCursor(i)

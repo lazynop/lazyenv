@@ -21,13 +21,8 @@ func tooSmallView(width, height int, title, muted lipgloss.Style) string {
 	return lipgloss.NewStyle().MaxWidth(width).MaxHeight(height).Render(placed)
 }
 
-// tooSmallInput handles msg in place of the model while a sized terminal
-// (width 0 means no tea.WindowSizeMsg yet) is below the minimum: it reports
-// whether msg is input, which it drops since it would act on what the user
-// cannot see, and the command it runs instead: Ctrl+C quits, from any mode,
-// so the user is never stuck.
 func tooSmallInput(width, height int, msg tea.Msg) (handled bool, cmd tea.Cmd) {
-	if width == 0 || !terminalTooSmall(width, height) {
+	if awaitingWindowSize(width) || !terminalTooSmall(width, height) {
 		return false, nil
 	}
 	switch msg := msg.(type) {
@@ -41,3 +36,5 @@ func tooSmallInput(width, height int, msg tea.Msg) (handled bool, cmd tea.Cmd) {
 	}
 	return false, nil
 }
+
+func awaitingWindowSize(width int) bool { return width == 0 }

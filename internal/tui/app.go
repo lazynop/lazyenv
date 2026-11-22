@@ -785,8 +785,10 @@ func (a *App) fitInputBar() {
 		return
 	}
 	in.SetWidth(width)
-	// textinput fits the scrolled part of its value to its width only when
-	// the value or the cursor moves: moving to the end and back does it.
+	refitScrolledValue(in)
+}
+
+func refitScrolledValue(in *textinput.Model) {
 	pos := in.Position()
 	in.CursorEnd()
 	in.SetCursor(pos)

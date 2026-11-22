@@ -21,17 +21,7 @@ func (a App) handleConfirmDeleteFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd
 			return a, a.flashError("Error deleting file: " + err.Error())
 		}
 
-		// Remove from file list
-		idx := -1
-		for i, ef := range a.fileList.Files {
-			if ef.Path == f.Path {
-				idx = i
-				break
-			}
-		}
-		if idx >= 0 {
-			a.fileList.Files = append(a.fileList.Files[:idx], a.fileList.Files[idx+1:]...)
-		}
+		a.fileList.removeFile(f.Path)
 
 		if len(a.fileList.Files) == 0 {
 			a.fileList.Cursor = 0
