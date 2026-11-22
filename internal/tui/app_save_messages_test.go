@@ -25,25 +25,21 @@ func assertFlashMatches(t *testing.T, app App, kind messageKind, pattern string)
 	assert.Equal(t, kind, app.statusBar.kind)
 }
 
-func q(s string) string {
-	return regexp.QuoteMeta(s)
-}
-
 func blockBackup(t *testing.T, path string) {
 	t.Helper()
 	require.NoError(t, os.MkdirAll(filepath.Join(path+".bak", "blocker"), 0o755))
 }
 
 func backupBlockedPattern(path string) string {
-	return `backup failed: renaming temp file: rename ` + q(filepath.Dir(path)) + `/\.lazyenv-\d+\.tmp ` + q(path+".bak") + `: [^:]+ - `
+	return `backup failed: renaming temp file: rename ` + regexp.QuoteMeta(filepath.Dir(path)) + `/\.lazyenv-\d+\.tmp ` + regexp.QuoteMeta(path+".bak") + `: [^:]+ - `
 }
 
 func backupMissingPattern(path string) string {
-	return `backup failed: reading file for backup: open ` + q(path) + `: no such file or directory - `
+	return `backup failed: reading file for backup: open ` + regexp.QuoteMeta(path) + `: no such file or directory - `
 }
 
 func writeFailedPattern(dir string) string {
-	return `creating temp file: open ` + q(dir) + `/\.lazyenv-\d+\.tmp: no such file or directory`
+	return `creating temp file: open ` + regexp.QuoteMeta(dir) + `/\.lazyenv-\d+\.tmp: no such file or directory`
 }
 
 func makeWriteOnly(t *testing.T, path string) {
@@ -304,7 +300,7 @@ func TestCompareSaveStatusMessages(t *testing.T) {
 		modifyBothCompared(app)
 		app = press(app, "w")
 		assertFlashMatches(t, app, messageAlert,
-			q("Saved .env but refresh failed: "+readDenied(pathA))+` - Error saving \.env\.prod: `+writeFailedPattern(filepath.Dir(pathB)))
+			regexp.QuoteMeta("Saved .env but refresh failed: "+readDenied(pathA))+` - Error saving \.env\.prod: `+writeFailedPattern(filepath.Dir(pathB)))
 	})
 }
 
