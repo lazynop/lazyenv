@@ -38,7 +38,7 @@ func (a App) handleSave() (App, tea.Cmd) {
 func (a *App) saveAndRefresh(f *model.EnvFile, verb, done string) tea.Cmd {
 	warn, err := a.backupAndSave(f)
 	if err != nil {
-		return a.flashError("Error saving: " + err.Error())
+		return a.flashError(warn + "Error saving: " + err.Error())
 	}
 
 	if _, err := a.refreshFile(f); err != nil {

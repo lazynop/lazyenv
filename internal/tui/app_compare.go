@@ -116,31 +116,48 @@ func (a App) handleCompareReset() (App, tea.Cmd) {
 }
 
 func (a App) handleCompareSave() (App, tea.Cmd) {
-	saved := []string{}
+	var saved, refreshErrs []string
 	var warn strings.Builder
 	for _, f := range []*model.EnvFile{a.diffView.FileA, a.diffView.FileB} {
 		if f != nil && f.Modified {
 			backupWarn, err := a.backupAndSave(f)
 			warn.WriteString(backupWarn)
 			if err != nil {
-				return a, a.flashError("Error saving " + f.Name + ": " + err.Error())
-			}
-			refreshed, err := a.refreshFile(f)
-			if err == nil {
-				if f == a.diffView.FileA {
-					a.diffView.FileA = refreshed
-				} else {
-					a.diffView.FileB = refreshed
+				if len(saved) > 0 {
+					warn.WriteString(savedReport(saved, refreshErrs) + " - ")
 				}
+				return a, a.flashError(warn.String() + "Error saving " + f.Name + ": " + err.Error())
 			}
 			saved = append(saved, f.Name)
+			refreshed, err := a.refreshFile(f)
+			if err != nil {
+				refreshErrs = append(refreshErrs, err.Error())
+				continue
+			}
+			if f == a.diffView.FileA {
+				a.diffView.FileA = refreshed
+			} else {
+				a.diffView.FileB = refreshed
+			}
 		}
 	}
 	a.diffView.Rediff()
 	if len(saved) == 0 {
 		return a, a.flashMessage("No changes to save")
 	}
-	return a, a.flashMessage(warn.String() + "Saved " + strings.Join(saved, ", "))
+	report := warn.String() + savedReport(saved, refreshErrs)
+	if len(refreshErrs) > 0 {
+		return a, a.flashError(report)
+	}
+	return a, a.flashMessage(report)
+}
+
+func savedReport(saved, refreshErrs []string) string {
+	report := "Saved " + strings.Join(saved, ", ")
+	if len(refreshErrs) > 0 {
+		report += " but refresh failed: " + strings.Join(refreshErrs, "; ")
+	}
+	return report
 }
 
 func (a App) startCompareEdit(file *model.EnvFile) (tea.Model, tea.Cmd) {
