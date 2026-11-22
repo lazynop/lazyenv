@@ -9,9 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
-	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 func TestTemplateFile_EntersModeOnT(t *testing.T) {
@@ -72,10 +70,7 @@ func TestTemplateFile_EscapeCancels(t *testing.T) {
 func TestTemplateFile_Success(t *testing.T) {
 	dir := t.TempDir()
 	srcPath := filepath.Join(dir, ".env")
-	require.NoError(t, os.WriteFile(srcPath, []byte("# Database config\nDB_HOST=localhost\nDB_PASS=secret123\n"), 0644))
-
-	src, err := parser.ParseFile(srcPath, config.SecretsConfig{})
-	require.NoError(t, err)
+	src := writeAndParse(t, srcPath, "# Database config\nDB_HOST=localhost\nDB_PASS=secret123\n")
 
 	app := newTestApp([]*model.EnvFile{src})
 	app.config.Dir = dir
@@ -97,10 +92,7 @@ func TestTemplateFile_Success(t *testing.T) {
 func TestTemplateFile_PreservesExportPrefix(t *testing.T) {
 	dir := t.TempDir()
 	srcPath := filepath.Join(dir, ".env")
-	require.NoError(t, os.WriteFile(srcPath, []byte("export API_KEY=abc123\n"), 0644))
-
-	src, err := parser.ParseFile(srcPath, config.SecretsConfig{})
-	require.NoError(t, err)
+	src := writeAndParse(t, srcPath, "export API_KEY=abc123\n")
 
 	app := newTestApp([]*model.EnvFile{src})
 	app.config.Dir = dir
@@ -118,10 +110,7 @@ func TestTemplateFile_PreservesCommentsAndBlankLines(t *testing.T) {
 	dir := t.TempDir()
 	srcPath := filepath.Join(dir, ".env")
 	content := "# App settings\nAPP_NAME=myapp\n\n# Database\nDB_HOST=localhost\nDB_PORT=5432\n"
-	require.NoError(t, os.WriteFile(srcPath, []byte(content), 0644))
-
-	src, err := parser.ParseFile(srcPath, config.SecretsConfig{})
-	require.NoError(t, err)
+	src := writeAndParse(t, srcPath, content)
 
 	app := newTestApp([]*model.EnvFile{src})
 	app.config.Dir = dir
@@ -137,11 +126,8 @@ func TestTemplateFile_PreservesCommentsAndBlankLines(t *testing.T) {
 
 func TestTemplateFile_AlreadyExists(t *testing.T) {
 	dir := t.TempDir()
-	require.NoError(t, os.WriteFile(filepath.Join(dir, ".env"), []byte("A=1\n"), 0644))
+	src := writeAndParse(t, filepath.Join(dir, ".env"), "A=1\n")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".env.example"), []byte(""), 0644))
-
-	src, err := parser.ParseFile(filepath.Join(dir, ".env"), config.SecretsConfig{})
-	require.NoError(t, err)
 
 	app := newTestApp([]*model.EnvFile{src})
 	app.config.Dir = dir
@@ -189,9 +175,7 @@ func TestTemplateFile_EmptyName(t *testing.T) {
 func TestTemplateOfAnEmptyFileGainsNoBlankFirstLine(t *testing.T) {
 	dir := t.TempDir()
 	srcPath := filepath.Join(dir, ".env")
-	require.NoError(t, os.WriteFile(srcPath, nil, 0644))
-	src, err := parser.ParseFile(srcPath, config.SecretsConfig{})
-	require.NoError(t, err)
+	src := writeAndParse(t, srcPath, "")
 
 	app := newTestApp([]*model.EnvFile{src})
 	app.config.Dir = dir

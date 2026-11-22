@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -11,7 +10,6 @@ import (
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
-	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 func makeDiffFiles() (*model.EnvFile, *model.EnvFile) {
@@ -350,15 +348,10 @@ func TestDiffViewResetPreservesGitWarning(t *testing.T) {
 	dir := t.TempDir()
 	pathA := filepath.Join(dir, ".env")
 	pathB := filepath.Join(dir, ".env.prod")
-	require.NoError(t, os.WriteFile(pathA, []byte("FOO=a\n"), 0644))
-	require.NoError(t, os.WriteFile(pathB, []byte("FOO=b\n"), 0644))
+	fA := writeAndParse(t, pathA, "FOO=a\n")
+	fB := writeAndParse(t, pathB, "FOO=b\n")
 
-	fA, err := parser.ParseFile(pathA, config.SecretsConfig{})
-	require.NoError(t, err)
 	fA.GitWarning = true
-
-	fB, err := parser.ParseFile(pathB, config.SecretsConfig{})
-	require.NoError(t, err)
 	fB.GitWarning = true
 
 	dv := NewDiffViewModel(config.DefaultConfig().Layout)

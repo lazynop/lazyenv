@@ -9,9 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
-	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 func TestRenameFile_EntersModeOnR(t *testing.T) {
@@ -74,10 +72,7 @@ func TestRenameFile_EscapeCancels(t *testing.T) {
 func TestRenameFile_SameNameNoOp(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, ".env")
-	require.NoError(t, os.WriteFile(path, []byte("FOO=bar\n"), 0644))
-
-	f, err := parser.ParseFile(path, config.SecretsConfig{})
-	require.NoError(t, err)
+	f := writeAndParse(t, path, "FOO=bar\n")
 
 	app := newTestApp([]*model.EnvFile{f})
 	app.config.Dir = dir
@@ -96,10 +91,7 @@ func TestRenameFile_SameNameNoOp(t *testing.T) {
 func TestRenameFile_Success(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, ".env")
-	require.NoError(t, os.WriteFile(path, []byte("FOO=bar\n"), 0644))
-
-	f, err := parser.ParseFile(path, config.SecretsConfig{})
-	require.NoError(t, err)
+	f := writeAndParse(t, path, "FOO=bar\n")
 
 	app := newTestApp([]*model.EnvFile{f})
 	app.config.Dir = dir
@@ -112,7 +104,7 @@ func TestRenameFile_Success(t *testing.T) {
 	assert.Contains(t, app.statusBar.Message, "Renamed")
 	assert.Contains(t, app.statusBar.Message, "→")
 
-	_, err = os.Stat(path)
+	_, err := os.Stat(path)
 	assert.True(t, os.IsNotExist(err))
 	_, err = os.Stat(filepath.Join(dir, ".env.local"))
 	require.NoError(t, err)
@@ -123,11 +115,8 @@ func TestRenameFile_Success(t *testing.T) {
 
 func TestRenameFile_AlreadyExists(t *testing.T) {
 	dir := t.TempDir()
-	require.NoError(t, os.WriteFile(filepath.Join(dir, ".env"), []byte("A=1\n"), 0644))
+	f := writeAndParse(t, filepath.Join(dir, ".env"), "A=1\n")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".env.local"), []byte("B=2\n"), 0644))
-
-	f, err := parser.ParseFile(filepath.Join(dir, ".env"), config.SecretsConfig{})
-	require.NoError(t, err)
 
 	app := newTestApp([]*model.EnvFile{f})
 	app.config.Dir = dir
@@ -176,10 +165,7 @@ func TestRenameFile_PathSeparator(t *testing.T) {
 func TestRenameFile_UpdatesBackupTracking(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, ".env")
-	require.NoError(t, os.WriteFile(path, []byte("FOO=bar\n"), 0644))
-
-	f, err := parser.ParseFile(path, config.SecretsConfig{})
-	require.NoError(t, err)
+	f := writeAndParse(t, path, "FOO=bar\n")
 
 	app := newTestApp([]*model.EnvFile{f})
 	app.config.Dir = dir

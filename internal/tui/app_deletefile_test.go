@@ -7,11 +7,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
-	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
-	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 func TestDeleteFile_EntersModeOnD(t *testing.T) {
@@ -64,10 +61,7 @@ func TestDeleteFile_BlocksIfModified(t *testing.T) {
 func TestDeleteFile_ConfirmDeletes(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, ".env")
-	require.NoError(t, os.WriteFile(path, []byte("FOO=bar\n"), 0644))
-
-	f, err := parser.ParseFile(path, config.SecretsConfig{})
-	require.NoError(t, err)
+	f := writeAndParse(t, path, "FOO=bar\n")
 
 	app := newTestApp([]*model.EnvFile{f})
 	app.config.Dir = dir
@@ -81,7 +75,7 @@ func TestDeleteFile_ConfirmDeletes(t *testing.T) {
 	assert.Equal(t, ModeNormal, app.mode)
 	assert.Contains(t, app.statusBar.Message, "Deleted")
 
-	_, err = os.Stat(path)
+	_, err := os.Stat(path)
 	assert.True(t, os.IsNotExist(err))
 
 	assert.Empty(t, app.fileList.Files)
@@ -92,13 +86,8 @@ func TestDeleteFile_ConfirmDeletesTheFirstOfTwoFiles(t *testing.T) {
 	dir := t.TempDir()
 	path1 := filepath.Join(dir, ".env")
 	path2 := filepath.Join(dir, ".env.local")
-	require.NoError(t, os.WriteFile(path1, []byte("A=1\n"), 0644))
-	require.NoError(t, os.WriteFile(path2, []byte("B=2\n"), 0644))
-
-	f1, err := parser.ParseFile(path1, config.SecretsConfig{})
-	require.NoError(t, err)
-	f2, err := parser.ParseFile(path2, config.SecretsConfig{})
-	require.NoError(t, err)
+	f1 := writeAndParse(t, path1, "A=1\n")
+	f2 := writeAndParse(t, path2, "B=2\n")
 
 	app := newTestApp([]*model.EnvFile{f1, f2})
 	app.config.Dir = dir
@@ -121,13 +110,8 @@ func TestDeleteFile_ConfirmDeletesLastFile(t *testing.T) {
 	dir := t.TempDir()
 	path1 := filepath.Join(dir, ".env")
 	path2 := filepath.Join(dir, ".env.local")
-	require.NoError(t, os.WriteFile(path1, []byte("A=1\n"), 0644))
-	require.NoError(t, os.WriteFile(path2, []byte("B=2\n"), 0644))
-
-	f1, err := parser.ParseFile(path1, config.SecretsConfig{})
-	require.NoError(t, err)
-	f2, err := parser.ParseFile(path2, config.SecretsConfig{})
-	require.NoError(t, err)
+	f1 := writeAndParse(t, path1, "A=1\n")
+	f2 := writeAndParse(t, path2, "B=2\n")
 
 	app := newTestApp([]*model.EnvFile{f1, f2})
 	app.config.Dir = dir

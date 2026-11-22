@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/lazynop/lazyenv/internal/parser"
 )
@@ -31,10 +30,8 @@ func TestCreatedFilesGetNewFileModeNotTheSourceMode(t *testing.T) {
 		t.Run(action, func(t *testing.T) {
 			dir := t.TempDir()
 			srcPath := filepath.Join(dir, ".env")
-			require.NoError(t, os.WriteFile(srcPath, []byte("FOO=bar\n"), 0o640))
+			src := writeAndParse(t, srcPath, "FOO=bar\n")
 			require.NoError(t, os.Chmod(srcPath, 0o640))
-			src, err := parser.ParseFile(srcPath, config.SecretsConfig{})
-			require.NoError(t, err)
 
 			app := newTestApp([]*model.EnvFile{src})
 			app.config.Dir = dir

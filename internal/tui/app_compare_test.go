@@ -361,13 +361,8 @@ func TestCompareResetUsesKeyMap(t *testing.T) {
 	dir := t.TempDir()
 	pathA := filepath.Join(dir, ".env")
 	pathB := filepath.Join(dir, ".env.prod")
-	require.NoError(t, os.WriteFile(pathA, []byte("FOO=val_FOO\n"), 0644), "reset re-parses the files from disk, so they must exist there")
-	require.NoError(t, os.WriteFile(pathB, []byte("FOO=val_FOO\n"), 0644))
-
-	fA, err := parser.ParseFile(pathA, config.SecretsConfig{})
-	require.NoError(t, err)
-	fB, err := parser.ParseFile(pathB, config.SecretsConfig{})
-	require.NoError(t, err)
+	fA := writeAndParse(t, pathA, "FOO=val_FOO\n")
+	fB := writeAndParse(t, pathB, "FOO=val_FOO\n")
 
 	app := enterCompareMode(t, fA, fB)
 	app.keys.Reset = key.NewBinding(key.WithKeys("x"))
@@ -383,13 +378,8 @@ func TestCompareSaveUsesKeyMap(t *testing.T) {
 	dir := t.TempDir()
 	pathA := filepath.Join(dir, ".env")
 	pathB := filepath.Join(dir, ".env.prod")
-	require.NoError(t, os.WriteFile(pathA, []byte("FOO=a\n"), 0644))
-	require.NoError(t, os.WriteFile(pathB, []byte("FOO=b\n"), 0644))
-
-	fA, err := parser.ParseFile(pathA, config.SecretsConfig{})
-	require.NoError(t, err)
-	fB, err := parser.ParseFile(pathB, config.SecretsConfig{})
-	require.NoError(t, err)
+	fA := writeAndParse(t, pathA, "FOO=a\n")
+	fB := writeAndParse(t, pathB, "FOO=b\n")
 
 	app := enterCompareMode(t, fA, fB)
 

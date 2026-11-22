@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -9,7 +8,6 @@ import (
 
 	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
-	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 func TestApp_SessionStats_InitDisabledByReadOnly(t *testing.T) {
@@ -48,15 +46,13 @@ func setupStatsFixture(t *testing.T, name, body string) (app App, ef *model.EnvF
 	t.Helper()
 	dir = t.TempDir()
 	path = dir + "/" + name
-	require.NoError(t, os.WriteFile(path, []byte(body), 0644))
+	ef = writeAndParse(t, path, body)
 
 	cfg := config.DefaultConfig()
 	cfg.Dir = dir
 	cfg.NoBackup = true
 	app = NewApp(cfg, StartupMessages{})
 
-	ef, err := parser.ParseFile(path, cfg.Secrets)
-	require.NoError(t, err)
 	out, _ := app.Update(FilesLoadedMsg{Files: []*model.EnvFile{ef}})
 	return out.(App), ef, dir, path
 }
@@ -149,8 +145,8 @@ func TestApp_SessionStats_EndToEnd(t *testing.T) {
 	dir := t.TempDir()
 	localPath := dir + "/.env.local"
 	stagingPath := dir + "/.env.staging"
-	require.NoError(t, os.WriteFile(localPath, []byte("FOO=1\nBAR=2\n"), 0644))
-	require.NoError(t, os.WriteFile(stagingPath, []byte("X=a\nY=b\n"), 0644))
+	localEf := writeAndParse(t, localPath, "FOO=1\nBAR=2\n")
+	stagingEf := writeAndParse(t, stagingPath, "X=a\nY=b\n")
 
 	cfg := config.DefaultConfig()
 	cfg.Dir = dir
@@ -158,10 +154,6 @@ func TestApp_SessionStats_EndToEnd(t *testing.T) {
 	cfg.NoGitCheck = true
 	app := NewApp(cfg, StartupMessages{})
 
-	localEf, err := parser.ParseFile(localPath, cfg.Secrets)
-	require.NoError(t, err)
-	stagingEf, err := parser.ParseFile(stagingPath, cfg.Secrets)
-	require.NoError(t, err)
 	out, _ := app.Update(FilesLoadedMsg{Files: []*model.EnvFile{localEf, stagingEf}})
 	app = out.(App)
 

@@ -68,11 +68,8 @@ func TestFlash_CreateFileSuccess(t *testing.T) {
 
 func TestFlash_DuplicateFileAlreadyExists(t *testing.T) {
 	dir := t.TempDir()
-	require.NoError(t, os.WriteFile(filepath.Join(dir, ".env"), []byte("A=1\n"), 0644))
+	src := writeAndParse(t, filepath.Join(dir, ".env"), "A=1\n")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".env.copy"), []byte(""), 0644))
-
-	src, err := parser.ParseFile(filepath.Join(dir, ".env"), config.SecretsConfig{})
-	require.NoError(t, err)
 
 	app := newTestApp([]*model.EnvFile{src})
 	app.config.Dir = dir
@@ -91,10 +88,7 @@ func TestFlash_DuplicateFileAlreadyExists(t *testing.T) {
 func TestFlash_RenameFileSuccess(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, ".env")
-	require.NoError(t, os.WriteFile(path, []byte("A=1\n"), 0644))
-
-	f, err := parser.ParseFile(path, config.SecretsConfig{})
-	require.NoError(t, err)
+	f := writeAndParse(t, path, "A=1\n")
 
 	app := newTestApp([]*model.EnvFile{f})
 	app.config.Dir = dir
@@ -145,10 +139,7 @@ func TestFlash_RenameKeySuccess(t *testing.T) {
 func TestFlash_DeleteFileConfirm(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, ".env")
-	require.NoError(t, os.WriteFile(path, []byte("A=1\n"), 0644))
-
-	f, err := parser.ParseFile(path, config.SecretsConfig{})
-	require.NoError(t, err)
+	f := writeAndParse(t, path, "A=1\n")
 
 	app := newTestApp([]*model.EnvFile{f})
 	app.config.Dir = dir
@@ -255,13 +246,8 @@ func TestFlash_CompareResetReloadFailureRendersInErrorColor(t *testing.T) {
 	dir := t.TempDir()
 	pathA := filepath.Join(dir, ".env")
 	pathB := filepath.Join(dir, ".env.prod")
-	require.NoError(t, os.WriteFile(pathA, []byte("FOO=a\n"), 0644))
-	require.NoError(t, os.WriteFile(pathB, []byte("FOO=b\n"), 0644))
-
-	fA, err := parser.ParseFile(pathA, config.SecretsConfig{})
-	require.NoError(t, err)
-	fB, err := parser.ParseFile(pathB, config.SecretsConfig{})
-	require.NoError(t, err)
+	fA := writeAndParse(t, pathA, "FOO=a\n")
+	fB := writeAndParse(t, pathB, "FOO=b\n")
 
 	app := enterCompareMode(t, fA, fB)
 	require.NoError(t, os.Remove(pathB))

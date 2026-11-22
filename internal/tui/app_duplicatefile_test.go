@@ -9,9 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lazynop/lazyenv/internal/config"
 	"github.com/lazynop/lazyenv/internal/model"
-	"github.com/lazynop/lazyenv/internal/parser"
 )
 
 func TestDuplicateFile_EntersModeOnC(t *testing.T) {
@@ -73,10 +71,7 @@ func TestDuplicateFile_EscapeCancels(t *testing.T) {
 func TestDuplicateFile_Success(t *testing.T) {
 	dir := t.TempDir()
 	srcPath := filepath.Join(dir, ".env")
-	require.NoError(t, os.WriteFile(srcPath, []byte("FOO=bar\nBAZ=qux\n"), 0644))
-
-	src, err := parser.ParseFile(srcPath, config.SecretsConfig{})
-	require.NoError(t, err)
+	src := writeAndParse(t, srcPath, "FOO=bar\nBAZ=qux\n")
 
 	app := newTestApp([]*model.EnvFile{src})
 	app.config.Dir = dir
@@ -100,11 +95,8 @@ func TestDuplicateFile_Success(t *testing.T) {
 func TestDuplicateFile_AlreadyExists(t *testing.T) {
 	dir := t.TempDir()
 	srcPath := filepath.Join(dir, ".env")
-	require.NoError(t, os.WriteFile(srcPath, []byte("FOO=bar\n"), 0644))
+	src := writeAndParse(t, srcPath, "FOO=bar\n")
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".env.local"), []byte(""), 0644))
-
-	src, err := parser.ParseFile(srcPath, config.SecretsConfig{})
-	require.NoError(t, err)
 
 	app := newTestApp([]*model.EnvFile{src})
 	app.config.Dir = dir
@@ -123,10 +115,7 @@ func TestDuplicateFile_AlreadyExists(t *testing.T) {
 func TestDuplicateFile_InvalidPattern(t *testing.T) {
 	dir := t.TempDir()
 	srcPath := filepath.Join(dir, ".env")
-	require.NoError(t, os.WriteFile(srcPath, []byte("FOO=bar\n"), 0644))
-
-	src, err := parser.ParseFile(srcPath, config.SecretsConfig{})
-	require.NoError(t, err)
+	src := writeAndParse(t, srcPath, "FOO=bar\n")
 
 	app := newTestApp([]*model.EnvFile{src})
 	app.config.Dir = dir
@@ -145,10 +134,7 @@ func TestDuplicateFile_InvalidPattern(t *testing.T) {
 func TestDuplicateFile_PathSeparator(t *testing.T) {
 	dir := t.TempDir()
 	srcPath := filepath.Join(dir, ".env")
-	require.NoError(t, os.WriteFile(srcPath, []byte("FOO=bar\n"), 0644))
-
-	src, err := parser.ParseFile(srcPath, config.SecretsConfig{})
-	require.NoError(t, err)
+	src := writeAndParse(t, srcPath, "FOO=bar\n")
 
 	app := newTestApp([]*model.EnvFile{src})
 	app.config.Dir = dir
