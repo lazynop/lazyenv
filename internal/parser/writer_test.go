@@ -265,15 +265,21 @@ func TestNormalizeForWriteIdempotent(t *testing.T) {
 	assert.Equal(t, model.QuoteDouble, ef.Vars[0].QuoteStyle)
 }
 
-func TestNormalizeForWriteQuoteNoneControlChars(t *testing.T) {
+func TestNormalizeForWriteQuoteNoneRoundTrips(t *testing.T) {
 	cases := []struct {
 		name  string
 		value string
+		quote model.QuoteStyle
 	}{
-		{"newline", "line1\nline2\nline3"},
-		{"cr", "before\rafter"},
-		{"tab", "col1\tcol2"},
-		{"crlf", "line1\r\nline2\r\nline3"},
+		{"newline", "line1\nline2\nline3", model.QuoteDouble},
+		{"cr", "before\rafter", model.QuoteDouble},
+		{"crlf", "line1\r\nline2\r\nline3", model.QuoteDouble},
+		{"inner tab", "col1\tcol2", model.QuoteNone},
+		{"leading tab", "\tvalue", model.QuoteNone},
+		{"tab only", "\t", model.QuoteDouble},
+		{"trailing tab", "value\t", model.QuoteDouble},
+		{"tab before hash", "value\t#not-a-comment", model.QuoteDouble},
+		{"leading tab before hash", "\t#not-a-comment", model.QuoteDouble},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -284,13 +290,23 @@ func TestNormalizeForWriteQuoteNoneControlChars(t *testing.T) {
 			out := string(Marshal(ef))
 			re := ParseBytes(".env", []byte(out), config.SecretsConfig{})
 
+			require.Len(t, re.Vars, 2, "no phantom vars must leak out of the round-trip")
 			v := re.VarByKey("V")
 			require.NotNil(t, v)
 			assert.Equal(t, tc.value, v.Value)
-			assert.Equal(t, model.QuoteDouble, v.QuoteStyle)
-			require.Len(t, re.Vars, 2, "no phantom vars must leak out of the round-trip")
+			assert.Equal(t, tc.quote, v.QuoteStyle)
+			assert.Empty(t, v.Comment)
 		})
 	}
+}
+
+func TestAnUntouchedUnquotedValueWithATabSavesVerbatim(t *testing.T) {
+	ef := ParseBytes(".env", []byte("A=1\nK=a\tb\nL=\tc\n"), config.SecretsConfig{})
+	ef.UpdateVar(0, "2")
+
+	NormalizeForWrite(ef)
+
+	assert.Equal(t, "A=2\nK=a\tb\nL=\tc\n", string(Marshal(ef)))
 }
 
 func TestAVarAddedToAnEmptyFileEndsWithANewline(t *testing.T) {

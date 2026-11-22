@@ -12,10 +12,10 @@ import (
 // NormalizeForWrite upgrades QuoteStyle for any var whose current Value
 // cannot round-trip safely in its current style. For QuoteSingle that is an
 // embedded `'` (shell has no escape inside '...'). For QuoteNone: an embedded
-// `\n` or `\r` (a line separator breaks the KEY=VALUE format) or `\t`, a leading
+// `\n` or `\r` (a line separator breaks the KEY=VALUE format), a leading
 // quote char (the re-parse would treat the value as quoted and swallow
 // following lines), and anything parseUnquoted would not read back verbatim
-// (inline-comment truncation, trailing-whitespace trim). All upgrade to
+// (inline-comment truncation, trailing space or tab trim). All upgrade to
 // QuoteDouble because escapeDouble can serialize every such value.
 //
 // An upgraded var is also marked Modified, so Marshal rebuilds its line in the
@@ -38,7 +38,7 @@ func needsQuoteUpgrade(v *model.EnvVar) bool {
 	case model.QuoteSingle:
 		return strings.ContainsRune(v.Value, '\'')
 	case model.QuoteNone:
-		if strings.ContainsAny(v.Value, "\n\r\t") {
+		if strings.ContainsAny(v.Value, "\n\r") {
 			return true
 		}
 		if len(v.Value) > 0 && (v.Value[0] == '"' || v.Value[0] == '\'') {
