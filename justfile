@@ -36,7 +36,7 @@ test-cover:
     go test -race -coverprofile=coverage.out ./...
     go tool cover -func=coverage.out
 
-# Mutation-test FILE: replace OLD (it must occur once) with NEW, run the tests matching RUN, restore FILE. Exit 0 killed, 1 survived, 2 no mutant
+# Mutation-test FILE: replace OLD (it must occur once) with NEW, run the tests matching RUN, restore FILE; list the killing tests and their failed assertions. Exit 0 killed, 1 survived, 2 no mutant
 [no-exit-message]
 mutant $file $old $new $run=".":
     #!/usr/bin/env bash
@@ -62,16 +62,72 @@ mutant $file $old $new $run=".":
         echo "$out" >&2
         exit 2
     fi
+    all=$out
     # A panicking test stops its package's test binary, so the tests after it
     # never ran: run again past every test that failed so far, until none panics
     while grep -q '^panic: ' <<<"$out"; do
         out=$(go test ./... -run "$run" -skip "^($(paste -sd'|' - <<<"$killers"))\$" 2>&1)
+        all=$(printf '%s\n%s' "$all" "$out")
         more=$(grep -o '^--- FAIL: [^ ]*' <<<"$out" | cut -d' ' -f3)
         [ -z "$more" ] && break
         killers=$(printf '%s\n%s\n' "$killers" "$more" | sort -u)
     done
     echo "killed by:"
     sed 's/^/  /' <<<"$killers"
+    echo "failed at:"
+    # One line per testify assertion: its Test (the (sub)test it ran in), the
+    # _test.go:line frames of its Error Trace (innermost first, so a helper
+    # comes before the test) and its Messages text. A killing test with no such
+    # assertion (a panic, t.Fatal) gets "no assertion trace". The values go
+    # through the environment: BSD awk rejects a newline in a -v value
+    killers="$killers" root="$PWD/" awk '
+        function flush(    line, top) {
+            if (inblock) {
+                # A parent assertion that runs after a failed subtest prints
+                # below the header of the subtest: the Test label names its owner
+                if (test == "") test = name
+                line = "  " test
+                if (frames != "") line = line ": " frames
+                if (msg != "") line = line ": " msg
+                print line
+                top = test
+                sub(/\/.*/, "", top)
+                traced[top] = 1
+            }
+            inblock = 0; label = ""; test = ""; frames = ""; msg = ""
+        }
+        function add(v) {
+            sub(/^\t+/, "", v)
+            if (label == "Test") {
+                test = v
+            } else if (label == "Error Trace" && v ~ /_test\.go:[0-9]+$/) {
+                if (index(v, ENVIRON["root"]) == 1) v = substr(v, length(ENVIRON["root"]) + 1)
+                frames = frames (frames == "" ? "" : ", ") v
+            } else if (label == "Messages") {
+                msg = msg (msg == "" ? "" : " ") v
+            }
+        }
+        { sub(/^ +/, "") }
+        /^--- FAIL: / { flush(); name = $3; next }
+        /^\tError Trace:\t/ { flush(); inblock = 1 }
+        inblock && /^\t[A-Z][A-Za-z ]*: *\t/ {
+            label = $0
+            sub(/^\t/, "", label)
+            sub(/:.*/, "", label)
+            sub(/^\t[^\t]*\t/, "")
+            add($0)
+            next
+        }
+        inblock && /^\t +\t/ { sub(/^\t +\t/, ""); add($0); next }
+        { flush() }
+        END {
+            flush()
+            n = split(ENVIRON["killers"], k, "\n")
+            for (i = 1; i <= n; i++) if (!(k[i] in traced)) print "  " k[i] ": no assertion trace"
+        }
+    ' <<<"$all"
+    # The killing tests set the exit code, not the parser
+    exit 0
 
 # Run static analysis
 vet:

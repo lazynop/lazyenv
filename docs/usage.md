@@ -88,7 +88,7 @@ just
 | `just run`        | Build and run with `go run`. Accepts arguments: `just run ./myproject -r`. |
 | `just test`       | Run all tests with race detection.                                         |
 | `just test-cover` | Run tests with race detection and coverage report.                         |
-| `just mutant <file> <old> <new> [run]` | Check that the tests catch a bug: replace `old`, which must occur once in `file`, with `new`, run the tests matching `run` (all by default), then restore `file`. Lists the tests that fail; exits 1 when none does, 2 when `old` is not unique or the change does not build. |
+| `just mutant <file> <old> <new> [run]` | Check that the tests catch a bug: replace `old`, which must occur once in `file`, with `new`, run the tests matching `run` (all by default), then restore `file`. Lists the tests that fail, then one line per failed testify assertion: the (sub)test, the `_test.go:line` frames of its error trace and its message; a test that fails with no assertion (a panic, `t.Fatal`) shows `no assertion trace`. Exits 1 when no test fails, 2 when `old` is not unique or the change does not build. |
 | `just check`      | Run all checks: formatting and import grouping, vet, lint, and tests — same as CI. Read-only, does not modify files. |
 | `just fmt`        | Format all Go source files and group their imports (gofmt + gci).                          |
 | `just fix`        | Apply Go modernization fixes (`go fix`). Run this before `just check`.                     |
