@@ -34,7 +34,9 @@ func isValidColor(s string) bool {
 // LoadResult holds the result of loading a config file.
 type LoadResult struct {
 	Config Config
-	Path   string   // path of the config file used, empty if none found
+	// Path is the config file used, empty if none was found. Every report of
+	// Errors names it, so the errors leave it out.
+	Path   string
 	Errors []string // why the file was rejected; empty when it was applied
 }
 
@@ -42,6 +44,8 @@ type LoadResult struct {
 // If configPath is non-empty, it takes highest priority.
 // A malformed or invalid config is rejected as a whole: Load returns the
 // defaults and the errors that rejected it.
+// Colors come back as the raw [colors] overrides: call FinalizeColors once
+// every further override (CLI flags) is applied.
 func Load(projectDir, configPath string) LoadResult {
 	cfg := DefaultConfig()
 
@@ -52,7 +56,6 @@ func Load(projectDir, configPath string) LoadResult {
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		// The path is in LoadResult.Path, which every report of the errors names.
 		var pathErr *fs.PathError
 		if errors.As(err, &pathErr) {
 			err = pathErr.Err
@@ -110,13 +113,9 @@ func merge(defaults Config, rawData []byte) (Config, []string) {
 	}
 
 	result.Secrets = normalizeSecrets(result.Secrets)
-	// Colors are returned raw (just the [colors] TOML overrides). The caller
-	// must invoke FinalizeColors after applying any further overrides (CLI
-	// flags etc.) to resolve theme + mask Bg in a single, late step.
 	return result, nil
 }
 
-// normalizeSecrets uppercases patterns so matchesPattern can skip ToUpper per call.
 func normalizeSecrets(s SecretsConfig) SecretsConfig {
 	s.SafePatterns = upperAll(s.SafePatterns)
 	s.ExtraPatterns = upperAll(s.ExtraPatterns)

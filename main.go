@@ -42,10 +42,7 @@ var cli struct {
 	Version        kong.VersionFlag `short:"v" help:"Show version."`
 }
 
-// applyCLIOverrides applies the CLI flags to cfg and returns notices about
-// flags it ignored or adjusted; none of them stops the run.
-func applyCLIOverrides(cfg *config.Config) []string {
-	var notices []string
+func applyCLIOverrides(cfg *config.Config) (notices []string) {
 	if cli.Recursive != nil {
 		cfg.Recursive = *cli.Recursive
 	}
@@ -105,9 +102,7 @@ func applySessionSummaryOverride(cfg *config.Config) {
 	}
 }
 
-// checkConfig lists the config search paths and validates the file found, and
-// returns the exit status: 1 when the file was rejected.
-func checkConfig(stdout, stderr io.Writer, projectDir, configPath string) int {
+func checkConfig(stdout, stderr io.Writer, projectDir, configPath string) (exitStatus int) {
 	r := config.Load(projectDir, configPath)
 	paths := config.ConfigSearchPaths(projectDir, configPath)
 
@@ -142,10 +137,7 @@ func writeConfigErrors(w io.Writer, path string, errs []string) {
 	}
 }
 
-// showConfig writes cfg to stdout as TOML, after reporting on stderr why the
-// config file was rejected and the notices from the CLI flags, and returns the
-// exit status: 1 when the file was rejected.
-func showConfig(stdout, stderr io.Writer, cfg config.Config, startup tui.StartupMessages) int {
+func showConfig(stdout, stderr io.Writer, cfg config.Config, startup tui.StartupMessages) (exitStatus int) {
 	rejected := len(startup.ConfigErrors) > 0
 	if rejected {
 		writeConfigErrors(stderr, startup.ConfigPath, startup.ConfigErrors)

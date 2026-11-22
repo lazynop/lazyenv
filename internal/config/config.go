@@ -30,6 +30,8 @@ type FileConfig struct {
 }
 
 // SecretsConfig holds secret detection tuning options.
+// Load uppercases SafePatterns and ExtraPatterns, so secret detection matches
+// them without uppercasing each pattern again per key.
 type SecretsConfig struct {
 	SafePatterns   []string `toml:"safe_patterns"`   // key patterns to never treat as secret
 	ExtraPatterns  []string `toml:"extra_patterns"`  // key patterns to always treat as secret

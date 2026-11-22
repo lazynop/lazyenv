@@ -48,19 +48,8 @@ func IsSecret(key, value string, cfg config.SecretsConfig) bool {
 		}
 	}
 
-	// Built-in key name checks.
-	if slices.Contains(secretExact, upper) {
+	if isSecretKeyName(upper) {
 		return true
-	}
-	for _, suffix := range secretSuffixes {
-		if strings.HasSuffix(upper, suffix) {
-			return true
-		}
-	}
-	for _, prefix := range secretPrefixes {
-		if strings.HasPrefix(upper, prefix) {
-			return true
-		}
 	}
 
 	if hasSecretValuePrefix(value) {
@@ -71,6 +60,23 @@ func IsSecret(key, value string, cfg config.SecretsConfig) bool {
 		return true
 	}
 
+	return false
+}
+
+func isSecretKeyName(upperKey string) bool {
+	if slices.Contains(secretExact, upperKey) {
+		return true
+	}
+	for _, suffix := range secretSuffixes {
+		if strings.HasSuffix(upperKey, suffix) {
+			return true
+		}
+	}
+	for _, prefix := range secretPrefixes {
+		if strings.HasPrefix(upperKey, prefix) {
+			return true
+		}
+	}
 	return false
 }
 

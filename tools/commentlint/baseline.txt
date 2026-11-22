@@ -3,15 +3,8 @@
 19 docs_test.go
 11 internal/config/config_test.go
 2 internal/config/example_test.go
-5 internal/config/load.go
-17 internal/model/envfile.go
 27 internal/model/envfile_test.go
-4 internal/model/groups.go
-10 internal/parser/parser.go
 13 internal/parser/parser_test.go
-8 internal/parser/writer.go
 14 internal/tui/source_scan_test.go
-1 internal/util/secrets.go
 21 internal/util/secrets_test.go
-7 main.go
 1 main_test.go

@@ -18,6 +18,9 @@ import (
 // (inline-comment truncation, trailing-whitespace trim). All upgrade to
 // QuoteDouble because escapeDouble can serialize every such value.
 //
+// An upgraded var is also marked Modified, so Marshal rebuilds its line in the
+// new style instead of re-emitting the stale raw line.
+//
 // Production callers should use WriteFile, which invokes this automatically.
 // NormalizeForWrite remains exported for direct unit testing. Idempotent.
 func NormalizeForWrite(ef *model.EnvFile) {
@@ -25,13 +28,6 @@ func NormalizeForWrite(ef *model.EnvFile) {
 		v := &ef.Vars[i]
 		if needsQuoteUpgrade(v) {
 			v.QuoteStyle = model.QuoteDouble
-			// Force reconstruction so Marshal picks reconstructLine instead
-			// of the raw (stale) line.Content. Every upstream path that can
-			// produce an upgrade candidate (UpdateVar, AddVar) already marks
-			// the var Modified with a correct OriginalValue, so this
-			// assignment is a no-op on those paths; it only matters if a
-			// future path mutates Value/QuoteStyle without going through
-			// UpdateVar.
 			v.Modified = true
 		}
 	}
@@ -147,14 +143,16 @@ func WriteFile(ef *model.EnvFile) error {
 
 	NormalizeForWrite(ef)
 	data := Marshal(ef)
+	return WriteFileAtomic(ef.Path, data, existingFileMode(ef.Path))
+}
 
-	// Preserve the existing file's permissions when overwriting.
-	mode := os.FileMode(0644)
-	if info, err := os.Stat(ef.Path); err == nil {
-		mode = info.Mode()
+const defaultFileMode = os.FileMode(0644)
+
+func existingFileMode(path string) os.FileMode {
+	if info, err := os.Stat(path); err == nil {
+		return info.Mode()
 	}
-
-	return WriteFileAtomic(ef.Path, data, mode)
+	return defaultFileMode
 }
 
 // WriteFileAtomic writes data to path atomically: it writes to a temp file in
@@ -205,9 +203,5 @@ func CreateBackup(path string) error {
 	if err != nil {
 		return fmt.Errorf("reading file for backup: %w", err)
 	}
-	mode := os.FileMode(0644)
-	if info, err := os.Stat(path); err == nil {
-		mode = info.Mode()
-	}
-	return WriteFileAtomic(path+".bak", src, mode)
+	return WriteFileAtomic(path+".bak", src, existingFileMode(path))
 }

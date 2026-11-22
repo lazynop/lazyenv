@@ -2,6 +2,8 @@ package model
 
 import "strings"
 
+const minGroupSize = 2
+
 // VarGroup is a prefix-based grouping of variables in an EnvFile.
 // Vars are referenced by their index into EnvFile.Vars.
 type VarGroup struct {
@@ -44,27 +46,23 @@ func ComputeGroups(vars []EnvVar) []VarGroup {
 		return nil
 	}
 
-	// First pass: count occurrences of each non-empty prefix and record
-	// its encounter order, so we can preserve file-order for groups.
 	counts := make(map[string]int)
-	order := make([]string, 0)
+	prefixesInFileOrder := make([]string, 0)
 	for _, v := range vars {
 		p := prefixOf(v.Key)
 		if p == "" {
 			continue
 		}
 		if _, seen := counts[p]; !seen {
-			order = append(order, p)
+			prefixesInFileOrder = append(prefixesInFileOrder, p)
 		}
 		counts[p]++
 	}
 
-	// Build the named groups in file order, keeping only those that pass
-	// the threshold of 2.
 	var groups []VarGroup
-	groupIdx := make(map[string]int, len(order))
-	for _, p := range order {
-		if counts[p] >= 2 {
+	groupIdx := make(map[string]int, len(prefixesInFileOrder))
+	for _, p := range prefixesInFileOrder {
+		if counts[p] >= minGroupSize {
 			groupIdx[p] = len(groups)
 			groups = append(groups, VarGroup{Prefix: p})
 		}

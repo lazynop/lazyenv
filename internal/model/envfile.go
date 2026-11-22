@@ -47,15 +47,12 @@ type EnvVar struct {
 	revival          *revival
 }
 
-// revival is a variable deleted this session whose key another variable took,
-// with what that variable had before taking it, so renaming or deleting the
-// variable can undo it.
 type revival struct {
-	deleted          EnvVar
-	index            int // where deleted sat in DeletedVars
-	originalValue    string
-	originalIsSecret bool
-	isNew            bool
+	deleted               EnvVar
+	deletedVarsIndex      int
+	priorOriginalValue    string
+	priorOriginalIsSecret bool
+	priorIsNew            bool
 }
 
 // EnvFile represents a parsed .env file.
@@ -142,20 +139,13 @@ func (ef *EnvFile) markModified(idx int) {
 	ef.Modified = true
 }
 
-// original returns the value v had before its first change this session,
-// and whether that value was a secret.
-func (v EnvVar) original() (string, bool) {
+func (v EnvVar) original() (value string, isSecret bool) {
 	if v.Modified {
 		return v.OriginalValue, v.OriginalIsSecret
 	}
 	return v.Value, v.IsSecret
 }
 
-// reviveDeleted makes the variable at idx, whose key was just set, take the
-// place of a variable deleted this session under that key. The deleted one
-// leaves DeletedVars. The variable takes its original value and secret status,
-// which peek shows, and is no longer new, as the deleted one was not: DeleteVar
-// lists no new variable.
 func (ef *EnvFile) reviveDeleted(idx int) {
 	v := &ef.Vars[idx]
 	i := slices.IndexFunc(ef.DeletedVars, func(d EnvVar) bool { return d.Key == v.Key })
@@ -163,9 +153,9 @@ func (ef *EnvFile) reviveDeleted(idx int) {
 		return
 	}
 	d := ef.DeletedVars[i]
-	v.revival = &revival{deleted: d, index: i, originalValue: v.OriginalValue, originalIsSecret: v.OriginalIsSecret, isNew: v.IsNew}
+	v.revival = &revival{deleted: d, deletedVarsIndex: i, priorOriginalValue: v.OriginalValue, priorOriginalIsSecret: v.OriginalIsSecret, priorIsNew: v.IsNew}
 	v.OriginalValue, v.OriginalIsSecret = d.original()
-	v.IsNew = false
+	v.IsNew = d.IsNew
 	ef.DeletedVars = slices.Delete(ef.DeletedVars, i, i+1)
 }
 
@@ -175,8 +165,8 @@ func (ef *EnvFile) undoRevival(idx int) {
 	if r == nil {
 		return
 	}
-	ef.DeletedVars = slices.Insert(ef.DeletedVars, min(r.index, len(ef.DeletedVars)), r.deleted)
-	v.OriginalValue, v.OriginalIsSecret, v.IsNew = r.originalValue, r.originalIsSecret, r.isNew
+	ef.DeletedVars = slices.Insert(ef.DeletedVars, min(r.deletedVarsIndex, len(ef.DeletedVars)), r.deleted)
+	v.OriginalValue, v.OriginalIsSecret, v.IsNew = r.priorOriginalValue, r.priorOriginalIsSecret, r.priorIsNew
 	v.revival = nil
 }
 
@@ -275,9 +265,9 @@ const (
 )
 
 type reorderUnit struct {
-	varIdx   int // index into the pre-reorder ef.Vars
-	varLine  RawLine
-	comments []RawLine // attached comment lines, in original order
+	oldVarIdx        int
+	varLine          RawLine
+	attachedComments []RawLine
 }
 
 type orderedUnit struct {
@@ -311,36 +301,10 @@ func (ef *EnvFile) Reorder(mode ReorderMode) {
 		return
 	}
 
-	// The head ends just before the first variable's attached comment block,
-	// so those comments stay with the variable rather than the file header.
-	headEnd := firstVar
-	for headEnd > 0 && ef.Lines[headEnd-1].Type == LineComment {
-		headEnd--
-	}
+	headEnd := ef.attachedCommentsStart(firstVar)
 	head := ef.Lines[:headEnd]
 	tail := ef.Lines[lastVar+1:]
-
-	// Split the body into units (var + attached comments) and floating comments
-	// (stand-alone blocks separated from any variable by a blank line).
-	var units []reorderUnit
-	var floating []RawLine
-	var pending []RawLine
-	for _, l := range ef.Lines[headEnd : lastVar+1] {
-		switch l.Type {
-		case LineComment:
-			pending = append(pending, l)
-		case LineEmpty:
-			floating = append(floating, pending...)
-			pending = nil
-		case LineVariable:
-			units = append(units, reorderUnit{
-				varIdx:   l.VarIdx,
-				varLine:  l,
-				comments: pending,
-			})
-			pending = nil
-		}
-	}
+	units, floating := splitBody(ef.Lines[headEnd : lastVar+1])
 
 	ordered := ef.orderUnits(units, mode)
 
@@ -355,9 +319,9 @@ func (ef *EnvFile) Reorder(mode ReorderMode) {
 			newLines = append(newLines, RawLine{Type: LineEmpty, VarIdx: -1})
 		}
 		prevGroup = o.group
-		newLines = append(newLines, o.unit.comments...)
+		newLines = append(newLines, o.unit.attachedComments...)
 		newIdx := len(newVars)
-		newVars = append(newVars, ef.Vars[o.unit.varIdx])
+		newVars = append(newVars, ef.Vars[o.unit.oldVarIdx])
 		vl := o.unit.varLine
 		vl.VarIdx = newIdx
 		newLines = append(newLines, vl)
@@ -367,6 +331,35 @@ func (ef *EnvFile) Reorder(mode ReorderMode) {
 	ef.Vars = newVars
 	ef.Lines = newLines
 	ef.Modified = true
+}
+
+func (ef *EnvFile) attachedCommentsStart(varLine int) int {
+	start := varLine
+	for start > 0 && ef.Lines[start-1].Type == LineComment {
+		start--
+	}
+	return start
+}
+
+func splitBody(body []RawLine) (units []reorderUnit, floating []RawLine) {
+	var pending []RawLine
+	for _, l := range body {
+		switch l.Type {
+		case LineComment:
+			pending = append(pending, l)
+		case LineEmpty:
+			floating = append(floating, pending...)
+			pending = nil
+		case LineVariable:
+			units = append(units, reorderUnit{
+				oldVarIdx:        l.VarIdx,
+				varLine:          l,
+				attachedComments: pending,
+			})
+			pending = nil
+		}
+	}
+	return units, floating
 }
 
 func (ef *EnvFile) orderUnits(units []reorderUnit, mode ReorderMode) []orderedUnit {
@@ -379,7 +372,7 @@ func (ef *EnvFile) orderUnits(units []reorderUnit, mode ReorderMode) []orderedUn
 func (ef *EnvFile) orderAlphabetical(units []reorderUnit) []orderedUnit {
 	sorted := slices.Clone(units)
 	sort.SliceStable(sorted, func(i, j int) bool {
-		return ef.Vars[sorted[i].varIdx].Key < ef.Vars[sorted[j].varIdx].Key
+		return ef.Vars[sorted[i].oldVarIdx].Key < ef.Vars[sorted[j].oldVarIdx].Key
 	})
 	out := make([]orderedUnit, len(sorted))
 	for i, u := range sorted {
@@ -391,7 +384,7 @@ func (ef *EnvFile) orderAlphabetical(units []reorderUnit) []orderedUnit {
 func (ef *EnvFile) orderGrouped(units []reorderUnit) []orderedUnit {
 	unitByVar := make(map[int]reorderUnit, len(units))
 	for _, u := range units {
-		unitByVar[u.varIdx] = u
+		unitByVar[u.oldVarIdx] = u
 	}
 
 	groups := ComputeGroups(ef.Vars)

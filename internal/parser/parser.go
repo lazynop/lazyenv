@@ -8,8 +8,8 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// basename returns the last path component of a file path, supporting both
-// '/' and '\' as separators so the behavior is identical on Linux and Windows.
+const utf8BOM = "\uFEFF"
+
 func basename(path string) string {
 	if idx := strings.LastIndexAny(path, `/\`); idx >= 0 {
 		return path[idx+1:]
@@ -36,8 +36,7 @@ func ParseBytes(name string, data []byte, secrets config.SecretsConfig) *model.E
 	}
 
 	content := string(data)
-	// Strip UTF-8 BOM if present (common with files saved by Windows editors).
-	content = strings.TrimPrefix(content, "\uFEFF")
+	content = strings.TrimPrefix(content, utf8BOM)
 	content = strings.ReplaceAll(content, "\r\n", "\n")
 	content = strings.ReplaceAll(content, "\r", "\n")
 	ef.TrailingNewline = content == "" || strings.HasSuffix(content, "\n")
@@ -113,13 +112,10 @@ func ParseBytes(name string, data []byte, secrets config.SecretsConfig) *model.E
 	return ef
 }
 
-// parseLine attempts to parse a variable from lines starting at index i.
-// Returns key, value, inline comment, quote style, hasExport, raw content, lines consumed.
-func parseLine(lines []string, i int) (string, string, string, model.QuoteStyle, bool, string, int) {
+func parseLine(lines []string, i int) (key, value, comment string, quote model.QuoteStyle, hasExport bool, rawContent string, consumed int) {
 	line := lines[i]
 	trimmed := strings.TrimSpace(line)
 
-	hasExport := false
 	working := trimmed
 	if strings.HasPrefix(working, "export ") {
 		hasExport = true
@@ -134,7 +130,7 @@ func parseLine(lines []string, i int) (string, string, string, model.QuoteStyle,
 		return "", "", "", model.QuoteNone, false, "", 0
 	}
 
-	key := strings.TrimSpace(before)
+	key = strings.TrimSpace(before)
 	if key == "" || !IsValidKey(key) {
 		return "", "", "", model.QuoteNone, false, "", 0
 	}
@@ -142,15 +138,15 @@ func parseLine(lines []string, i int) (string, string, string, model.QuoteStyle,
 	rest := after
 
 	if len(rest) > 0 && rest[0] == '"' {
-		value, comment, rawContent, consumed := parseDoubleQuoted(lines, i, rest)
+		value, comment, rawContent, consumed = parseDoubleQuoted(lines, i, rest)
 		return key, value, comment, model.QuoteDouble, hasExport, rawContent, consumed
 	}
 	if len(rest) > 0 && rest[0] == '\'' {
-		value, comment, rawContent, consumed := parseSingleQuoted(lines, i, rest)
+		value, comment, rawContent, consumed = parseSingleQuoted(lines, i, rest)
 		return key, value, comment, model.QuoteSingle, hasExport, rawContent, consumed
 	}
 
-	value, comment := parseUnquoted(rest)
+	value, comment = parseUnquoted(rest)
 	return key, value, comment, model.QuoteNone, hasExport, line, 1
 }
 
@@ -162,18 +158,14 @@ func parseSingleQuoted(lines []string, startIdx int, rest string) (string, strin
 	return parseQuoted(lines, startIdx, rest, findClosingSingleQuote, identityTransform)
 }
 
-// parseQuoted reads a (possibly multi-line) quoted value starting at lines[startIdx].
-// rest is the substring after the `=` sign, including the opening quote char.
-// findClose locates the closing quote on a given content slice (or -1), and
-// transform maps the raw joined value into the final form (e.g. escape processing).
 func parseQuoted(
 	lines []string,
 	startIdx int,
-	rest string,
+	fromOpeningQuote string,
 	findClose func(string) int,
 	transform func(string) string,
 ) (string, string, string, int) {
-	content := rest[1:] // skip opening quote
+	content := fromOpeningQuote[1:]
 	var valueParts []string
 	rawLines := []string{lines[startIdx]}
 	consumed := 1
