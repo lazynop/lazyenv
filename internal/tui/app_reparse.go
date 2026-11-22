@@ -23,10 +23,6 @@ func (a *App) refreshFile(f *model.EnvFile) (*model.EnvFile, error) {
 	return refreshed, nil
 }
 
-// refreshIfShown recomputes the var list's rows when it shows f, which a
-// compare or matrix action changed: added or deleted vars would leave its
-// rows indexing the old Vars, and a changed value may match the kept search
-// or stop matching it.
 func (a *App) refreshIfShown(f *model.EnvFile) {
 	if a.varList.File == f {
 		a.varList.Refresh()

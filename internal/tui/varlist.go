@@ -400,6 +400,9 @@ func (m *VarListModel) SetSearch(query string) {
 	m.recomputeDisplay()
 }
 
+// Refresh recomputes the rows from File after its Vars changed: added or
+// deleted vars would leave rows indexing the old Vars, and a changed value may
+// start or stop matching the search.
 func (m *VarListModel) Refresh() {
 	m.recomputeDisplay()
 }

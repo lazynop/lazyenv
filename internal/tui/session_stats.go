@@ -24,10 +24,11 @@ type createOrigin struct {
 }
 
 // SessionStats tracks disk-level changes during a lazyenv session.
-// All maps are keyed by absolute file path.
+// All maps are keyed by absolute file path. final holds each path's vars after
+// its latest save, nil once the file is deleted.
 type SessionStats struct {
 	initial  map[string]*fileSnapshot
-	final    map[string]*fileSnapshot // path → vars after latest save; nil value = deleted
+	final    map[string]*fileSnapshot
 	originOf map[string]string
 	created  map[string]createOrigin
 }

@@ -40,7 +40,6 @@
 2 internal/tui/app_renamefile_test.go
 22 internal/tui/app_renamekey_test.go
 6 internal/tui/app_reorder_test.go
-4 internal/tui/app_reparse.go
 24 internal/tui/app_reparse_test.go
 18 internal/tui/app_reset_test.go
 19 internal/tui/app_resize_test.go
@@ -62,7 +61,6 @@
 13 internal/tui/scanner_gitignore_test.go
 6 internal/tui/scanner_test.go
 5 internal/tui/scroll.go
-1 internal/tui/session_stats.go
 18 internal/tui/session_stats_test.go
 25 internal/tui/source_scan_test.go
 26 internal/tui/statusbar_test.go
