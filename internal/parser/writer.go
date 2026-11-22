@@ -84,7 +84,7 @@ func Marshal(ef *model.EnvFile) []byte {
 		b.WriteString(reconstructLine(&v))
 	}
 
-	if ef.TrailingNewline {
+	if ef.TrailingNewline && len(ef.Lines) > 0 {
 		b.WriteByte('\n')
 	}
 	return []byte(b.String())

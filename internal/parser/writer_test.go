@@ -307,3 +307,22 @@ func TestNormalizeForWriteQuoteNoneControlChars(t *testing.T) {
 		})
 	}
 }
+
+func TestAVarAddedToAnEmptyFileEndsWithANewline(t *testing.T) {
+	ef := ParseBytes(".env", nil, config.SecretsConfig{})
+	ef.AddVar("KEY", "value")
+	assert.Equal(t, "KEY=value\n", string(Marshal(ef)))
+}
+
+func TestAnEmptiedFileSavesEmpty(t *testing.T) {
+	ef := ParseBytes(".env", nil, config.SecretsConfig{})
+	ef.AddVar("KEY", "value")
+	ef.DeleteVar(0)
+	assert.Empty(t, Marshal(ef))
+}
+
+func TestAParsedFileEmptiedSavesEmpty(t *testing.T) {
+	ef := ParseBytes(".env", []byte("A=1\n"), config.SecretsConfig{})
+	ef.DeleteVar(0)
+	assert.Empty(t, Marshal(ef))
+}

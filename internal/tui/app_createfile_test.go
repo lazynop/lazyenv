@@ -3,7 +3,6 @@ package tui
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
@@ -186,5 +185,5 @@ func TestCreatedFileEndsWithANewlineAfterItsFirstSave(t *testing.T) {
 
 	data, err := os.ReadFile(filepath.Join(dir, ".env.staging"))
 	require.NoError(t, err)
-	assert.True(t, strings.HasSuffix(string(data), "KEY=value\n"), "%q", data)
+	assert.Equal(t, "KEY=value\n", string(data))
 }

@@ -43,9 +43,12 @@ func ParseBytes(name string, data []byte, secrets config.SecretsConfig) *model.E
 	content = strings.ReplaceAll(content, "\r", "\n")
 	// Track whether the source ended with a newline so Marshal can preserve
 	// the round-trip exactly (no silent injection of \n on files without one).
-	ef.TrailingNewline = strings.HasSuffix(content, "\n")
+	ef.TrailingNewline = content == "" || strings.HasSuffix(content, "\n")
 
-	lines := strings.Split(content, "\n")
+	var lines []string
+	if content != "" {
+		lines = strings.Split(content, "\n")
+	}
 
 	// If file ends with newline, Split produces a trailing empty string — remove it
 	if len(lines) > 0 && lines[len(lines)-1] == "" && strings.HasSuffix(content, "\n") {

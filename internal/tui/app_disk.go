@@ -20,7 +20,7 @@ func (a App) saveFile(f *model.EnvFile) error {
 }
 
 func (a App) createFile(path string) error {
-	if err := parser.WriteFileAtomic(path, []byte("\n"), envFilePerm); err != nil {
+	if err := parser.WriteFileAtomic(path, nil, envFilePerm); err != nil {
 		return err
 	}
 	a.sessionStats.RecordCreateScratch(path, nil)
