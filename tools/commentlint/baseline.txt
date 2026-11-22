@@ -10,7 +10,6 @@
 10 internal/parser/parser.go
 13 internal/parser/parser_test.go
 8 internal/parser/writer.go
-3 internal/parser/writer_test.go
 14 internal/tui/source_scan_test.go
 1 internal/util/secrets.go
 21 internal/util/secrets_test.go

@@ -124,9 +124,6 @@ func TestRoundTripEmptyFile(t *testing.T) {
 }
 
 func TestRoundTripCRLFNormalizedToLF(t *testing.T) {
-	// CRLF endings are normalized to LF on read. Round-trip keeps a trailing
-	// newline (LF), not the original CRLF — line-ending normalization is by
-	// design, not a fidelity regression.
 	src := []byte("FOO=bar\r\nBAZ=qux\r\n")
 	expected := []byte("FOO=bar\nBAZ=qux\n")
 	ef := ParseBytes(".env", src, config.SecretsConfig{})
