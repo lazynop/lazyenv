@@ -314,6 +314,13 @@ func TestParseDoubleQuotedUnterminated(t *testing.T) {
 	assert.Equal(t, model.QuoteDouble, ef.Vars[0].QuoteStyle)
 }
 
+func TestParseDoubleQuotedUnterminatedSwallowsTheRestOfTheFile(t *testing.T) {
+	ef := ParseBytes(".env", []byte("FOO=\"a\nBAR=b\n"), config.SecretsConfig{})
+	require.Len(t, ef.Vars, 1, "BAR=b sits inside FOO's open quote, so it is no variable")
+	assert.Equal(t, "a\nBAR=b", ef.Vars[0].Value)
+	assert.Equal(t, model.QuoteDouble, ef.Vars[0].QuoteStyle)
+}
+
 func TestExportWithTab(t *testing.T) {
 	ef := ParseBytes(".env", []byte("export\tFOO=bar\n"), config.SecretsConfig{})
 	require.Len(t, ef.Vars, 1)
