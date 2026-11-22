@@ -432,9 +432,7 @@ func TestCodingStandardsNamesExistingCode(t *testing.T) {
 		if _, ok := notInRepo[ref]; ok {
 			continue
 		}
-		if problem := repo.missing(ref); problem != "" {
-			t.Errorf("CODING_STANDARDS.md names `%s`, but %s", ref, problem)
-		}
+		assert.Empty(t, repo.missing(ref), "CODING_STANDARDS.md names `%s`", ref)
 	}
 }
 
