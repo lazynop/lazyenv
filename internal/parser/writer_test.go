@@ -123,11 +123,33 @@ func TestRoundTripEmptyFile(t *testing.T) {
 	assert.Equal(t, src, Marshal(ef))
 }
 
-func TestRoundTripCRLFNormalizedToLF(t *testing.T) {
-	src := []byte("FOO=bar\r\nBAZ=qux\r\n")
-	expected := []byte("FOO=bar\nBAZ=qux\n")
-	ef := ParseBytes(".env", src, config.SecretsConfig{})
-	assert.Equal(t, expected, Marshal(ef))
+func TestSaveWritesLFAndNoBOM(t *testing.T) {
+	cases := []struct {
+		name, src, want string
+	}{
+		{"crlf", "# c\r\nFOO=bar\r\nBAZ=qux\r\n", "# c\nFOO=bar\nBAZ=qux\n"},
+		{"lone cr", "# c\rFOO=bar\rBAZ=qux\r", "# c\nFOO=bar\nBAZ=qux\n"},
+		{"bom", "\xEF\xBB\xBFFOO=bar\nBAZ=qux\n", "FOO=bar\nBAZ=qux\n"},
+		{"bom and crlf", "\xEF\xBB\xBFFOO=bar\r\nBAZ=qux\r\n", "FOO=bar\nBAZ=qux\n"},
+		{"bom and crlf without final newline", "\xEF\xBB\xBFFOO=bar\r\nBAZ=qux", "FOO=bar\nBAZ=qux"},
+		{"crlf inside a multi-line value", "FOO=\"a\r\nb\"\r\nBAZ=qux\r\n", "FOO=\"a\nb\"\nBAZ=qux\n"},
+		{"bom before a comment", "\xEF\xBB\xBF# c\r\nFOO=bar\r\n", "# c\nFOO=bar\n"},
+		{"mixed endings", "A=1\r\nB=2\rC=3\n", "A=1\nB=2\nC=3\n"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), ".env")
+			require.NoError(t, os.WriteFile(path, []byte(c.src), 0o644))
+			ef, err := ParseFile(path, config.SecretsConfig{})
+			require.NoError(t, err)
+
+			require.NoError(t, WriteFile(ef))
+
+			got, err := os.ReadFile(path)
+			require.NoError(t, err)
+			assert.Equal(t, c.want, string(got))
+		})
+	}
 }
 
 func assertNoTempLeftover(t *testing.T, dir string) {
