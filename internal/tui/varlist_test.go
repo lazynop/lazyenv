@@ -648,11 +648,6 @@ func TestVarListGrouping_ToggleSortFollowsUngroupedHeaderCursor(t *testing.T) {
 
 	vl.ToggleSort()
 
-	// After alpha sort named groups swap (DB before REDIS); UNGROUPED
-	// stays last. The new layout still has UNGROUPED at index 6 (1+2 +
-	// 1+2 = 6 lines for the named groups), so the cursor index also
-	// happens to match — but the assertion below verifies it via the
-	// IsUngrouped check, not via numeric index.
 	require.True(t, vl.IsHeaderAtCursor(), "cursor must still be on a header")
 	assert.True(t, vl.groups[vl.displayItems[vl.Cursor].GroupIdx].IsUngrouped(),
 		"cursor must still be on the UNGROUPED header after sort toggle")

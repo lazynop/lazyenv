@@ -36,10 +36,10 @@
 3 internal/tui/app_renamekey_test.go
 3 internal/tui/app_reorder_test.go
 2 internal/tui/app_reparse_test.go
-2 internal/tui/app_reset_test.go
+1 internal/tui/app_reset_test.go
 5 internal/tui/app_resize_test.go
 9 internal/tui/app_session_stats_test.go
-13 internal/tui/app_test.go
+8 internal/tui/app_test.go
 23 internal/tui/app_var_flags_test.go
 2 internal/tui/chrome_test.go
 12 internal/tui/diffview_test.go
@@ -55,7 +55,7 @@
 15 internal/tui/source_scan_test.go
 8 internal/tui/text_test.go
 5 internal/tui/theme_preview_test.go
-44 internal/tui/varlist_test.go
+39 internal/tui/varlist_test.go
 9 internal/util/secrets.go
 27 internal/util/secrets_test.go
 2 internal/util/validator.go

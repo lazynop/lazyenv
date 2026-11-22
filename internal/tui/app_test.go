@@ -34,8 +34,6 @@ func TestUpdateBackgroundColorMsg(t *testing.T) {
 	updated, cmd := app.Update(tea.BackgroundColorMsg{})
 	app = updated.(App)
 	assert.Nil(t, cmd)
-	// The theme should have been rebuilt (we can't easily check IsDark() on a zero msg,
-	// but we verify it doesn't crash and returns)
 }
 
 func TestUpdateFilesLoadedMsg(t *testing.T) {
@@ -180,7 +178,6 @@ func TestQuitReturnsQuitCmd(t *testing.T) {
 	app := newTestApp(nil)
 
 	_, cmd := app.Update(keyMsg("q"))
-	// tea.Quit is a function, we can check cmd is not nil
 	assert.NotNil(t, cmd)
 }
 
@@ -193,8 +190,6 @@ func TestViewNotReady(t *testing.T) {
 func TestInitReturnsBatch(t *testing.T) {
 	app := newTestApp(nil)
 
-	// Init builds the initial command batch (scan dir + request bg color);
-	// we only assert it is non-nil without running the closures.
 	assert.NotNil(t, app.Init())
 }
 

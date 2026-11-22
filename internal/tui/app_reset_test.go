@@ -190,7 +190,6 @@ func TestSaveFromMatrixPreservesGitWarning(t *testing.T) {
 	app.fileList.Selected = 0
 	app.varList.SetFile(fA)
 
-	// Add a var to file B via AddVar (simulating matrix add).
 	fB.AddVar("FOO", "from_matrix")
 	require.True(t, fB.Modified)
 
