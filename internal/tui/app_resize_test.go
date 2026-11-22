@@ -13,14 +13,13 @@ import (
 	"github.com/lazynop/lazyenv/internal/model"
 )
 
-// resizeFixture returns 30 files that each hold the keys K00 to K29: more
-// rows and columns than any view shows at the sizes the resize tests use.
 func resizeFixture() []*model.EnvFile {
-	keys := make([]string, 30)
+	const moreRowsAndColumnsThanAnyView = 30
+	keys := make([]string, moreRowsAndColumnsThanAnyView)
 	for i := range keys {
 		keys[i] = fmt.Sprintf("K%02d", i)
 	}
-	files := make([]*model.EnvFile, 30)
+	files := make([]*model.EnvFile, moreRowsAndColumnsThanAnyView)
 	for i := range files {
 		files[i] = makeTestFile(fmt.Sprintf(".env.%02d", i), keys...)
 	}
@@ -84,14 +83,13 @@ func TestStartupFocusesTheFileList(t *testing.T) {
 	assert.False(t, app.varList.Focused)
 }
 
-// TestMatrixRendersInATinyTerminal opens the matrix in a one-column terminal,
-// narrower than its padding: it renders without panicking. The App draws the
-// too-small notice there instead, so the matrix is rendered directly.
 func TestMatrixRendersInATinyTerminal(t *testing.T) {
 	app := press(resize(newTestApp([]*model.EnvFile{makeTestFile(".env", "A"), makeTestFile(".env.prod", "B")}), 80, 24), "m")
-	app = resize(app, 1, 24)
+	const narrowerThanTheMatrixPadding = 1
+	app = resize(app, narrowerThanTheMatrixPadding, 24)
 
-	assert.NotPanics(t, func() { _ = app.matrixView.View(app.theme) })
+	assert.NotPanics(t, func() { _ = app.matrixView.View(app.theme) },
+		"the App draws the too-small notice at this width, so the matrix renders itself")
 }
 
 func TestTooSmallTerminalShowsANotice(t *testing.T) {

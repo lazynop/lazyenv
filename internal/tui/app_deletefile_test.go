@@ -88,7 +88,7 @@ func TestDeleteFile_ConfirmDeletes(t *testing.T) {
 	assert.Nil(t, app.varList.File)
 }
 
-func TestDeleteFile_ConfirmWithMultipleFiles(t *testing.T) {
+func TestDeleteFile_ConfirmDeletesTheFirstOfTwoFiles(t *testing.T) {
 	dir := t.TempDir()
 	path1 := filepath.Join(dir, ".env")
 	path2 := filepath.Join(dir, ".env.local")
@@ -105,7 +105,6 @@ func TestDeleteFile_ConfirmWithMultipleFiles(t *testing.T) {
 	app.config.NoGitCheck = true
 	app.focus = FocusFiles
 	app.mode = ModeConfirmDeleteFile
-	// First file is selected (index 0)
 
 	updated, _ := app.Update(keyMsg("y"))
 	app = updated.(App)

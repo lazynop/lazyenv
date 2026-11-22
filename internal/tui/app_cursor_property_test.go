@@ -28,13 +28,11 @@ func cursorInputs(t *testing.T, app App) []cursorInput {
 	)
 }
 
-// cursorFollowUps answer or leave whatever mode a pair of inputs reached:
-// each list is tried after every pair, the second one first going on with
-// Enter (into the diff view from the compare picker).
-var cursorFollowUps = [][]string{
-	{"y", "esc", "esc", "q"},
-	{"enter", "y", "esc", "esc", "q"},
-}
+var (
+	answerOrLeaveModeKeys          = []string{"y", "esc", "esc", "q"}
+	enterDiffViewThenLeaveModeKeys = append([]string{"enter"}, answerOrLeaveModeKeys...)
+	cursorFollowUps                = [][]string{answerOrLeaveModeKeys, enterDiffViewThenLeaveModeKeys}
+)
 
 func TestMainViewCursorStaysOnTheActiveFile(t *testing.T) {
 	newApp := func(t *testing.T) App {

@@ -65,20 +65,20 @@ func assertMaskedInView(t *testing.T, view, value string, masked bool) {
 }
 
 var valueEdits = []struct {
-	name   string
-	keys   []string
-	label  string
-	mode   AppMode // the mode the keys leave the app in when the bar stays closed
-	edited int     // index of the file whose value the keys edit
+	name          string
+	keys          []string
+	label         string
+	modeIfRefused AppMode
+	editedFile    int
 }{
 	{"var list e", []string{"right", "e"}, "Edit CERT: ", ModeNormal, 0},
 	{"compare e", []string{"c", "j", "enter", "e"}, "Edit CERT in .env: ", ModeComparing, 0},
 	{"compare E", []string{"c", "j", "enter", "E"}, "Edit CERT in .env.prod: ", ModeComparing, 1},
 }
 
-func valueEditApp(edited int, line string) (App, []*model.EnvFile) {
+func valueEditApp(editedFile int, line string) (App, []*model.EnvFile) {
 	lines := []string{"CERT=plain", "CERT=plain"}
-	lines[edited] = line
+	lines[editedFile] = line
 	files := []*model.EnvFile{
 		parser.ParseBytes(".env", []byte(lines[0]+"\n"), config.SecretsConfig{}),
 		parser.ParseBytes(".env.prod", []byte(lines[1]+"\n"), config.SecretsConfig{}),
@@ -89,12 +89,12 @@ func valueEditApp(edited int, line string) (App, []*model.EnvFile) {
 func TestConfirmingAnUntouchedEditKeepsTheValue(t *testing.T) {
 	for _, edit := range valueEdits {
 		t.Run(edit.name, func(t *testing.T) {
-			app, files := valueEditApp(edit.edited, "CERT=plain")
+			app, files := valueEditApp(edit.editedFile, "CERT=plain")
 
 			press(press(app, edit.keys...), "enter")
 
-			assert.Equal(t, "plain", files[edit.edited].Vars[0].Value)
-			assert.False(t, files[edit.edited].Modified, "an untouched edit must not modify the file")
+			assert.Equal(t, "plain", files[edit.editedFile].Vars[0].Value)
+			assert.False(t, files[edit.editedFile].Modified, "an untouched edit must not modify the file")
 		})
 	}
 }
@@ -102,7 +102,7 @@ func TestConfirmingAnUntouchedEditKeepsTheValue(t *testing.T) {
 func TestEditOpensTheBarOnAPlainValue(t *testing.T) {
 	for _, edit := range valueEdits {
 		t.Run(edit.name, func(t *testing.T) {
-			app, files := valueEditApp(edit.edited, "CERT=plain")
+			app, files := valueEditApp(edit.editedFile, "CERT=plain")
 			app = press(app, edit.keys...)
 			require.Contains(t, stripAnsi(app.View().Content), edit.label+"> plain")
 
@@ -110,8 +110,8 @@ func TestEditOpensTheBarOnAPlainValue(t *testing.T) {
 
 			assert.Contains(t, view, "Modified CERT")
 			assert.Contains(t, view, "plainz")
-			assert.Equal(t, "plainz", files[edit.edited].Vars[0].Value)
-			assert.True(t, files[edit.edited].Modified)
+			assert.Equal(t, "plainz", files[edit.editedFile].Vars[0].Value)
+			assert.True(t, files[edit.editedFile].Modified)
 		})
 	}
 }
@@ -126,17 +126,17 @@ func TestEditRefusesAValueTheBarCannotShow(t *testing.T) {
 	for _, v := range values {
 		for _, edit := range valueEdits {
 			t.Run(v.name+"/"+edit.name, func(t *testing.T) {
-				app, files := valueEditApp(edit.edited, v.line)
+				app, files := valueEditApp(edit.editedFile, v.line)
 				app = press(app, edit.keys...)
 
 				view := stripAnsi(app.View().Content)
-				assert.Equal(t, edit.mode, app.mode, "the edit bar must not open")
+				assert.Equal(t, edit.modeIfRefused, app.mode, "the edit bar must not open")
 				assert.NotContains(t, view, "Edit CERT")
 				assert.Contains(t, view, "Value holds line breaks or control characters: can't edit it here")
 
 				press(app, "z", "enter")
 
-				assert.Equal(t, v.value, files[edit.edited].Vars[0].Value)
+				assert.Equal(t, v.value, files[edit.editedFile].Vars[0].Value)
 				for _, f := range files {
 					assert.False(t, f.Modified, "a refused edit must not modify %s", f.Name)
 				}
@@ -145,16 +145,14 @@ func TestEditRefusesAValueTheBarCannotShow(t *testing.T) {
 	}
 }
 
-// TestEditingALongValueKeepsAllOfIt edits a value longer than any input limit
-// would allow, appending one character: the rest of the value survives.
 func TestEditingALongValueKeepsAllOfIt(t *testing.T) {
-	long := strings.Repeat("a", 1500)
-	f := parser.ParseBytes(".env", []byte("CERT="+long+"\n"), config.SecretsConfig{})
+	longerThanAnyInputLimit := strings.Repeat("a", 1500)
+	f := parser.ParseBytes(".env", []byte("CERT="+longerThanAnyInputLimit+"\n"), config.SecretsConfig{})
 	app := resize(newTestApp([]*model.EnvFile{f}), 80, 24)
 
 	press(app, "right", "e", "z", "enter")
 
-	assert.Equal(t, long+"z", f.Vars[0].Value)
+	assert.Equal(t, longerThanAnyInputLimit+"z", f.Vars[0].Value)
 }
 
 func TestEditExistingVarCancel(t *testing.T) {

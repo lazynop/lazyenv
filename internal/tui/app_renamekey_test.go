@@ -199,10 +199,7 @@ func TestRenameKey_OntoADeletedKeyRevivesIt(t *testing.T) {
 	assert.Contains(t, view, "was: val_FOO", "peek should show the deleted var's value as the original")
 }
 
-// TestRenameKey_BackOffARevivedKeyListsItAsDeletedAgain deletes FOO, renames
-// BAR to FOO, then back to BAR, as when undoing a typo: the var list shows FOO
-// deleted again, and peek shows BAR's own value as its original.
-func TestRenameKey_BackOffARevivedKeyListsItAsDeletedAgain(t *testing.T) {
+func TestRenameKey_UndoingARenameOntoADeletedKeyListsItAsDeletedAgain(t *testing.T) {
 	app := onVars(resize(newTestApp([]*model.EnvFile{makeTestFile(".env", "FOO", "BAR")}), 80, 24))
 
 	app = press(renameKey(renameOntoDeleted(app, "FOO"), "BAR"), "p")

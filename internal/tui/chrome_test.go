@@ -12,12 +12,13 @@ import (
 func TestBorderedPanelsFillEveryInnerRow(t *testing.T) {
 	keys := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"}
 	theme := BuildTheme(true, config.ColorConfig{})
-	const height = 8 // top border + title + 5 content rows + bottom border
+	const contentRows = 5
+	const height = panelBorderHeight + panelTitleHeight + contentRows
 
 	cases := []struct {
-		name     string
-		lastItem string // the 5th item, which belongs on the last inner row
-		render   func() string
+		name               string
+		lastContentRowItem string
+		render             func() string
 	}{
 		{"var list", "val_E", func() string {
 			vl := NewVarListModel(config.DefaultConfig().Layout)
@@ -44,7 +45,7 @@ func TestBorderedPanelsFillEveryInnerRow(t *testing.T) {
 	for _, tc := range cases {
 		rows := strings.Split(stripAnsi(tc.render()), "\n")
 		assert.Len(t, rows, height, "%s: panel height", tc.name)
-		assert.Contains(t, rows[len(rows)-2], tc.lastItem,
+		assert.Contains(t, rows[len(rows)-2], tc.lastContentRowItem,
 			"%s: the row above the bottom border should hold content, not stay blank", tc.name)
 	}
 }

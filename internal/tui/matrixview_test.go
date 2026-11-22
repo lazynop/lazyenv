@@ -151,20 +151,16 @@ func TestMatrixToggleSort(t *testing.T) {
 	assert.Equal(t, 0, m.rows.Cursor, "the cursor should follow A back to row 0")
 }
 
-// newMissingCellMatrix builds a matrix over .env, .env.local and .env.prod,
-// which all hold A, B and D while only .env.prod holds C, and puts the cursor
-// on the gap C leaves in .env.local: row 2, column 1. The cursor's file,
-// .env.local, differs from every file a wrong pick would read: the first file,
-// which is also the first one lacking C, and the last file, which is also the
-// one at the row's index; the cursor's row is not the last.
-// newMissingCellMatrix returns .env.local with the matrix.
 func newMissingCellMatrix() (MatrixModel, *model.EnvFile) {
+	const cRowAboveTheLast, missingCol = 2, 1
+	firstFileAlsoLackingC := makeTestFile(".env", "A", "B", "D")
 	missing := makeTestFile(".env.local", "A", "B", "D")
-	files := []*model.EnvFile{makeTestFile(".env", "A", "B", "D"), missing, makeTestFile(".env.prod", "A", "B", "C", "D")}
+	lastFileAtCsRowIndex := makeTestFile(".env.prod", "A", "B", "C", "D")
+	files := []*model.EnvFile{firstFileAlsoLackingC, missing, lastFileAtCsRowIndex}
 	m := NewMatrixModel(files, config.DefaultConfig().Layout)
 	m.Width = 120
 	m.Height = 40
-	m.SetCursor(2, 1)
+	m.SetCursor(cRowAboveTheLast, missingCol)
 	return m, missing
 }
 
@@ -183,18 +179,14 @@ func TestMatrixStartEditMissing(t *testing.T) {
 	assert.NotNil(t, cmd, "StartEdit should return a focus command")
 }
 
-// TestMatrixStartEditPresent puts the cursor on a present cell of a complete
-// row, A in .env.local, and of a row with a gap, B in .env: neither opens an
-// edit. Both sit off the diagonal, so in B's row the file at the row's index,
-// .env.local, lacks the key the cursor's file holds.
 func TestMatrixStartEditPresent(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
 		row, col int
 		key      string
 	}{
-		{"complete row", 0, 1, "A"},
-		{"row with a gap", 1, 0, "B"},
+		{"complete row, A in .env.local", 0, 1, "A"},
+		{"row with a gap, B in .env while .env.local at B's index lacks it", 1, 0, "B"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			m := NewMatrixModel([]*model.EnvFile{makeTestFile(".env", "A", "B"), makeTestFile(".env.local", "A")}, config.DefaultConfig().Layout)
@@ -251,8 +243,8 @@ func TestMatrixConfirmEditResorts(t *testing.T) {
 		name          string
 		mode          model.SortMode
 		before, after []string
-		row           int // M's, before the confirm
-		offset        int // the view's, after the confirm
+		mRowBefore    int
+		offsetAfter   int
 	}{
 		{"alpha", model.SortAlpha, []string{"A", "B", "M", "Y", "Z"}, []string{"A", "B", "M", "Y", "Z"}, 2, 1},
 		{"completeness", model.SortCompleteness, []string{"B", "M", "Z", "A", "Y"}, []string{"B", "Z", "A", "M", "Y"}, 1, 2},
@@ -266,7 +258,7 @@ func TestMatrixConfirmEditResorts(t *testing.T) {
 				m.ToggleSort()
 			}
 			require.Equal(t, tc.before, matrixKeys(m.entries))
-			m.SetCursor(tc.row, 0)
+			m.SetCursor(tc.mRowBefore, 0)
 			m.StartEdit()
 			m.editor.SetValue("new_value")
 
@@ -275,7 +267,7 @@ func TestMatrixConfirmEditResorts(t *testing.T) {
 			assert.Equal(t, tc.after, matrixKeys(m.entries), "the rows should follow the sort mode after confirm")
 			cell, _ := m.CursorCell()
 			assert.Equal(t, "M", cell.Key, "the cursor should stay on M, the key it filled")
-			assert.Equal(t, tc.offset, m.rows.Offset, "the view should scroll just enough to show M")
+			assert.Equal(t, tc.offsetAfter, m.rows.Offset, "the view should scroll just enough to show M")
 		})
 	}
 }
@@ -307,7 +299,7 @@ func TestMatrixDeleteAtCursorKeepsTheCursorOnItsKey(t *testing.T) {
 	require.Same(t, files[1], from)
 
 	require.Equal(t, []string{"B", "C", "D", "F", "A", "E"}, matrixKeys(m.entries), "C, now with a gap, should sort among B, D and F")
-	assert.Equal(t, 1, m.rows.Cursor, "the cursor should follow C to row 1")
+	assert.Equal(t, 1, m.rows.Cursor, "the cursor should follow C to row 1, where neither the key now at C's old row nor the one there alphabetically is C")
 	assert.Equal(t, 1, m.rows.Offset, "the view should scroll up just as far as C")
 }
 
@@ -365,10 +357,10 @@ func TestMatrixViewFooterStaysOnTheSameRow(t *testing.T) {
 		return strings.Split(stripAnsi(m.View(theme)), "\n")
 	}
 
-	few, many := render(3), render(30) // fewer and more keys than body rows
-	assert.Equal(t, len(many), len(few), "the stats footer should sit on the same row whatever the key count")
-	assert.Contains(t, few[len(few)-1], "3 keys")
-	assert.Contains(t, many[len(many)-1], "30 keys")
+	fewerThanBodyRows, moreThanBodyRows := render(3), render(30)
+	assert.Equal(t, len(moreThanBodyRows), len(fewerThanBodyRows), "the stats footer should sit on the same row whatever the key count")
+	assert.Contains(t, fewerThanBodyRows[len(fewerThanBodyRows)-1], "3 keys")
+	assert.Contains(t, moreThanBodyRows[len(moreThanBodyRows)-1], "30 keys")
 }
 
 func TestMatrixViewNarrowWidthKeepsEachRowOnOneRow(t *testing.T) {
@@ -380,9 +372,8 @@ func TestMatrixViewNarrowWidthKeepsEachRowOnOneRow(t *testing.T) {
 	theme := BuildTheme(true, config.ColorConfig{})
 	const height = 18
 
-	// Narrower than 40 columns, the key column, one file column and the
-	// counter no longer fit on a row.
-	assertNoRowWraps(t, 40, 100, height, []string{"keys"}, func(width int) string {
+	const minWidthForKeyFileAndCounter = 40
+	assertNoRowWraps(t, minWidthForKeyFileAndCounter, 100, height, []string{"keys"}, func(width int) string {
 		m := NewMatrixModel(files, config.DefaultConfig().Layout)
 		m.Width, m.Height = width, height
 		return m.View(theme)
@@ -411,9 +402,7 @@ func TestMatrixViewAlignsColumnsAfterANonASCIIFileName(t *testing.T) {
 	}
 }
 
-// TestZeroMatrixModelSurvivesALayout sizes a zero MatrixModel, never built
-// with a layout: it scrolls without dividing by its zero column width.
-func TestZeroMatrixModelSurvivesALayout(t *testing.T) {
+func TestZeroMatrixModelSizesWithoutDividingByItsZeroColWidth(t *testing.T) {
 	var m MatrixModel
 
 	assert.NotPanics(t, func() { m.SetSize(80, 20) })

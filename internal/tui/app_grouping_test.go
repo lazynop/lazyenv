@@ -68,7 +68,7 @@ func TestApp_EnterOnHeaderTogglesCollapse(t *testing.T) {
 	app, _ := newGroupingApp(t)
 	app.varList.Grouping = true
 	app.varList.Refresh()
-	app.varList.SetCursor(0) // DB header
+	app.varList.SetCursor(groupingDBHeaderRow)
 	require.True(t, app.varList.IsHeaderAtCursor())
 
 	updated, _ := app.Update(tea.KeyPressMsg{Code: tea.KeyEnter})
@@ -85,7 +85,7 @@ func TestApp_SpaceOnHeaderTogglesCollapse(t *testing.T) {
 	app, _ := newGroupingApp(t)
 	app.varList.Grouping = true
 	app.varList.Refresh()
-	app.varList.SetCursor(0) // DB header
+	app.varList.SetCursor(groupingDBHeaderRow)
 	require.True(t, app.varList.IsHeaderAtCursor())
 
 	updated, _ := app.Update(keyMsg("space"))
@@ -114,7 +114,7 @@ func TestApp_EditOnHeaderFlashes(t *testing.T) {
 	app, _ := newGroupingApp(t)
 	app.varList.Grouping = true
 	app.varList.Refresh()
-	app.varList.SetCursor(0) // DB header
+	app.varList.SetCursor(groupingDBHeaderRow)
 	require.True(t, app.varList.IsHeaderAtCursor())
 
 	updated, _ := app.Update(keyMsg("e"))
@@ -128,7 +128,7 @@ func TestApp_RenameKeyOnHeaderFlashes(t *testing.T) {
 	app, _ := newGroupingApp(t)
 	app.varList.Grouping = true
 	app.varList.Refresh()
-	app.varList.SetCursor(0)
+	app.varList.SetCursor(groupingDBHeaderRow)
 
 	updated, _ := app.Update(keyMsg("E"))
 	app = updated.(App)
@@ -141,7 +141,7 @@ func TestApp_AddOnHeaderFlashes(t *testing.T) {
 	app, _ := newGroupingApp(t)
 	app.varList.Grouping = true
 	app.varList.Refresh()
-	app.varList.SetCursor(0)
+	app.varList.SetCursor(groupingDBHeaderRow)
 
 	updated, _ := app.Update(keyMsg("a"))
 	app = updated.(App)
@@ -154,7 +154,7 @@ func TestApp_DeleteOnHeaderFlashes(t *testing.T) {
 	app, _ := newGroupingApp(t)
 	app.varList.Grouping = true
 	app.varList.Refresh()
-	app.varList.SetCursor(0)
+	app.varList.SetCursor(groupingDBHeaderRow)
 
 	updated, _ := app.Update(keyMsg("d"))
 	app = updated.(App)
@@ -167,7 +167,7 @@ func TestApp_EditOnVarStillWorksWithGrouping(t *testing.T) {
 	app, _ := newGroupingApp(t)
 	app.varList.Grouping = true
 	app.varList.Refresh()
-	app.varList.SetCursor(1) // first DB var (DB_HOST)
+	app.varList.SetCursor(groupingDBHostRow)
 	require.False(t, app.varList.IsHeaderAtCursor())
 
 	updated, _ := app.Update(keyMsg("e"))

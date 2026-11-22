@@ -21,11 +21,7 @@ func makeDiffFiles() (*model.EnvFile, *model.EnvFile) {
 	return a, b
 }
 
-func TestDiffViewRenderEntryFlattensControlChars(t *testing.T) {
-	// A diff entry whose values contain embedded newlines/tabs/CRs must
-	// render on a single row in each panel. If raw control chars leaked
-	// through, the status markers (=, ≠, +, -) would land on the wrong
-	// visual row and the two panels would drift out of alignment.
+func TestDiffViewRenderEntryFlattensControlCharsToKeepThePanelsAligned(t *testing.T) {
 	a := makeTestFile(".env", "MULTI")
 	b := makeTestFile(".env.prod", "MULTI")
 	a.Vars[0].Value = "left1\nleft2\tcol\rend"
@@ -314,8 +310,7 @@ func TestDiffViewTruncatesLongKeys(t *testing.T) {
 	theme := BuildTheme(true, config.ColorConfig{})
 	view := dv.View(theme)
 
-	// The full key should NOT appear (it exceeds the 25-char cap)
-	assert.NotContains(t, view, longKey, "long key should be truncated")
+	assert.NotContains(t, view, longKey, "long key should be cut at diff-max-key-width (default 25)")
 	assert.Contains(t, view, "THIS_IS_A_VERY_LONG_ENV..", "truncated key with .. should appear")
 }
 
@@ -326,8 +321,10 @@ func TestDiffViewNarrowWidthKeepsEachEntryOnOneRow(t *testing.T) {
 	b.Vars[0].Value = "different"
 	theme := BuildTheme(true, config.ColorConfig{})
 	layout := config.DefaultConfig().Layout
-	layout.DiffPadding = 1          // raised to config.DiffMinPadding, the tightest rows get
-	height := panelChromeHeight + 4 // fewer rows than entries: a wrapped entry has no spare row to hide in
+	paddingRaisedToTheMinimum := 1
+	layout.DiffPadding = paddingRaisedToTheMinimum
+	rowsFewerThanTheEntries := 4
+	height := panelChromeHeight + rowsFewerThanTheEntries
 
 	assertNoRowWraps(t, 40, 100, height, []string{"≠"}, func(width int) string {
 		dv := NewDiffViewModel(layout)
@@ -338,17 +335,12 @@ func TestDiffViewNarrowWidthKeepsEachEntryOnOneRow(t *testing.T) {
 	})
 }
 
-// assertNoRowWraps renders a view at every width from minWidth to maxWidth and
-// fails wherever it comes out taller than height: a row that wraps onto a
-// second line makes its panel grow. It also fails where the view lacks any of
-// shown, the text of the rows under test, so a render that leaves them out
-// cannot pass.
-func assertNoRowWraps(t *testing.T, minWidth, maxWidth, height int, shown []string, render func(width int) string) {
+func assertNoRowWraps(t *testing.T, minWidth, maxWidth, height int, rowsUnderTest []string, render func(width int) string) {
 	t.Helper()
 	for width := minWidth; width <= maxWidth; width++ {
 		view := render(width)
 		assert.Equal(t, height, lipgloss.Height(view), "width %d: a row wrapped onto a second line", width)
-		for _, s := range shown {
+		for _, s := range rowsUnderTest {
 			assert.Contains(t, stripAnsi(view), s, "width %d: the rows under test should be drawn", width)
 		}
 	}

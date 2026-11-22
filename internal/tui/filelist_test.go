@@ -265,10 +265,7 @@ func TestFileListViewVarCountUpdatesAfterDelete(t *testing.T) {
 	assert.Contains(t, view, "2")
 }
 
-func TestFileListCursorStaysVisibleWhenScrolling(t *testing.T) {
-	// The scroll threshold in MoveDown must match the row count actually
-	// rendered by View, or the cursor walks below the viewport and never
-	// becomes visible again.
+func TestFileListMoveDownScrollsAtTheRowCountViewDraws(t *testing.T) {
 	var fl FileListModel
 	for i := range 30 {
 		fl.Files = append(fl.Files, makeTestFile(fmt.Sprintf(".env.f%02d", i), "A"))

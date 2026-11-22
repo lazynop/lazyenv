@@ -319,10 +319,9 @@ func TestConfigErrorScreenCutsWhatDoesNotFit(t *testing.T) {
 	assert.NotContains(t, rows[title:hint], "", "the blank rows go before any error is cut")
 	assert.Contains(t, rows[hint], "see lazyenv --check-config", "the hint points to the full list")
 
-	// A wrapped error reads whole once its rows are joined back.
-	body := strings.Join(rows[title+2:hint], " ")
+	errorRowsJoinedBack := strings.Join(rows[title+2:hint], " ")
 	shown := 0
-	for shown < len(errs) && strings.Contains(body, errs[shown]) {
+	for shown < len(errs) && strings.Contains(errorRowsJoinedBack, errs[shown]) {
 		shown++
 	}
 	require.Positive(t, shown, "at least one error is shown")
@@ -359,7 +358,8 @@ func TestConfigErrorScreenCapsALongPathSoAnErrorStillFits(t *testing.T) {
 
 func TestConfigErrorScreenCutsAWidePathToItsRows(t *testing.T) {
 	path := "/home/user/" + strings.Repeat("設定ファイル", 20) + "/config.toml"
-	for pad := range 2 { // the wide characters land on the row boundary either way
+	const wideCharAlignments = 2
+	for pad := range wideCharAlignments {
 		rows := smallestConfigErrorRows(t, StartupMessages{ConfigPath: strings.Repeat("x", pad) + path, ConfigErrors: []string{`invalid sort value: "random"`}})
 
 		title := slices.Index(rows, "Configuration Error")
@@ -399,16 +399,16 @@ func TestFileListWidthBeyondTheTerminalLeavesTheVarListItsMinimum(t *testing.T) 
 	assert.LessOrEqual(t, lipgloss.Width(app.View().Content), 80, "the screen should fit the terminal")
 }
 
-// TestFileListWidthBelowMinimumIsRaised sizes the file list on a terminal 120
-// wide, where auto gives 30: a width below the minimum, a negative one from
-// --file-list-width included, is raised to 20, and only 0 means auto.
 func TestFileListWidthBelowMinimumIsRaised(t *testing.T) {
-	for _, tc := range []struct{ width, want int }{
-		{0, 30},
-		{5, 20},
-		{-5, 20},
+	for _, tc := range []struct {
+		name        string
+		width, want int
+	}{
+		{"0 means auto, 30 at 120 columns", 0, 30},
+		{"5 is raised to the minimum", 5, 20},
+		{"-5 from --file-list-width is raised to the minimum", -5, 20},
 	} {
-		t.Run(fmt.Sprint(tc.width), func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			app := newTestApp(nil)
 			app.config.Layout.FileListWidth = tc.width
 

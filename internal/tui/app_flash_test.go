@@ -17,18 +17,22 @@ import (
 	"github.com/lazynop/lazyenv/internal/parser"
 )
 
-// TestLongMessageKeepsTheScreenInTheTerminal shows a message that wraps the
-// status bar onto many rows, in a view without an input bar and in one that
-// opens it while the message is still up: the screen stays within the
-// terminal.
 func TestLongMessageKeepsTheScreenInTheTerminal(t *testing.T) {
-	for _, keys := range [][]string{{"right"}, {"right", "e"}} {
-		app := resize(newTestApp(layoutFiles()), 60, 16)
-		app.flashError("Error saving: " + strings.Repeat("permission denied ", 12))
+	for _, tc := range []struct {
+		name string
+		keys []string
+	}{
+		{"without an input bar", []string{"right"}},
+		{"opening the input bar while the message is up", []string{"right", "e"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			app := resize(newTestApp(layoutFiles()), 60, 16)
+			app.flashError("Error saving: " + strings.Repeat("permission denied ", 12))
 
-		app = press(app, keys...)
+			app = press(app, tc.keys...)
 
-		assert.LessOrEqual(t, lipgloss.Height(app.View().Content), 16, "after %v: taller than the terminal", keys)
+			assert.LessOrEqual(t, lipgloss.Height(app.View().Content), 16, "after %v: taller than the terminal", tc.keys)
+		})
 	}
 }
 

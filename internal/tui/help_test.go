@@ -275,8 +275,8 @@ func TestHelpGroupsTheKeysByScreen(t *testing.T) {
 
 func TestHelpNamesEachKeyOnceASection(t *testing.T) {
 	for title, rows := range helpSections(helpScreen(openHelp(120, 200))) {
-		if strings.Contains(title, "Indicators") {
-			continue // glyphs, not keys
+		if listsGlyphsNotKeys := strings.Contains(title, "Indicators"); listsGlyphsNotKeys {
+			continue
 		}
 		seen := map[string]bool{}
 		for _, row := range rows {
@@ -309,11 +309,12 @@ func TestHelpAlignsItsDescriptions(t *testing.T) {
 }
 
 func TestHelpPagesWithPgUpAndPgDn(t *testing.T) {
-	app := openHelp(80, 24) // 20 rows of text between the padding and the footer
+	app := openHelp(80, 24)
+	textRowsBetweenThePaddingAndTheFooter := 20
 	top := helpScreen(app)
 
 	paged := press(app, "pgdown")
-	assert.Equal(t, helpScreen(press(app, slices.Repeat([]string{"down"}, 20)...)), helpScreen(paged),
+	assert.Equal(t, helpScreen(press(app, slices.Repeat([]string{"down"}, textRowsBetweenThePaddingAndTheFooter)...)), helpScreen(paged),
 		"PgDn scrolls one screen of text")
 	assert.Equal(t, top, helpScreen(press(paged, "pgup")), "PgUp scrolls back one screen")
 	assert.Equal(t, top, helpScreen(press(app, "pgup")), "PgUp at the top does nothing")
@@ -338,7 +339,8 @@ func TestHelpNamesTheMouseWheelOnlyWithTheMouseOn(t *testing.T) {
 	assert.NotContains(t, helpScreen(openHelpWith(cfg, 120, 200)), "mouse wheel")
 
 	cfg = config.DefaultConfig()
-	cfg.Layout.MouseScrollLines = 0 // the wheel scrolls nothing
+	wheelScrollsNothing := 0
+	cfg.Layout.MouseScrollLines = wheelScrollsNothing
 	assert.NotContains(t, helpScreen(openHelpWith(cfg, 120, 200)), "mouse wheel")
 }
 

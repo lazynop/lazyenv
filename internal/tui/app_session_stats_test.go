@@ -41,22 +41,19 @@ func TestApp_SessionStats_InitialLoadRecorded(t *testing.T) {
 	out, _ := app.Update(FilesLoadedMsg{Files: files})
 	got := out.(App)
 	assert.NotNil(t, got.sessionStats)
-	assert.Empty(t, got.sessionStats.Summary()) // no changes yet
+	assert.Empty(t, got.sessionStats.Summary(), "loading files should record no change")
 }
 
-// setupStatsFixture bootstraps a tempdir with a single .env file loaded into
-// an App with SessionStats enabled. Returns the post-load app, the parsed
-// EnvFile, the tempdir and the file path.
-func setupStatsFixture(t *testing.T, name, body string) (App, *model.EnvFile, string, string) {
+func setupStatsFixture(t *testing.T, name, body string) (app App, ef *model.EnvFile, dir, path string) {
 	t.Helper()
-	dir := t.TempDir()
-	path := dir + "/" + name
+	dir = t.TempDir()
+	path = dir + "/" + name
 	require.NoError(t, os.WriteFile(path, []byte(body), 0644))
 
 	cfg := config.DefaultConfig()
 	cfg.Dir = dir
 	cfg.NoBackup = true
-	app := NewApp(cfg, StartupMessages{})
+	app = NewApp(cfg, StartupMessages{})
 
 	ef, err := parser.ParseFile(path, cfg.Secrets)
 	require.NoError(t, err)
@@ -96,9 +93,7 @@ func TestApp_SessionStats_Duplicate(t *testing.T) {
 	}, app.sessionStats.Summary())
 }
 
-// The duplicate copies the source's bytes on disk, so the source's unsaved
-// edits are neither in the new file nor in its baseline.
-func TestApp_SessionStats_DuplicateOfUnsavedSource(t *testing.T) {
+func TestApp_SessionStats_DuplicateLeavesOutTheSourcesUnsavedEdits(t *testing.T) {
 	app, ef, dir, srcPath := setupStatsFixture(t, ".env", "FOO=1\nBAR=2\n")
 	ef.UpdateVar(0, "99")
 	ef.AddVar("BAZ", "3")
@@ -128,7 +123,7 @@ func TestApp_SessionStats_Template(t *testing.T) {
 	}, app.sessionStats.Summary())
 }
 
-func TestApp_SessionStats_Rename(t *testing.T) {
+func TestApp_SessionStats_RenameDiffsTheNewPathAgainstTheOriginBaseline(t *testing.T) {
 	app, ef, dir, oldPath := setupStatsFixture(t, ".env.local", "FOO=1\n")
 
 	app.fileOpSource = ef
@@ -138,12 +133,9 @@ func TestApp_SessionStats_Rename(t *testing.T) {
 	app = out.(App)
 
 	newPath := dir + "/.env.dev"
-	// Without a post-rename save the row is still emitted (seeded from the
-	// initial snapshot), because on-disk content at the new path equals the
-	// origin's baseline.
 	assert.Equal(t, []string{
 		newPath + " (renamed from " + oldPath + ") — 0 added, 0 changed, 0 deleted",
-	}, app.sessionStats.Summary())
+	}, app.sessionStats.Summary(), "a rename alone should emit a row, seeded from the initial snapshot")
 
 	app.varList.File.AddVar("BAR", "2")
 	app, _ = app.handleSave()

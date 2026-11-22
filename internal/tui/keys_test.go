@@ -138,9 +138,7 @@ func keyMapBindings(t *testing.T) []keyMapBinding {
 	return bindings
 }
 
-// keyCodes are the codes of the key names longer than one character that
-// keyMsg knows, other than Ctrl chords.
-var keyCodes = map[string]rune{
+var namedKeyCodes = map[string]rune{
 	"enter": tea.KeyEnter, "esc": tea.KeyEscape, "tab": tea.KeyTab, "space": tea.KeySpace,
 	"up": tea.KeyUp, "down": tea.KeyDown, "left": tea.KeyLeft, "right": tea.KeyRight,
 	"pgup": tea.KeyPgUp, "pgdown": tea.KeyPgDown, "home": tea.KeyHome, "end": tea.KeyEnd,
@@ -151,7 +149,7 @@ func keyMsg(k string) tea.KeyPressMsg {
 	if c, ok := strings.CutPrefix(k, "ctrl+"); ok && len([]rune(c)) == 1 {
 		return tea.KeyPressMsg{Code: []rune(c)[0], Mod: tea.ModCtrl}
 	}
-	if code, ok := keyCodes[k]; ok {
+	if code, ok := namedKeyCodes[k]; ok {
 		if code == tea.KeySpace {
 			return tea.KeyPressMsg{Code: code, Text: " "}
 		}
@@ -163,5 +161,5 @@ func keyMsg(k string) tea.KeyPressMsg {
 		}
 		return tea.KeyPressMsg{Code: r[0], Text: k}
 	}
-	panic(fmt.Sprintf("keyMsg: cannot build %q: check its spelling; a new named key goes in keyCodes, a new modifier in keyMsg", k))
+	panic(fmt.Sprintf("keyMsg: cannot build %q: check its spelling; a new named key goes in namedKeyCodes, a new modifier in keyMsg", k))
 }

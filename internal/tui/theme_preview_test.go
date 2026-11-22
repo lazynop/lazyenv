@@ -229,12 +229,11 @@ func TestThemePreviewMouseClick(t *testing.T) {
 	updated, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 	m = updated.(ThemePreviewModel)
 
-	// Click in left panel (X=5 < listWidth=26) at Y=6
-	// index = Y - 2 + scrollOffset() = 6 - 2 + 0 = 4
 	updated, _ = m.Update(tea.MouseClickMsg{X: 5, Y: 6, Button: tea.MouseLeft})
 	m = updated.(ThemePreviewModel)
 
-	assert.Equal(t, 4, m.cursor, "click at Y=6 with offset=0 should set cursor to 4")
+	assert.Equal(t, 4, m.cursor, "a click in the theme list (X=5 < listWidth) at Y=6 with offset=0 "+
+		"should set the cursor to Y - panelContentOffsetY = 4")
 }
 
 func TestThemePreviewMouseClickOutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
@@ -273,7 +272,7 @@ func TestThemePreviewMouseWheel(t *testing.T) {
 func TestThemePreviewScrollOffset(t *testing.T) {
 	m := NewThemePreview(config.DefaultConfig())
 
-	// Height 24 leaves visibleLines = 24 - statusBarHeight - panelChromeHeight = 20
+	const visibleLinesAt24Rows = 24 - statusBarHeight - panelChromeHeight
 	updated, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 	m = updated.(ThemePreviewModel)
 
@@ -283,15 +282,13 @@ func TestThemePreviewScrollOffset(t *testing.T) {
 	m.cursor = 5
 	assert.Equal(t, 0, m.scrollOffset(), "scrollOffset should be 0 when cursor < visibleLines")
 
-	// cursor=20 >= visibleLines=20 → offset = 20 - 20 + 1 = 1
 	require.Greater(t, len(m.themes), 20, "need more than 20 themes for this test")
 	m.cursor = 20
-	assert.Equal(t, 1, m.scrollOffset(), "scrollOffset should be positive when cursor >= visibleLines")
+	assert.Equal(t, 1, m.scrollOffset(), "scrollOffset should be cursor - visibleLinesAt24Rows + 1 when cursor >= visibleLinesAt24Rows (%d)", visibleLinesAt24Rows)
 
-	// cursor=25 >= visibleLines=20 → offset = 25 - 20 + 1 = 6
 	require.Greater(t, len(m.themes), 25, "need more than 25 themes for this test")
 	m.cursor = 25
-	assert.Equal(t, 6, m.scrollOffset(), "scrollOffset should increase with cursor")
+	assert.Equal(t, 6, m.scrollOffset(), "scrollOffset should increase with cursor, as cursor - visibleLinesAt24Rows + 1 (%d)", visibleLinesAt24Rows)
 }
 
 func TestThemePreviewFitsSmallTerminals(t *testing.T) {

@@ -27,16 +27,18 @@ const viewsGoldenPath = "testdata/views.golden"
 
 var layoutSecrets = []string{"hunter2", "ghp_x7Kq9", "stg-pass"}
 
-// layoutFiles returns two files whose secrets are detected by key name
-// (API_TOKEN) and by value (GREETING), with more vars than any panel shows.
 func layoutFiles() []*model.EnvFile {
 	return layoutFilesNamed(".env", ".env.local")
 }
 
+const apiTokenIndex = 0
+
 func layoutFilesNamed(env, local string) []*model.EnvFile {
+	const secretByKeyName, secretByValue = "API_TOKEN=hunter2\n", "GREETING=ghp_x7Kq9\n"
+	const morePlainVarsThanAnyPanelShows = 30
 	var vars strings.Builder
-	vars.WriteString("API_TOKEN=hunter2\nGREETING=ghp_x7Kq9\nHOST=localhost\nEMPTY=\n")
-	for i := range 30 {
+	vars.WriteString(secretByKeyName + secretByValue + "HOST=localhost\nEMPTY=\n")
+	for i := range morePlainVarsThanAnyPanelShows {
 		fmt.Fprintf(&vars, "VAR_%02d=value_%02d\n", i, i)
 	}
 	localVars := "API_TOKEN=stg-pass\nHOST=example.com\nVAR_00=value_00\nONLY_LOCAL=1\n"
@@ -46,9 +48,11 @@ func layoutFilesNamed(env, local string) []*model.EnvFile {
 	}
 }
 
+const screenOutsideApp = -1
+
 type viewScenario struct {
 	name  string
-	mode  AppMode // -1 for a screen outside App
+	mode  AppMode
 	setup func(app App) App
 	draw  func(t *testing.T, width, height int) string
 }
@@ -112,22 +116,22 @@ var viewScenarios = []viewScenario{
 	appScenario("normal", ModeNormal, func(app App) App { return app }),
 	appScenario("vars", ModeNormal, onVars),
 	appScenario("peek edited secret", ModeNormal, func(app App) App {
-		app.fileList.Files[0].UpdateVar(0, "edited") // API_TOKEN
+		app.fileList.Files[0].UpdateVar(apiTokenIndex, "edited")
 		app.varList.Refresh()
 		return press(onVars(app), "p")
 	}),
 	appScenario("peek secret renamed to a plain key", ModeNormal, func(app App) App {
 		app = onVars(app)
-		app.fileList.Files[0].UpdateVar(0, "x") // API_TOKEN
+		app.fileList.Files[0].UpdateVar(apiTokenIndex, "x")
 		app.mode = ModeEditing
-		app.editor.StartEditKey(&app.fileList.Files[0].Vars[0], 0)
+		app.editor.StartEditKey(&app.fileList.Files[0].Vars[apiTokenIndex], apiTokenIndex)
 		app.editor.input.SetValue("PLAIN")
 		return press(app, "enter", "p")
 	}),
 	appScenario("peek secret value renamed", ModeNormal, func(app App) App {
-		app = press(onVars(app), "j", "E") // GREETING, a secret by its value only
-		app.editor.input.SetValue("WELCOME")
-		return press(app, "enter", "p")
+		editingGreetingKey := press(onVars(app), "j", "E")
+		editingGreetingKey.editor.input.SetValue("WELCOME")
+		return press(editingGreetingKey, "enter", "p")
 	}),
 	appScenario("peek secret re-added with a plain value", ModeNormal, func(app App) App {
 		f := app.fileList.Files[0]
@@ -161,11 +165,13 @@ var viewScenarios = []viewScenario{
 	appScenario("compare select", ModeCompareSelect, func(app App) App { return press(app, "c") }),
 	appScenario("compare", ModeComparing, func(app App) App { return press(app, "c", "j", "enter") }),
 	appScenario("compare edit", ModeEditingCompare, func(app App) App {
-		return press(app, "c", "j", "enter", "j", "j", "e") // HOST, third in both files
+		editingHostInBothFiles := press(app, "c", "j", "enter", "j", "j", "e")
+		return editingHostInBothFiles
 	}),
 	appScenario("matrix", ModeMatrix, func(app App) App { return press(app, "m") }),
 	appScenario("matrix add", ModeMatrixEditing, func(app App) App {
-		return press(app, "m", "j", "right", "a") // EMPTY, missing from .env.local
+		addingEmptyToEnvLocal := press(app, "m", "j", "right", "a")
+		return addingEmptyToEnvLocal
 	}),
 	appScenario("matrix confirm delete", ModeConfirmMatrixDelete, func(app App) App { return press(app, "m", "d") }),
 	configErrorScenario("config error", StartupMessages{
@@ -176,7 +182,7 @@ var viewScenarios = []viewScenario{
 		ConfigPath:   "/home/user/projects/a-rather-long-project-name/configuration/lazyenv/config.toml",
 		ConfigErrors: []string{`invalid sort value: "random"`, `invalid colors.primary: "teal" (expected hex like #RRGGBB or ANSI 0-255)`},
 	}),
-	{name: "theme preview", mode: -1, draw: func(t *testing.T, width, height int) string {
+	{name: "theme preview", mode: screenOutsideApp, draw: func(t *testing.T, width, height int) string {
 		m := NewThemePreview(config.DefaultConfig())
 		m.searchPaths = []string{".lazyenvrc", "/home/user/.config/lazyenv/config.toml", "/home/user/.lazyenvrc"}
 		updated, _ := m.Update(tea.WindowSizeMsg{Width: width, Height: height})
@@ -184,9 +190,6 @@ var viewScenarios = []viewScenario{
 	}},
 }
 
-// TestViewScenariosCoverEveryMode fails on an AppMode with no scenario in
-// viewScenarios. It reads the modes from the iota block in app.go, where a
-// mode's value is its position.
 func TestViewScenariosCoverEveryMode(t *testing.T) {
 	covered := map[AppMode]bool{}
 	for _, sc := range viewScenarios {
@@ -205,16 +208,12 @@ func TestViewScenariosCoverEveryMode(t *testing.T) {
 		}
 	}
 	require.NotEmpty(t, modes, "the AppMode const block starting at ModeNormal should be in app.go")
-	for value, name := range modes {
-		assert.True(t, covered[AppMode(value)], "%s has no scenario in viewScenarios", name)
+	for iotaPosition, name := range modes {
+		assert.True(t, covered[AppMode(iotaPosition)], "%s has no scenario in viewScenarios", name)
 	}
 }
 
-// knownTooTall lists the scenarios that still outgrow the terminal, each with
-// the issue tracking it. An entry whose scenario fits everywhere fails the
-// test: remove it. It is empty while every screen fits, and kept for the next
-// screen found too tall.
-var knownTooTall = map[string]string{}
+var tooTallIssueByScenario = map[string]string{}
 
 var (
 	gridWidths  = []int{MinTerminalWidth, 80, 100, 120}
@@ -223,7 +222,7 @@ var (
 
 func TestViewsFitTheTerminalAndHideSecrets(t *testing.T) {
 	for _, sc := range viewScenarios {
-		_, known := knownTooTall[sc.name]
+		_, known := tooTallIssueByScenario[sc.name]
 		tooTall := false
 		for _, width := range gridWidths {
 			for _, height := range gridHeights {
@@ -240,17 +239,12 @@ func TestViewsFitTheTerminalAndHideSecrets(t *testing.T) {
 			}
 		}
 		if known {
-			assert.True(t, tooTall, "%s now fits the terminal: remove it from knownTooTall", sc.name)
+			assert.True(t, tooTall, "%s now fits the terminal: remove it from tooTallIssueByScenario", sc.name)
 		}
 	}
 }
 
-// TestLayoutSecretsAreDrawnWhole renders every scenario across the grid with
-// secrets revealed. A column that draws a secret cut (its start, then "..")
-// would show only that start on a leak, which the check for the whole secret
-// in TestViewsFitTheTerminalAndHideSecrets misses. Each secret must also be
-// drawn somewhere, or that check could not catch its leak at all.
-func TestLayoutSecretsAreDrawnWhole(t *testing.T) {
+func TestLayoutSecretsAreDrawnWholeSoTheLeakCheckCanCatchThem(t *testing.T) {
 	drawn := map[string]bool{}
 	for _, sc := range viewScenarios {
 		for _, width := range gridWidths {
@@ -259,7 +253,8 @@ func TestLayoutSecretsAreDrawnWhole(t *testing.T) {
 				for _, secret := range layoutSecrets {
 					drawn[secret] = drawn[secret] || strings.Contains(view, secret)
 					for n := 1; n < len(secret); n++ {
-						assert.NotContains(t, view, secret[:n]+"..", "%s at %dx%d: %q is drawn cut, shorten it",
+						assert.NotContains(t, view, secret[:n]+"..", "%s at %dx%d: %q is drawn cut, so a leak would show only its start, "+
+							"which the check for the whole secret misses: shorten it",
 							sc.name, width, height, secret)
 					}
 				}
@@ -267,7 +262,7 @@ func TestLayoutSecretsAreDrawnWhole(t *testing.T) {
 		}
 	}
 	for _, secret := range layoutSecrets {
-		assert.True(t, drawn[secret], "%q is never drawn, even revealed", secret)
+		assert.True(t, drawn[secret], "%q is never drawn, even revealed, so no leak check can catch its leak", secret)
 	}
 }
 

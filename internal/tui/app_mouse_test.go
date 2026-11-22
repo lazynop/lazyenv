@@ -87,18 +87,16 @@ func TestMouseClickOnHeader_TogglesCollapse(t *testing.T) {
 	app.varList.Grouping = true
 	app.varList.Refresh()
 
-	// Layout: row 0 = DB header, then DB vars, etc. Y=2 maps to row 0
-	// (Y=0 border, Y=1 title, Y=2 first item) and X must land in the var
-	// panel (X >= a.fileWidth).
 	clickX := app.fileWidth + 5
-	updated, _ := app.Update(tea.MouseClickMsg{X: clickX, Y: 2, Button: tea.MouseLeft})
+	headerY := panelContentOffsetY
+	updated, _ := app.Update(tea.MouseClickMsg{X: clickX, Y: headerY, Button: tea.MouseLeft})
 	app = updated.(App)
 
 	require.Equal(t, FocusVars, app.focus)
 	assert.True(t, app.varList.collapsed["DB"],
 		"clicking the DB header must toggle collapse on")
 
-	updated, _ = app.Update(tea.MouseClickMsg{X: clickX, Y: 2, Button: tea.MouseLeft})
+	updated, _ = app.Update(tea.MouseClickMsg{X: clickX, Y: headerY, Button: tea.MouseLeft})
 	app = updated.(App)
 	assert.False(t, app.varList.collapsed["DB"],
 		"second click must toggle collapse off")
@@ -111,10 +109,9 @@ func TestMouseClickOnVar_DoesNotToggleCollapse(t *testing.T) {
 	app.varList.Grouping = true
 	app.varList.Refresh()
 
-	// Y=3 → row 1 = first DB var (DB_HOST). Click on a var must just
-	// move the cursor without toggling.
 	clickX := app.fileWidth + 5
-	updated, _ := app.Update(tea.MouseClickMsg{X: clickX, Y: 3, Button: tea.MouseLeft})
+	firstVarY := panelContentOffsetY + 1
+	updated, _ := app.Update(tea.MouseClickMsg{X: clickX, Y: firstVarY, Button: tea.MouseLeft})
 	app = updated.(App)
 
 	assert.False(t, app.varList.collapsed["DB"],
@@ -217,16 +214,13 @@ func rowDrawing(t *testing.T, view, text string) int {
 	return row
 }
 
-// TestMouseClickVarList_SelectsTheVarDrawnAtTheRow turns peek on over a
-// modified var and clicks rows around its peek line: a click selects the var
-// drawn on that row, and one on the peek line keeps the var it belongs to.
 func TestMouseClickVarList_SelectsTheVarDrawnAtTheRow(t *testing.T) {
-	for _, tt := range []struct{ click, selects string }{
-		{"BRAVO", "BRAVO"},
-		{"DELTA", "DELTA"},
-		{"↳ was:", "ALPHA"},
+	for _, tt := range []struct{ name, click, selects string }{
+		{"a var below the peek line", "BRAVO", "BRAVO"},
+		{"a var further down", "DELTA", "DELTA"},
+		{"the peek line selects its var", "↳ was:", "ALPHA"},
 	} {
-		t.Run(tt.click, func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			f := makeTestFile(".env", "ALPHA", "BRAVO", "CHARLIE", "DELTA")
 			f.UpdateVar(0, "edited")
 			app := press(resize(newTestApp([]*model.EnvFile{f}), 80, 24), "right", "p")
@@ -241,15 +235,10 @@ func TestMouseClickVarList_SelectsTheVarDrawnAtTheRow(t *testing.T) {
 	}
 }
 
-// longFileName is wider than the title of any panel at the sizes these tests
-// use.
-var longFileName = ".env." + strings.Repeat("verylongname", 6)
+var fileNameWiderThanAnyPanel = ".env." + strings.Repeat("verylongname", 6)
 
-// TestMouseClickVarList_UnderALongFileName opens a file whose name is wider
-// than the var panel: the name gives way to the var count, so the title keeps
-// its one row and a click lands on the var drawn on the clicked row.
-func TestMouseClickVarList_UnderALongFileName(t *testing.T) {
-	f := makeTestFile(longFileName, "ALPHA", "BRAVO", "CHARLIE")
+func TestMouseClickVarList_UnderAFileNameCutToKeepTheTitleOnOneRow(t *testing.T) {
+	f := makeTestFile(fileNameWiderThanAnyPanel, "ALPHA", "BRAVO", "CHARLIE")
 	app := onVars(resize(newTestApp([]*model.EnvFile{f}), 80, 24))
 	view := app.View().Content
 	require.Contains(t, strings.Split(stripAnsi(view), "\n")[panelContentOffsetY-1], "(3 vars)", "the title row ends in the count")
@@ -260,33 +249,26 @@ func TestMouseClickVarList_UnderALongFileName(t *testing.T) {
 	assert.Equal(t, "BRAVO", clicked.varList.SelectedVar().Key)
 }
 
-// TestMouseClickVarList_UnderALongGroupHeader groups two vars under a prefix
-// wider than the var panel: the prefix gives way to the count, so the header
-// keeps its one row and the first var is drawn on the row a click maps to it.
-// Cut, both keys read the same: the first var's value tells its row apart.
-func TestMouseClickVarList_UnderALongGroupHeader(t *testing.T) {
+func TestMouseClickVarList_UnderAGroupHeaderCutToKeepItOnOneRow(t *testing.T) {
 	prefix := strings.Repeat("LONGPREFIX", 8)
 	f := makeTestFile(".env", prefix+"_HOST", prefix+"_PORT")
-	f.Vars[0].Value = "host"
-	app := press(onVars(resize(newTestApp([]*model.EnvFile{f}), 80, 24)), "g", "j") // the second var
-	rows := strings.Split(stripAnsi(app.View().Content), "\n")
+	valueTellingTheCutKeysApart := "host"
+	f.Vars[0].Value = valueTellingTheCutKeysApart
+	onTheSecondVar := press(onVars(resize(newTestApp([]*model.EnvFile{f}), 80, 24)), "g", "j")
+	rows := strings.Split(stripAnsi(onTheSecondVar.View().Content), "\n")
 	require.Contains(t, rows[panelContentOffsetY], "(2)", "the header row ends in the count")
 	firstVar := panelContentOffsetY + 1
-	require.Contains(t, rows[firstVar], "host", "the first var follows the header")
+	require.Contains(t, rows[firstVar], valueTellingTheCutKeysApart, "the first var follows the header")
 
-	updated, _ := app.Update(tea.MouseClickMsg{X: 40, Y: firstVar, Button: tea.MouseLeft})
+	updated, _ := onTheSecondVar.Update(tea.MouseClickMsg{X: 40, Y: firstVar, Button: tea.MouseLeft})
 
 	clicked := updated.(App)
 	assert.Equal(t, prefix+"_HOST", clicked.varList.SelectedVar().Key)
 }
 
-// TestMouseClickCompareMode_UnderALongFileName compares with a modified file
-// whose name is wider than its panel: the name gives way to the modified mark,
-// so both panels draw each key on one row and a click lands on the entry drawn
-// on the clicked row.
-func TestMouseClickCompareMode_UnderALongFileName(t *testing.T) {
+func TestMouseClickCompareMode_UnderAFileNameCutToKeepEachKeyOnOneRow(t *testing.T) {
 	keys := []string{"ALPHA", "BRAVO", "CHARLIE"}
-	long := makeTestFile(longFileName, keys...)
+	long := makeTestFile(fileNameWiderThanAnyPanel, keys...)
 	long.Modified = true
 	app := enterCompareMode(t, makeTestFile(".env", keys...), long)
 	view := app.View().Content
@@ -301,10 +283,7 @@ func TestMouseClickCompareMode_UnderALongFileName(t *testing.T) {
 	assert.Equal(t, "BRAVO", clicked.Entries[clicked.Cursor].Key)
 }
 
-// TestMouseClickVarList_OnADeletedVarKeepsTheCursor clicks the row of a
-// deleted var, drawn below the last var: no cursor reaches it, so the cursor
-// stays put.
-func TestMouseClickVarList_OnADeletedVarKeepsTheCursor(t *testing.T) {
+func TestMouseClickVarList_OnADeletedVarKeepsTheCursorAsNoCursorReachesIt(t *testing.T) {
 	f := makeTestFile(".env", "A", "B", "GONE")
 	f.DeleteVar(2)
 	app := press(resize(newTestApp([]*model.EnvFile{f}), 80, 24), "right", "j")
@@ -316,27 +295,19 @@ func TestMouseClickVarList_OnADeletedVarKeepsTheCursor(t *testing.T) {
 	assert.Equal(t, "B", clicked.varList.SelectedVar().Key)
 }
 
-// TestMouseClickVarList_OutsideTheDrawnRowsKeepsTheCursor scrolls a var list
-// four rows tall to its middle, then clicks its title row and its bottom
-// border: they draw no var, though vars sit just off screen on either side,
-// so the cursor stays put.
 func TestMouseClickVarList_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J")
 	app := press(resize(newTestApp([]*model.EnvFile{f}), 80, fourRowPanelsHeight), "right", "j", "j", "j", "j", "j")
 	require.Equal(t, 2, app.varList.Offset)
 
-	for _, y := range []int{panelContentOffsetY - 1, panelContentOffsetY + 4} {
+	titleRow, bottomBorderRow := panelContentOffsetY-1, panelContentOffsetY+4
+	for _, y := range []int{titleRow, bottomBorderRow} {
 		updated, _ := app.Update(tea.MouseClickMsg{X: 40, Y: y, Button: tea.MouseLeft})
 		clicked := updated.(App)
 		assert.Equal(t, "F", clicked.varList.SelectedVar().Key, "a click at Y=%d draws no var", y)
 	}
 }
 
-// TestMouseClickFileList_OutsideTheDrawnRowsKeepsTheCursor scrolls a file list
-// four rows tall to its middle, then clicks its title row and its bottom
-// border, in the main view and while picking the file to compare: they draw
-// no file, though files sit just off screen on either side, so the cursor
-// stays put, and with it the active file in the main view.
 func TestMouseClickFileList_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	files := make([]*model.EnvFile, 10)
 	for i := range files {
@@ -345,9 +316,10 @@ func TestMouseClickFileList_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	app := press(resize(newTestApp(files), 80, fourRowPanelsHeight), "j", "j", "j", "j", "j")
 	require.Equal(t, 2, app.fileList.Offset)
 
+	titleRow, bottomBorderRow := panelContentOffsetY-1, panelContentOffsetY+4
 	for _, mode := range []AppMode{ModeNormal, ModeCompareSelect} {
 		app.mode = mode
-		for _, y := range []int{panelContentOffsetY - 1, panelContentOffsetY + 4} {
+		for _, y := range []int{titleRow, bottomBorderRow} {
 			updated, _ := app.Update(tea.MouseClickMsg{X: 5, Y: y, Button: tea.MouseLeft})
 			clicked := updated.(App).fileList
 			assert.Equal(t, 5, clicked.Cursor, "in mode %v a click at Y=%d draws no file", mode, y)
@@ -368,11 +340,7 @@ func TestMouseClickFileList_BelowTheLastFileKeepsTheCursor(t *testing.T) {
 	}
 }
 
-// TestMouseClickVarList_FromTheFileListSelectsTheVarDrawnAtTheRow clicks a var
-// while the file list has the focus and the var cursor sits on the bottom row,
-// on a modified var: focusing the var list draws a peek line under it and
-// scrolls, but the click selects the var that was drawn where it landed.
-func TestMouseClickVarList_FromTheFileListSelectsTheVarDrawnAtTheRow(t *testing.T) {
+func TestMouseClickVarList_FromTheFileListSelectsTheVarDrawnBeforeTheFocusScrolls(t *testing.T) {
 	app := peekedBottomRowApp()
 	row := rowDrawing(t, app.View().Content, "val_D")
 
@@ -394,17 +362,14 @@ func TestMouseClickCompareMode_SelectsTheClickedEntry(t *testing.T) {
 	assert.Equal(t, "CHARLIE", app.diffView.Entries[app.diffView.Cursor].Key)
 }
 
-// TestMouseClickCompareMode_OutsideTheDrawnRowsKeepsTheCursor scrolls a diff
-// view four rows tall to its middle, then clicks its title row and its bottom
-// border: they draw no entry, though entries sit just off screen on either
-// side, so the cursor stays put.
 func TestMouseClickCompareMode_OutsideTheDrawnRowsKeepsTheCursor(t *testing.T) {
 	keys := []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"}
 	app := enterCompareMode(t, makeTestFile(".env", keys...), makeTestFile(".env.prod", keys...))
 	app = press(resize(app, 80, fourRowPanelsHeight), "j", "j", "j", "j", "j")
 	require.Equal(t, 2, app.diffView.Offset)
 
-	for _, y := range []int{panelContentOffsetY - 1, panelContentOffsetY + 4} {
+	titleRow, bottomBorderRow := panelContentOffsetY-1, panelContentOffsetY+4
+	for _, y := range []int{titleRow, bottomBorderRow} {
 		updated, _ := app.Update(tea.MouseClickMsg{X: 10, Y: y, Button: tea.MouseLeft})
 		clicked := updated.(App).diffView
 		assert.Equal(t, 5, clicked.Cursor, "a click at Y=%d draws no entry", y)
@@ -431,8 +396,8 @@ func TestMouseClickCompareSelectMode_MovesCursorOnly(t *testing.T) {
 	app = resize(app, 120, 40)
 	app.mode = ModeCompareSelect
 
-	// index = Y - 2 + Offset = 4 - 2 + 0 = 2
-	updated, _ := app.Update(tea.MouseClickMsg{X: 5, Y: 4, Button: tea.MouseLeft})
+	thirdFileRow := panelContentOffsetY + 2
+	updated, _ := app.Update(tea.MouseClickMsg{X: 5, Y: thirdFileRow, Button: tea.MouseLeft})
 	app = updated.(App)
 	assert.Equal(t, 2, app.fileList.Cursor, "compare-select click moves the cursor")
 	assert.Equal(t, 0, app.fileList.Selected,
@@ -462,10 +427,7 @@ func TestMouseWheelCompareSelectMode_IgnoresTheVarPanel(t *testing.T) {
 	assert.Equal(t, 0, updated.(App).fileList.Cursor, "the wheel over the var panel moves nothing")
 }
 
-// TestMouseClickEditingCompareMode_KeepsTheEditedEntry clicks another row of
-// the diff while its edit bar is open: the bar edits the entry it was opened
-// on, so the cursor stays there.
-func TestMouseClickEditingCompareMode_KeepsTheEditedEntry(t *testing.T) {
+func TestMouseClickEditingCompareMode_KeepsTheEntryTheEditBarEdits(t *testing.T) {
 	keys := []string{"ALPHA", "BRAVO", "CHARLIE"}
 	a, b := makeTestFile(".env", keys...), makeTestFile(".env.prod", keys...)
 	b.Vars[0].Value = "different"
@@ -517,8 +479,8 @@ func TestMouseClickMatrixMode_SetsCell(t *testing.T) {
 	kw := app.matrixView.layout.MatrixKeyWidth
 	cw := app.matrixView.layout.MatrixColWidth
 
-	// Data cell: row 2 (Y=4), column 1 (X one column band past the key column)
-	updated, _ := app.Update(tea.MouseClickMsg{X: matrixSidePaddingWidth + kw + cw, Y: 4, Button: tea.MouseLeft})
+	thirdRowY := matrixContentOffsetY + 2
+	updated, _ := app.Update(tea.MouseClickMsg{X: matrixSidePaddingWidth + kw + cw, Y: thirdRowY, Button: tea.MouseLeft})
 	app = updated.(App)
 	assert.Equal(t, 2, app.matrixView.rows.Cursor)
 	assert.Equal(t, 1, app.matrixView.cols.Cursor)
@@ -529,18 +491,21 @@ func TestMouseClickMatrixMode_SetsCell(t *testing.T) {
 	assert.Equal(t, 1, app.matrixView.cols.Cursor, "key-column click keeps the current column")
 }
 
-// TestMouseClickMatrixMode_SelectsTheColumnDrawnAtX clicks the first cell of a
-// file's column, as drawn under its name in the header, and the cell just
-// before it, the last of the previous column.
 func TestMouseClickMatrixMode_SelectsTheColumnDrawnAtX(t *testing.T) {
 	app := press(resize(newTestApp([]*model.EnvFile{makeTestFile(".env.a", "K"), makeTestFile(".env.b", "K")}), 120, 24), "m")
 	header := strings.Split(stripAnsi(app.View().Content), "\n")[0]
 	x := strings.Index(header, ".env.b")
 	require.Positive(t, x, "the header should name .env.b")
 
-	for _, tt := range []struct{ x, col int }{{x, 1}, {x - 1, 0}} {
+	for _, tt := range []struct {
+		cell   string
+		x, col int
+	}{
+		{"the first cell of .env.b, under its name", x, 1},
+		{"the last cell of .env.a, just before it", x - 1, 0},
+	} {
 		updated, _ := app.Update(tea.MouseClickMsg{X: tt.x, Y: matrixContentOffsetY, Button: tea.MouseLeft})
-		assert.Equal(t, tt.col, updated.(App).matrixView.cols.Cursor, "click at X=%d", tt.x)
+		assert.Equal(t, tt.col, updated.(App).matrixView.cols.Cursor, "click on %s at X=%d", tt.cell, tt.x)
 	}
 }
 
@@ -593,9 +558,9 @@ func TestMouseWheelMatrixMode_Scrolls(t *testing.T) {
 
 func TestMouseOnTheActiveFileKeepsTheVarList(t *testing.T) {
 	for _, tt := range []struct {
-		name   string
-		prefix string // of the active file's variables
-		msg    tea.Msg
+		name                string
+		activeFileVarPrefix string
+		msg                 tea.Msg
 	}{
 		{"click on the first file", "FIRST", tea.MouseClickMsg{X: 1, Y: panelContentOffsetY, Button: tea.MouseLeft}},
 		{"wheel up on the first file", "FIRST", tea.MouseWheelMsg{X: 1, Y: panelContentOffsetY, Button: tea.MouseWheelUp}},
@@ -603,8 +568,8 @@ func TestMouseOnTheActiveFileKeepsTheVarList(t *testing.T) {
 		{"wheel down on the last file", "LAST", tea.MouseWheelMsg{X: 1, Y: panelContentOffsetY + 1, Button: tea.MouseWheelDown}},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			updated, _ := varListAtTheEnd(t, tt.prefix).Update(tt.msg)
-			assertVarListKeptAtTheEnd(t, updated.(App), tt.prefix)
+			updated, _ := varListAtTheEnd(t, tt.activeFileVarPrefix).Update(tt.msg)
+			assertVarListKeptAtTheEnd(t, updated.(App), tt.activeFileVarPrefix)
 		})
 	}
 }

@@ -118,14 +118,14 @@ func TestStats_ExistingFile_DuplicateKeyOrderFollowsLastOccurrence(t *testing.T)
 		{Key: "FOO", Value: "old"},
 		{Key: "FOO", Value: "1"},
 	})
-	assert.Empty(t, s.Summary())
+	assert.Empty(t, s.Summary(), "moving the shadowed FOO is no reorder: a key's position is its last occurrence, the one a shell keeps")
 
 	s.RecordSave("/p/.env", []model.EnvVar{
 		{Key: "FOO", Value: "old"},
 		{Key: "FOO", Value: "1"},
 		{Key: "BAR", Value: "2"},
 	})
-	assert.Equal(t, []string{"/p/.env — reordered"}, s.Summary())
+	assert.Equal(t, []string{"/p/.env — reordered"}, s.Summary(), "moving the last FOO is a reorder")
 }
 
 func TestStats_InitialLoadIdempotent(t *testing.T) {
@@ -134,7 +134,7 @@ func TestStats_InitialLoadIdempotent(t *testing.T) {
 	s.RecordInitialLoad("/p/.env", []model.EnvVar{{Key: "FOO", Value: "DIFFERENT"}})
 	s.RecordSave("/p/.env", []model.EnvVar{{Key: "FOO", Value: "1"}})
 
-	assert.Empty(t, s.Summary())
+	assert.Empty(t, s.Summary(), "saving the first snapshot's value must report nothing: against the second load's DIFFERENT it would report 1 changed")
 }
 
 func TestStats_NilReceiver_Safe(t *testing.T) {
@@ -250,7 +250,7 @@ func TestStats_Rename_NoEdits(t *testing.T) {
 	s.RecordRename("/p/.env.local", "/p/.env.dev")
 	assert.Equal(t, []string{
 		"/p/.env.dev (renamed from /p/.env.local) — 0 added, 0 changed, 0 deleted",
-	}, s.Summary())
+	}, s.Summary(), "a renamed file is reported without a save after the rename, compared with its initial load")
 }
 
 func TestStats_RenameThenRecreateAtOriginPath(t *testing.T) {

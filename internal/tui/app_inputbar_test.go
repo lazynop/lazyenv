@@ -32,11 +32,9 @@ var inputBarCases = []inputBarCase{
 		func(app *App) *textinput.Model { return &app.matrixView.editor }},
 }
 
-// inputTail ends longInput, a value wider than any input bar in the layout
-// grid and within the search input's 100-rune limit.
 const inputTail = "TAIL_12345"
 
-var longInput = strings.Repeat("x", 90) + inputTail
+var longInputUnderSearchLimit = strings.Repeat("x", 90) + inputTail
 
 func openInputBar(t *testing.T, tc inputBarCase, width int, value string) App {
 	t.Helper()
@@ -53,7 +51,7 @@ func TestInputBarsScrollALongValueOnOneRow(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			for _, width := range gridWidths {
 				short := openInputBar(t, tc, width, "short").View().Content
-				view := openInputBar(t, tc, width, longInput).View().Content
+				view := openInputBar(t, tc, width, longInputUnderSearchLimit).View().Content
 
 				assert.Equal(t, lipgloss.Height(short), lipgloss.Height(view), "width %d: a long value must not wrap the bar", width)
 				assert.Contains(t, stripAnsi(view), inputTail, "width %d: the end of the value, at the cursor, should be in view", width)
@@ -62,14 +60,12 @@ func TestInputBarsScrollALongValueOnOneRow(t *testing.T) {
 	}
 }
 
-// TestInputBarsKeepOneRowWithWideGraphemes types emoji with a variation
-// selector, which the text input measures as one column and the terminal draws
-// in two: the bar still keeps one row.
-func TestInputBarsKeepOneRowWithWideGraphemes(t *testing.T) {
+func TestInputBarsKeepOneRowWithGraphemesTheInputUndercounts(t *testing.T) {
+	const variationSelectorEmoji = "\u2764\uFE0F"
 	for _, tc := range inputBarCases {
 		t.Run(tc.name, func(t *testing.T) {
 			short := openInputBar(t, tc, 80, "short").View().Content
-			view := openInputBar(t, tc, 80, strings.Repeat("\u2764\uFE0F", 40)).View().Content
+			view := openInputBar(t, tc, 80, strings.Repeat(variationSelectorEmoji, 40)).View().Content
 
 			assert.Equal(t, lipgloss.Height(short), lipgloss.Height(view), "the bar should keep one row")
 		})
@@ -80,7 +76,7 @@ func TestInputBarsRefitAfterAResize(t *testing.T) {
 	for _, tc := range inputBarCases {
 		t.Run(tc.name, func(t *testing.T) {
 			short := openInputBar(t, tc, 60, "short").View().Content
-			view := resize(openInputBar(t, tc, 120, longInput), 60, 24).View().Content
+			view := resize(openInputBar(t, tc, 120, longInputUnderSearchLimit), 60, 24).View().Content
 
 			assert.Equal(t, lipgloss.Height(short), lipgloss.Height(view), "the bar should keep one row")
 			assert.Contains(t, stripAnsi(view), inputTail, "the end of the value, at the cursor, should be in view")
@@ -89,10 +85,10 @@ func TestInputBarsRefitAfterAResize(t *testing.T) {
 }
 
 func TestInputBarsKeepTextTypedMidValueInView(t *testing.T) {
-	long := strings.Repeat("x", 90) // room to type within the search input's 100-rune limit
+	longUnderSearchLimit := strings.Repeat("x", 90)
 	for _, tc := range inputBarCases {
 		t.Run(tc.name, func(t *testing.T) {
-			app := openInputBar(t, tc, 80, long)
+			app := openInputBar(t, tc, 80, longUnderSearchLimit)
 			tc.input(&app).SetCursor(10)
 
 			app = press(app, "A", "B", "C")
@@ -108,8 +104,8 @@ func TestInputBarCutsALongLabel(t *testing.T) {
 	app := press(resize(newTestApp([]*model.EnvFile{
 		makeTestFile(".env", "A"),
 		makeTestFile(".env.production.local", "A", longKey),
-	}), 60, 20), "m", "j", "a") // the long key, missing from .env
-	require.Equal(t, ModeMatrixEditing, app.mode)
+	}), 60, 20), "m", "j", "a")
+	require.Equal(t, ModeMatrixEditing, app.mode, "the matrix should add the long key, missing from .env")
 
 	rows := strings.Split(stripAnsi(app.View().Content), "\n")
 	bar := rowDrawing(t, app.View().Content, "Add UPSTREAM")
@@ -118,8 +114,6 @@ func TestInputBarCutsALongLabel(t *testing.T) {
 	assert.Contains(t, rows[bar+1], "Enter to confirm", "the status bar should follow the one-row editor bar")
 }
 
-// TestInputBarsShowTheWholePlaceholder opens every input bar empty: it shows
-// its whole placeholder, not the first letter.
 func TestInputBarsShowTheWholePlaceholder(t *testing.T) {
 	for _, tc := range inputBarCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -127,7 +121,7 @@ func TestInputBarsShowTheWholePlaceholder(t *testing.T) {
 			placeholder := tc.input(&app).Placeholder
 			require.NotEmpty(t, placeholder)
 
-			assert.Contains(t, stripAnsi(app.View().Content), placeholder)
+			assert.Contains(t, stripAnsi(app.View().Content), placeholder, "the whole placeholder, not its first letter, should show")
 		})
 	}
 }

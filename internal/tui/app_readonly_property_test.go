@@ -31,38 +31,36 @@ var mutatingModes = map[AppMode]string{
 // mode. ModeConfigError is absent on purpose: a config error at startup
 // enters it, never a key.
 var readOnlyStartStates = []struct {
-	name  string
-	keys  []string // pressed from Normal mode, files panel, first file selected
-	mode  AppMode
-	ready func(App) bool
+	name                  string
+	keysFromTheFilesPanel []string
+	mode                  AppMode
+	ready                 func(App) bool
 }{
 	{name: "normal-files", mode: ModeNormal},
-	{name: "normal-vars", keys: []string{"l"}, mode: ModeNormal, ready: func(a App) bool {
+	{name: "normal-vars", keysFromTheFilesPanel: []string{"l"}, mode: ModeNormal, ready: func(a App) bool {
 		return a.focus == FocusVars && a.varList.SelectedVar() != nil
 	}},
-	{name: "normal-vars-group-header", keys: []string{"l", "g", "k"}, mode: ModeNormal, ready: func(a App) bool {
+	{name: "normal-vars-group-header", keysFromTheFilesPanel: []string{"l", "g", "k"}, mode: ModeNormal, ready: func(a App) bool {
 		return a.focus == FocusVars && a.varList.IsHeaderAtCursor()
 	}},
-	{name: "help", keys: []string{"?"}, mode: ModeHelp},
-	{name: "searching", keys: []string{"l", "/"}, mode: ModeSearching},
-	{name: "compare-select", keys: []string{"c"}, mode: ModeCompareSelect},
-	{name: "comparing", keys: []string{"c", "j", "enter"}, mode: ModeComparing},
-	{name: "matrix-present-cell", keys: []string{"m"}, mode: ModeMatrix, ready: func(a App) bool {
+	{name: "help", keysFromTheFilesPanel: []string{"?"}, mode: ModeHelp},
+	{name: "searching", keysFromTheFilesPanel: []string{"l", "/"}, mode: ModeSearching},
+	{name: "compare-select", keysFromTheFilesPanel: []string{"c"}, mode: ModeCompareSelect},
+	{name: "comparing", keysFromTheFilesPanel: []string{"c", "j", "enter"}, mode: ModeComparing},
+	{name: "matrix-present-cell-to-delete", keysFromTheFilesPanel: []string{"m"}, mode: ModeMatrix, ready: func(a App) bool {
 		return matrixCellPresent(a.matrixView)
 	}},
-	{name: "matrix-missing-cell", keys: []string{"m", "l"}, mode: ModeMatrix, ready: func(a App) bool {
+	{name: "matrix-missing-cell-to-add", keysFromTheFilesPanel: []string{"m", "l"}, mode: ModeMatrix, ready: func(a App) bool {
 		return !matrixCellPresent(a.matrixView)
 	}},
 }
 
-// readOnlyFollowUps are pressed after each binding to walk two-step flows
-// (open an input or prompt, then submit or confirm it).
-var readOnlyFollowUps = []string{"enter", "y"}
+var submitThenConfirmKeys = []string{"enter", "y"}
 
-// readOnlyFixture is written to disk for every case. Its first file has a
-// DB_ group, so grouping shows a header to put the cursor on.
+const envWithAGroupHeader = "# Database\nDB_HOST=localhost\nDB_PORT=5432\nAPI_KEY=secret\n"
+
 var readOnlyFixture = map[string]string{
-	".env":       "# Database\nDB_HOST=localhost\nDB_PORT=5432\nAPI_KEY=secret\n",
+	".env":       envWithAGroupHeader,
 	".env.local": "DB_HOST=remote\nDEBUG=true\n",
 	".env.prod":  "DB_HOST=prod.example.com\nAPI_KEY=prod-secret\n",
 }
@@ -77,13 +75,13 @@ func TestReadOnlyNoKeyChangesFiles(t *testing.T) {
 
 				t.Run(b.field, func(t *testing.T) {
 					app, dir := newReadOnlyDiskApp(t)
-					for _, k := range st.keys {
+					for _, k := range st.keysFromTheFilesPanel {
 						app = press(app, k)
 					}
 					require.Equal(t, st.mode, app.mode, "start state %s not reached", st.name)
 					require.True(t, st.ready == nil || st.ready(app), "start state %s not reached", st.name)
 
-					for _, k := range append([]string{binding.Keys()[0]}, readOnlyFollowUps...) {
+					for _, k := range append([]string{binding.Keys()[0]}, submitThenConfirmKeys...) {
 						app = press(app, k)
 						requireReadOnlyHeld(t, app, dir, k)
 					}
@@ -137,8 +135,6 @@ func readDirContents(t *testing.T, dir string) map[string]string {
 	return got
 }
 
-// matrixCellPresent reports whether the variable under the matrix cursor
-// exists in the file under it: delete needs a present cell, add a missing one.
 func matrixCellPresent(m MatrixModel) bool {
 	cell, _ := m.CursorCell()
 	return cell.Present

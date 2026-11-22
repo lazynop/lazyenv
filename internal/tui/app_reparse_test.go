@@ -97,9 +97,7 @@ func TestEnvFilesComeFromTheParser(t *testing.T) {
 		"get an EnvFile from parser.ParseFile or parser.ParseBytes (reparse for a file already in memory), never build one")
 }
 
-// envFileBuild returns the EnvFile identifier of a model.EnvFile that n
-// builds, local being the file's name for the model package, or nil.
-func envFileBuild(n ast.Node, local string) *ast.Ident {
+func envFileBuild(n ast.Node, modelImportName string) *ast.Ident {
 	var typ ast.Expr
 	switch n := n.(type) {
 	case *ast.CompositeLit:
@@ -111,7 +109,7 @@ func envFileBuild(n ast.Node, local string) *ast.Ident {
 	case *ast.ValueSpec:
 		typ = n.Type
 	}
-	if !isSelector(typ, local, "EnvFile") {
+	if !isSelector(typ, modelImportName, "EnvFile") {
 		return nil
 	}
 	return typ.(*ast.SelectorExpr).Sel

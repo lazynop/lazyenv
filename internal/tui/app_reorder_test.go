@@ -26,8 +26,7 @@ func TestReorderAlphabeticalWritesToDisk(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "A=1\nB=2\nC=3\n", string(data))
 
-	// In-memory file is refreshed from disk in the new order.
-	assert.Equal(t, "A", app.fileList.Files[0].Vars[0].Key)
+	assert.Equal(t, "A", app.fileList.Files[0].Vars[0].Key, "the in-memory file should be re-read from disk in the new order")
 	assert.False(t, app.fileList.Files[0].Modified)
 }
 
@@ -45,11 +44,11 @@ func TestReorderGroupedWritesToDisk(t *testing.T) {
 }
 
 func TestReorderPreservesGitWarning(t *testing.T) {
-	app, _ := newTestAppWithDiskFile(t, "B=2\nA=1\n") // helper sets GitWarning=true
+	app, _ := newTestAppWithDiskFile(t, "B=2\nA=1\n")
 
 	app = press(app, "O", "a", "y")
 
-	assert.True(t, app.fileList.Files[0].GitWarning, "GitWarning must survive a reorder")
+	assert.True(t, app.fileList.Files[0].GitWarning, "GitWarning, which newTestAppWithDiskFile sets, must survive a reorder")
 }
 
 func TestReorderCancelFromMenuLeavesDiskUntouched(t *testing.T) {
@@ -107,15 +106,14 @@ func TestReorderCreatesBackup(t *testing.T) {
 func TestReorderMenuSurvivesStaleClear(t *testing.T) {
 	app, _ := newTestAppWithDiskFile(t, "B=2\nA=1\n")
 
-	// A prior flash (e.g. pressing `o`) scheduled an auto-clear timer.
 	app.statusBar.SetMessage("Sorted alphabetically")
-	staleGen := app.statusBar.msgGen
+	priorFlashGen := app.statusBar.msgGen
 
 	app = press(app, "O")
 	require.Equal(t, ModeReorderMenu, app.mode)
 	require.NotEmpty(t, app.statusBar.Message)
 
-	updated, _ := app.Update(ClearMessageMsg{gen: staleGen})
+	updated, _ := app.Update(ClearMessageMsg{gen: priorFlashGen})
 	app = updated.(App)
 
 	assert.NotEmpty(t, app.statusBar.Message,

@@ -25,14 +25,10 @@ func pressPageStep(t *testing.T, app App, step pageStep, cursorItem func(App) st
 	return app
 }
 
-// pageSteps returns the steps of the page and jump keys through the 40 items
-// named in names, in a view that shows 18 rows from screen row first, the
-// cursor starting on the second item. A page moves the cursor 18 positions and
-// scrolls the view with it, so the cursor keeps its row on screen; where the
-// view cannot scroll a whole page, the cursor still moves a page, stopping at
-// the first or last item.
-func pageSteps(names []string, first int) []pageStep {
-	last := first + 17
+const pageViewRows = 18
+
+func pageStepsFromTheSecondItem(names []string, first int) []pageStep {
+	last := first + pageViewRows - 1
 	return []pageStep{
 		{"pgdown", names[19], first + 1},
 		{"pgup", names[1], first + 1},
@@ -79,12 +75,9 @@ func varCursorItem(a App) string {
 
 func TestPageKeysMoveTheVarListCursor(t *testing.T) {
 	keys := append(numbered("DB_", 20), numbered("API_", 20)...)
-	// Grouped, the positions are the DB header (0), DB_00 to DB_19 (1 to 20),
-	// the API header (21) and API_00 to API_19 (22 to 41); the cursor starts
-	// on DB_00, on the second row.
 	app := press(onVars(resize(newTestApp([]*model.EnvFile{makeTestFile(".env", keys...)}), 80, 24)), "g")
-	require.Equal(t, "DB_00", varCursorItem(app))
-	first, last := panelContentOffsetY, panelContentOffsetY+17
+	require.Equal(t, "DB_00", varCursorItem(app), "grouped, the DB header is position 0 and the cursor starts on DB_00 below it")
+	first, last := panelContentOffsetY, panelContentOffsetY+pageViewRows-1
 	for _, step := range []pageStep{
 		{"pgdown", "DB_18", first + 1},
 		{"pgup", "DB_00", first + 1},
@@ -111,7 +104,7 @@ func TestPageKeysMoveTheFileListCursor(t *testing.T) {
 	}
 	app := press(resize(newTestApp(files), 80, 24), "j")
 	fileCursorItem := func(a App) string { return a.fileList.CursorFile().Name }
-	for _, step := range pageSteps(names, panelContentOffsetY) {
+	for _, step := range pageStepsFromTheSecondItem(names, panelContentOffsetY) {
 		app = pressPageStep(t, app, step, fileCursorItem)
 		assert.Equal(t, step.item, app.fileList.SelectedFile().Name, "after %s, the file at the cursor should be selected", step.key)
 		assert.Contains(t, screenRow(t, app, panelContentOffsetY-1), step.item+"  (1 vars)",
@@ -123,7 +116,7 @@ func TestPageKeysMoveTheCompareCursor(t *testing.T) {
 	app := press(resize(newTestApp(pageKeyFiles()), 80, 24), "c", "j", "enter", "j")
 	require.Equal(t, ModeComparing, app.mode)
 	diffCursorItem := func(a App) string { return a.diffView.Entries[a.diffView.Cursor].Key }
-	for _, step := range pageSteps(pageKeys, panelContentOffsetY) {
+	for _, step := range pageStepsFromTheSecondItem(pageKeys, panelContentOffsetY) {
 		app = pressPageStep(t, app, step, diffCursorItem)
 	}
 }
@@ -136,7 +129,7 @@ func TestPageKeysMoveTheMatrixRowCursor(t *testing.T) {
 		cell, _ := a.matrixView.CursorCell()
 		return cell.Key
 	}
-	for _, step := range pageSteps(pageKeys, matrixContentOffsetY) {
+	for _, step := range pageStepsFromTheSecondItem(pageKeys, matrixContentOffsetY) {
 		app = pressPageStep(t, app, step, matrixCursorItem)
 		assert.Equal(t, 1, app.matrixView.cols.Cursor, "after %s, the column cursor should stay on the second file", step.key)
 	}
@@ -167,8 +160,8 @@ func assertVarListKeptAtTheEnd(t *testing.T, app App, prefix string) {
 
 func TestFileKeysThatKeepTheActiveFileKeepTheVarList(t *testing.T) {
 	for _, tt := range []struct {
-		prefix string // of the active file's variables
-		key    string
+		activePrefix string
+		key          string
 	}{
 		{"FIRST", "up"},
 		{"FIRST", "pgup"},
@@ -178,9 +171,9 @@ func TestFileKeysThatKeepTheActiveFileKeepTheVarList(t *testing.T) {
 		{"LAST", "pgdown"},
 		{"LAST", "end"},
 	} {
-		t.Run(tt.prefix+" "+tt.key, func(t *testing.T) {
-			app := press(varListAtTheEnd(t, tt.prefix), tt.key)
-			assertVarListKeptAtTheEnd(t, app, tt.prefix)
+		t.Run(tt.activePrefix+" "+tt.key, func(t *testing.T) {
+			app := press(varListAtTheEnd(t, tt.activePrefix), tt.key)
+			assertVarListKeptAtTheEnd(t, app, tt.activePrefix)
 		})
 	}
 }

@@ -115,13 +115,12 @@ func TestMatrixAddVariableFlow(t *testing.T) {
 	require.Equal(t, "B", app.matrixView.entries[1].Key)
 	require.False(t, app.matrixView.entries[1].Present[1], "B should be missing in f2")
 
-	updated, cmd := app.Update(keyMsg("a"))
+	updated, focusCmd := app.Update(keyMsg("a"))
 	app = updated.(App)
 	assert.Equal(t, ModeMatrixEditing, app.mode, "pressing 'a' on missing cell should enter editing mode")
 
-	// Process the focus command (textinput.Focus)
-	if cmd != nil {
-		msg := cmd()
+	if focusCmd != nil {
+		msg := focusCmd()
 		if msg != nil {
 			updated, _ = app.Update(msg)
 			app = updated.(App)
@@ -149,8 +148,7 @@ func TestMatrixDeleteVariableConfirm(t *testing.T) {
 	app = updated.(App)
 	require.Equal(t, ModeMatrix, app.mode)
 
-	// Cursor at row=0 (A), col=0 (f1) — A is present
-	require.True(t, app.matrixView.entries[0].Present[0])
+	require.True(t, app.matrixView.entries[0].Present[0], "A should be present in f1, the cell under the cursor")
 
 	updated, _ = app.Update(keyMsg("d"))
 	app = updated.(App)
@@ -174,10 +172,6 @@ func TestMatrixDeleteFlashNamesTheFile(t *testing.T) {
 	assert.Equal(t, "Deleted B from .env.local", app.statusBar.Message)
 }
 
-// TestMatrixDeleteRemovesEveryOccurrenceOfTheKey deletes D from .env.local,
-// which holds it twice with different values, around A (#76): no D is left
-// there, the cell shows ✗ and the flash holds, while .env, the file the var
-// list shows, keeps its own D.
 func TestMatrixDeleteRemovesEveryOccurrenceOfTheKey(t *testing.T) {
 	env := parser.ParseBytes(".env", []byte("A=0\nD=0\n"), config.SecretsConfig{})
 	local := parser.ParseBytes(".env.local", []byte("D=1\nA=2\nD=3\n"), config.SecretsConfig{})
@@ -186,7 +180,7 @@ func TestMatrixDeleteRemovesEveryOccurrenceOfTheKey(t *testing.T) {
 
 	require.Equal(t, ModeMatrix, app.mode)
 	assert.Equal(t, "A=2\n", string(parser.Marshal(local)), "every D should leave .env.local")
-	assert.Equal(t, "A=0\nD=0\n", string(parser.Marshal(env)), ".env should keep its D")
+	assert.Equal(t, "A=0\nD=0\n", string(parser.Marshal(env)), ".env, the file the var list shows, should keep its D")
 	cell, ok := app.matrixView.CursorCell()
 	require.True(t, ok)
 	assert.Equal(t, MatrixCell{Key: "D", File: local, Present: false}, cell, "the cell should show ✗")
@@ -253,8 +247,6 @@ func TestMatrixDeleteThenReturnToNormal(t *testing.T) {
 	updated, _ = app.Update(keyMsg("y"))
 	app = updated.(App)
 
-	// After recompute: A still in entries (exists in f2), cursor at row=0 col=0 = A in f1 (now ✗).
-	// Move to row=1 (B) which is still present in f1.
 	updated, _ = app.Update(keyMsg("j"))
 	app = updated.(App)
 	updated, _ = app.Update(keyMsg("d"))
@@ -263,14 +255,13 @@ func TestMatrixDeleteThenReturnToNormal(t *testing.T) {
 	app = updated.(App)
 
 	assert.Equal(t, ModeMatrix, app.mode)
-	require.Len(t, f1.Vars, 1, "f1 should have 1 var left")
+	require.Len(t, f1.Vars, 1, "deleting A, then B on the next row (A's cell, still listed for f2, now shows ✗), should leave f1 one var")
 
 	assert.NotPanics(t, func() {
 		updated, _ = app.Update(keyMsg("q"))
 		app = updated.(App)
-		// Force a View render to trigger calcColumnWidths
 		app.View()
-	})
+	}, "back in the main view, rendering the var list (calcColumnWidths) after matrix deletes should not panic")
 	assert.Equal(t, ModeNormal, app.mode)
 }
 

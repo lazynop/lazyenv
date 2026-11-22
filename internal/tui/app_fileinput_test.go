@@ -11,14 +11,12 @@ import (
 
 func TestFinaliseNewFileCleanupCancelsCreate(t *testing.T) {
 	app := newTestApp(nil)
-	// A directory where the new file should be: parsing it fails, so
-	// finaliseNewFile cleans it up.
-	path := filepath.Join(t.TempDir(), ".env.new")
-	require.NoError(t, os.Mkdir(path, 0o755))
-	app.sessionStats.RecordCreateScratch(path, nil)
+	unparsableNewFile := filepath.Join(t.TempDir(), ".env.new")
+	require.NoError(t, os.Mkdir(unparsableNewFile, 0o755))
+	app.sessionStats.RecordCreateScratch(unparsableNewFile, nil)
 
-	_, _ = app.finaliseNewFile(path, "Created .env.new")
+	_, _ = app.finaliseNewFile(unparsableNewFile, "Created .env.new")
 
-	assert.NoDirExists(t, path)
+	assert.NoDirExists(t, unparsableNewFile)
 	assert.Empty(t, app.sessionStats.Summary(), "a cleaned-up new file must not be reported as created")
 }

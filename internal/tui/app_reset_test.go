@@ -34,9 +34,8 @@ func newTestAppWithDiskFile(t *testing.T, content string) (App, string) {
 func TestResetPreservesGitWarning(t *testing.T) {
 	app, _ := newTestAppWithDiskFile(t, "FOO=bar\n")
 
-	// Simulate an edit so Modified=true (reset requires it).
 	app.fileList.Files[0].UpdateVar(0, "changed")
-	require.True(t, app.fileList.Files[0].Modified)
+	require.True(t, app.fileList.Files[0].Modified, "reset acts only on a modified file")
 
 	updated, _ := app.Update(keyMsg("r"))
 	app = updated.(App)

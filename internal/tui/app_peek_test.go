@@ -232,8 +232,9 @@ func TestPeekFlattensOriginalControlChars(t *testing.T) {
 }
 
 func TestPeekMasksOriginalOfSecretReAddedWithPlainValue(t *testing.T) {
+	const secretByValueOnly = "ghp_abc123"
 	f := makeTestFile(".env", "GREETING")
-	f.Vars[0].Value, f.Vars[0].IsSecret = "ghp_abc123", true // secret by value only
+	f.Vars[0].Value, f.Vars[0].IsSecret = secretByValueOnly, true
 	vlm := NewVarListModel(config.DefaultConfig().Layout)
 	vlm.SetFile(f)
 	vlm.Focused = true
@@ -249,13 +250,14 @@ func TestPeekMasksOriginalOfSecretReAddedWithPlainValue(t *testing.T) {
 	view := vlm.View(theme)
 
 	assert.Contains(t, view, "was: ••••••••", "peek should mask the original value of a re-added secret")
-	assert.NotContains(t, view, "ghp_abc123", "peek must not reveal the original value of a re-added secret")
+	assert.NotContains(t, view, secretByValueOnly, "peek must not reveal the original value of a re-added secret")
 	assert.Contains(t, view, "hello", "the re-added plain value should stay in clear")
 }
 
 func TestPeekMasksOriginalOfSecretRenamedToPlainKey(t *testing.T) {
-	f := makeTestFile(".env", "API_TOKEN")
-	f.Vars[0].Value, f.Vars[0].IsSecret = "hunter2", true // secret by key only
+	const secretByKeyOnly = "API_TOKEN"
+	f := makeTestFile(".env", secretByKeyOnly)
+	f.Vars[0].Value, f.Vars[0].IsSecret = "hunter2", true
 	app := newTestApp([]*model.EnvFile{f})
 	app.focus = FocusVars
 	f.UpdateVar(0, "x")
@@ -335,14 +337,17 @@ func TestPeekShowsOnDiskOriginalOfEditedThenReAddedVar(t *testing.T) {
 	assert.Contains(t, view, "was: val_FOO", "peek should show the value on disk, not the edit made before the delete")
 }
 
-// peekBottomRowList returns a var list three rows tall over five vars, so the
-// last var only fits on the bottom row.
+const (
+	peekListRows      = 3
+	peekListBottomRow = peekListRows - 1
+)
+
 func peekBottomRowList(f *model.EnvFile) VarListModel {
 	vlm := NewVarListModel(config.DefaultConfig().Layout)
 	vlm.SetFile(f)
 	vlm.Focused = true
 	vlm.Width = 80
-	vlm.Height = panelChromeHeight + 3
+	vlm.Height = panelChromeHeight + peekListRows
 	return vlm
 }
 
@@ -364,9 +369,9 @@ func TestPeekKeepsCursorRowVisibleAtTheBottom(t *testing.T) {
 
 	t.Run("turning peek on", func(t *testing.T) {
 		f := makeTestFile(".env", "A", "B", "C", "D", "E")
-		f.UpdateVar(2, "edited")
+		f.UpdateVar(peekListBottomRow, "edited")
 		vlm := peekBottomRowList(f)
-		vlm.SetCursor(2) // bottom row
+		vlm.SetCursor(peekListBottomRow)
 		vlm.TogglePeek()
 		view := vlm.View(theme)
 		assert.Contains(t, view, "edited")
@@ -377,8 +382,8 @@ func TestPeekKeepsCursorRowVisibleAtTheBottom(t *testing.T) {
 		f := makeTestFile(".env", "A", "B", "C", "D", "E")
 		vlm := peekBottomRowList(f)
 		vlm.Peeking = true
-		vlm.SetCursor(2) // bottom row
-		f.UpdateVar(2, "edited")
+		vlm.SetCursor(peekListBottomRow)
+		f.UpdateVar(peekListBottomRow, "edited")
 		vlm.Refresh()
 		view := vlm.View(theme)
 		assert.Contains(t, view, "edited")
@@ -400,13 +405,11 @@ func TestPeekReservesNoRowWhenUnfocused(t *testing.T) {
 
 const fourRowPanelsHeight = bottomChromeHeight + panelChromeHeight + 4
 
-// peekedBottomRowApp returns an App whose file list has the focus, with peek
-// on and the var cursor scrolled, by mouse wheel, onto the bottom row: F,
-// edited, below C, D and E.
 func peekedBottomRowApp() App {
 	f := makeTestFile(".env", "A", "B", "C", "D", "E", "F")
 	f.UpdateVar(5, "edited")
-	app := press(resize(newTestApp([]*model.EnvFile{f}), 80, fourRowPanelsHeight), "right", "p", "left")
+	peekThenFocusTheFileList := []string{"right", "p", "left"}
+	app := press(resize(newTestApp([]*model.EnvFile{f}), 80, fourRowPanelsHeight), peekThenFocusTheFileList...)
 	for range len(f.Vars) - 1 {
 		updated, _ := app.Update(tea.MouseWheelMsg{X: 60, Y: 3, Button: tea.MouseWheelDown})
 		app = updated.(App)
@@ -417,8 +420,7 @@ func peekedBottomRowApp() App {
 func TestFocusingTheVarListKeepsThePeekedCursorRowVisible(t *testing.T) {
 	focusVars := map[string]tea.Msg{
 		"right key": tea.KeyPressMsg{Code: tea.KeyRight},
-		// The bottom border selects no row, so only the focus changes.
-		"click on the bottom border": tea.MouseClickMsg{X: 60, Y: fourRowPanelsHeight - bottomChromeHeight - 1, Button: tea.MouseLeft},
+		"click on the bottom border, which selects no row": tea.MouseClickMsg{X: 60, Y: fourRowPanelsHeight - bottomChromeHeight - 1, Button: tea.MouseLeft},
 	}
 	for name, focus := range focusVars {
 		t.Run(name, func(t *testing.T) {
@@ -507,10 +509,6 @@ func TestDeletingTheLastVarListsItUnderTheNote(t *testing.T) {
 	assert.Contains(t, rows[note+1], "ONLY  val_ONLY", "the deleted var should be listed below, its key whole")
 }
 
-// TestALongNoMatchesNoteKeepsItsRow searches, for text no var matches, a file
-// whose vars are deleted but one, the query wider than the panel: the query is
-// cut so the note keeps to its one row and its closing quote, and the deleted
-// vars listed below keep the panel inside the terminal.
 func TestALongNoMatchesNoteKeepsItsRow(t *testing.T) {
 	keys := []string{"KEEP"}
 	for i := range 11 {
@@ -520,8 +518,9 @@ func TestALongNoMatchesNoteKeepsItsRow(t *testing.T) {
 	for range 11 {
 		f.DeleteVar(1)
 	}
+	const queryWiderThanThePanel = 60
 	app := press(onVars(resize(newTestApp([]*model.EnvFile{f}), MinTerminalWidth, 16)), "/")
-	app = press(app, slices.Repeat([]string{"z"}, 60)...)
+	app = press(app, slices.Repeat([]string{"z"}, queryWiderThanThePanel)...)
 
 	view := app.View().Content
 	assert.LessOrEqual(t, lipgloss.Height(view), 16, "the screen should fit the terminal")

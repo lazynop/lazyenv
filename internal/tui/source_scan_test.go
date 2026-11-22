@@ -24,14 +24,14 @@ const (
 )
 
 type sourceRef struct {
-	file  string
-	line  int
-	owner string // enclosing top-level function, "" at package level
-	name  string
+	file          string
+	line          int
+	enclosingFunc string
+	name          string
 }
 
 func (r sourceRef) String() string {
-	return fmt.Sprintf("%s:%d: %s in %s", r.file, r.line, r.name, r.owner)
+	return fmt.Sprintf("%s:%d: %s in %s", r.file, r.line, r.name, r.enclosingFunc)
 }
 
 // sourceRefs returns every reference, in this package's non-test .go files, to
@@ -74,9 +74,9 @@ func sourceMatches(t *testing.T, importPath string, match func(n ast.Node, local
 			}
 		}
 		for _, decl := range file.Decls {
-			owner := ""
+			enclosingFunc := ""
 			if fn, ok := decl.(*ast.FuncDecl); ok {
-				owner = fn.Name.Name
+				enclosingFunc = fn.Name.Name
 			}
 			ast.Inspect(decl, func(n ast.Node) bool {
 				id := match(n, local)
@@ -88,10 +88,10 @@ func sourceMatches(t *testing.T, importPath string, match func(n ast.Node, local
 					qualified = path.Base(importPath) + "." + id.Name
 				}
 				refs = append(refs, sourceRef{
-					file:  name,
-					line:  fset.Position(id.Pos()).Line,
-					owner: owner,
-					name:  qualified,
+					file:          name,
+					line:          fset.Position(id.Pos()).Line,
+					enclosingFunc: enclosingFunc,
+					name:          qualified,
 				})
 				return true
 			})
@@ -147,7 +147,7 @@ func assertRefsAllowed(t *testing.T, refs []sourceRef, allowed map[string]string
 	for _, ref := range refs {
 		key := ref.file
 		if _, ok := allowed[key]; !ok {
-			key = ref.file + ":" + ref.owner
+			key = ref.file + ":" + ref.enclosingFunc
 		}
 		if _, ok := allowed[key]; ok {
 			used[key] = true

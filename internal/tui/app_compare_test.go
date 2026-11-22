@@ -105,8 +105,8 @@ func TestCompareToggleSecretsRefiltersKeptSearch(t *testing.T) {
 	app.varList.SetSearch("hunter")
 	require.Equal(t, 1, len(app.varList.displayItems), "the masked secret's value must not match")
 
-	// Compare the files, reveal secrets there, exit.
-	for _, k := range []string{"c", "j", "enter", "ctrl+s", "q"} {
+	compareRevealSecretsAndExit := []string{"c", "j", "enter", "ctrl+s", "q"}
+	for _, k := range compareRevealSecretsAndExit {
 		updated, _ := app.Update(keyMsg(k))
 		app = updated.(App)
 	}
@@ -183,7 +183,7 @@ func TestCompareCopyDeletesEveryOccurrenceOfTheKey(t *testing.T) {
 func TestCompareCopyMasksTheCopiedValueWhenItIsASecret(t *testing.T) {
 	tests := []struct {
 		name, left, right, copyKey string
-		showTarget                 []string // keys that leave compare and show the target file
+		leaveCompareAndShowTarget  []string
 		copied                     string
 		masked                     bool
 	}{
@@ -197,7 +197,7 @@ func TestCompareCopyMasksTheCopiedValueWhenItIsASecret(t *testing.T) {
 			left := parser.ParseBytes(".env", []byte("GREETING="+tt.left+"\n"), config.SecretsConfig{})
 			right := parser.ParseBytes(".env.prod", []byte("GREETING="+tt.right+"\n"), config.SecretsConfig{})
 			app := press(enterCompareMode(t, left, right), tt.copyKey)
-			app = press(app, tt.showTarget...)
+			app = press(app, tt.leaveCompareAndShowTarget...)
 			require.Equal(t, ModeNormal, app.mode)
 
 			view := stripAnsi(app.View().Content)
@@ -358,13 +358,10 @@ func TestCompareEditRefiltersKeptSearch(t *testing.T) {
 }
 
 func TestCompareResetUsesKeyMap(t *testing.T) {
-	// Compare-mode reset must route through keys.Reset, not a hardcoded 'r'.
-	// Rebinding Reset to a different key must take effect.
-	// Reset re-parses from disk, so the files have to live on disk.
 	dir := t.TempDir()
 	pathA := filepath.Join(dir, ".env")
 	pathB := filepath.Join(dir, ".env.prod")
-	require.NoError(t, os.WriteFile(pathA, []byte("FOO=val_FOO\n"), 0644))
+	require.NoError(t, os.WriteFile(pathA, []byte("FOO=val_FOO\n"), 0644), "reset re-parses the files from disk, so they must exist there")
 	require.NoError(t, os.WriteFile(pathB, []byte("FOO=val_FOO\n"), 0644))
 
 	fA, err := parser.ParseFile(pathA, config.SecretsConfig{})
@@ -396,9 +393,8 @@ func TestCompareSaveUsesKeyMap(t *testing.T) {
 
 	app := enterCompareMode(t, fA, fB)
 
-	// Modify file A so handleCompareSave actually has work to do.
 	app.diffView.FileA.UpdateVar(0, "changed")
-	require.True(t, app.diffView.FileA.Modified)
+	require.True(t, app.diffView.FileA.Modified, "handleCompareSave writes only a modified file")
 
 	app.keys.Save = key.NewBinding(key.WithKeys("Z"))
 

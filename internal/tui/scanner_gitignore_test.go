@@ -19,72 +19,64 @@ func initGitRepo(t *testing.T, dir string) {
 
 func TestCheckGitIgnore(t *testing.T) {
 	tests := []struct {
-		name      string
-		fixture   map[string]string
-		scan      string // the directory scanned, relative, from the fixture's root; empty scans the root by its absolute path
-		recursive bool
-		notARepo  bool
-		warned    map[string]bool // each .env file's GitWarning, by its path in the fixture
+		name             string
+		fixture          map[string]string
+		relativeScanDir  string
+		recursive        bool
+		notARepo         bool
+		gitWarningByPath map[string]bool
 	}{
 		{
-			// Each pattern holds a slash, so it matches only the path from
-			// the root: read from services, services/.env would be another.
-			name:    "relative scan of a subdirectory",
-			fixture: map[string]string{"services/.env": "FOO=bar\n", "services/.env.local": "LOCAL=1\n", ".gitignore": "services/.env\n"},
-			scan:    "services",
-			warned:  map[string]bool{"services/.env": false, "services/.env.local": true},
+			name:             "relative scan of a subdirectory, against root-anchored patterns",
+			fixture:          map[string]string{"services/.env": "FOO=bar\n", "services/.env.local": "LOCAL=1\n", ".gitignore": "services/.env\n"},
+			relativeScanDir:  "services",
+			gitWarningByPath: map[string]bool{"services/.env": false, "services/.env.local": true},
 		},
 		{
-			// The first file found sits in a, and b/.env lies outside it.
-			name:      "relative recursive scan from a root without .env",
-			fixture:   map[string]string{"a/.env": "A=1\n", "b/.env": "B=1\n", "c/.env": "C=1\n", ".gitignore": "/a/.env\n/b/.env\n"},
-			scan:      ".",
-			recursive: true,
-			warned:    map[string]bool{"a/.env": false, "b/.env": false, "c/.env": true},
+			name:             "relative recursive scan from a root without .env, with a match outside the first file's directory",
+			fixture:          map[string]string{"a/.env": "A=1\n", "b/.env": "B=1\n", "c/.env": "C=1\n", ".gitignore": "/a/.env\n/b/.env\n"},
+			relativeScanDir:  ".",
+			recursive:        true,
+			gitWarningByPath: map[string]bool{"a/.env": false, "b/.env": false, "c/.env": true},
 		},
 		{
-			name:    "marks uncovered files",
-			fixture: map[string]string{".env": "FOO=bar\n", ".env.local": "LOCAL=1\n", ".gitignore": ".env.local\n"},
-			warned:  map[string]bool{".env": true, ".env.local": false},
+			name:             "marks uncovered files",
+			fixture:          map[string]string{".env": "FOO=bar\n", ".env.local": "LOCAL=1\n", ".gitignore": ".env.local\n"},
+			gitWarningByPath: map[string]bool{".env": true, ".env.local": false},
 		},
 		{
-			name:    "all ignored",
-			fixture: map[string]string{".env": "FOO=bar\n", ".env.local": "LOCAL=1\n", ".gitignore": ".env\n.env.local\n"},
-			warned:  map[string]bool{".env": false, ".env.local": false},
+			name:             "all ignored",
+			fixture:          map[string]string{".env": "FOO=bar\n", ".env.local": "LOCAL=1\n", ".gitignore": ".env\n.env.local\n"},
+			gitWarningByPath: map[string]bool{".env": false, ".env.local": false},
 		},
 		{
-			name:     "not a git repo does nothing",
-			fixture:  map[string]string{".env": "FOO=bar\n"},
-			notARepo: true,
-			warned:   map[string]bool{".env": false},
+			name:             "not a git repo does nothing",
+			fixture:          map[string]string{".env": "FOO=bar\n"},
+			notARepo:         true,
+			gitWarningByPath: map[string]bool{".env": false},
 		},
 		{
 			name: "wildcard",
 			fixture: map[string]string{
 				".env": "FOO=bar\n", ".env.local": "LOCAL=1\n", ".env.production": "PROD=1\n", ".gitignore": ".env*\n",
 			},
-			warned: map[string]bool{".env": false, ".env.local": false, ".env.production": false},
+			gitWarningByPath: map[string]bool{".env": false, ".env.local": false, ".env.production": false},
 		},
 		{
-			name:      "subdirectory",
-			fixture:   map[string]string{".env": "FOO=bar\n", "sub/.env": "SUB=1\n", ".gitignore": ".env\n"},
-			recursive: true,
-			warned:    map[string]bool{".env": false, "sub/.env": false},
+			name:             "subdirectory",
+			fixture:          map[string]string{".env": "FOO=bar\n", "sub/.env": "SUB=1\n", ".gitignore": ".env\n"},
+			recursive:        true,
+			gitWarningByPath: map[string]bool{".env": false, "sub/.env": false},
 		},
 		{
-			// git reads a path that starts with ':' as pathspec magic: it
-			// would match :x.env as x.env, and fail on :!y.env's exclude.
-			name:    "names git reads as pathspec magic",
-			fixture: map[string]string{":x.env": "X=1\n", ":!y.env": "Y=1\n", ".env.local": "LOCAL=1\n", ".gitignore": ":x.env\n:!y.env\n"},
-			warned:  map[string]bool{":x.env": false, ":!y.env": false, ".env.local": true},
+			name:             "names git reads as pathspec magic: :x.env as x.env, :!y.env as an exclude",
+			fixture:          map[string]string{":x.env": "X=1\n", ":!y.env": "Y=1\n", ".env.local": "LOCAL=1\n", ".gitignore": ":x.env\n:!y.env\n"},
+			gitWarningByPath: map[string]bool{":x.env": false, ":!y.env": false, ".env.local": true},
 		},
 		{
-			// One path per line, git would quote a path holding a control
-			// character, or a non-ASCII byte while core.quotePath is on (the
-			// default).
-			name:    "names git quotes",
-			fixture: map[string]string{".env.café": "FOO=bar\n", ".env.\nx": "FOO=bar\n", ".gitignore": ".env*\n"},
-			warned:  map[string]bool{".env.café": false, ".env.\nx": false},
+			name:             "names git quotes: a control character, or non-ASCII while core.quotePath is on",
+			fixture:          map[string]string{".env.café": "FOO=bar\n", ".env.\nx": "FOO=bar\n", ".gitignore": ".env*\n"},
+			gitWarningByPath: map[string]bool{".env.café": false, ".env.\nx": false},
 		},
 	}
 	for _, tt := range tests {
@@ -94,9 +86,9 @@ func TestCheckGitIgnore(t *testing.T) {
 				initGitRepo(t, dir)
 			}
 			scan := dir
-			if tt.scan != "" {
+			if tt.relativeScanDir != "" {
 				t.Chdir(dir)
-				scan = tt.scan
+				scan = tt.relativeScanDir
 			}
 			files, err := ScanDir(scan, tt.recursive, config.DefaultConfig().Files, config.SecretsConfig{})
 			require.NoError(t, err)
@@ -112,12 +104,11 @@ func TestCheckGitIgnore(t *testing.T) {
 				}
 				warned[rel] = f.GitWarning
 			}
-			assert.Equal(t, tt.warned, warned)
+			assert.Equal(t, tt.gitWarningByPath, warned)
 		})
 	}
 }
 
-func TestCheckGitIgnoreEmptyFiles(t *testing.T) {
+func TestCheckGitIgnoreOnNoFilesDoesNotPanic(t *testing.T) {
 	CheckGitIgnore(nil)
-	// Should not panic
 }

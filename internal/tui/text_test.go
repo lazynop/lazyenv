@@ -67,13 +67,12 @@ func TestTruncate(t *testing.T) {
 		{"arrow_truncate", "line1↵line2", 7, "line1.."},
 		{"tab_arrow_truncate", "a⇥b⇥c⇥d", 5, "a⇥b.."},
 
-		// ── Degenerate cases: maxCols ≤ 2 has no room for ".." ellipsis ──
 		{"maxlen_zero", "anything", 0, ""},
 		{"maxlen_negative", "anything", -5, ""},
-		{"maxlen_one_ascii", "hello", 1, "h"},
-		{"maxlen_two_ascii", "hello", 2, "he"},
-		{"maxlen_two_bullets", "•••••", 2, "••"},
-		{"maxlen_one_bullet", "•••••", 1, "•"},
+		{"maxlen_one_ascii_no_room_for_dots", "hello", 1, "h"},
+		{"maxlen_two_ascii_no_room_for_dots", "hello", 2, "he"},
+		{"maxlen_two_bullets_no_room_for_dots", "•••••", 2, "••"},
+		{"maxlen_one_bullet_no_room_for_dots", "•••••", 1, "•"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -82,12 +81,10 @@ func TestTruncate(t *testing.T) {
 	}
 }
 
-// TestTruncateMeasuresLikeLipgloss fits strings whose width go-runewidth and
-// lipgloss disagree on. truncate must measure them as lipgloss draws them, or
-// a row it fits wraps (an emoji with VS16 takes two columns, not one) or loses
-// text that fits (a ZWJ sequence is one two-column cluster).
-func TestTruncateMeasuresLikeLipgloss(t *testing.T) {
-	for _, s := range []string{strings.Repeat("\u2764\uFE0F", 10), "\U0001F468\u200D\U0001F469\u200D\U0001F467 family"} {
+func TestTruncateMeasuresLikeLipglossSoRowsNeitherWrapNorLoseText(t *testing.T) {
+	emojiWithVS16TakingTwoColumns := strings.Repeat("\u2764\uFE0F", 10)
+	zwjSequenceDrawnAsOneCluster := "\U0001F468\u200D\U0001F469\u200D\U0001F467 family"
+	for _, s := range []string{emojiWithVS16TakingTwoColumns, zwjSequenceDrawnAsOneCluster} {
 		width := lipgloss.Width(s)
 		for cols := 1; cols < width; cols++ {
 			assert.LessOrEqual(t, lipgloss.Width(truncate(s, cols)), cols, "%q in %d columns", s, cols)
@@ -97,16 +94,16 @@ func TestTruncateMeasuresLikeLipgloss(t *testing.T) {
 }
 
 func TestDisplayTextNeutralizesTerminalControls(t *testing.T) {
-	for _, value := range []string{
-		"\x1b]52;c;ZXZpbA==\x07", // OSC 52: write the clipboard
-		"\x1b[2J",                // clear the screen
-		"\x9b31m",                // C1 CSI: red text
-		"bell\x07 del\x7f nul\x00",
+	for _, tt := range []struct{ does, value string }{
+		{"OSC 52 writes the clipboard", "\x1b]52;c;ZXZpbA==\x07"},
+		{"CSI clears the screen", "\x1b[2J"},
+		{"C1 CSI turns text red", "\x9b31m"},
+		{"bell, del and nul", "bell\x07 del\x7f nul\x00"},
 	} {
-		shown := displayText(value, false)
-		assert.True(t, utf8.ValidString(shown), "%q is drawn as %q", value, shown)
+		shown := displayText(tt.value, false)
+		assert.True(t, utf8.ValidString(shown), "%s: %q is drawn as %q", tt.does, tt.value, shown)
 		assert.False(t, strings.ContainsFunc(shown, func(r rune) bool {
 			return r < 0x20 || (r >= 0x7f && r < 0xa0)
-		}), "%q is drawn as %q", value, shown)
+		}), "%s: %q is drawn as %q", tt.does, tt.value, shown)
 	}
 }

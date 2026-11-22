@@ -76,11 +76,6 @@ var helpSectionStates = map[string]struct {
 	}},
 }
 
-// panelReady returns the precondition of a panel state: the panel named by
-// focus has the focus and its cursor sits between two items, and the active
-// file is modified or not as modified says. In the variables panel the cursor
-// is also on a variable; when modified is set, on an edited one rather than a
-// new one, so peek shows an original value ("was: ...").
 func panelReady(focus Focus, modified bool) func(App) bool {
 	return func(a App) bool {
 		if a.focus != focus || a.varList.File == nil || a.varList.File.Modified != modified {
@@ -90,8 +85,12 @@ func panelReady(focus Focus, modified bool) func(App) bool {
 			return fileCursorBetween(a)
 		}
 		v := a.varList.SelectedVar()
-		return v != nil && (!modified || (v.Modified && !v.IsNew)) && varCursorBetween(a)
+		return v != nil && (!modified || peekShowsAnOriginal(v)) && varCursorBetween(a)
 	}
+}
+
+func peekShowsAnOriginal(v *model.EnvVar) bool {
+	return v.Modified && !v.IsNew
 }
 
 func fileCursorBetween(a App) bool {
@@ -117,20 +116,21 @@ var helpKeysFixture = map[string]string{
 
 func TestHelpScreenKeysActInTheirScreen(t *testing.T) {
 	requireHelpStatesReached(t)
-	inputBar := map[*helpState]bool{} // whether each state has an input bar, once opened
+	stateHasInputBar := map[*helpState]bool{}
 	hasInputBar := func(state *helpState) bool {
-		if bar, ok := inputBar[state]; ok {
+		if bar, ok := stateHasInputBar[state]; ok {
 			return bar
 		}
-		inputBar[state] = typesText(openHelpState(t, state))
-		return inputBar[state]
+		stateHasInputBar[state] = typesText(openHelpState(t, state))
+		return stateHasInputBar[state]
 	}
 
 	names := helpKeyNames(t)
 	shown := map[string]bool{}
 	for _, section := range helpContents(DefaultKeyMap(), false) {
-		if strings.Contains(section.title, "Indicators") {
-			continue // glyphs, not keys
+		listsGlyphsNotKeys := strings.Contains(section.title, "Indicators")
+		if listsGlyphsNotKeys {
+			continue
 		}
 		shown[section.title] = true
 		mapping, ok := helpSectionStates[section.title]
@@ -208,25 +208,15 @@ func requireHelpStatesReached(t *testing.T) {
 	}
 }
 
-// reachedHelpStates holds the states openHelpState has reached once, checking
-// every key on the way: later opens press the same keys unchecked, since
-// checking one renders the screen twice.
-var reachedHelpStates = map[*helpState]bool{}
+var statesWithKeysChecked = map[*helpState]bool{}
 
-// openHelpState loads helpKeysFixture from disk into an app the way the
-// program does, then presses state's keys and checks the state is reached:
-// each key acts without a warning (checked on the state's first open), and
-// the app ends in state's mode and meets its precondition. A flash a key sets
-// is cleared before the next key, as its timeout would: it is told from a
-// persistent prompt by the command it returns, the clear's tick, where every
-// persistent prompt returns none.
 func openHelpState(t *testing.T, state *helpState) App {
 	t.Helper()
 	app := loadFixtureApp(t, config.DefaultConfig(), helpKeysFixture, 120, 24)
 	for _, k := range state.keys {
 		gen := app.statusBar.msgGen
 		var cmd tea.Cmd
-		if reachedHelpStates[state] {
+		if statesWithKeysChecked[state] {
 			var updated tea.Model
 			updated, cmd = app.Update(keyMsg(k))
 			app = updated.(App)
@@ -235,14 +225,15 @@ func openHelpState(t *testing.T, state *helpState) App {
 			app, cmd, acted = helpKeyActs(app, keyMsg(k))
 			require.True(t, acted, "pressing %s on the way to the %s does nothing", k, state.name)
 		}
-		if cmd != nil && app.statusBar.msgGen != gen {
+		flashScheduledItsClear := cmd != nil && app.statusBar.msgGen != gen
+		if flashScheduledItsClear {
 			updated, _ := app.Update(ClearMessageMsg{gen: app.statusBar.msgGen})
 			app = updated.(App)
 		}
 	}
 	require.Equal(t, state.mode, app.mode, "pressing %v does not reach the %s", state.keys, state.name)
 	require.True(t, state.ready == nil || state.ready(app), "pressing %v does not reach the %s", state.keys, state.name)
-	reachedHelpStates[state] = true
+	statesWithKeysChecked[state] = true
 	return app
 }
 
