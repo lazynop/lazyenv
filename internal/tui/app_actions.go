@@ -3,6 +3,7 @@ package tui
 import (
 	tea "charm.land/bubbletea/v2"
 
+	"github.com/lazynop/lazyenv/internal/model"
 	"github.com/lazynop/lazyenv/internal/parser"
 )
 
@@ -17,6 +18,11 @@ func (a App) backupIfNeeded(path string) string {
 	return ""
 }
 
+func (a App) backupAndSave(f *model.EnvFile) (warn string, err error) {
+	warn = a.backupIfNeeded(f.Path)
+	return warn, a.saveFile(f)
+}
+
 func (a App) handleSave() (App, tea.Cmd) {
 	f := a.varList.File
 	if f == nil {
@@ -26,9 +32,8 @@ func (a App) handleSave() (App, tea.Cmd) {
 		return a, a.flashMessage("No changes to save")
 	}
 
-	warn := a.backupIfNeeded(f.Path)
-
-	if err := a.saveFile(f); err != nil {
+	warn, err := a.backupAndSave(f)
+	if err != nil {
 		return a, a.flashError("Error saving: " + err.Error())
 	}
 

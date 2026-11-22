@@ -120,8 +120,9 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 	var warn strings.Builder
 	for _, f := range []*model.EnvFile{a.diffView.FileA, a.diffView.FileB} {
 		if f != nil && f.Modified {
-			warn.WriteString(a.backupIfNeeded(f.Path))
-			if err := a.saveFile(f); err != nil {
+			backupWarn, err := a.backupAndSave(f)
+			warn.WriteString(backupWarn)
+			if err != nil {
 				return a, a.flashError("Error saving " + f.Name + ": " + err.Error())
 			}
 			refreshed, err := a.refreshFile(f)
