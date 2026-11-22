@@ -16,7 +16,6 @@ func TestComputeGroups_EmptyList(t *testing.T) {
 }
 
 func TestComputeGroups_ThresholdEnforced(t *testing.T) {
-	// All prefixes are unique (count==1) → single Ungrouped group with all vars.
 	vars := []EnvVar{
 		{Key: "A_X"},
 		{Key: "B_Y"},
@@ -49,7 +48,6 @@ func TestComputeGroups_SimpleGrouping(t *testing.T) {
 }
 
 func TestComputeGroups_PreservesFileOrder(t *testing.T) {
-	// REDIS appears first (index 0), DB second (index 1) → groups in that order.
 	vars := []EnvVar{
 		{Key: "REDIS_URL"},
 		{Key: "DB_HOST"},
@@ -82,7 +80,6 @@ func TestComputeGroups_NoUnderscore_Ungrouped(t *testing.T) {
 }
 
 func TestComputeGroups_LeadingUnderscore(t *testing.T) {
-	// Vars beginning with '_' have prefix "" → Ungrouped, regardless of count.
 	vars := []EnvVar{
 		{Key: "_HIDDEN"},
 		{Key: "_SECRET"},
@@ -100,7 +97,6 @@ func TestComputeGroups_LeadingUnderscore(t *testing.T) {
 }
 
 func TestComputeGroups_DuplicateKeys(t *testing.T) {
-	// Duplicate keys are kept in the same group, in insertion order.
 	vars := []EnvVar{
 		{Key: "DB_HOST", Value: "a"},
 		{Key: "DB_HOST", Value: "b"},
@@ -114,7 +110,6 @@ func TestComputeGroups_DuplicateKeys(t *testing.T) {
 }
 
 func TestComputeGroups_CaseSensitive(t *testing.T) {
-	// "DB" and "db" are distinct prefixes; with one each, both go to Ungrouped.
 	vars := []EnvVar{
 		{Key: "DB_HOST"},
 		{Key: "db_host"},
@@ -140,8 +135,6 @@ func TestComputeGroups_AllInOneGroup_NoUngrouped(t *testing.T) {
 }
 
 func TestComputeGroups_InterleavedGroups(t *testing.T) {
-	// Vars from the same group are NOT contiguous in the file. The group
-	// still collects them all, in their original order.
 	vars := []EnvVar{
 		{Key: "DB_HOST"},
 		{Key: "REDIS_URL"},

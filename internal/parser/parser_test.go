@@ -174,7 +174,7 @@ func TestAddVar(t *testing.T) {
 
 func TestDeleteVar(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO=bar\nBAZ=qux\nQUX=end\n"), config.SecretsConfig{})
-	ef.DeleteVar(1) // delete BAZ
+	ef.DeleteVar(1)
 
 	require.Len(t, ef.Vars, 2)
 	assert.Equal(t, "FOO=bar\nQUX=end\n", string(Marshal(ef)))
@@ -188,8 +188,6 @@ func TestSecretDetection(t *testing.T) {
 	assert.False(t, ef.Vars[2].IsSecret, "NORMAL should not be secret")
 }
 
-// TestParseKeepsTheSecretsConfig parses with a custom [secrets] config: the
-// file keeps the config its variables were judged with.
 func TestParseKeepsTheSecretsConfig(t *testing.T) {
 	secrets := config.SecretsConfig{ExtraPatterns: []string{"_HOST"}, SafePatterns: []string{"PUBLIC_"}}
 
@@ -261,7 +259,6 @@ func TestIsValidKey(t *testing.T) {
 		{"my-var", true},
 		{"FOO_BAR_123", true},
 
-		// Invalid cases
 		{"", false},
 		{"1STARTS_WITH_DIGIT", false},
 		{"has space", false},
@@ -307,13 +304,10 @@ func TestProcessEscapesEdgeCases(t *testing.T) {
 	// Trailing backslash (no char after it) — preserved as-is
 	assert.Equal(t, "end\\", processEscapes(`end\`))
 
-	// \r escape
 	assert.Equal(t, "\r", processEscapes(`\r`))
 
-	// \t escape
 	assert.Equal(t, "\t", processEscapes(`\t`))
 
-	// Mixed escapes
 	assert.Equal(t, "a\nb\\c\"d", processEscapes(`a\nb\\c\"d`))
 }
 
@@ -371,8 +365,6 @@ func TestMultilineSingleQuotedFollowedByVar(t *testing.T) {
 }
 
 func TestMultilineSingleQuotedNoPhantomVariable(t *testing.T) {
-	// A continuation line containing an '=' must NOT be parsed as a separate
-	// phantom variable. It is part of the single-quoted value.
 	ef := ParseBytes(".env", []byte("NOTE='Short summary\nitem=value'\n"), config.SecretsConfig{})
 
 	require.Len(t, ef.Vars, 1)
@@ -396,9 +388,6 @@ func TestModifiedMultilineSingleQuotedWriteBack(t *testing.T) {
 }
 
 func TestMultilineSingleQuotedCompareValuesDiffer(t *testing.T) {
-	// Regression test for the compare false-negative: two single-quoted
-	// multiline values that share the first line but differ on the second
-	// must end up with different Value fields after parse.
 	efA := ParseBytes("a.env", []byte("MSG='first line\nsecond A'\n"), config.SecretsConfig{})
 	efB := ParseBytes("b.env", []byte("MSG='first line\nsecond B'\n"), config.SecretsConfig{})
 

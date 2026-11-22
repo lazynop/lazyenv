@@ -102,27 +102,22 @@ func TestReconstructLineDoubleQuotedEscape(t *testing.T) {
 func TestMarshalPreservesUnmodified(t *testing.T) {
 	input := "# Header comment\n\nFOO=bar\nBAZ=qux\n"
 	ef := ParseBytes(".env", []byte(input), config.SecretsConfig{})
-	// No modifications — output should be identical
 	assert.Equal(t, input, string(Marshal(ef)))
 }
 
 func TestRoundTripPreservesNoTrailingNewline(t *testing.T) {
-	// A file without a trailing newline must round-trip without one being
-	// silently injected.
 	src := []byte("FOO=bar")
 	ef := ParseBytes(".env", src, config.SecretsConfig{})
 	assert.Equal(t, src, Marshal(ef))
 }
 
 func TestRoundTripPreservesTrailingNewline(t *testing.T) {
-	// The common case: a file with a trailing newline keeps it on save.
 	src := []byte("FOO=bar\n")
 	ef := ParseBytes(".env", src, config.SecretsConfig{})
 	assert.Equal(t, src, Marshal(ef))
 }
 
 func TestRoundTripEmptyFile(t *testing.T) {
-	// A 0-byte file must round-trip as 0 bytes, not be turned into "\n".
 	src := []byte{}
 	ef := ParseBytes(".env", src, config.SecretsConfig{})
 	assert.Equal(t, src, Marshal(ef))
@@ -177,15 +172,12 @@ func TestWriteFileAtomicOverwrites(t *testing.T) {
 }
 
 func TestWriteFileAtomicTempCreateFails(t *testing.T) {
-	// A non-existent parent directory makes CreateTemp fail.
 	err := WriteFileAtomic("/nonexistent/dir/.env", []byte("x"), 0644)
 	require.Error(t, err)
 	assert.ErrorContains(t, err, "creating temp file")
 }
 
 func TestWriteFileAtomicRenameFailsCleansUpTemp(t *testing.T) {
-	// Renaming a file onto an existing directory fails (EISDIR); the temp
-	// file created alongside it must not leak.
 	dir := t.TempDir()
 	target := filepath.Join(dir, "iam-a-dir")
 	require.NoError(t, os.Mkdir(target, 0755))
@@ -198,7 +190,6 @@ func TestWriteFileAtomicRenameFailsCleansUpTemp(t *testing.T) {
 
 func TestWriteFileNoPath(t *testing.T) {
 	ef := ParseBytes(".env", []byte("FOO=bar\n"), config.SecretsConfig{})
-	// Path is empty by default from ParseBytes
 	err := WriteFile(ef)
 	require.Error(t, err)
 	assert.ErrorContains(t, err, "no file path set")
@@ -272,15 +263,12 @@ func TestNormalizeForWriteIdempotent(t *testing.T) {
 	ef.UpdateVar(0, "it's a trap")
 
 	NormalizeForWrite(ef)
-	NormalizeForWrite(ef) // second call must be a no-op
+	NormalizeForWrite(ef)
 
 	assert.Equal(t, model.QuoteDouble, ef.Vars[0].QuoteStyle)
 }
 
 func TestNormalizeForWriteQuoteNoneControlChars(t *testing.T) {
-	// Reproduces the compare-copy bug: a var added via AddVar (QuoteNone
-	// by default) with any of \n, \r, \t in the value must round-trip
-	// through marshal + re-parse without losing data past the first line.
 	cases := []struct {
 		name  string
 		value string

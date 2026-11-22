@@ -9,11 +9,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/config"
 )
 
-// Regression tests for unquoted values that cannot survive a write/re-parse
-// round trip unless NormalizeForWrite upgrades them to a quoted style.
-// Each case feeds raw user input through the same path the TUI editor uses
-// (UpdateVar on a QuoteNone var), serializes, re-parses, and requires the
-// value — and the rest of the file — to come back intact.
 func TestWriteRoundTripPreservesUnsafeUnquotedValues(t *testing.T) {
 	tests := []struct {
 		name  string

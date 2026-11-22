@@ -25,10 +25,6 @@ import (
 	"github.com/lazynop/lazyenv/internal/tui"
 )
 
-// The tests in this file keep the docs in step with the code: each one fails
-// when a doc names something the code no longer has, or when the code gains
-// something its doc leaves out.
-
 var (
 	codeSpanRe   = regexp.MustCompile("`([^`]+)`")
 	wordRe       = regexp.MustCompile(`[A-Za-z_]\w*`)
@@ -46,10 +42,6 @@ var (
 	helpRowRe = regexp.MustCompile(`^ {2}(\S.*\S|\S) {2,}\S`)
 )
 
-// TestUsageDocumentsEveryFlag checks docs/usage.md against the Kong flags.
-// The flags table lists every spelling of every flag and nothing else. Every
-// flag either maps to a real config key in the flag → config key table, or is
-// named in the sentence on flags without a config equivalent.
 func TestUsageDocumentsEveryFlag(t *testing.T) {
 	parser, err := kong.New(&cli)
 	require.NoError(t, err)
@@ -62,7 +54,7 @@ func TestUsageDocumentsEveryFlag(t *testing.T) {
 		if f.Short != 0 {
 			spellings["-"+string(f.Short)] = f.Name
 		}
-		if f.Tag.Negatable != "" { // negatable:"" adds --no-<name>
+		if f.Tag.Negatable != "" {
 			spellings["--no-"+f.Name] = f.Name
 		}
 	}
@@ -99,22 +91,16 @@ func TestUsageDocumentsEveryFlag(t *testing.T) {
 	}
 }
 
-// layoutMinimums are the layout options the TUI raises to a minimum, which
-// docs/configuration.md states as "Minimum `N`".
 var layoutMinimums = map[string]int{
 	"file-list-width":  config.FileListMinWidth,
 	"var-list-padding": config.VarListMinPadding,
 	"diff-padding":     config.DiffMinPadding,
 }
 
-// TestConfigurationDocumentsDefaults checks the options tables of
-// docs/configuration.md: every option has a row, each Default matches
-// DefaultConfig, and each "Minimum `N`" matches the minimum the TUI applies.
 func TestConfigurationDocumentsDefaults(t *testing.T) {
 	cfg := config.DefaultConfig()
 	defaults := map[string]reflect.Value{} // option name → default
 	configDefaults(t, reflect.ValueOf(cfg), defaults)
-	// A nil *bool stands for a default; compare the doc against the value it means.
 	defaults["value_heuristic"] = reflect.ValueOf(cfg.Secrets.ValueHeuristicEnabled())
 
 	documented := map[string]bool{}
@@ -129,7 +115,7 @@ func TestConfigurationDocumentsDefaults(t *testing.T) {
 			if !assert.True(t, ok, "docs/configuration.md documents option %s, which Config does not have", name) {
 				continue
 			}
-			for _, span := range codeSpans(row[1]) { // none for "See description"
+			for _, span := range codeSpans(row[1]) {
 				assertDocDefault(t, name, span, want)
 			}
 			if m := minimumRe.FindStringSubmatch(row[2]); m != nil {
@@ -146,9 +132,6 @@ func TestConfigurationDocumentsDefaults(t *testing.T) {
 	}
 }
 
-// configDefaults collects the value of every option in v (a Config or one of
-// its tables) by option name, skipping [colors]: its defaults come from the
-// built-in themes, see TestConfigurationDocumentsThemeColors.
 func configDefaults(t *testing.T, v reflect.Value, out map[string]reflect.Value) {
 	t.Helper()
 	for field := range v.Type().Fields() {
@@ -166,8 +149,6 @@ func configDefaults(t *testing.T, v reflect.Value, out map[string]reflect.Value)
 	}
 }
 
-// assertDocDefault decodes span, a TOML value from the Default column, as the
-// option's type and compares it to want.
 func assertDocDefault(t *testing.T, name, span string, want reflect.Value) {
 	t.Helper()
 	holder := reflect.New(reflect.StructOf([]reflect.StructField{{Name: "V", Type: want.Type(), Tag: `toml:"v"`}}))
@@ -176,7 +157,7 @@ func assertDocDefault(t *testing.T, name, span string, want reflect.Value) {
 	}
 	got := holder.Elem().Field(0)
 	if want.Kind() == reflect.Slice && want.Len() == 0 && got.Len() == 0 {
-		return // nil and [] are both "empty"
+		return
 	}
 	assert.Equal(t, want.Interface(), got.Interface(), "docs/configuration.md states the wrong default for %s", name)
 }
@@ -210,7 +191,6 @@ func TestConfigurationDocumentsThemeColors(t *testing.T) {
 	}
 }
 
-// colorsByKey returns each color of c by its config key.
 func colorsByKey(c config.ColorConfig) map[string]string {
 	colors := map[string]string{}
 	v := reflect.ValueOf(c)
@@ -221,9 +201,6 @@ func colorsByKey(c config.ColorConfig) map[string]string {
 	return colors
 }
 
-// TestDocsStateCurrentCounts checks the numbers the docs quote against their
-// source: the built-in theme count, the minimum Go version and the minimum
-// terminal size, which docs/installation.md must state.
 func TestDocsStateCurrentCounts(t *testing.T) {
 	m := goModRe.FindStringSubmatch(readFile(t, "go.mod"))
 	require.NotNil(t, m, "go.mod has no go directive")
@@ -251,9 +228,6 @@ func TestDocsStateCurrentCounts(t *testing.T) {
 	}
 }
 
-// TestDocsStateTheVarListMinimum checks that each place describing
-// file-list-width, --help included, states the width the TUI leaves the
-// variables panel.
 func TestDocsStateTheVarListMinimum(t *testing.T) {
 	flag, ok := reflect.TypeOf(cli).FieldByName("FileListWidth")
 	require.True(t, ok, "cli has no FileListWidth field to read the --file-list-width help from")
@@ -269,9 +243,6 @@ func TestDocsStateTheVarListMinimum(t *testing.T) {
 	}
 }
 
-// helpDocSections maps each section of docs/keybindings.md that lists keys to
-// the help screen sections describing the same screen. Both main-view tables
-// list the keys shared by the two panels, which the help groups apart.
 var helpDocSections = map[string][]string{
 	"Main view — File list (left panel)":      {"Files panel", "Both panels"},
 	"Main view — Variable list (right panel)": {"Variables panel", "Both panels"},
@@ -282,10 +253,6 @@ var helpDocSections = map[string][]string{
 	"Help screen (`?`)":                       {"This help"},
 }
 
-// TestHelpScreenMatchesKeybindingsDoc checks that each screen's keys are the
-// same in the in-app help and in docs/keybindings.md: every key section of the
-// help maps to a doc section in helpDocSections, and every doc section that
-// lists keys is either mapped there or exempted in docOnlySections.
 func TestHelpScreenMatchesKeybindingsDoc(t *testing.T) {
 	help := map[string][][]string{}
 	for _, section := range helpScreenSections(t) {
@@ -325,14 +292,10 @@ func TestHelpScreenMatchesKeybindingsDoc(t *testing.T) {
 	}
 }
 
-// docOnlySections are the docs/keybindings.md sections that list keys the
-// help screen does not cover, each with the reason.
 var docOnlySections = map[string]string{
 	"Theme preview (`--themes`)": "a separate program mode with no help screen",
 }
 
-// docSectionKeys returns the keys the "## heading" section of
-// docs/keybindings.md names in its Key, Confirm and Cancel columns.
 func docSectionKeys(t *testing.T, doc, heading string) map[string]bool {
 	t.Helper()
 	keys := map[string]bool{}
@@ -354,25 +317,16 @@ func docSectionKeys(t *testing.T, doc, heading string) map[string]bool {
 	return keys
 }
 
-// helpSection is one section of the in-app help screen that lists keys: its
-// title and, for each row, the keys it names.
 type helpSection struct {
 	title string
 	rows  [][]string
 }
 
-// helpScreenWidth and helpScreenHeight are the terminal size
-// helpScreenSections renders the help at: wide enough that no row wraps, tall
-// enough that it does not scroll.
 const (
 	helpScreenWidth  = 300
 	helpScreenHeight = 200
 )
 
-// helpScreenSections renders the in-app help screen (?) on a terminal large
-// enough to show it unscrolled, with no row wrapped, and returns its key
-// sections, in order. The indicator sections list glyphs, not keys, and are
-// left out.
 func helpScreenSections(t *testing.T) []helpSection {
 	t.Helper()
 	screen := helpScreen(helpScreenHeight)
@@ -408,8 +362,6 @@ func helpScreenSections(t *testing.T) []helpSection {
 	return slices.DeleteFunc(sections, func(s helpSection) bool { return len(s.rows) == 0 })
 }
 
-// helpScreen renders the in-app help screen (?) at helpScreenWidth and height,
-// as plain text.
 func helpScreen(height int) string {
 	var app tea.Model = tui.NewApp(config.DefaultConfig(), tui.StartupMessages{})
 	app, _ = app.Update(tea.WindowSizeMsg{Width: helpScreenWidth, Height: height})
@@ -417,9 +369,6 @@ func helpScreen(height int) string {
 	return ansi.Strip(app.View().Content)
 }
 
-// helpKeys splits a help-screen key column into keys: alternatives are
-// joined by " / " ("q / Ctrl+C"), the columns of a pair by spaces and its
-// halves by "/" ("↑/↓  k/j"), and "/" alone is the slash key.
 func helpKeys(column string) []string {
 	var keys []string
 	for _, alternative := range strings.Split(column, " / ") {
@@ -438,9 +387,6 @@ func helpKeys(column string) []string {
 	return keys
 }
 
-// TestKeybindingsDocumentsEveryKey checks docs/keybindings.md against the
-// KeyMap: every bound key has a row in some Key column, and every key in a Key
-// column is bound.
 func TestKeybindingsDocumentsEveryKey(t *testing.T) {
 	documented := map[string]bool{}
 	for _, table := range markdownTables(readFile(t, "docs/keybindings.md")) {
@@ -470,8 +416,6 @@ func TestKeybindingsDocumentsEveryKey(t *testing.T) {
 	}
 }
 
-// notInRepo are the code spans CODING_STANDARDS.md uses on purpose although
-// the repo holds nothing by that name, each with the reason.
 var notInRepo = map[string]string{
 	"foo_test.go":         "an example file name",
 	"vX.Y.Z":              "the shape of a version tag",
@@ -480,11 +424,6 @@ var notInRepo = map[string]string{
 	"site/lazyenv/media/": "a path in the lazynop.dev repo",
 }
 
-// TestCodingStandardsNamesExistingCode checks that what CODING_STANDARDS.md
-// names in code spans still exists: paths and file names on disk, module paths
-// in go.mod, just recipes in the justfile, identifiers in the Go sources or
-// build files. Spans that are none of these (snippets, flags, TOML) are not
-// checked.
 func TestCodingStandardsNamesExistingCode(t *testing.T) {
 	repo := newRepoIndex(t)
 	doc := readFile(t, "CODING_STANDARDS.md")
@@ -501,7 +440,6 @@ func TestCodingStandardsNamesExistingCode(t *testing.T) {
 	}
 }
 
-// repoIndex is what the repo holds, to check the names a doc uses against.
 type repoIndex struct {
 	words   map[string]bool // identifier-like words of the Go sources and build files
 	files   map[string]bool // base names of the files at the root and under internal/
@@ -549,8 +487,6 @@ func newRepoIndex(t *testing.T) repoIndex {
 	return repo
 }
 
-// missing returns why ref names nothing in the repo, or "" when it names
-// something that exists or is not a name (a snippet, a flag, TOML).
 func (r repoIndex) missing(ref string) string {
 	if m := justRefRe.FindStringSubmatch(ref); m != nil {
 		if !r.recipes[m[1]] {
@@ -574,8 +510,6 @@ func (r repoIndex) missing(ref string) string {
 	return ""
 }
 
-// missingPath is missing for a ref with a slash: a module path or a path in
-// the repo.
 func (r repoIndex) missingPath(ref string) string {
 	if strings.Contains(ref, "...") || strings.ContainsAny(ref, " \"") {
 		return "" // an elided path or a snippet
@@ -613,8 +547,6 @@ func (r repoIndex) missingIdent(chain string, prefix bool) string {
 	return ""
 }
 
-// configKeys returns the dotted path of every key the config file accepts
-// under table ("" is the top level), recursing into nested tables.
 func configKeys(table string, typ reflect.Type) map[string]bool {
 	keys := map[string]bool{}
 	for field := range typ.Fields() {
@@ -635,14 +567,11 @@ func configKeys(table string, typ reflect.Type) map[string]bool {
 	return keys
 }
 
-// docTable is one Markdown table: its header cells and the cells of each body
-// row, trimmed.
 type docTable struct {
 	header []string
 	rows   [][]string
 }
 
-// markdownTables returns every table in doc, in order.
 func markdownTables(doc string) []docTable {
 	var tables []docTable
 	inTable := false
@@ -669,8 +598,6 @@ func markdownTables(doc string) []docTable {
 	return tables
 }
 
-// markdownTable returns the body rows of the first table in doc with a column
-// named header.
 func markdownTable(t *testing.T, doc, header string) [][]string {
 	t.Helper()
 	for _, table := range markdownTables(doc) {
@@ -682,7 +609,6 @@ func markdownTable(t *testing.T, doc, header string) [][]string {
 	return nil
 }
 
-// lineStartingWith returns the first line of doc that starts with prefix.
 func lineStartingWith(t *testing.T, doc, prefix string) string {
 	t.Helper()
 	for line := range strings.Lines(doc) {
@@ -694,8 +620,6 @@ func lineStartingWith(t *testing.T, doc, prefix string) string {
 	return ""
 }
 
-// markdownSection returns the body of the "## heading" section of doc, up to
-// the next heading of the same level.
 func markdownSection(t *testing.T, doc, heading string) string {
 	t.Helper()
 	_, body, ok := strings.Cut(doc, "\n## "+heading+"\n")
@@ -704,7 +628,6 @@ func markdownSection(t *testing.T, doc, heading string) string {
 	return body
 }
 
-// codeSpans returns the text of each `code` span in s.
 func codeSpans(s string) []string {
 	var spans []string
 	for _, m := range codeSpanRe.FindAllStringSubmatch(s, -1) {

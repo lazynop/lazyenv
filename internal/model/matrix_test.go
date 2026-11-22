@@ -20,7 +20,6 @@ func TestComputeMatrixSingleFile(t *testing.T) {
 	f.Name = "one.env"
 	entries := ComputeMatrix([]*EnvFile{f})
 	require.Len(t, entries, 2)
-	// alphabetical order
 	assert.Equal(t, "A", entries[0].Key)
 	assert.Equal(t, "B", entries[1].Key)
 	assert.Equal(t, []bool{true}, entries[0].Present)
@@ -40,7 +39,6 @@ func TestComputeMatrixMultipleFiles(t *testing.T) {
 	entries := ComputeMatrix([]*EnvFile{f1, f2})
 	require.Len(t, entries, 3)
 
-	// alphabetical: API_KEY, DB_HOST, REDIS_URL
 	assert.Equal(t, "API_KEY", entries[0].Key)
 	assert.Equal(t, []bool{true, false}, entries[0].Present)
 
@@ -52,7 +50,6 @@ func TestComputeMatrixMultipleFiles(t *testing.T) {
 }
 
 func TestComputeMatrixDuplicateKeys(t *testing.T) {
-	// A key a file holds twice is one row, present in that file
 	f := newTestFile(
 		EnvVar{Key: "A", Value: "first"},
 		EnvVar{Key: "A", Value: "second"},
@@ -71,7 +68,6 @@ func TestSortByCompleteness(t *testing.T) {
 		{Key: "SOME", Present: []bool{true, false, true}},
 	}
 	SortEntries(entries, SortCompleteness)
-	// most gaps first: NONE (0/3), SOME (2/3), ALL (3/3)
 	assert.Equal(t, "NONE", entries[0].Key)
 	assert.Equal(t, "SOME", entries[1].Key)
 	assert.Equal(t, "ALL", entries[2].Key)

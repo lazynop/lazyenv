@@ -173,10 +173,6 @@ func TestDeleteVarOutOfBounds(t *testing.T) {
 	assert.False(t, ef.Modified)
 }
 
-// TestDeleteKeyRemovesEveryOccurrence deletes A, held twice with different
-// values, on the first and the third of four lines: both A go, with their
-// lines, the one in effect listed first among the deleted, and the other
-// variables keep their lines in order.
 func TestDeleteKeyRemovesEveryOccurrence(t *testing.T) {
 	ef := newTestFile(
 		EnvVar{Key: "A", Value: "1"},
@@ -193,8 +189,6 @@ func TestDeleteKeyRemovesEveryOccurrence(t *testing.T) {
 	assert.True(t, ef.Modified)
 }
 
-// TestDeleteKeyWithoutTheKeyLeavesTheFile deletes a key the file does not
-// hold: the file stays as it was, unmodified.
 func TestDeleteKeyWithoutTheKeyLeavesTheFile(t *testing.T) {
 	ef := newTestFile(EnvVar{Key: "A", Value: "1"})
 
@@ -205,9 +199,6 @@ func TestDeleteKeyWithoutTheKeyLeavesTheFile(t *testing.T) {
 	assert.False(t, ef.Modified)
 }
 
-// TestTakingAKeyBackAfterDeleteKeyRevivesTheVarInEffect deletes A, held twice,
-// then adds it again: the new A takes the original of the A in effect, the
-// last, and the other A stays listed as deleted.
 func TestTakingAKeyBackAfterDeleteKeyRevivesTheVarInEffect(t *testing.T) {
 	ef := newTestFile(
 		EnvVar{Key: "A", Value: "1"},
@@ -224,8 +215,6 @@ func TestTakingAKeyBackAfterDeleteKeyRevivesTheVarInEffect(t *testing.T) {
 	assert.Equal(t, []string{"A=1"}, deletedVars(ef))
 }
 
-// lineVars returns the variables ef's lines hold, in line order, each as
-// KEY=value, read through the lines' VarIdx.
 func lineVars(ef *EnvFile) []string {
 	var vars []string
 	for _, l := range ef.Lines {
@@ -283,8 +272,6 @@ func TestChangingASecretKeepsItsOriginalSecret(t *testing.T) {
 	}
 }
 
-// TestChangesDetectPlaceholders edits and adds values: a variable is a
-// placeholder exactly when its new value is one.
 func TestChangesDetectPlaceholders(t *testing.T) {
 	ef := newTestFile(
 		EnvVar{Key: "API_URL", Value: "changeme", IsPlaceholder: true},
@@ -300,9 +287,6 @@ func TestChangesDetectPlaceholders(t *testing.T) {
 	assert.True(t, ef.Vars[2].IsPlaceholder, "an added placeholder should have it")
 }
 
-// TestChangesMarkDuplicates renames, adds or deletes a variable of a file
-// holding A twice and B: a variable is a duplicate exactly when another one
-// shares its key.
 func TestChangesMarkDuplicates(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -370,9 +354,6 @@ func TestChangesDetectSecretsWithTheFileConfig(t *testing.T) {
 	}
 }
 
-// revivals are the ways a variable revives API_KEY, deleted from the file
-// deletedAPIKeyFile returns: adding the key again, renaming BAR onto it, or
-// renaming onto it a variable added this session.
 var revivals = map[string]func(ef *EnvFile){
 	"add":    func(ef *EnvFile) { ef.AddVar("API_KEY", "2") },
 	"rename": func(ef *EnvFile) { ef.RenameVar(0, "API_KEY") }, // BAR
@@ -382,8 +363,6 @@ var revivals = map[string]func(ef *EnvFile){
 	},
 }
 
-// deletedAPIKeyFile returns a file that held API_KEY=1, a secret, and BAR=2,
-// with API_KEY deleted.
 func deletedAPIKeyFile() *EnvFile {
 	ef := newTestFile(
 		EnvVar{Key: "API_KEY", Value: "1", IsSecret: true},
@@ -393,8 +372,6 @@ func deletedAPIKeyFile() *EnvFile {
 	return ef
 }
 
-// deletedVars returns the variables ef lists as deleted, in order, each as
-// KEY=value.
 func deletedVars(ef *EnvFile) []string {
 	var deleted []string
 	for _, d := range ef.DeletedVars {
@@ -403,9 +380,6 @@ func deletedVars(ef *EnvFile) []string {
 	return deleted
 }
 
-// TestTakingADeletedKeyRevivesIt gives a key deleted this session back to a
-// variable: the deleted entry goes, and the variable takes the deleted one's
-// original and is no longer new, as the deleted one was not.
 func TestTakingADeletedKeyRevivesIt(t *testing.T) {
 	for name, revive := range revivals {
 		t.Run(name, func(t *testing.T) {
@@ -425,10 +399,6 @@ func TestTakingADeletedKeyRevivesIt(t *testing.T) {
 	}
 }
 
-// TestRenamingARevivedVarOffItsKeyUndoesTheRevival renames the variable that
-// revived a deleted key to another key, then to a third one: the deleted
-// variable is listed again, once, and the variable gets back the original it
-// had before the revival.
 func TestRenamingARevivedVarOffItsKeyUndoesTheRevival(t *testing.T) {
 	want := map[string]struct {
 		original string
@@ -456,9 +426,6 @@ func TestRenamingARevivedVarOffItsKeyUndoesTheRevival(t *testing.T) {
 	}
 }
 
-// TestDeletingARevivedVarUndoesTheRevival deletes the variable that revived a
-// deleted key: the variable deleted first is listed again with its value, and
-// the reviving one is listed after it only if it was not added this session.
 func TestDeletingARevivedVarUndoesTheRevival(t *testing.T) {
 	want := map[string][]string{
 		"add":                             {"API_KEY=1"},
@@ -477,8 +444,6 @@ func TestDeletingARevivedVarUndoesTheRevival(t *testing.T) {
 	}
 }
 
-// TestUndoingARevivalListsTheDeletedVarInItsPlace deletes FOO, then BAZ,
-// renames BAR to FOO and back: FOO is listed again before BAZ, where it was.
 func TestUndoingARevivalListsTheDeletedVarInItsPlace(t *testing.T) {
 	ef := newTestFile(
 		EnvVar{Key: "FOO", Value: "1"},
@@ -517,9 +482,6 @@ func TestUndoingRevivalsInReverseOrderListsBothDeletedVars(t *testing.T) {
 	assert.Equal(t, []string{"FOO=1", "BAZ=3"}, deletedVars(ef))
 }
 
-// TestRenameVarOntoAKeyNotDeletedKeepsItsOwnOriginal renames a variable onto a
-// key no deleted variable holds, while another key is deleted: the variable's
-// original is its own value, and the deleted variable stays.
 func TestRenameVarOntoAKeyNotDeletedKeepsItsOwnOriginal(t *testing.T) {
 	ef := deletedAPIKeyFile()
 
@@ -601,8 +563,6 @@ func parseTestEnv(content string) *EnvFile {
 	return ef
 }
 
-// dumpLines reconstructs the file text from RawLine.Content, mirroring what a
-// write would produce for unmodified variables.
 func dumpLines(ef *EnvFile) string {
 	parts := make([]string, len(ef.Lines))
 	for i, l := range ef.Lines {

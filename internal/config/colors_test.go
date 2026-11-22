@@ -10,13 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestColorFieldsWiredEverywhere walks ColorConfig by reflection, so a new
-// color field is covered without editing this test: every built-in theme must
-// set it, an explicit [colors] override must win over the theme, and
-// validate() must reject an invalid value for it.
 func TestColorFieldsWiredEverywhere(t *testing.T) {
-	// The default-* themes mirror BuildTheme's built-in defaults, which paint
-	// no background: their bg stays empty so the terminal's own shows through.
 	terminalNativeBg := map[string]bool{"default-dark": true, "default-light": true}
 	for name := range terminalNativeBg {
 		require.Contains(t, ThemeNames(), name, "stale terminal-native bg exception")

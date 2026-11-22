@@ -16,10 +16,6 @@ var (
 	exampleKeyRe   = regexp.MustCompile(`^#?\s*([\w-]+)\s*=`)
 )
 
-// TestExampleDocumentsEveryKey checks that examples/config/full.toml, the
-// reference users copy from, documents every key Config reads: each table as
-// a [table] header, each field as a "key = ..." line under its table
-// (commented out counts).
 func TestExampleDocumentsEveryKey(t *testing.T) {
 	data, err := os.ReadFile("../../examples/config/full.toml")
 	require.NoError(t, err)
@@ -27,8 +23,6 @@ func TestExampleDocumentsEveryKey(t *testing.T) {
 	checkKeysDocumented(t, exampleKeys(string(data)), "", reflect.TypeFor[Config]())
 }
 
-// checkKeysDocumented runs one subtest per toml key of typ, found under table,
-// recursing into nested tables.
 func checkKeysDocumented(t *testing.T, documented map[string]bool, table string, typ reflect.Type) {
 	t.Helper()
 	for field := range typ.Fields() {
@@ -70,9 +64,6 @@ func checkKeysDocumented(t *testing.T, documented map[string]bool, table string,
 	}
 }
 
-// exampleKeys returns the key paths a TOML example documents: each [table]
-// header as "table", each "key = ..." line, commented out or not, as "key" at
-// the top level or "table.key" below a header.
 func exampleKeys(src string) map[string]bool {
 	keys := map[string]bool{}
 	table := ""
@@ -90,7 +81,6 @@ func exampleKeys(src string) map[string]bool {
 	return keys
 }
 
-// joinKey returns the dotted path of key inside table ("" is the top level).
 func joinKey(table, key string) string {
 	if table == "" {
 		return key

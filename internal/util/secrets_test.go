@@ -91,8 +91,6 @@ func TestIsSecretCaseInsensitiveKey(t *testing.T) {
 	assert.True(t, IsSecret("db_Password", "", defaultCfg))
 }
 
-// --- New tests for entropy and config ---
-
 func TestShannonEntropy(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -118,7 +116,6 @@ func TestEntropyFalsePositiveFix(t *testing.T) {
 	// The original bug: hostname flagged as secret due to length+alphanumeric mix
 	assert.False(t, IsSecret("DATABASE_HOST", "db-prod-ap-03.internal", defaultCfg),
 		"hostname should not be flagged as secret")
-	// Short URLs are not flagged
 	assert.False(t, IsSecret("API_ENDPOINT", "https://api.example.com/v2", defaultCfg),
 		"short URL should not be flagged as secret")
 	// Very long URLs with high entropy may be flagged — users can use safe_patterns
@@ -129,7 +126,7 @@ func TestEntropyFalsePositiveFix(t *testing.T) {
 
 func TestIsSecretSafePatterns(t *testing.T) {
 	cfg := config.SecretsConfig{
-		SafePatterns: []string{"_TOKEN"}, // override built-in suffix
+		SafePatterns: []string{"_TOKEN"},
 	}
 	// AUTH_TOKEN matches built-in _TOKEN suffix, but safe_patterns overrides
 	assert.False(t, IsSecret("AUTH_TOKEN", "", cfg))
@@ -139,7 +136,7 @@ func TestIsSecretSafePatterns(t *testing.T) {
 
 func TestIsSecretSafePatternsExact(t *testing.T) {
 	cfg := config.SecretsConfig{
-		SafePatterns: []string{"PASSWORD"}, // exact match
+		SafePatterns: []string{"PASSWORD"},
 	}
 	assert.False(t, IsSecret("PASSWORD", "", cfg))
 	assert.True(t, IsSecret("DB_PASSWORD", "", cfg)) // suffix still matches built-in
@@ -147,7 +144,7 @@ func TestIsSecretSafePatternsExact(t *testing.T) {
 
 func TestIsSecretSafePatternsPrefix(t *testing.T) {
 	cfg := config.SecretsConfig{
-		SafePatterns: []string{"SECRET_"}, // prefix match
+		SafePatterns: []string{"SECRET_"},
 	}
 	assert.False(t, IsSecret("SECRET_VALUE", "", cfg))
 	assert.True(t, IsSecret("MY_SECRET", "", cfg)) // suffix still matches built-in
@@ -186,7 +183,6 @@ func TestIsSecretSafePatternsOverrideExtraPatterns(t *testing.T) {
 		SafePatterns:  []string{"_ENDPOINT"},
 		ExtraPatterns: []string{"_ENDPOINT"},
 	}
-	// Safe takes precedence over extra
 	assert.False(t, IsSecret("API_ENDPOINT", "", cfg))
 }
 

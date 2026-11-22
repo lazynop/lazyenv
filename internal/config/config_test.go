@@ -324,7 +324,6 @@ func TestThemeNames(t *testing.T) {
 	assert.Contains(t, names, "ayu-mirage")
 	assert.Contains(t, names, "synthwave-84")
 	assert.Contains(t, names, "vesper")
-	// verify sorted
 	for i := 1; i < len(names); i++ {
 		assert.True(t, names[i-1] < names[i], "themes should be sorted")
 	}
@@ -419,14 +418,11 @@ func TestDefaultSecretsConfig(t *testing.T) {
 }
 
 func TestValueHeuristicEnabled(t *testing.T) {
-	// nil → true (default)
 	assert.True(t, SecretsConfig{}.ValueHeuristicEnabled())
 
-	// explicit true
 	v := true
 	assert.True(t, SecretsConfig{ValueHeuristic: &v}.ValueHeuristicEnabled())
 
-	// explicit false
 	f := false
 	assert.False(t, SecretsConfig{ValueHeuristic: &f}.ValueHeuristicEnabled())
 }
@@ -522,9 +518,6 @@ func TestIsValidColor(t *testing.T) {
 		{"hex missing prefix", "FF0000", false},
 		{"ansi out of range", "256", false},
 		{"ansi negative", "-1", false},
-		// Whitespace: TOML usually trims surrounding spaces, but if a value
-		// somehow keeps them (multiline string, escaped, etc.) we must reject
-		// it rather than silently pass an unparseable color to lipgloss.
 		{"hex leading space", " #FF0000", false},
 		{"hex trailing space", "#FF0000 ", false},
 		{"ansi leading space", " 127", false},
