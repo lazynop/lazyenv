@@ -245,10 +245,10 @@ func startAddWithKey(t *testing.T, f *model.EnvFile, key string) App {
 	return updated.(App)
 }
 
-// TestAddVariableRejectsAnInvalidKey checks that the add flow refuses a
-// key the parser would drop when it reads the file back, so a saved variable
-// never vanishes on reload.
-func TestAddVariableRejectsAnInvalidKey(t *testing.T) {
+// TestAddVariableRejectsAKeyTheParserWouldDropOnReload checks that the add
+// flow refuses a key the parser would drop when it reads the file back, so a
+// saved variable never vanishes on reload.
+func TestAddVariableRejectsAKeyTheParserWouldDropOnReload(t *testing.T) {
 	for _, key := range []string{"has space", "CAFÉ", "日本", "1ST"} {
 		f := makeTestFile(".env", "EXISTING")
 		app := startAddWithKey(t, f, key)

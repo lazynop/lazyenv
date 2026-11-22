@@ -364,7 +364,7 @@ func TestConfigErrorScreenCutsAnErrorTallerThanTheTerminal(t *testing.T) {
 	assert.True(t, strings.HasPrefix(rows[slices.Index(rows, ".lazyenvrc")+1], "config error: toml:"), "the first error starts the list")
 }
 
-func TestConfigErrorScreenCutsAPathTooLong(t *testing.T) {
+func TestConfigErrorScreenCapsALongPathSoAnErrorStillFits(t *testing.T) {
 	path := "/home/user/" + strings.Repeat("a-deeply-nested-directory/", 12) + "lazyenv/config.toml"
 
 	rows := smallestConfigErrorRows(t, StartupMessages{ConfigPath: path, ConfigErrors: []string{`invalid sort value: "random"`}})
