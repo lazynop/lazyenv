@@ -50,7 +50,6 @@
 2 internal/tui/chrome_test.go
 42 internal/tui/diffview_test.go
 22 internal/tui/filelist_test.go
-3 internal/tui/help.go
 67 internal/tui/help_keys_test.go
 23 internal/tui/help_test.go
 20 internal/tui/keys_test.go

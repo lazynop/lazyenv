@@ -263,12 +263,9 @@ func (m *HelpViewModel) View(theme Theme) string {
 	}
 	footer := theme.MutedItem.Render(hint)
 
-	// The newline that ends the text, then the gap rows. The outer style only
-	// pads and sizes text already styled, so it must set no colors of its own
-	// (CODING_STANDARDS.md § Pitfalls, nested ANSI).
 	return lipgloss.NewStyle().
 		Width(m.width).
 		Height(m.height).
 		Padding(helpPaddingHeight, helpPaddingWidth).
-		Render(text + strings.Repeat("\n", helpFooterGapHeight+1) + footer)
+		Render(text + "\n" + strings.Repeat("\n", helpFooterGapHeight) + footer)
 }
