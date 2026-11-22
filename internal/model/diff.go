@@ -1,7 +1,5 @@
 package model
 
-import "slices"
-
 // DiffStatus represents the type of difference between two env files.
 type DiffStatus int
 
@@ -41,15 +39,6 @@ func ComputeDiff(a, b *EnvFile) []DiffEntry {
 	seen := make(map[string]bool)
 	var entries []DiffEntry
 
-	for _, v := range slices.Backward(a.Vars) {
-		key := v.Key
-		if seen[key] {
-			continue
-		}
-		seen[key] = true
-	}
-
-	seen = make(map[string]bool)
 	for _, v := range a.Vars {
 		if seen[v.Key] {
 			continue
