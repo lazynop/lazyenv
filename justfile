@@ -7,7 +7,7 @@ tool := "go tool -modfile=tools/go.mod"
 gci_flags := "-s standard -s default -s 'prefix(github.com/lazynop/lazyenv)' --skip-generated --skip-vendor"
 
 # Go sources to format: explicit paths, so hidden dirs (e.g. .claude/worktrees) are never walked
-go_src := "*.go internal/"
+go_src := "*.go internal/ tools/commentlint/"
 
 # VHS on the fresh bin/lazyenv, without XDG config; the tapes also point HOME
 # at a missing /home/demo, so recordings show the defaults whoever runs them
@@ -29,6 +29,7 @@ run *args:
 # Run all tests
 test:
     go test -race ./...
+    go -C tools test ./commentlint
 
 # Run tests with coverage report
 test-cover:
@@ -95,7 +96,12 @@ lint:
     dead=$({{tool}} deadcode -test ./...) || rc=1
     [ -z "$dead" ] || { echo "$dead"; rc=1; }
     {{tool}} exhaustive -e ./... || rc=1
+    go -C tools run ./commentlint .. || rc=1
     exit $rc
+
+# Rewrite the comment ratchet baseline after deleting comments; never to allow new ones
+comment-baseline:
+    go -C tools run ./commentlint -update ..
 
 # Check formatting and import grouping (CI-friendly, fails if unformatted)
 fmt-check:
