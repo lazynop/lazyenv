@@ -80,7 +80,8 @@ func (a App) finaliseNewFile(path string, successMsg string) (tea.Model, tea.Cmd
 	ef, err := parser.ParseFile(path, a.config.Secrets)
 	if err != nil {
 		_ = a.deleteFile(path)
-		return a, a.flashError("Error parsing new file: " + err.Error())
+		cmd := a.flashError("Error parsing new file: " + err.Error())
+		return a, cmd
 	}
 
 	if !a.config.NoGitCheck {
@@ -91,5 +92,6 @@ func (a App) finaliseNewFile(path string, successMsg string) (tea.Model, tea.Cmd
 	a.fileList.MoveCursorTo(len(a.fileList.Files) - 1)
 	a.selectCursorFile()
 
-	return a, a.flashMessage(successMsg)
+	cmd := a.flashMessage(successMsg)
+	return a, cmd
 }

@@ -45,7 +45,8 @@ func (a App) confirmTemplateFile() (tea.Model, tea.Cmd) {
 	}
 
 	if err := a.templateFile(destPath, []byte(b.String()), src); err != nil {
-		return a, a.flashError("Error creating file: " + err.Error())
+		cmd = a.flashError("Error creating file: " + err.Error())
+		return a, cmd
 	}
 
 	return a.finaliseNewFile(destPath, "Template from "+src.Name+" → "+name)

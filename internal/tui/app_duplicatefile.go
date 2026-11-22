@@ -25,11 +25,13 @@ func (a App) confirmDuplicateFile() (tea.Model, tea.Cmd) {
 
 	data, err := os.ReadFile(src.Path)
 	if err != nil {
-		return a, a.flashError("Error reading source: " + err.Error())
+		cmd = a.flashError("Error reading source: " + err.Error())
+		return a, cmd
 	}
 
 	if err := a.duplicateFile(destPath, data, src.Path); err != nil {
-		return a, a.flashError("Error creating file: " + err.Error())
+		cmd = a.flashError("Error creating file: " + err.Error())
+		return a, cmd
 	}
 
 	return a.finaliseNewFile(destPath, "Duplicated "+src.Name+" → "+name)

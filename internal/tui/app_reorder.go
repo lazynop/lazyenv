@@ -15,7 +15,8 @@ func (a App) startReorder() (tea.Model, tea.Cmd) {
 	}
 	f := a.varList.File
 	if f == nil || len(f.Vars) < 2 {
-		return a, a.flashWarning("Need at least 2 variables to reorder")
+		cmd := a.flashWarning("Need at least 2 variables to reorder")
+		return a, cmd
 	}
 	a.mode = ModeReorderMenu
 	a.statusBar.SetMessage(fmt.Sprintf("Reorder on disk: [%s]alphabetical  [%s]grouped  [%s]cancel",
@@ -34,7 +35,8 @@ func (a App) handleReorderMenuKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
-		return a, a.flashMessage("Reorder cancelled")
+		cmd := a.flashMessage("Reorder cancelled")
+		return a, cmd
 	case key.Matches(msg, a.keys.ReorderAlpha):
 		a.reorderMode = model.ReorderAlphabetical
 		return a.promptReorderConfirm()
@@ -49,7 +51,8 @@ func (a App) promptReorderConfirm() (tea.Model, tea.Cmd) {
 	f := a.varList.File
 	if f == nil {
 		a.mode = ModeNormal
-		return a, a.flashWarning("No file selected")
+		cmd := a.flashWarning("No file selected")
+		return a, cmd
 	}
 	a.mode = ModeReorderConfirm
 	a.statusBar.SetMessage(fmt.Sprintf(
@@ -65,7 +68,8 @@ func (a App) handleReorderConfirmKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		return a.executeReorder()
 	case key.Matches(msg, a.keys.Deny), key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
-		return a, a.flashMessage("Reorder cancelled")
+		cmd := a.flashMessage("Reorder cancelled")
+		return a, cmd
 	}
 	return a, nil
 }
@@ -74,12 +78,14 @@ func (a App) executeReorder() (tea.Model, tea.Cmd) {
 	a.mode = ModeNormal
 	f := a.varList.File
 	if f == nil {
-		return a, a.flashWarning("No file selected")
+		cmd := a.flashWarning("No file selected")
+		return a, cmd
 	}
 
 	f.Reorder(a.reorderMode)
 
-	return a, a.saveAndRefresh(f, "Reordered", fmt.Sprintf("Reordered %s (%s)", f.Name, a.reorderModeLabel()))
+	cmd := a.saveAndRefresh(f, "Reordered", fmt.Sprintf("Reordered %s (%s)", f.Name, a.reorderModeLabel()))
+	return a, cmd
 }
 
 func (a App) reorderModeLabel() string {

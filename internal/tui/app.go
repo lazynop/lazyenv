@@ -229,7 +229,8 @@ func (a App) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, nil
 
 	case StartupNoticeMsg:
-		return a, a.flashError(msg.Notice)
+		cmd := a.flashError(msg.Notice)
+		return a, cmd
 
 	case FilesLoadedMsg:
 		if msg.Err != nil {
@@ -375,7 +376,8 @@ func bothPanelsHelp(keys KeyMap) helpSection {
 
 func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bool) {
 	if a.config.ReadOnly && key.Matches(msg, a.keys.CreateFile, a.keys.DuplicateFile, a.keys.DeleteFile, a.keys.RenameFile, a.keys.TemplateFile) {
-		return a, a.readOnlyFlash(), true
+		cmd := a.readOnlyFlash()
+		return a, cmd, true
 	}
 
 	switch {
@@ -403,7 +405,8 @@ func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bo
 
 	case key.Matches(msg, a.keys.DeleteFile):
 		if f.Modified {
-			return a, a.flashWarning("Save or reset changes before deleting"), true
+			cmd := a.flashWarning("Save or reset changes before deleting")
+			return a, cmd, true
 		}
 		a.mode = ModeConfirmDeleteFile
 		a.statusBar.SetAlert("Delete " + f.Name + "? " + yesNo(a.keys))
@@ -411,7 +414,8 @@ func (a App) handleNormalFileAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, bo
 
 	case key.Matches(msg, a.keys.RenameFile):
 		if f.Modified {
-			return a, a.flashWarning("Save or reset changes before renaming"), true
+			cmd := a.flashWarning("Save or reset changes before renaming")
+			return a, cmd, true
 		}
 		a.fileOpSource = f
 		a.fileInput.SetValue(f.Name)
@@ -432,7 +436,8 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 	switch {
 	case key.Matches(msg, a.keys.Compare):
 		if len(a.fileList.Files) < 2 {
-			return a, a.flashWarning("Need at least 2 files to compare")
+			cmd := a.flashWarning("Need at least 2 files to compare")
+			return a, cmd
 		}
 		f := a.fileList.SelectedFile()
 		if f == nil {
@@ -458,15 +463,19 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 	case key.Matches(msg, a.keys.ToggleSecret):
 		a.varList.SetShowSecrets(!a.varList.ShowSecrets)
 		if a.varList.ShowSecrets {
-			return a, a.flashMessage("Secrets revealed")
+			cmd := a.flashMessage("Secrets revealed")
+			return a, cmd
 		}
-		return a, a.flashMessage("Secrets hidden")
+		cmd := a.flashMessage("Secrets hidden")
+		return a, cmd
 
 	case key.Matches(msg, a.keys.ToggleSort):
-		return a, a.toggleSortFlash()
+		cmd := a.toggleSortFlash()
+		return a, cmd
 
 	case key.Matches(msg, a.keys.ToggleGroup):
-		return a, a.toggleGroupingFlash()
+		cmd := a.toggleGroupingFlash()
+		return a, cmd
 
 	case key.Matches(msg, a.keys.Search):
 		a.mode = ModeSearching
@@ -475,7 +484,8 @@ func (a App) handleNormalGlobalAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 
 	case key.Matches(msg, a.keys.Matrix):
 		if len(a.fileList.Files) < 2 {
-			return a, a.flashWarning("Need at least 2 files for matrix")
+			cmd := a.flashWarning("Need at least 2 files for matrix")
+			return a, cmd
 		}
 		a.matrixView = NewMatrixModel(a.fileList.Files, a.config.Layout)
 		a.mode = ModeMatrix
@@ -550,20 +560,16 @@ func (a App) handleNormalVarAction(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, boo
 	case key.Matches(msg, a.keys.YankValue):
 		v := a.varList.SelectedVar()
 		if v != nil {
-			return a, tea.Batch(
-				tea.SetClipboard(v.Value),
-				a.flashMessage(fmt.Sprintf("Copied %s value to clipboard", v.Key)),
-			), true
+			flash := a.flashMessage(fmt.Sprintf("Copied %s value to clipboard", v.Key))
+			return a, tea.Batch(tea.SetClipboard(v.Value), flash), true
 		}
 
 	case key.Matches(msg, a.keys.YankLine):
 		v := a.varList.SelectedVar()
 		if v != nil {
 			line := v.Key + "=" + v.Value
-			return a, tea.Batch(
-				tea.SetClipboard(line),
-				a.flashMessage(fmt.Sprintf("Copied %s to clipboard", v.Key+"=...")),
-			), true
+			flash := a.flashMessage(fmt.Sprintf("Copied %s to clipboard", v.Key+"=..."))
+			return a, tea.Batch(tea.SetClipboard(line), flash), true
 		}
 
 	case key.Matches(msg, a.keys.Peek):
@@ -579,7 +585,8 @@ func (a App) handleNormalVarMutation(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, b
 		return a, cmd, true
 	}
 	if a.varList.IsHeaderAtCursor() {
-		return a, a.flashWarning("No variable selected"), true
+		cmd := a.flashWarning("No variable selected")
+		return a, cmd, true
 	}
 
 	switch {
@@ -588,7 +595,8 @@ func (a App) handleNormalVarMutation(msg tea.KeyPressMsg) (tea.Model, tea.Cmd, b
 		if v != nil {
 			idx := a.varList.SelectedVarIndex()
 			if !a.editor.StartEdit(v, idx) {
-				return a, a.flashWarning(uneditableValueWarning), true
+				cmd := a.flashWarning(uneditableValueWarning)
+				return a, cmd, true
 			}
 			a.mode = ModeEditing
 			return a, a.editor.input.Focus(), true
@@ -630,7 +638,8 @@ func (a App) handleConfirmDeleteKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			name := a.varList.File.Vars[idx].Key
 			a.varList.File.DeleteVar(idx)
 			a.varList.Refresh()
-			return a, a.flashMessage("Deleted " + name)
+			cmd := a.flashMessage("Deleted " + name)
+			return a, cmd
 		}
 		return a, nil
 	case key.Matches(msg, a.keys.Deny), key.Matches(msg, a.keys.Escape):

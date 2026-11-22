@@ -167,7 +167,8 @@ func (m *DiffViewModel) visibleLines() int {
 // IndexAt returns the index of the entry drawn on screen row y, the panels
 // being drawn from the top of the screen, or -1 for a row that draws no entry.
 func (m *DiffViewModel) IndexAt(y int) int {
-	return visibleIndex(y-panelContentOffsetY, m.Offset, m.visibleLines(), len(m.Entries))
+	visible := m.visibleLines()
+	return visibleIndex(y-panelContentOffsetY, m.Offset, visible, len(m.Entries))
 }
 
 func (m *DiffViewModel) ensureVisible() {

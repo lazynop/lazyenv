@@ -20,7 +20,8 @@ func (a App) confirmCreateFile() (tea.Model, tea.Cmd) {
 	}
 
 	if err := a.createFile(fullPath); err != nil {
-		return a, a.flashError("Error creating file: " + err.Error())
+		cmd = a.flashError("Error creating file: " + err.Error())
+		return a, cmd
 	}
 
 	return a.finaliseNewFile(fullPath, "Created "+name)

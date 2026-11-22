@@ -25,7 +25,8 @@ func (a App) confirmRenameFile() (tea.Model, tea.Cmd) {
 	}
 
 	if err := a.renameFile(src.Path, newPath); err != nil {
-		return a, a.flashError("Error renaming file: " + err.Error())
+		cmd = a.flashError("Error renaming file: " + err.Error())
+		return a, cmd
 	}
 
 	if a.backupAttempted[src.Path] {
@@ -44,5 +45,6 @@ func (a App) confirmRenameFile() (tea.Model, tea.Cmd) {
 
 	a.varList.SetFile(src)
 
-	return a, a.flashMessage("Renamed " + oldName + " → " + name)
+	cmd = a.flashMessage("Renamed " + oldName + " → " + name)
+	return a, cmd
 }

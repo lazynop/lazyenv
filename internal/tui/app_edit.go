@@ -28,7 +28,8 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 					return a, nil
 				}
 				if problem := newKeyProblem(a.varList.File, newKey, noVarToSkip); problem != "" {
-					return a, a.flashWarning(problem)
+					cmd := a.flashWarning(problem)
+					return a, cmd
 				}
 				a.editor.StartAddValue(newKey)
 				a.mode = ModeEditing
@@ -36,9 +37,11 @@ func (a App) handleEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			}
 			a.varList.File.AddVar(a.editor.addKey, result.Value)
 			a.varList.Refresh()
-			return a, a.flashMessage("Added " + a.editor.addKey)
+			cmd := a.flashMessage("Added " + a.editor.addKey)
+			return a, cmd
 		}
-		return a, a.commitValueEdit(a.varList.File, result)
+		cmd := a.commitValueEdit(a.varList.File, result)
+		return a, cmd
 	default:
 		var cmd tea.Cmd
 		a.editor.input, cmd = a.editor.input.Update(msg)

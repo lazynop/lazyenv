@@ -51,9 +51,11 @@ func (a App) handleComparingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		a.diffView.ShowSecrets = !a.diffView.ShowSecrets
 		a.varList.SetShowSecrets(a.diffView.ShowSecrets)
 		if a.diffView.ShowSecrets {
-			return a, a.flashMessage("Secrets revealed")
+			cmd := a.flashMessage("Secrets revealed")
+			return a, cmd
 		}
-		return a, a.flashMessage("Secrets hidden")
+		cmd := a.flashMessage("Secrets hidden")
+		return a, cmd
 	}
 	return a, nil
 }
@@ -93,7 +95,8 @@ func (a App) handleCompareCopy(toRight bool) (tea.Model, tea.Cmd) {
 	}
 	if k != "" {
 		a.refreshIfShown(mutated)
-		return a, a.flashMessage(k + " → " + target)
+		cmd := a.flashMessage(k + " → " + target)
+		return a, cmd
 	}
 	return a, nil
 }
@@ -101,18 +104,22 @@ func (a App) handleCompareCopy(toRight bool) (tea.Model, tea.Cmd) {
 func (a App) handleCompareFilter() (tea.Model, tea.Cmd) {
 	a.diffView.ToggleFilter()
 	if a.diffView.HideEqual {
-		return a, a.flashMessage("Showing differences only")
+		cmd := a.flashMessage("Showing differences only")
+		return a, cmd
 	}
-	return a, a.flashMessage("Showing all entries")
+	cmd := a.flashMessage("Showing all entries")
+	return a, cmd
 }
 
 func (a App) handleCompareReset() (App, tea.Cmd) {
 	if errMsg := a.diffView.Reset(); errMsg != "" {
-		return a, a.flashError(errMsg)
+		cmd := a.flashError(errMsg)
+		return a, cmd
 	}
 	a.replaceFile(a.diffView.FileA)
 	a.replaceFile(a.diffView.FileB)
-	return a, a.flashMessage("Reset to saved state")
+	cmd := a.flashMessage("Reset to saved state")
+	return a, cmd
 }
 
 func (a App) handleCompareSave() (App, tea.Cmd) {
@@ -126,7 +133,8 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 				if len(saved) > 0 {
 					warn.WriteString(savedReport(saved, refreshErrs) + " - ")
 				}
-				return a, a.flashError(warn.String() + "Error saving " + f.Name + ": " + err.Error())
+				cmd := a.flashError(warn.String() + "Error saving " + f.Name + ": " + err.Error())
+				return a, cmd
 			}
 			saved = append(saved, f.Name)
 			refreshed, err := a.refreshFile(f)
@@ -143,13 +151,16 @@ func (a App) handleCompareSave() (App, tea.Cmd) {
 	}
 	a.diffView.Rediff()
 	if len(saved) == 0 {
-		return a, a.flashMessage("No changes to save")
+		cmd := a.flashMessage("No changes to save")
+		return a, cmd
 	}
 	report := warn.String() + savedReport(saved, refreshErrs)
 	if len(refreshErrs) > 0 {
-		return a, a.flashError(report)
+		cmd := a.flashError(report)
+		return a, cmd
 	}
-	return a, a.flashMessage(report)
+	cmd := a.flashMessage(report)
+	return a, cmd
 }
 
 func savedReport(saved, refreshErrs []string) string {
@@ -169,11 +180,13 @@ func (a App) startCompareEdit(file *model.EnvFile) (tea.Model, tea.Cmd) {
 	varIdx := file.LastIndexOfKey(e.Key)
 
 	if varIdx < 0 {
-		return a, a.flashWarning(e.Key + " not in " + file.Name)
+		cmd := a.flashWarning(e.Key + " not in " + file.Name)
+		return a, cmd
 	}
 
 	if !a.editor.StartEdit(&file.Vars[varIdx], varIdx) {
-		return a, a.flashWarning(uneditableValueWarning)
+		cmd := a.flashWarning(uneditableValueWarning)
+		return a, cmd
 	}
 	a.compareEditFile = file
 	a.editor.label = fmt.Sprintf("Edit %s in %s: ", e.Key, file.Name)
@@ -230,7 +243,8 @@ func (a App) handleCompareSelectKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			break
 		}
 		if second == a.compareFirstFile {
-			return a, a.flashWarning("Pick a different file to compare with")
+			cmd := a.flashWarning("Pick a different file to compare with")
+			return a, cmd
 		}
 		a.diffView.SetFiles(a.compareFirstFile, second)
 		a.diffView.ShowSecrets = a.varList.ShowSecrets

@@ -21,10 +21,12 @@ func (a App) confirmRenameKey(result EditorResult) (tea.Model, tea.Cmd) {
 	}
 
 	if problem := newKeyProblem(f, newKey, idx); problem != "" {
-		return a, a.flashWarning(problem)
+		cmd := a.flashWarning(problem)
+		return a, cmd
 	}
 
 	f.RenameVar(idx, newKey)
 	a.varList.Refresh()
-	return a, a.flashMessage("Renamed " + oldKey + " → " + newKey)
+	cmd := a.flashMessage("Renamed " + oldKey + " → " + newKey)
+	return a, cmd
 }

@@ -104,7 +104,8 @@ func (m *FileListModel) visibleLines() int {
 // IndexAt returns the index of the file drawn on screen row y, the panel
 // being drawn from the top of the screen, or -1 for a row that draws no file.
 func (m *FileListModel) IndexAt(y int) int {
-	return visibleIndex(y-panelContentOffsetY, m.Offset, m.visibleLines(), len(m.Files))
+	visible := m.visibleLines()
+	return visibleIndex(y-panelContentOffsetY, m.Offset, visible, len(m.Files))
 }
 
 // Select selects the current cursor position.

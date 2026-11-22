@@ -26,13 +26,16 @@ func (a App) backupAndSave(f *model.EnvFile) (warn string, err error) {
 func (a App) handleSave() (App, tea.Cmd) {
 	f := a.varList.File
 	if f == nil {
-		return a, a.flashWarning("No file selected")
+		cmd := a.flashWarning("No file selected")
+		return a, cmd
 	}
 	if !f.Modified {
-		return a, a.flashMessage("No changes to save")
+		cmd := a.flashMessage("No changes to save")
+		return a, cmd
 	}
 
-	return a, a.saveAndRefresh(f, "Saved", "Saved "+f.Name)
+	cmd := a.saveAndRefresh(f, "Saved", "Saved "+f.Name)
+	return a, cmd
 }
 
 func (a *App) saveAndRefresh(f *model.EnvFile, verb, done string) tea.Cmd {
@@ -51,15 +54,19 @@ func (a *App) saveAndRefresh(f *model.EnvFile, verb, done string) tea.Cmd {
 func (a App) handleReset() (App, tea.Cmd) {
 	f := a.varList.File
 	if f == nil {
-		return a, a.flashWarning("No file selected")
+		cmd := a.flashWarning("No file selected")
+		return a, cmd
 	}
 	if !f.Modified {
-		return a, a.flashMessage("No changes to reset")
+		cmd := a.flashMessage("No changes to reset")
+		return a, cmd
 	}
 
 	if _, err := a.refreshFile(f); err != nil {
-		return a, a.flashError("Error reloading: " + err.Error())
+		cmd := a.flashError("Error reloading: " + err.Error())
+		return a, cmd
 	}
 
-	return a, a.flashMessage("Reset to saved state")
+	cmd := a.flashMessage("Reset to saved state")
+	return a, cmd
 }

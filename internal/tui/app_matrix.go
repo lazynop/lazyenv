@@ -38,9 +38,11 @@ func (a App) handleMatrixKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, a.keys.ToggleSort):
 		a.matrixView.ToggleSort()
 		if a.matrixView.sortMode == model.SortCompleteness {
-			return a, a.flashMessage("Sorted by completeness")
+			cmd := a.flashMessage("Sorted by completeness")
+			return a, cmd
 		}
-		return a, a.flashMessage("Sorted alphabetically")
+		cmd := a.flashMessage("Sorted alphabetically")
+		return a, cmd
 	case key.Matches(msg, a.keys.Add), key.Matches(msg, a.keys.Delete):
 		return a.handleMatrixEdit(msg)
 	}
@@ -60,14 +62,16 @@ func (a App) handleMatrixEdit(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case key.Matches(msg, a.keys.Add):
 		if cell.Present {
-			return a, a.flashWarning("Variable already exists")
+			cmd := a.flashWarning("Variable already exists")
+			return a, cmd
 		}
 		cmd := a.matrixView.StartEdit()
 		a.mode = ModeMatrixEditing
 		return a, cmd
 	case key.Matches(msg, a.keys.Delete):
 		if !cell.Present {
-			return a, a.flashWarning("Variable not present in this file")
+			cmd := a.flashWarning("Variable not present in this file")
+			return a, cmd
 		}
 		a.mode = ModeConfirmMatrixDelete
 		a.statusBar.SetAlert(fmt.Sprintf("Delete %s from %s? %s", cell.Key, cell.File.Name, yesNo(a.keys)))
@@ -82,7 +86,8 @@ func (a App) handleConfirmMatrixDeleteKey(msg tea.KeyPressMsg) (tea.Model, tea.C
 		deleted, file := a.matrixView.DeleteAtCursor()
 		if file != nil {
 			a.refreshIfShown(file)
-			return a, a.flashMessage("Deleted " + deleted + " from " + file.Name)
+			cmd := a.flashMessage("Deleted " + deleted + " from " + file.Name)
+			return a, cmd
 		}
 		return a, nil
 	case key.Matches(msg, a.keys.Deny), key.Matches(msg, a.keys.Escape):
@@ -102,7 +107,8 @@ func (a App) handleMatrixEditingKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		addedTo := a.matrixView.ConfirmEdit()
 		a.refreshIfShown(addedTo)
 		a.mode = ModeMatrix
-		return a, a.flashMessage("Variable added")
+		cmd := a.flashMessage("Variable added")
+		return a, cmd
 	default:
 		var cmd tea.Cmd
 		a.matrixView.editor, cmd = a.matrixView.editor.Update(msg)

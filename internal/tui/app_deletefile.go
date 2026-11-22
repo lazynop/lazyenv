@@ -18,7 +18,8 @@ func (a App) handleConfirmDeleteFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd
 		}
 
 		if err := a.deleteFile(f.Path); err != nil {
-			return a, a.flashError("Error deleting file: " + err.Error())
+			cmd := a.flashError("Error deleting file: " + err.Error())
+			return a, cmd
 		}
 
 		a.fileList.removeFile(f.Path)
@@ -35,7 +36,8 @@ func (a App) handleConfirmDeleteFileKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd
 			a.varList.SetFile(a.fileList.Files[a.fileList.Cursor])
 		}
 
-		return a, a.flashMessage("Deleted " + f.Name)
+		cmd := a.flashMessage("Deleted " + f.Name)
+		return a, cmd
 
 	case key.Matches(msg, a.keys.Deny), key.Matches(msg, a.keys.Escape):
 		a.mode = ModeNormal
