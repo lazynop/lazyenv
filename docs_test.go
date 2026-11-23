@@ -440,13 +440,16 @@ func TestDocsNameExistingJustRecipes(t *testing.T) {
 	repo := newRepoIndex(t)
 	pages, err := filepath.Glob("docs/*.md")
 	require.NoError(t, err)
-	for _, path := range append(pages, "README.md") {
+	checked := 0
+	for _, path := range append(pages, "README.md", "CONTRIBUTING.md") {
 		for _, ref := range docstest.CodeSpans(docstest.ReadFile(t, path)) {
 			if justRefRe.MatchString(ref) {
+				checked++
 				assert.Empty(t, repo.missing(ref), "%s names `%s`", path, ref)
 			}
 		}
 	}
+	assert.NotZero(t, checked, "the docs scan found no `just` span to check")
 }
 
 func TestRepoIndexChecksTheRecipeAJustSpanNames(t *testing.T) {
