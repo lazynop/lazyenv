@@ -4,6 +4,7 @@ package docstest
 
 import (
 	"fmt"
+	"iter"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -55,18 +56,41 @@ func CodeSpans(s string) []string {
 }
 
 func withoutFencedBlocks(s string) string {
-	lines := strings.Split(s, "\n")
-	inFence := false
-	for i, line := range lines {
-		fence := strings.HasPrefix(strings.TrimSpace(line), "```")
-		if fence || inFence {
-			lines[i] = ""
+	var lines []string
+	for line, kind := range lineKinds(s) {
+		if kind != proseLine {
+			line = ""
 		}
-		if fence {
-			inFence = !inFence
-		}
+		lines = append(lines, line)
 	}
 	return strings.Join(lines, "\n")
+}
+
+type lineKind int
+
+const (
+	proseLine lineKind = iota
+	fenceDelimiter
+	codeLine
+)
+
+func lineKinds(s string) iter.Seq2[string, lineKind] {
+	return func(yield func(string, lineKind) bool) {
+		inFence := false
+		for _, line := range strings.Split(s, "\n") {
+			kind := proseLine
+			switch {
+			case strings.HasPrefix(strings.TrimSpace(line), "```"):
+				kind = fenceDelimiter
+				inFence = !inFence
+			case inFence:
+				kind = codeLine
+			}
+			if !yield(line, kind) {
+				return
+			}
+		}
+	}
 }
 
 // Table is a Markdown table: the header cells and, for each row, its cells,
