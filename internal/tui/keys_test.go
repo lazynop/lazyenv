@@ -3,6 +3,7 @@ package tui
 import (
 	"fmt"
 	"go/ast"
+	goparser "go/parser"
 	"go/token"
 	"reflect"
 	"strings"
@@ -51,14 +52,15 @@ func TestEveryBoundKeyCanBePressed(t *testing.T) {
 
 func TestKeyPressesCarryTheirCode(t *testing.T) {
 	fset := token.NewFileSet()
-	textOnly := textOnlyKeyPresses(fset, parseFiles(t, fset, listPackageSource(t).testFiles))
+	textOnly := textOnlyKeyPresses(t, fset, parseFiles(t, fset, listPackageSource(t).testFiles))
 	assert.Empty(t, textOnly, "press keys with keyMsg(k), or press(app, k...), which build the press a terminal sends")
 }
 
-func textOnlyKeyPresses(fset *token.FileSet, files []*ast.File) []string {
+func textOnlyKeyPresses(t *testing.T, fset *token.FileSet, files []*ast.File) []string {
+	t.Helper()
 	var textOnly []string
 	for _, file := range files {
-		local := importName(file, bubbleteaPath)
+		local := importName(t, file, bubbleteaPath)
 		if local == "" {
 			continue
 		}
@@ -96,6 +98,22 @@ func textOnlyKeyPresses(fset *token.FileSet, files []*ast.File) []string {
 		})
 	}
 	return textOnly
+}
+
+func TestKeyPressScanChecksAliasedAndUnaliasedImports(t *testing.T) {
+	for _, tc := range []struct{ name, imp, local string }{
+		{"unaliased", `"charm.land/bubbletea/v2"`, "tea"},
+		{"aliased", `bt "charm.land/bubbletea/v2"`, "bt"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			src := "package tui\n\nimport " + tc.imp + "\n\nfunc f() { _ = " + tc.local + ".KeyPressMsg{Text: \"q\"} }\n"
+			fset := token.NewFileSet()
+			file, err := goparser.ParseFile(fset, tc.name+".go", src, goparser.SkipObjectResolution)
+			require.NoError(t, err)
+			assert.Equal(t, []string{tc.name + ".go:5: " + tc.local + ".KeyPressMsg in f"}, textOnlyKeyPresses(t, fset, []*ast.File{file}),
+				"the scan misses a press without Code in a file that imports bubbletea %s", tc.name)
+		})
+	}
 }
 
 func elemType(typ ast.Expr) ast.Expr {

@@ -9,6 +9,7 @@ import (
 	"path"
 	"slices"
 	"strconv"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -106,7 +107,7 @@ func sourceMatches(t *testing.T, importPath string, match identMatcher) []source
 	for _, file := range parseFiles(t, fset, listPackageSource(t).goFiles) {
 		importedAs := thisPackage
 		if importPath != thisPackage {
-			if importedAs = importName(file, importPath); importedAs == "" {
+			if importedAs = importName(t, file, importPath); importedAs == "" {
 				continue
 			}
 		}
@@ -149,7 +150,8 @@ func isSelector(expr ast.Expr, pkg, name string) bool {
 	return ok && id.Name == pkg
 }
 
-func importName(file *ast.File, importPath string) string {
+func importName(t *testing.T, file *ast.File, importPath string) string {
+	t.Helper()
 	for _, imp := range file.Imports {
 		if p, _ := strconv.Unquote(imp.Path.Value); p != importPath {
 			continue
@@ -157,9 +159,27 @@ func importName(file *ast.File, importPath string) string {
 		if imp.Name != nil {
 			return imp.Name.Name
 		}
-		return path.Base(importPath)
+		return packageName(t, importPath)
 	}
 	return ""
+}
+
+var packageNames = struct {
+	sync.Mutex
+	byPath map[string]string
+}{byPath: map[string]string{}}
+
+func packageName(t *testing.T, importPath string) string {
+	t.Helper()
+	packageNames.Lock()
+	defer packageNames.Unlock()
+	if name, ok := packageNames.byPath[importPath]; ok {
+		return name
+	}
+	pkg, err := build.Import(importPath, ".", 0)
+	require.NoError(t, err, "resolving the package name of %s", importPath)
+	packageNames.byPath[importPath] = pkg.Name
+	return pkg.Name
 }
 
 func assertRefsMatchAllowList(t *testing.T, refs []sourceRef, allowed allowList, whatToDoInstead string) {
