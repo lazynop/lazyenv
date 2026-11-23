@@ -51,8 +51,13 @@ func TestEveryBoundKeyCanBePressed(t *testing.T) {
 
 func TestKeyPressesCarryTheirCode(t *testing.T) {
 	fset := token.NewFileSet()
+	textOnly := textOnlyKeyPresses(fset, parseFiles(t, fset, listPackageSource(t).testFiles))
+	assert.Empty(t, textOnly, "press keys with keyMsg(k), or press(app, k...), which build the press a terminal sends")
+}
+
+func textOnlyKeyPresses(fset *token.FileSet, files []*ast.File) []string {
 	var textOnly []string
-	for _, file := range parseFiles(t, fset, listPackageSource(t).testFiles) {
+	for _, file := range files {
 		local := importName(file, bubbleteaPath)
 		if local == "" {
 			continue
@@ -90,7 +95,7 @@ func TestKeyPressesCarryTheirCode(t *testing.T) {
 			return true
 		})
 	}
-	assert.Empty(t, textOnly, "press keys with keyMsg(k), or press(app, k...), which build the press a terminal sends")
+	return textOnly
 }
 
 func elemType(typ ast.Expr) ast.Expr {
