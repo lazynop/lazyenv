@@ -6,7 +6,6 @@ import (
 	"go/build"
 	goparser "go/parser"
 	"go/token"
-	"path"
 	"slices"
 	"strconv"
 	"sync"
@@ -118,7 +117,7 @@ func sourceMatches(t *testing.T, importPath string, match identMatcher) []source
 			}
 			qualified := id.Name
 			if importPath != thisPackage {
-				qualified = path.Base(importPath) + "." + id.Name
+				qualified = packageName(t, importPath) + "." + id.Name
 			}
 			refs = append(refs, newSourceRef(fset, id.Pos(), enclosingFunc, qualified))
 			return true

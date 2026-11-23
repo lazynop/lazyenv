@@ -72,7 +72,7 @@ func textOnlyKeyPresses(t *testing.T, fset *token.FileSet, files []*ast.File) []
 		}
 		check := func(lit *ast.CompositeLit, enclosingFunc string) {
 			if fields := keyedFields(lit); fields["Text"] && !fields["Code"] {
-				ref := newSourceRef(fset, lit.Pos(), enclosingFunc, local+".KeyPressMsg")
+				ref := newSourceRef(fset, lit.Pos(), enclosingFunc, packageName(t, bubbleteaPath)+".KeyPressMsg")
 				textOnly = append(textOnly, ref.String())
 			}
 		}
@@ -110,8 +110,8 @@ func TestKeyPressScanChecksAliasedAndUnaliasedImports(t *testing.T) {
 			fset := token.NewFileSet()
 			file, err := goparser.ParseFile(fset, tc.name+".go", src, goparser.SkipObjectResolution)
 			require.NoError(t, err)
-			assert.Equal(t, []string{tc.name + ".go:5: " + tc.local + ".KeyPressMsg in f"}, textOnlyKeyPresses(t, fset, []*ast.File{file}),
-				"the scan misses a press without Code in a file that imports bubbletea %s", tc.name)
+			assert.Equal(t, []string{tc.name + ".go:5: tea.KeyPressMsg in f"}, textOnlyKeyPresses(t, fset, []*ast.File{file}),
+				"the scan does not report the press without Code as tea.KeyPressMsg in a file that imports bubbletea %s", tc.name)
 		})
 	}
 }
