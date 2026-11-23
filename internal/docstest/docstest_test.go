@@ -52,6 +52,10 @@ func TestCodeSpansSkipFencedBlocks(t *testing.T) {
 	assert.Equal(t, []string{"just build", "just run", "just check", "just test"}, CodeSpans(fencedDoc))
 }
 
+func TestFencedLinesReadTheTrimmedLinesOfEveryFencedBlock(t *testing.T) {
+	assert.Equal(t, []string{"echo `date`", "echo `whoami`"}, FencedLines(fencedDoc))
+}
+
 func TestSubsectionReadsTheSubsectionOfTheNamedSection(t *testing.T) {
 	assert.Equal(t, "\nsecond rules\n", Subsection(t, subsectionDoc, "Second", "Rules"))
 }

@@ -55,6 +55,18 @@ func CodeSpans(s string) []string {
 	return spans
 }
 
+// FencedLines returns each line inside the fenced code blocks of s, in order
+// and trimmed of surrounding white space, without the fence lines.
+func FencedLines(s string) []string {
+	var lines []string
+	for line, kind := range lineKinds(s) {
+		if kind == codeLine {
+			lines = append(lines, strings.TrimSpace(line))
+		}
+	}
+	return lines
+}
+
 func withoutFencedBlocks(s string) string {
 	var lines []string
 	for line, kind := range lineKinds(s) {

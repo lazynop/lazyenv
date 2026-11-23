@@ -440,16 +440,50 @@ func TestDocsNameExistingJustRecipes(t *testing.T) {
 	repo := newRepoIndex(t)
 	pages, err := filepath.Glob("docs/*.md")
 	require.NoError(t, err)
-	checked := 0
+	spans, commands := 0, 0
 	for _, path := range append(pages, "README.md", "CONTRIBUTING.md") {
-		for _, ref := range docstest.CodeSpans(docstest.ReadFile(t, path)) {
+		doc := docstest.ReadFile(t, path)
+		for _, ref := range docstest.CodeSpans(doc) {
 			if justRefRe.MatchString(ref) {
-				checked++
+				spans++
 				assert.Empty(t, repo.missing(ref), "%s names `%s`", path, ref)
 			}
 		}
+		for _, command := range justCommandLines(doc) {
+			commands++
+			assert.Empty(t, repo.missing(command), "%s runs `%s` in a fenced block", path, command)
+		}
 	}
-	assert.NotZero(t, checked, "the docs scan found no `just` span to check")
+	assert.NotZero(t, spans, "the docs scan found no `just` span to check")
+	assert.NotZero(t, commands, "the docs scan found no `just` command in a fenced block to check")
+}
+
+func justCommandLines(doc string) []string {
+	var commands []string
+	for _, line := range docstest.FencedLines(doc) {
+		if justRefRe.MatchString(line) {
+			commands = append(commands, line)
+		}
+	}
+	return commands
+}
+
+const fencedJustDoc = "Run `just run` first.\n\n" +
+	"```bash\n" +
+	"just build        # build to bin/lazyenv\n" +
+	"echo done\n" +
+	"```\n\n" +
+	"```toml\n" +
+	"[colors]\n" +
+	"primary = \"#FF6600\"    # override just primary\n" +
+	"```\n"
+
+func TestJustCommandLinesReadAFencedCommandWithATrailingComment(t *testing.T) {
+	assert.Equal(t, []string{"just build        # build to bin/lazyenv"}, justCommandLines(fencedJustDoc), "the just command lines of the fenced blocks")
+}
+
+func TestJustCommandLinesSkipFencedProseHoldingJust(t *testing.T) {
+	assert.NotContains(t, justCommandLines(fencedJustDoc), `primary = "#FF6600"    # override just primary`, "a TOML comment that holds the word just is read as a command")
 }
 
 func TestRepoIndexChecksTheRecipeAJustSpanNames(t *testing.T) {
