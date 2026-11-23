@@ -52,15 +52,19 @@ func TestEveryBoundKeyCanBePressed(t *testing.T) {
 
 func TestKeyPressesCarryTheirCode(t *testing.T) {
 	fset := token.NewFileSet()
-	textOnly := textOnlyKeyPresses(t, fset, parseFiles(t, fset, listPackageSource(t).testFiles))
+	textOnly, err := textOnlyKeyPresses(t, fset, parseFiles(t, fset, listPackageSource(t).testFiles))
+	require.NoError(t, err)
 	assert.Empty(t, textOnly, "press keys with keyMsg(k), or press(app, k...), which build the press a terminal sends")
 }
 
-func textOnlyKeyPresses(t *testing.T, fset *token.FileSet, files []*ast.File) []string {
+func textOnlyKeyPresses(t *testing.T, fset *token.FileSet, files []*ast.File) ([]string, error) {
 	t.Helper()
 	var textOnly []string
 	for _, file := range files {
-		local := importName(t, file, bubbleteaPath)
+		local, err := importName(t, fset, file, bubbleteaPath)
+		if err != nil {
+			return nil, err
+		}
 		if local == "" {
 			continue
 		}
@@ -97,7 +101,7 @@ func textOnlyKeyPresses(t *testing.T, fset *token.FileSet, files []*ast.File) []
 			return true
 		})
 	}
-	return textOnly
+	return textOnly, nil
 }
 
 func TestKeyPressScanChecksAliasedAndUnaliasedImports(t *testing.T) {
@@ -110,10 +114,43 @@ func TestKeyPressScanChecksAliasedAndUnaliasedImports(t *testing.T) {
 			fset := token.NewFileSet()
 			file, err := goparser.ParseFile(fset, tc.name+".go", src, goparser.SkipObjectResolution)
 			require.NoError(t, err)
-			assert.Equal(t, []string{tc.name + ".go:5: tea.KeyPressMsg in f"}, textOnlyKeyPresses(t, fset, []*ast.File{file}),
+			textOnly, err := textOnlyKeyPresses(t, fset, []*ast.File{file})
+			require.NoError(t, err)
+			assert.Equal(t, []string{tc.name + ".go:5: tea.KeyPressMsg in f"}, textOnly,
 				"the scan does not report the press without Code as tea.KeyPressMsg in a file that imports bubbletea %s", tc.name)
 		})
 	}
+}
+
+func TestKeyPressScanFailsOnADotImportOfBubbletea(t *testing.T) {
+	for _, tc := range []struct {
+		name, imports string
+		line          int
+	}{
+		{"alone", `. "charm.land/bubbletea/v2"`, 3},
+		{"after a named import", "(\n\ttea \"charm.land/bubbletea/v2\"\n\t. \"charm.land/bubbletea/v2\"\n)", 5},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			src := "package tui\n\nimport " + tc.imports + "\n\nfunc f() { _ = KeyPressMsg{Text: \"q\"} }\n"
+			fset := token.NewFileSet()
+			file, err := goparser.ParseFile(fset, "dot.go", src, goparser.SkipObjectResolution)
+			require.NoError(t, err)
+			_, err = textOnlyKeyPresses(t, fset, []*ast.File{file})
+			assert.EqualError(t, err,
+				fmt.Sprintf("dot.go:%d: dot import of charm.land/bubbletea/v2 hides its identifiers from the source scans: import it by name", tc.line),
+				"a dot import of bubbletea turns the scan off for its file without a report")
+		})
+	}
+}
+
+func TestKeyPressScanAllowsADotImportOfAnotherPackage(t *testing.T) {
+	src := "package tui\n\nimport (\n\t. \"strings\"\n\n\ttea \"charm.land/bubbletea/v2\"\n)\n\nfunc f() { _ = tea.KeyPressMsg{Text: ToLower(\"Q\")} }\n"
+	fset := token.NewFileSet()
+	file, err := goparser.ParseFile(fset, "other.go", src, goparser.SkipObjectResolution)
+	require.NoError(t, err)
+	textOnly, err := textOnlyKeyPresses(t, fset, []*ast.File{file})
+	assert.NoError(t, err, "a dot import of a package the scan does not look for hides nothing from it")
+	assert.Equal(t, []string{"other.go:9: tea.KeyPressMsg in f"}, textOnly, "the scan stops checking a file that dot-imports another package")
 }
 
 func elemType(typ ast.Expr) ast.Expr {

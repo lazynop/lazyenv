@@ -106,7 +106,10 @@ func sourceMatches(t *testing.T, importPath string, match identMatcher) []source
 	for _, file := range parseFiles(t, fset, listPackageSource(t).goFiles) {
 		importedAs := thisPackage
 		if importPath != thisPackage {
-			if importedAs = importName(t, file, importPath); importedAs == "" {
+			var err error
+			importedAs, err = importName(t, fset, file, importPath)
+			require.NoError(t, err)
+			if importedAs == "" {
 				continue
 			}
 		}
@@ -149,18 +152,31 @@ func isSelector(expr ast.Expr, pkg, name string) bool {
 	return ok && id.Name == pkg
 }
 
-func importName(t *testing.T, file *ast.File, importPath string) string {
+func importName(t *testing.T, fset *token.FileSet, file *ast.File, importPath string) (string, error) {
 	t.Helper()
+	name := ""
 	for _, imp := range file.Imports {
 		if p, _ := strconv.Unquote(imp.Path.Value); p != importPath {
 			continue
 		}
-		if imp.Name != nil {
-			return imp.Name.Name
+		if imp.Name != nil && imp.Name.Name == "." {
+			pos := fset.PositionFor(imp.Pos(), false)
+			return "", fmt.Errorf("%s:%d: dot import of %s hides its identifiers from the source scans: import it by name",
+				pos.Filename, pos.Line, importPath)
 		}
-		return packageName(t, importPath)
+		if name == "" {
+			name = localName(t, imp, importPath)
+		}
 	}
-	return ""
+	return name, nil
+}
+
+func localName(t *testing.T, imp *ast.ImportSpec, importPath string) string {
+	t.Helper()
+	if imp.Name != nil {
+		return imp.Name.Name
+	}
+	return packageName(t, importPath)
 }
 
 var packageNames = struct {
