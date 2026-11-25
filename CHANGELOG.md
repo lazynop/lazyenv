@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0] - 2026-11-25
+
+lazyenv 1.0 makes the CLI flags, the `.lazyenvrc` keys and the keybindings a stable interface.
+
+### Changed
+- Homebrew now installs lazyenv as a cask instead of the deprecated formula, and needs Homebrew 6.0.13 or later. The tap moves existing formula installs to the cask.
+- `--show-config` reports a rejected config file and exits with status 1, so scripts can detect a broken config (#47).
+- In a terminal smaller than 60x10, a notice replaces the screens until the terminal grows.
+- The edit bar refuses a value that contains line breaks or control characters, with a warning, instead of changing the value on save (#62).
+- Deleting a key in the matrix or compare view removes every occurrence of a duplicated key (#76).
+- A layout width below its minimum is raised to the minimum instead of rejecting the config. A negative `--file-list-width` is also raised to the minimum; it no longer means auto.
+- A CLI flag warning shows as a notice and no longer quits lazyenv (#45).
+- Errors show in the theme's error color, refused actions as warnings, and delete prompts as alerts (#50).
+- When a save fails, the message names every step that failed: a failed backup, and in compare, which file was saved before the other one failed or whose refresh failed.
+- The help screen groups keys by the screen they work in, scrolls when taller than the terminal, and lists the glyphs of compare, matrix and control characters.
+- Updated runtime dependencies: Bubble Tea v2.1.2, Lip Gloss v2.1.1, Kong v1.17.0, go-runewidth v0.0.31, x/ansi v0.11.10.
+
+### Added
+- `PgUp`/`PgDn` and `Home`/`End` move a page or to either end in the file list, the variable list, the compare view, the matrix, the help screen and the compare file picker (#65).
+
+### Fixed
+- Search no longer matches the values of masked secrets (#49).
+- The peek line masks the original value of a secret and draws it on one row (#51).
+- Secrets are detected again whenever a key or value changes, so a value copied in compare can no longer show unmasked (#52).
+- Control characters in values and file names show as visible glyphs and never reach the terminal as escape sequences.
+- An unquoted value with a tab stays unquoted on save (#93).
+- An empty `.env`, and a template made from it, no longer gain a blank first line on save.
+- Confirming an edit without changes leaves the value as it was. Renaming a variable onto a key deleted in the same session restores that key. Adding a variable rejects an invalid or existing key.
+- Long values scroll inside the input bars instead of wrapping, and values of any length load into them.
+- The duplicate and placeholder flags update after a rename, add, delete or value change.
+- The `.gitignore` warning works for file names with special characters and when lazyenv runs from a subdirectory of the repository.
+- Showing secrets at startup (`--show-all` or `show-secrets`) also applies when the startup scan finds no file.
+- The session summary lists a reorder.
+- The config error screen names the config file once, shows one error per line and fits the terminal.
+- The compare file picker cancels with `q` and `Ctrl+C`, warns when fewer than 2 files exist, and picks a target only from clicks on the file list. The variable list refreshes after a compare or matrix edit.
+- The matrix cursor stays on its key when the rows re-sort, and the matrix no longer crashes in a one-column terminal.
+- The mouse is ignored while an edit bar or a confirmation is open, clicks outside the drawn rows do nothing, and the help screen stays open on a click.
+- Non-ASCII file names and keys line up in the file list and matrix (#61). Long file names, group labels, search queries and config paths are cut to fit their row.
+- Panels, the status bar, the peek line and the theme preview fit small terminals, and every view keeps its cursor visible after a resize.
+
 ## [0.9.1] - 2026-10-11
 
 ### Fixed
