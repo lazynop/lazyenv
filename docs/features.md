@@ -80,6 +80,8 @@ Before lazyenv first writes a file in a session, it copies it to a `.bak` file n
 
 Saves preserve comments, blank lines, quoting style, and key ordering. Line endings and the byte order mark are the exception: a save writes LF line endings and no UTF-8 BOM, whatever the file used, so a file with CRLF or CR line endings, or with a BOM, changes on its first save. LF without a BOM is the dotenv convention, and a BOM breaks the first key in a parser that does not strip it.
 
+A value you edit or add keeps its quoting style unless that style cannot hold the new value: a save writes it in double quotes instead. An unquoted value switches when it contains ` #`, a line break, or trailing whitespace, or starts with a quote; a single-quoted value switches when it contains `'`.
+
 ## Search and sort
 
 Filter variables by name or value with `/`: `Enter` keeps the filter, `Esc` clears it. While secrets are masked, the filter skips their values, so a secret matches only by name until `Ctrl+S` reveals it. Toggle between original position and alphabetical sorting with `o`.
@@ -113,7 +115,7 @@ To start with grouping already enabled, set `group = true` in your config or pas
 While `o` only changes how variables are displayed, `O` rewrites the file on disk in a new order — like `gofmt` for `.env` files. Press `O`, choose a mode, and confirm:
 
 - **`a` alphabetical** — variables sorted A→Z by key.
-- **`g` grouped** — variables grouped by prefix (groups alphabetical, then by key within each group), mirroring the `g` view, with the ungrouped bucket last and a blank line between groups.
+- **`g` grouped** — variables grouped by prefix (groups alphabetical, then by key within each group), mirroring the `g` view with sort (`o`) on, with the ungrouped bucket last and a blank line between groups.
 
 The reorder is **lossless for comments**: a comment block directly above a variable (no blank line between) travels with it, the file's leading and trailing comment blocks stay put, and stand-alone comments move up to just above the first variable. Blank lines between variables are not kept: alphabetical mode removes them, grouped mode leaves one between groups. The write goes through the same safe path as a manual save (a `.bak` backup on first write, atomic replace), so unsaved edits in the file are persisted as part of the reorder. Disabled in `--read-only` mode.
 
@@ -140,7 +142,7 @@ Session summary:
   .env.schema — from template .env.production (8 variables)
 ```
 
-Paths include the directory you passed: with `lazyenv ./services`, a line reads `services/.env — …`. A file renamed several times shows a single rename from its original name, renaming a file back to its original name drops the rename, and a file created and then deleted in the same session is not listed. A duplicate counts from the source's contents on disk, so edits to the source not yet saved are not part of it.
+Paths are relative to the current directory when you run `lazyenv` without a directory. When you pass one, even `.`, paths are absolute: with `lazyenv ./services`, a line reads `/home/you/project/services/.env — …`. A file renamed several times shows a single rename from its original name, renaming a file back to its original name drops the rename, and a file created and then deleted in the same session is not listed. A duplicate counts from the source's contents on disk, so edits to the source not yet saved are not part of it.
 
 Silent when nothing changed. Disable via `session-summary = false` in config or the `--no-session-summary` flag. `--read-only` disables it implicitly.
 
